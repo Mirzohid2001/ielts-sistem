@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Haftalik Xulosa - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="fade-in-left">
+                            <div class="page-header-icon">
+                                <i class="fas fa-calendar-week"></i>
+                            </div>
+                            <h1 class="page-header-title">Haftalik Xulosa</h1>
+                            <p class="page-header-subtitle">
+                                {{ week_start|date:"d.m.Y" }} - {{ week_end|date:"d.m.Y" }}
+                            </p>
+                        </div>
+                        <div class="fade-in-right">
+                            <a href="{% url 'core:profile' %}" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Orqaga
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistika -->
+    <div class="row mb-4">
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-list fa-2x fa-md-3x mb-2 mb-md-3 text-primary" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ total_tests }}</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Testlar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-2x fa-md-3x mb-2 mb-md-3 text-success" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ avg_score }}%</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">O'rtacha ball</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-video fa-2x fa-md-3x mb-2 mb-md-3 text-info" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ total_videos }}</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Videolar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-fire fa-3x mb-3 text-warning"></i>
+                    <h3 class="mb-0">{{ study_days }}</h3>
+                    <p class="text-muted mb-0">O'qish kunlari</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test natijalari -->
+    {% if test_results %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Test natijalari</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sana</th>
+                                    <th>Test</th>
+                                    <th>Kategoriya</th>
+                                    <th>Ball</th>
+                                    <th>Foiz</th>
+                                    <th>Holat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in test_results %}
+                                <tr>
+                                    <td>{{ result.completed_at|date:"d.m.Y H:i" }}</td>
+                                    <td><a href="{% url 'core:test_result' result.pk %}">{{ result.test.title }}</a></td>
+                                    <td>{{ result.test.category.name }}</td>
+                                    <td>{{ result.score }}/{{ result.total_questions }}</td>
+                                    <td>
+                                        <span class="badge {% if result.percentage >= 70 %}bg-success{% elif result.percentage >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ result.percentage|floatformat:1 }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if result.is_passed %}
+                                        <span class="badge bg-success">O'tdi</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">O'tmadi</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Video progress -->
+    {% if video_progress %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-video me-2"></i>Ko'rilgan videolar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for progress in video_progress %}
+                        <div class="col-12 col-sm-6 col-md-6 mb-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-3">
+                                    <h6 class="mb-1"><a href="{% url 'core:video_detail' progress.video.pk %}">{{ progress.video.title }}</a></h6>
+                                    <small class="text-muted">{{ progress.video.category.name }}</small>
+                                    <div class="mt-2">
+                                        <small class="text-muted">{{ progress.completed_at|date:"d.m.Y" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,1455 @@
+{% extends 'base.html' %}
+{% load youtube %}
+
+{% block title %}{{ video.title }} - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 col-lg-8 fade-in-up">
+            <!-- Video player -->
+            <div class="card mb-4 video-detail-card hover-lift">
+                <div class="card-body p-0">
+                    <!-- Video Controls -->
+                    <div class="video-controls d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-light" id="add-bookmark-btn" title="Bookmark qo'yish">
+                                <i class="fas fa-bookmark me-1"></i>Bookmark
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-light" id="add-note-btn" title="Eslatma qo'shish">
+                                <i class="fas fa-sticky-note me-1"></i>Eslatma
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="playlistDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-list me-1"></i>Playlist
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="playlistDropdown">
+                                    {% for playlist in user_playlists %}
+                                    <li>
+                                        <a class="dropdown-item playlist-item" href="#" data-playlist-id="{{ playlist.pk }}" data-video-id="{{ video.pk }}">
+                                            {% if playlist.pk in video_in_playlists %}
+                                            <i class="fas fa-check text-success me-2"></i>
+                                            {% else %}
+                                            <i class="fas fa-plus me-2"></i>
+                                            {% endif %}
+                                            {{ playlist.name }}
+                                        </a>
+                                    </li>
+                                    {% empty %}
+                                    <li><span class="dropdown-item-text text-muted">Playlist yo'q</span></li>
+                                    {% endfor %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="create-playlist-btn"><i class="fas fa-plus-circle me-2"></i>Yangi playlist</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="video-progress-container">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="video-time" id="current-time">0:00</span>
+                            <div class="video-progress-bar flex-grow-1" id="video-progress-bar">
+                                <div class="video-progress-fill" role="progressbar" style="width: {{ progress.watch_percentage }}%;" id="video-progress-fill"></div>
+                            </div>
+                            <span class="video-time" id="total-time">0:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="ratio ratio-16x9" style="position: relative; background: #000; min-height: 400px;">
+                        {% if video.youtube_id and video.youtube_id|length == 11 %}
+                        <!-- YouTube embed - Ishonchli versiya -->
+                        <div id="video-container-{{ video.pk }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                            <!-- Asosiy iframe - youtube.com ishlatish (eng ishonchli) -->
+                            <iframe 
+                                src="https://www.youtube.com/embed/{{ video.youtube_id }}?rel=0&modestbranding=1&playsinline=1" 
+                                allowfullscreen
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                id="youtube-player-{{ video.pk }}"
+                                title="{{ video.title }}"
+                                frameborder="0"></iframe>
+                        </div>
+                        <!-- Error fallback -->
+                        <div id="video-error-{{ video.pk }}" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); color: white; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; z-index: 10;">
+                            <i class="fas fa-exclamation-triangle fa-4x mb-4 text-warning" style="animation: pulse 2s ease-in-out infinite;"></i>
+                            <h4 class="mb-3" style="font-weight: 700;">Video yuklanmadi</h4>
+                            <p class="mb-4 text-center" style="max-width: 400px; opacity: 0.9;">Video yuklashda muammo yuz berdi. Iltimos, quyidagi havola orqali YouTube'da ko'ring.</p>
+                            <a href="https://www.youtube.com/watch?v={{ video.youtube_id }}" target="_blank" class="btn btn-primary btn-lg" rel="noopener noreferrer" style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">
+                                <i class="fas fa-external-link-alt me-2"></i>YouTube'da ko'rish
+                            </a>
+                            <button onclick="retryVideo{{ video.pk }}()" class="btn btn-outline-light btn-sm mt-3" style="border-radius: 8px;">
+                                <i class="fas fa-redo me-2"></i>Qayta urinish
+                            </button>
+                        </div>
+                        <script>
+                            // Video error handling
+                            function showVideoError{{ video.pk }}() {
+                                const errorDiv = document.getElementById('video-error-{{ video.pk }}');
+                                const container = document.getElementById('video-container-{{ video.pk }}');
+                                if (errorDiv && container) {
+                                    container.style.display = 'none';
+                                    errorDiv.style.display = 'flex';
+                                }
+                            }
+                            
+                            function retryVideo{{ video.pk }}() {
+                                const errorDiv = document.getElementById('video-error-{{ video.pk }}');
+                                const container = document.getElementById('video-container-{{ video.pk }}');
+                                const iframe = document.getElementById('youtube-player-{{ video.pk }}');
+                                
+                                if (errorDiv && container && iframe) {
+                                    errorDiv.style.display = 'none';
+                                    container.style.display = 'block';
+                                    // Iframe ni qayta yuklash
+                                    const videoId = '{{ video.youtube_id }}';
+                                    // Oddiy youtube.com URL ishlatish
+                                    iframe.src = 'https://www.youtube.com/embed/' + videoId + '?rel=0&modestbranding=1&playsinline=1';
+                                }
+                            }
+                            
+                            // Video yuklanishini tekshirish va ta'minlash
+                            (function() {
+                                const iframe = document.getElementById('youtube-player-{{ video.pk }}');
+                                if (!iframe) {
+                                    console.warn('YouTube iframe topilmadi');
+                                    return;
+                                }
+                                
+                                let loadTimeout;
+                                let hasLoaded = false;
+                                let checkInterval;
+                                let checkCount = 0;
+                                const maxChecks = 15; // 15 soniya
+                                
+                                // Iframe yuklanganda
+                                iframe.addEventListener('load', function() {
+                                    hasLoaded = true;
+                                    if (loadTimeout) clearTimeout(loadTimeout);
+                                    if (checkInterval) clearInterval(checkInterval);
+                                    
+                                    const errorDiv = document.getElementById('video-error-{{ video.pk }}');
+                                    if (errorDiv) {
+                                        errorDiv.style.display = 'none';
+                                    }
+                                    
+                                    const container = document.getElementById('video-container-{{ video.pk }}');
+                                    if (container) {
+                                        container.style.display = 'block';
+                                    }
+                                    
+                                    console.log('✓ YouTube video yuklandi');
+                                });
+                                
+                                // Iframe xatolik tekshirish
+                                iframe.addEventListener('error', function(e) {
+                                    console.error('YouTube iframe error:', e);
+                                    if (!hasLoaded) {
+                                        showVideoError{{ video.pk }}();
+                                    }
+                                });
+                                
+                                // Iframe yuklanishini muntazam tekshirish
+                                checkInterval = setInterval(function() {
+                                    checkCount++;
+                                    
+                                    if (hasLoaded) {
+                                        clearInterval(checkInterval);
+                                        return;
+                                    }
+                                    
+                                    // Iframe mavjudligini tekshirish
+                                    try {
+                                        const container = document.getElementById('video-container-{{ video.pk }}');
+                                        if (container && iframe.offsetHeight > 0 && iframe.offsetWidth > 0) {
+                                            // Iframe mavjud va o'lchamlari bor - yuklangan deb hisoblash
+                                            hasLoaded = true;
+                                            clearInterval(checkInterval);
+                                            if (loadTimeout) clearTimeout(loadTimeout);
+                                            
+                                            const errorDiv = document.getElementById('video-error-{{ video.pk }}');
+                                            if (errorDiv) {
+                                                errorDiv.style.display = 'none';
+                                            }
+                                            
+                                            console.log('✓ YouTube video yuklandi (tekshiruv)');
+                                        }
+                                    } catch (e) {
+                                        // Cross-origin xatolik - bu normal, video yuklangan bo'lishi mumkin
+                                    }
+                                    
+                                    // Maksimal tekshiruvlar soniga yetganda
+                                    if (checkCount >= maxChecks && !hasLoaded) {
+                                        clearInterval(checkInterval);
+                                        // Iframe mavjudligini yakuniy tekshirish
+                                        try {
+                                            const container = document.getElementById('video-container-{{ video.pk }}');
+                                            if (container && iframe.offsetHeight > 0 && iframe.offsetWidth > 0) {
+                                                // Iframe mavjud - yuklangan deb hisoblash
+                                                hasLoaded = true;
+                                                console.log('✓ YouTube video yuklandi (maksimal tekshiruv)');
+                                            } else {
+                                                // Iframe yuklanmagan
+                                                console.warn('⚠ YouTube video yuklanmadi');
+                                                // Error ko'rsatmaslik - video yuklanishi mumkin, lekin tekshirib bo'lmaydi
+                                            }
+                                        } catch (e) {
+                                            // Cross-origin xatolik - bu normal, video yuklangan bo'lishi mumkin
+                                            console.log('✓ YouTube video yuklanishi tekshirildi (cross-origin)');
+                                        }
+                                    }
+                                }, 1000);
+                                
+                                // Timeout - agar 15 soniyadan keyin yuklanmasa
+                                loadTimeout = setTimeout(function() {
+                                    if (!hasLoaded) {
+                                        clearInterval(checkInterval);
+                                        // Iframe mavjudligini yakuniy tekshirish
+                                        try {
+                                            const container = document.getElementById('video-container-{{ video.pk }}');
+                                            if (container && iframe.offsetHeight > 0 && iframe.offsetWidth > 0) {
+                                                // Iframe mavjud - yuklangan deb hisoblash
+                                                hasLoaded = true;
+                                                console.log('✓ YouTube video yuklandi (timeout tekshiruvi)');
+                                            } else {
+                                                // Iframe yuklanmagan - lekin error ko'rsatmaslik
+                                                // Chunki video yuklanishi mumkin, lekin tekshirib bo'lmaydi
+                                                console.warn('⚠ YouTube video yuklanishi tekshirib bo\'lmaydi (cross-origin)');
+                                            }
+                                        } catch (e) {
+                                            // Cross-origin xatolik - bu normal, video yuklangan bo'lishi mumkin
+                                            console.log('✓ YouTube video yuklanishi tekshirildi (cross-origin)');
+                                        }
+                                    }
+                                }, 15000);
+                            })();
+                        </script>
+                        {% elif video.youtube_url %}
+                        <!-- YouTube URL dan ID olish -->
+                        <div id="video-container-{{ video.pk }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                            {% with video_id=video.youtube_url|youtube_id %}
+                            {% if video_id %}
+                            <iframe 
+                                src="https://www.youtube.com/embed/{{ video_id }}?rel=0&modestbranding=1&playsinline=1" 
+                                allowfullscreen
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                id="youtube-player-{{ video.pk }}"
+                                title="{{ video.title }}"
+                                frameborder="0"></iframe>
+                            {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-dark text-white" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                <div class="text-center p-4">
+                                    <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                                    <h5 class="mb-3">Video yuklanmadi</h5>
+                                    <p class="mb-3">YouTube URL noto'g'ri</p>
+                                    <a href="{{ video.youtube_url }}" target="_blank" class="btn btn-primary" rel="noopener noreferrer">
+                                        <i class="fas fa-external-link-alt me-2"></i>YouTube'da ko'rish
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                        {% else %}
+                        <!-- Video ID va URL yo'q -->
+                        <div class="d-flex align-items-center justify-content-center bg-dark text-white" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                            <div class="text-center p-4">
+                                <i class="fas fa-video-slash fa-3x mb-3 text-muted"></i>
+                                <h5>Video URL kiritilmagan</h5>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video ma'lumotlari -->
+            <div class="card mb-4 video-info-card">
+                <div class="card-body p-4">
+                    <h2 class="video-info-title">{{ video.title }}</h2>
+                    <div class="mb-3 d-flex gap-2 flex-wrap">
+                        <span class="badge" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; padding: 0.625rem 1rem; font-size: 0.875rem; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);">
+                            <i class="fas fa-folder me-1"></i>{{ video.category.name }}
+                        </span>
+                        {% if video.duration %}
+                        <span class="badge" style="background: var(--gray-200); color: var(--gray-700); padding: 0.625rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-clock me-1"></i>{{ video.duration|floatformat:0 }}s
+                        </span>
+                        {% endif %}
+                        <span class="badge" style="background: linear-gradient(135deg, var(--info) 0%, #0891b2 100%); color: white; padding: 0.625rem 1rem; font-size: 0.875rem; box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);">
+                            <i class="fas fa-eye me-1"></i>{{ video.views_count }} ko'rish
+                        </span>
+                        {% if video.average_rating > 0 %}
+                        <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 0.625rem 1rem; font-size: 0.875rem; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);">
+                            <i class="fas fa-star me-1"></i>{{ video.average_rating }} ({{ video.total_ratings }})
+                        </span>
+                        {% endif %}
+                        <!-- Bookmark button -->
+                        <button class="btn btn-sm bookmark-btn hover-lift {% if is_bookmarked %}active{% endif %}" 
+                                data-video-id="{{ video.pk }}"
+                                {% if is_bookmarked %}data-bookmarked="true"{% else %}data-bookmarked="false"{% endif %}
+                                title="{% if is_bookmarked %}Izbranniydan olib tashlash{% else %}Izbranniyga qo'shish{% endif %}"
+                                style="background: {% if is_bookmarked %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% else %}var(--gray-100){% endif %}; 
+                                       color: {% if is_bookmarked %}white{% else %}var(--gray-700){% endif %}; 
+                                       border: 2px solid {% if is_bookmarked %}#f59e0b{% else %}var(--gray-300){% endif %}; 
+                                       padding: 0.625rem 0.875rem; 
+                                       border-radius: 10px; 
+                                       transition: all 0.3s ease;
+                                       width: 42px;
+                                       height: 42px;
+                                       display: flex;
+                                       align-items: center;
+                                       justify-content: center;">
+                            <i class="fas fa-{% if is_bookmarked %}bookmark{% else %}bookmark-o{% endif %}" style="font-size: 1.1rem;"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Video Rating -->
+                    <div class="mt-3">
+                        <label class="form-label mb-2" style="font-weight: 600;">
+                            <i class="fas fa-star me-1 text-warning"></i>Videoni baholash:
+                        </label>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rating-stars" data-video-id="{{ video.pk }}">
+                                {% for i in "12345" %}
+                                <button type="button" class="btn btn-sm p-0 rating-star" 
+                                        data-rating="{{ forloop.counter }}"
+                                        style="border: none; background: none; color: {% if user_rating and user_rating.rating >= forloop.counter %}#f59e0b{% else %}#d1d5db{% endif %}; font-size: 1.75rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 0.25rem;">
+                                    <i class="{% if user_rating and user_rating.rating >= forloop.counter %}fas{% else %}far{% endif %} fa-star"></i>
+                                </button>
+                                {% endfor %}
+                            </div>
+                            {% if user_rating %}
+                            <span class="text-muted user-rating-text" style="font-size: 0.875rem; margin-left: 0.5rem;">Sizning reytingingiz: <strong>{{ user_rating.rating }}/5</strong></span>
+                            {% endif %}
+                        </div>
+                        {% if video.average_rating > 0 %}
+                        <small class="text-muted d-block mt-2 average-rating-text">
+                            O'rtacha reyting: <strong>{{ video.average_rating|floatformat:1 }}/5</strong> ({{ video.total_ratings }} ta baho)
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% if video.description %}
+                    <p class="card-text">{{ video.description|linebreaks }}</p>
+                    {% endif %}
+                    {% if progress.watch_percentage > 0 %}
+                    <div class="mt-3">
+                        <small class="text-muted d-block mb-1">Ko'rilgan progress:</small>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress.watch_percentage }}%;"></div>
+                        </div>
+                        <small class="text-muted">{{ progress.watch_percentage }}%</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Video Notes -->
+            <div class="card mb-4 video-notes-card">
+                <div class="video-notes-header">
+                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                        <i class="fas fa-sticky-note me-2 text-primary"></i>Eslatmalar
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div id="notes-list">
+                        {% for note in video_notes %}
+                        <div class="card mb-3 video-note-item" data-note-id="{{ note.pk }}">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="badge bg-primary me-2">{{ note.get_timestamp_display }}</span>
+                                        <small class="text-muted">{{ note.created_at|date:"d.m.Y H:i" }}</small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-note-btn" data-note-id="{{ note.pk }}" title="O'chirish">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <p class="mb-0">{{ note.note_text|linebreaks }}</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-sticky-note fa-3x mb-3 opacity-25"></i>
+                            <p>Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Video Comments -->
+            <div class="card mb-4 video-comments-card">
+                <div class="video-notes-header">
+                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                        <i class="fas fa-comments me-2 text-primary"></i>Izohlar
+                        <span class="badge bg-primary ms-2" id="comments-count">{{ video_comments|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Add Comment Form -->
+                    <div class="mb-4">
+                        <form id="add-comment-form">
+                            {% csrf_token %}
+                            <div class="mb-2">
+                                <textarea class="form-control" id="comment-text" name="comment_text" rows="3" placeholder="Izoh yozing..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Izoh qo'shish
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Comments List -->
+                    <div id="comments-list">
+                        {% for comment in video_comments %}
+                        <div class="card mb-3 comment-item" data-comment-id="{{ comment.pk }}" style="border-left: 4px solid var(--primary);">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>{{ comment.user.first_name|default:comment.user.username }}</strong>
+                                        <small class="text-muted ms-2">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                                        {% if comment.is_edited %}
+                                        <small class="text-muted ms-2">(tahrirlangan)</small>
+                                        {% endif %}
+                                    </div>
+                                    {% if comment.user == request.user %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-comment-btn" data-comment-id="{{ comment.pk }}" title="O'chirish">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                <p class="mb-2">{{ comment.comment_text|linebreaks }}</p>
+                                
+                                <!-- Reply Button -->
+                                <button type="button" class="btn btn-sm btn-outline-secondary reply-btn" data-comment-id="{{ comment.pk }}">
+                                    <i class="fas fa-reply me-1"></i>Javob berish
+                                </button>
+                                
+                                <!-- Replies -->
+                                {% if comment.replies.all %}
+                                <div class="mt-3 ms-4">
+                                    {% for reply in comment.replies.all %}
+                                    <div class="card mb-2 reply-item" style="background: var(--gray-50); border-left: 3px solid var(--info);">
+                                        <div class="card-body p-2">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <strong style="font-size: 0.875rem;">{{ reply.user.first_name|default:reply.user.username }}</strong>
+                                                    <small class="text-muted ms-2">{{ reply.created_at|date:"d.m.Y H:i" }}</small>
+                                                </div>
+                                                {% if reply.user == request.user %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger delete-comment-btn" data-comment-id="{{ reply.pk }}" title="O'chirish">
+                                                    <i class="fas fa-trash" style="font-size: 0.75rem;"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            <p class="mb-0" style="font-size: 0.875rem;">{{ reply.comment_text|linebreaks }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Reply Form (hidden by default) -->
+                                <div class="mt-2 ms-4 reply-form" id="reply-form-{{ comment.pk }}" style="display: none;">
+                                    <form class="reply-comment-form" data-parent-id="{{ comment.pk }}">
+                                        {% csrf_token %}
+                                        <div class="mb-2">
+                                            <textarea class="form-control form-control-sm" name="comment_text" rows="2" placeholder="Javob yozing..." required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary">Javob yuborish</button>
+                                        <button type="button" class="btn btn-sm btn-secondary cancel-reply-btn">Bekor qilish</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-comments fa-3x mb-3 opacity-25"></i>
+                            <p>Hozircha izohlar yo'q. Birinchi izohni siz yozing!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-12 col-lg-4 mt-4 mt-lg-0">
+            <!-- Related videos -->
+            {% if related_videos %}
+            <div class="card video-info-card">
+                <div class="video-notes-header">
+                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                        <i class="fas fa-video me-2 text-primary"></i>Tegishli videolar
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for related_video in related_videos %}
+                    <a href="{% url 'core:video_detail' related_video.pk %}" 
+                       class="list-group-item list-group-item-action related-video-item">
+                        <div class="d-flex">
+                            {% if related_video.youtube_thumbnail %}
+                            <img src="{{ related_video.youtube_thumbnail }}" alt="{{ related_video.title }}" 
+                                 class="me-3 related-video-thumb">
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1" style="font-weight: 600; font-size: 0.9375rem;">{{ related_video.title|truncatewords:8 }}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-folder me-1"></i>{{ related_video.category.name }}
+                                </small>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sticky-note me-2"></i>Eslatma qo'shish
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-note-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="note-timestamp" name="timestamp" value="0">
+                    <div class="mb-3">
+                        <label class="form-label">Vaqt: <span id="note-timestamp-display" class="badge bg-primary">0:00</span></label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="note-text" class="form-label">Eslatma matni</label>
+                        <textarea class="form-control" id="note-text" name="note_text" rows="4" required placeholder="Eslatma yozing..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="button" class="btn btn-primary" id="save-note-btn">
+                    <i class="fas fa-save me-1"></i>Saqlash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% if video.youtube_id and video.youtube_id|length == 11 %}
+// YouTube Player variables
+let player{{ video.pk }};
+let progressUpdateInterval{{ video.pk }};
+const videoId{{ video.pk }} = '{{ video.youtube_id }}';
+let youtubeAPILoaded{{ video.pk }} = false;
+
+// YouTube API yuklash
+function loadYouTubeAPI{{ video.pk }}() {
+    if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        // Global callback
+        window.onYouTubeIframeAPIReady = function() {
+            youtubeAPILoaded{{ video.pk }} = true;
+            initYouTubePlayer{{ video.pk }}();
+        };
+    } else {
+        youtubeAPILoaded{{ video.pk }} = true;
+        initYouTubePlayer{{ video.pk }}();
+    }
+}
+
+// YouTube Player initialization
+function initYouTubePlayer{{ video.pk }}() {
+    if (!youtubeAPILoaded{{ video.pk }} || typeof YT === 'undefined') {
+        return;
+    }
+    
+    const iframe = document.getElementById('youtube-player-{{ video.pk }}');
+    if (!iframe) {
+        return;
+    }
+    
+    try {
+        player{{ video.pk }} = new YT.Player('youtube-player-{{ video.pk }}', {
+            events: {
+                'onReady': onPlayerReady{{ video.pk }},
+                'onStateChange': onPlayerStateChange{{ video.pk }},
+                'onError': onPlayerError{{ video.pk }}
+            }
+        });
+    } catch (error) {
+        console.warn('YouTube API initialization error (non-critical):', error);
+        // API xatosi kritik emas, video oddiy iframe orqali ishlaydi
+    }
+}
+
+function onPlayerReady{{ video.pk }}(event) {
+    // Progress bar yangilash
+    updateProgressBar{{ video.pk }}();
+    progressUpdateInterval{{ video.pk }} = setInterval(updateProgressBar{{ video.pk }}, 1000);
+    
+    // Total time ko'rsatish
+    try {
+        const duration = player{{ video.pk }}.getDuration();
+        const totalTimeEl = document.getElementById('total-time');
+        if (totalTimeEl) {
+            totalTimeEl.textContent = formatTime{{ video.pk }}(duration);
+        }
+    } catch (error) {
+        console.warn('Duration error:', error);
+    }
+}
+
+function onPlayerStateChange{{ video.pk }}(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+        // Video tugaganda progress 100% qilish
+        updateVideoProgress{{ video.pk }}(100);
+    }
+}
+
+function onPlayerError{{ video.pk }}(event) {
+    console.warn('YouTube Player error:', event.data);
+    // Error 153 yoki boshqa xatolar - fallback ko'rsatish
+    if (event.data === 150 || event.data === 100 || event.data === 101 || event.data === 153) {
+        showVideoError{{ video.pk }}();
+    }
+}
+
+function showVideoError{{ video.pk }}() {
+    const errorDiv = document.getElementById('video-error-{{ video.pk }}');
+    const container = document.getElementById('video-container-{{ video.pk }}');
+    if (errorDiv && container) {
+        container.style.display = 'none';
+        errorDiv.style.display = 'flex';
+    }
+}
+
+function updateProgressBar{{ video.pk }}() {
+    if (player{{ video.pk }} && player{{ video.pk }}.getCurrentTime) {
+        try {
+            const currentTime = player{{ video.pk }}.getCurrentTime();
+            const duration = player{{ video.pk }}.getDuration();
+            
+            if (duration > 0) {
+                const percentage = Math.min(100, Math.max(0, (currentTime / duration) * 100));
+                const progressFill = document.getElementById('video-progress-fill');
+                const currentTimeEl = document.getElementById('current-time');
+                
+                if (progressFill) {
+                    progressFill.style.width = percentage + '%';
+                    // Smooth transition
+                    progressFill.style.transition = 'width 0.3s ease';
+                }
+                if (currentTimeEl) {
+                    currentTimeEl.textContent = formatTime{{ video.pk }}(currentTime);
+                }
+                
+                // Progress ni backend ga yuborish (har 3 soniyada bir marta - yaxshilangan)
+                const lastUpdateTime = window.lastProgressUpdate{{ video.pk }} || 0;
+                if (Math.floor(currentTime) - lastUpdateTime >= 3) {
+                    updateVideoProgress{{ video.pk }}(percentage);
+                    window.lastProgressUpdate{{ video.pk }} = Math.floor(currentTime);
+                }
+            }
+        } catch (error) {
+            console.warn('Progress update error:', error);
+        }
+    }
+}
+
+function formatTime{{ video.pk }}(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function updateVideoProgress{{ video.pk }}(percentage) {
+    const formData = new FormData();
+    formData.append('progress', Math.round(percentage));
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        formData.append('csrfmiddlewaretoken', csrfToken.value);
+    }
+    
+    fetch('{% url "core:update_video_progress" video.pk %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : ''
+        }
+    }).catch(error => console.error('Progress update error:', error));
+}
+
+// Playback speed - DOMContentLoaded ichida qo'yiladi
+
+// Progress bar click - yaxshilangan
+const progressBar = document.getElementById('video-progress-bar');
+if (progressBar) {
+    progressBar.addEventListener('click', function(e) {
+        if (player{{ video.pk }} && player{{ video.pk }}.getDuration) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const percentage = Math.min(100, Math.max(0, (x / rect.width) * 100));
+            const duration = player{{ video.pk }}.getDuration();
+            const newTime = (percentage / 100) * duration;
+            
+            try {
+                player{{ video.pk }}.seekTo(newTime, true);
+                
+                // Progress bar ni darhol yangilash
+                const progressFill = document.getElementById('video-progress-fill');
+                if (progressFill) {
+                    progressFill.style.width = percentage + '%';
+                }
+                
+                // Current time ni yangilash
+                const currentTimeEl = document.getElementById('current-time');
+                if (currentTimeEl) {
+                    currentTimeEl.textContent = formatTime{{ video.pk }}(newTime);
+                }
+                
+                // Progress ni backend ga yuborish
+                updateVideoProgress{{ video.pk }}(percentage);
+            } catch (error) {
+                console.warn('Seek error:', error);
+            }
+        }
+    });
+    
+    // Progress bar hover effect
+    progressBar.addEventListener('mousemove', function(e) {
+        if (player{{ video.pk }} && player{{ video.pk }}.getDuration) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const percentage = Math.min(100, Math.max(0, (x / rect.width) * 100));
+            const duration = player{{ video.pk }}.getDuration();
+            const hoverTime = (percentage / 100) * duration;
+            
+            // Tooltip ko'rsatish (optional)
+            this.title = formatTime{{ video.pk }}(hoverTime);
+        }
+    });
+}
+
+// Add note button
+document.getElementById('add-note-btn').addEventListener('click', function() {
+    if (player{{ video.pk }} && player{{ video.pk }}.getCurrentTime) {
+        const currentTime = Math.floor(player{{ video.pk }}.getCurrentTime());
+        document.getElementById('note-timestamp').value = currentTime;
+        document.getElementById('note-timestamp-display').textContent = formatTime{{ video.pk }}(currentTime);
+        
+        const modal = new bootstrap.Modal(document.getElementById('addNoteModal'));
+        modal.show();
+    }
+});
+
+// Save note
+document.getElementById('save-note-btn').addEventListener('click', function() {
+    const noteText = document.getElementById('note-text').value.trim();
+    const timestamp = document.getElementById('note-timestamp').value;
+    
+    if (!noteText) {
+        alert('Eslatma matni bo\'sh bo\'lishi mumkin emas!');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('note_text', noteText);
+    formData.append('timestamp', timestamp);
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        formData.append('csrfmiddlewaretoken', csrfToken.value);
+    }
+    
+    fetch('{% url "core:add_video_note" video.pk %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Note qo'shish
+            const notesList = document.getElementById('notes-list');
+            if (notesList.querySelector('.text-center')) {
+                notesList.innerHTML = '';
+            }
+            
+            const noteHtml = `
+                <div class="card mb-3 border-0 shadow-sm note-item" data-note-id="${data.note.id}" style="border-left: 4px solid var(--primary) !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge bg-primary me-2">${data.note.timestamp_display}</span>
+                                <small class="text-muted">${data.note.created_at}</small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger delete-note-btn" data-note-id="${data.note.id}" title="O'chirish">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <p class="mb-0">${data.note.text.replace(/\n/g, '<br>')}</p>
+                    </div>
+                </div>
+            `;
+            notesList.insertAdjacentHTML('beforeend', noteHtml);
+            
+            // Modal yopish
+            bootstrap.Modal.getInstance(document.getElementById('addNoteModal')).hide();
+            document.getElementById('note-text').value = '';
+            
+            // Delete button event listener qo'shish
+            attachDeleteListeners();
+        } else {
+            alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Xatolik yuz berdi');
+    });
+});
+
+// Delete note
+function attachDeleteListeners() {
+    document.querySelectorAll('.delete-note-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!confirm('Eslatmani o\'chirishni xohlaysizmi?')) {
+                return;
+            }
+            
+            const noteId = this.getAttribute('data-note-id');
+            const formData = new FormData();
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            fetch(`/video/note/${noteId}/delete/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector(`.note-item[data-note-id="${noteId}"]`).remove();
+                    
+                    // Agar eslatmalar bo'sh bo'lsa
+                    const notesList = document.getElementById('notes-list');
+                    if (notesList.children.length === 0) {
+                        notesList.innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-sticky-note fa-3x mb-3 opacity-25"></i>
+                                <p>Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin.</p>
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Xatolik yuz berdi');
+            });
+        });
+    });
+}
+
+// Initial delete listeners
+attachDeleteListeners();
+
+// Barcha funksiyalarni DOMContentLoaded ichiga qo'shish
+document.addEventListener('DOMContentLoaded', function() {
+    // Add bookmark button
+    const addBookmarkBtn = document.getElementById('add-bookmark-btn');
+    if (addBookmarkBtn) {
+        addBookmarkBtn.addEventListener('click', function() {
+            // Player tayyor bo'lguncha kutish
+            const checkPlayer = setInterval(function() {
+                if (player{{ video.pk }} && player{{ video.pk }}.getCurrentTime) {
+                    clearInterval(checkPlayer);
+                    const currentTime = Math.floor(player{{ video.pk }}.getCurrentTime());
+                    const formData = new FormData();
+                    formData.append('timestamp', currentTime);
+                    
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                    if (csrfToken) {
+                        formData.append('csrfmiddlewaretoken', csrfToken.value);
+                    }
+                    
+                    fetch('{% url "core:add_video_bookmark" video.pk %}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (data.bookmarked) {
+                                addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark qo\'yildi';
+                                addBookmarkBtn.classList.add('active');
+                                setTimeout(() => {
+                                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                                }, 2000);
+                            } else {
+                                addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark olib tashlandi';
+                                addBookmarkBtn.classList.remove('active');
+                                setTimeout(() => {
+                                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                                }, 2000);
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Bookmark error:', error));
+                }
+            }, 100);
+            
+            // 5 soniyadan keyin to'xtatish
+            setTimeout(() => clearInterval(checkPlayer), 5000);
+        });
+    }
+
+    // Playlist functionality
+    document.querySelectorAll('.playlist-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const playlistId = this.getAttribute('data-playlist-id');
+            const videoId = this.getAttribute('data-video-id');
+            const isInPlaylist = this.querySelector('.fa-check');
+            
+            const formData = new FormData();
+            formData.append('playlist_id', playlistId);
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            const url = isInPlaylist 
+                ? '{% url "core:remove_video_from_playlist" video.pk %}'
+                : '{% url "core:add_video_to_playlist" video.pk %}';
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (isInPlaylist) {
+                        this.innerHTML = '<i class="fas fa-plus me-2"></i>' + this.textContent.replace('✓', '').trim();
+                    } else {
+                        this.innerHTML = '<i class="fas fa-check text-success me-2"></i>' + this.textContent.replace('+', '').trim();
+                    }
+                }
+            })
+            .catch(error => console.error('Playlist error:', error));
+        });
+    });
+
+    // Create playlist button
+    const createPlaylistBtn = document.getElementById('create-playlist-btn');
+    if (createPlaylistBtn) {
+        createPlaylistBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const name = prompt('Playlist nomini kiriting:');
+            if (!name) return;
+            
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('description', '');
+            formData.append('is_public', 'false');
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            fetch('{% url "core:create_playlist" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Playlist ro'yxatini yangilash
+                }
+            })
+            .catch(error => console.error('Create playlist error:', error));
+        });
+    }
+
+    // Add comment form
+    const addCommentForm = document.getElementById('add-comment-form');
+    if (addCommentForm) {
+        addCommentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const commentText = document.getElementById('comment-text').value.trim();
+            
+            if (!commentText) {
+                alert('Izoh matni bo\'sh bo\'lishi mumkin emas!');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('comment_text', commentText);
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            fetch('{% url "core:add_video_comment" video.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Comment qo'shish
+                    const commentsList = document.getElementById('comments-list');
+                    if (commentsList.querySelector('.text-center')) {
+                        commentsList.innerHTML = '';
+                    }
+                    
+                    const commentHtml = `
+                        <div class="card mb-3 comment-item" data-comment-id="${data.comment.id}" style="border-left: 4px solid var(--primary);">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>${data.comment.user_first_name}</strong>
+                                        <small class="text-muted ms-2">${data.comment.created_at}</small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-comment-btn" data-comment-id="${data.comment.id}" title="O'chirish">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <p class="mb-2">${data.comment.text.replace(/\n/g, '<br>')}</p>
+                                <button type="button" class="btn btn-sm btn-outline-secondary reply-btn" data-comment-id="${data.comment.id}">
+                                    <i class="fas fa-reply me-1"></i>Javob berish
+                                </button>
+                                <div class="mt-2 ms-4 reply-form" id="reply-form-${data.comment.id}" style="display: none;">
+                                    <form class="reply-comment-form" data-parent-id="${data.comment.id}">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken.value}">
+                                        <div class="mb-2">
+                                            <textarea class="form-control form-control-sm" name="comment_text" rows="2" placeholder="Javob yozing..." required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary">Javob yuborish</button>
+                                        <button type="button" class="btn btn-sm btn-secondary cancel-reply-btn">Bekor qilish</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    commentsList.insertAdjacentHTML('beforeend', commentHtml);
+                    
+                    // Update comments count
+                    const commentsCount = document.getElementById('comments-count');
+                    if (commentsCount) {
+                        commentsCount.textContent = parseInt(commentsCount.textContent) + 1;
+                    }
+                    
+                    // Clear form
+                    document.getElementById('comment-text').value = '';
+                    
+                    // Attach event listeners
+                    attachCommentListeners();
+                } else {
+                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Xatolik yuz berdi');
+            });
+        });
+    }
+    
+    // Initial comment listeners
+    attachCommentListeners();
+});
+
+// Reply button
+function attachCommentListeners() {
+    // Reply buttons
+    document.querySelectorAll('.reply-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.getAttribute('data-comment-id');
+            const replyForm = document.getElementById('reply-form-' + commentId);
+            if (replyForm) {
+                replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+    
+    // Cancel reply buttons
+    document.querySelectorAll('.cancel-reply-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const replyForm = this.closest('.reply-form');
+            if (replyForm) {
+                replyForm.style.display = 'none';
+                replyForm.querySelector('textarea').value = '';
+            }
+        });
+    });
+    
+    // Reply forms
+    document.querySelectorAll('.reply-comment-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const parentId = this.getAttribute('data-parent-id');
+            const commentText = this.querySelector('textarea').value.trim();
+            
+            if (!commentText) {
+                alert('Javob matni bo\'sh bo\'lishi mumkin emas!');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('comment_text', commentText);
+            formData.append('parent_id', parentId);
+            
+            const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            fetch('{% url "core:add_video_comment" video.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reply qo'shish
+                    const commentItem = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
+                    if (commentItem) {
+                        let repliesDiv = commentItem.querySelector('.mt-3.ms-4');
+                        if (!repliesDiv) {
+                            repliesDiv = document.createElement('div');
+                            repliesDiv.className = 'mt-3 ms-4';
+                            commentItem.querySelector('.card-body').appendChild(repliesDiv);
+                        }
+                        
+                        const replyHtml = `
+                            <div class="card mb-2 reply-item" style="background: var(--gray-50); border-left: 3px solid var(--info);">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong style="font-size: 0.875rem;">${data.comment.user_first_name}</strong>
+                                            <small class="text-muted ms-2">${data.comment.created_at}</small>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger delete-comment-btn" data-comment-id="${data.comment.id}" title="O'chirish">
+                                            <i class="fas fa-trash" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                    </div>
+                                    <p class="mb-0" style="font-size: 0.875rem;">${data.comment.text.replace(/\n/g, '<br>')}</p>
+                                </div>
+                            </div>
+                        `;
+                        repliesDiv.insertAdjacentHTML('beforeend', replyHtml);
+                        
+                        // Hide reply form
+                        const replyForm = document.getElementById('reply-form-' + parentId);
+                        if (replyForm) {
+                            replyForm.style.display = 'none';
+                            replyForm.querySelector('textarea').value = '';
+                        }
+                        
+                        // Attach delete listener
+                        attachDeleteCommentListeners();
+                    }
+                } else {
+                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Xatolik yuz berdi');
+            });
+        });
+    });
+    
+    // Delete comment buttons
+    attachDeleteCommentListeners();
+}
+
+function attachDeleteCommentListeners() {
+    document.querySelectorAll('.delete-comment-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!confirm('Izohni o\'chirishni xohlaysizmi?')) {
+                return;
+            }
+            
+            const commentId = this.getAttribute('data-comment-id');
+            const formData = new FormData();
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            fetch(`/video/comment/${commentId}/delete/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const commentItem = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`) || 
+                                       document.querySelector(`.reply-item`);
+                    if (commentItem) {
+                        commentItem.remove();
+                    }
+                    
+                    // Update comments count
+                    const commentsCount = document.getElementById('comments-count');
+                    if (commentsCount) {
+                        const currentCount = parseInt(commentsCount.textContent);
+                        if (currentCount > 0) {
+                            commentsCount.textContent = currentCount - 1;
+                        }
+                    }
+                    
+                    // Agar izohlar bo'sh bo'lsa
+                    const commentsList = document.getElementById('comments-list');
+                    if (commentsList && commentsList.children.length === 0) {
+                        commentsList.innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-comments fa-3x mb-3 opacity-25"></i>
+                                <p>Hozircha izohlar yo'q. Birinchi izohni siz yozing!</p>
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Xatolik yuz berdi');
+            });
+        });
+    });
+}
+
+// Cleanup
+window.addEventListener('beforeunload', function() {
+    if (progressUpdateInterval{{ video.pk }}) {
+        clearInterval(progressUpdateInterval{{ video.pk }});
+    }
+});
+{% endif %}
+
+// YouTube API ni yuklash - sahifa yuklangandan keyin
+{% if video.youtube_id and video.youtube_id|length == 11 %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Iframe yuklangandan keyin API ni ishga tushirish
+    const iframe = document.getElementById('youtube-player-{{ video.pk }}');
+    if (iframe) {
+        // Agar iframe allaqachon yuklangan bo'lsa
+        if (iframe.contentWindow) {
+            setTimeout(function() {
+                loadYouTubeAPI{{ video.pk }}();
+            }, 1500);
+        } else {
+            iframe.addEventListener('load', function() {
+                // Kichik kechikish - iframe to'liq yuklanguncha kutish
+                setTimeout(function() {
+                    loadYouTubeAPI{{ video.pk }}();
+                }, 1500);
+            });
+        }
+    }
+});
+{% endif %}
+
+// Video Rating
+document.addEventListener('DOMContentLoaded', function() {
+    const ratingStars = document.querySelector('.rating-stars');
+    if (!ratingStars) return;
+    
+    const stars = ratingStars.querySelectorAll('.rating-star');
+    const userRating = {% if user_rating %}{{ user_rating.rating }}{% else %}0{% endif %};
+    
+    // Initial star colors
+    stars.forEach((star, index) => {
+        if (userRating > 0 && index < userRating) {
+            star.style.color = '#f59e0b';
+        }
+    });
+    
+    stars.forEach(star => {
+        star.addEventListener('click', function(e) {
+            e.preventDefault();
+            const rating = parseInt(this.getAttribute('data-rating'));
+            const clickedStar = this;
+            
+            // Animation
+            clickedStar.style.transform = 'scale(1.3)';
+            setTimeout(() => {
+                clickedStar.style.transform = 'scale(1)';
+            }, 200);
+            
+            const formData = new FormData();
+            formData.append('rating', rating);
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken.value);
+            }
+            
+            fetch('{% url "core:rate_video" video.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken ? csrfToken.value : ''
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update all stars
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.style.color = '#f59e0b';
+                            s.querySelector('i').classList.remove('far');
+                            s.querySelector('i').classList.add('fas');
+                        } else {
+                            s.style.color = '#d1d5db';
+                            s.querySelector('i').classList.remove('fas');
+                            s.querySelector('i').classList.add('far');
+                        }
+                    });
+                    
+                    // Update rating display
+                    const ratingContainer = ratingStars.closest('.mt-3');
+                    if (ratingContainer) {
+                        // Update or create user rating text
+                        let userRatingText = ratingContainer.querySelector('.user-rating-text');
+                        if (!userRatingText) {
+                            userRatingText = document.createElement('span');
+                            userRatingText.className = 'text-muted user-rating-text';
+                            userRatingText.style.fontSize = '0.875rem';
+                            userRatingText.style.marginLeft = '1rem';
+                            ratingContainer.querySelector('.d-flex').appendChild(userRatingText);
+                        }
+                        userRatingText.innerHTML = `Sizning reytingingiz: <strong>${rating}/5</strong>`;
+                        
+                        // Update average rating
+                        let avgText = ratingContainer.querySelector('.average-rating-text');
+                        const avgRating = parseFloat(data.average_rating) || 0;
+                        const totalRatings = parseInt(data.total_ratings) || 0;
+                        const avgRatingText = `O'rtacha reyting: <strong>${avgRating.toFixed(1)}/5</strong> (${totalRatings} ta baho)`;
+                        
+                        if (avgText) {
+                            avgText.innerHTML = avgRatingText;
+                        } else {
+                            avgText = document.createElement('small');
+                            avgText.className = 'text-muted d-block mt-2 average-rating-text';
+                            avgText.innerHTML = avgRatingText;
+                            ratingContainer.appendChild(avgText);
+                        }
+                    }
+                    
+                    // Success notification
+                    const successBadge = document.createElement('span');
+                    successBadge.className = 'badge bg-success ms-2';
+                    successBadge.style.fontSize = '0.75rem';
+                    successBadge.innerHTML = '<i class="fas fa-check me-1"></i>Saqlandi';
+                    ratingContainer.querySelector('.d-flex').appendChild(successBadge);
+                    setTimeout(() => {
+                        successBadge.style.transition = 'opacity 0.3s';
+                        successBadge.style.opacity = '0';
+                        setTimeout(() => successBadge.remove(), 300);
+                    }, 2000);
+                } else {
+                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                }
+            })
+            .catch(error => {
+                console.error('Rating error:', error);
+                // Error notification
+                const errorBadge = document.createElement('span');
+                errorBadge.className = 'badge bg-danger ms-2';
+                errorBadge.style.fontSize = '0.75rem';
+                errorBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Xatolik';
+                const ratingContainer = ratingStars.closest('.mt-3');
+                if (ratingContainer) {
+                    ratingContainer.querySelector('.d-flex').appendChild(errorBadge);
+                    setTimeout(() => {
+                        errorBadge.style.transition = 'opacity 0.3s';
+                        errorBadge.style.opacity = '0';
+                        setTimeout(() => errorBadge.remove(), 300);
+                    }, 3000);
+                }
+            });
+        });
+        
+        // Hover effect
+        star.addEventListener('mouseenter', function() {
+            const hoverRating = parseInt(this.getAttribute('data-rating'));
+            stars.forEach((s, index) => {
+                if (index < hoverRating) {
+                    s.style.color = '#f59e0b';
+                    s.style.transform = 'scale(1.15)';
+                    s.style.transition = 'all 0.2s ease';
+                }
+            });
+        });
+        
+        star.addEventListener('mouseleave', function() {
+            stars.forEach((s, index) => {
+                s.style.transform = 'scale(1)';
+                if (userRating > 0 && index < userRating) {
+                    s.style.color = '#f59e0b';
+                } else {
+                    s.style.color = '#d1d5db';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+

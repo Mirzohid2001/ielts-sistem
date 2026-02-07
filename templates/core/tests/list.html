@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+
+{% block title %}Testlar - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="fade-in-left">
+                            <div class="page-header-icon">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <h1 class="page-header-title">Testlar</h1>
+                            <p class="page-header-subtitle">IELTS tayyorgarlik uchun testlar</p>
+                        </div>
+                        <div class="fade-in-right">
+                            <a href="{% url 'core:dashboard' %}" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Orqaga
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Animated background elements -->
+                <div style="position: absolute; top: -30%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); border-radius: 50%; animation: float 8s ease-in-out infinite; pointer-events: none;"></div>
+                <div style="position: absolute; bottom: -20%; left: -5%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); border-radius: 50%; animation: float 10s ease-in-out infinite reverse; pointer-events: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Qidiruv va Filterlar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-3">
+                    <form method="get" id="search-form" class="d-flex gap-2 flex-wrap align-items-end">
+                        <!-- Qidiruv -->
+                        <div class="search-wrapper flex-grow-1" style="min-width: 200px;">
+                            <label class="form-label mb-1" style="font-size: 0.875rem; font-weight: 600;">
+                                <i class="fas fa-search me-1"></i>Qidirish
+                            </label>
+                            <div class="position-relative">
+                                <i class="fas fa-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-400); pointer-events: none;"></i>
+                                <input type="text" 
+                                       name="search" 
+                                       id="search-input"
+                                       class="form-control ps-5" 
+                                       placeholder="Test nomi, kategoriya..." 
+                                       value="{{ search_query }}"
+                                       autocomplete="off"
+                                       style="border-radius: 10px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Sort -->
+                        <div style="min-width: 150px;">
+                            <label class="form-label mb-1" style="font-size: 0.875rem; font-weight: 600;">
+                                <i class="fas fa-sort me-1"></i>Tartiblash
+                            </label>
+                            <select name="sort" class="form-select" style="border-radius: 10px;">
+                                <option value="newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>Yangi</option>
+                                <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Eski</option>
+                                <option value="title_asc" {% if request.GET.sort == 'title_asc' %}selected{% endif %}>Nomi (A-Z)</option>
+                                <option value="title_desc" {% if request.GET.sort == 'title_desc' %}selected{% endif %}>Nomi (Z-A)</option>
+                                <option value="questions_asc" {% if request.GET.sort == 'questions_asc' %}selected{% endif %}>Savollar (kam)</option>
+                                <option value="questions_desc" {% if request.GET.sort == 'questions_desc' %}selected{% endif %}>Savollar (ko'p)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filterlar -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" style="border-radius: 10px;">
+                                <i class="fas fa-filter me-1"></i><span class="d-none d-sm-inline">Qidirish</span>
+                            </button>
+                            {% if search_query or selected_category or selected_type or selected_difficulty %}
+                            <a href="{% url 'core:test_list' %}" class="btn btn-outline-secondary" style="border-radius: 10px;">
+                                <i class="fas fa-times me-1"></i><span class="d-none d-sm-inline">Tozalash</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Hidden fields for filters -->
+                        {% if selected_category %}
+                        <input type="hidden" name="category" value="{{ selected_category }}">
+                        {% endif %}
+                        {% if selected_type %}
+                        <input type="hidden" name="type" value="{{ selected_type }}">
+                        {% endif %}
+                        {% if selected_difficulty %}
+                        <input type="hidden" name="difficulty" value="{{ selected_difficulty }}">
+                        {% endif %}
+                    </form>
+                    
+                    <!-- Active filters -->
+                    {% if search_query or selected_category or selected_type or selected_difficulty %}
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <span class="text-muted" style="font-size: 0.875rem; font-weight: 600;">Faol filterlar:</span>
+                            {% if search_query %}
+                            <span class="badge bg-primary" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                <i class="fas fa-search me-1"></i>{{ search_query }}
+                                <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_type %}type={{ selected_type }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}{% endif %}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                            </span>
+                            {% endif %}
+                            {% if selected_category %}
+                            <span class="badge bg-success" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                <i class="fas fa-folder me-1"></i>Kategoriya: {{ selected_category }}
+                                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_type %}type={{ selected_type }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}{% endif %}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                            </span>
+                            {% endif %}
+                            {% if selected_type %}
+                            <span class="badge bg-info" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                <i class="fas fa-tag me-1"></i>Turi: {{ selected_type|title }}
+                                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}{% endif %}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                            </span>
+                            {% endif %}
+                            {% if selected_difficulty %}
+                            <span class="badge bg-warning" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                <i class="fas fa-layer-group me-1"></i>Qiyinlik: {{ selected_difficulty|title }}
+                                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_type %}type={{ selected_type }}{% endif %}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-md-3 mb-4">
+            <!-- Mobile filter toggle -->
+            <div class="d-md-none mb-3">
+                <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#filterSidebar" aria-expanded="false" aria-controls="filterSidebar" style="border-radius: 10px;">
+                    <i class="fas fa-filter me-2"></i>Filterlar
+                    <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+            </div>
+            
+            <div class="collapse d-md-block" id="filterSidebar">
+            <div class="filter-sidebar">
+                <div class="filter-header filter-header-success">
+                    <i class="fas fa-filter me-2"></i>Kategoriyalar
+                </div>
+                <ul class="filter-list">
+                    <li>
+                        <a href="{% url 'core:test_list' %}" 
+                           class="filter-item {% if not selected_category %}active{% endif %}">
+                            <i class="fas fa-th me-2"></i><strong>Barchasi</strong>
+                        </a>
+                    </li>
+                    {% for category in categories %}
+                    <li>
+                        <a href="{% url 'core:test_list' %}?category={{ category.slug }}" 
+                           class="filter-item {% if selected_category == category.slug %}active{% endif %}">
+                            {% if category.icon %}<i class="{{ category.icon }} me-2"></i>{% endif %}
+                            <strong>{{ category.name }}</strong>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="filter-header filter-header-info">
+                    <i class="fas fa-tag me-2"></i>Test turi
+                </div>
+                <ul class="filter-list">
+                    <li>
+                        <a href="{% url 'core:test_list' %}" 
+                           class="filter-item {% if not selected_type %}active{% endif %}">
+                            <i class="fas fa-th me-2"></i><strong>Barchasi</strong>
+                        </a>
+                    </li>
+                    {% for type_code, type_name in test_types %}
+                    <li>
+                        <a href="{% url 'core:test_list' %}?type={{ type_code }}" 
+                           class="filter-item {% if selected_type == type_code %}active{% endif %}">
+                            <strong>{{ type_name }}</strong>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="filter-header filter-header-warning">
+                    <i class="fas fa-layer-group me-2"></i>Qiyinlik
+                </div>
+                <ul class="filter-list">
+                    <li>
+                        <a href="{% url 'core:test_list' %}" 
+                           class="filter-item {% if not selected_difficulty %}active{% endif %}">
+                            <i class="fas fa-th me-2"></i><strong>Barchasi</strong>
+                        </a>
+                    </li>
+                    {% for diff_code, diff_name in difficulty_levels %}
+                    <li>
+                        <a href="{% url 'core:test_list' %}?difficulty={{ diff_code }}" 
+                           class="filter-item {% if selected_difficulty == diff_code %}active{% endif %}">
+                            {% if diff_code == 'easy' %}
+                            <span class="badge badge-difficulty-easy me-2">Oson</span>
+                            {% elif diff_code == 'medium' %}
+                            <span class="badge badge-difficulty-medium me-2">O'rta</span>
+                            {% elif diff_code == 'hard' %}
+                            <span class="badge badge-difficulty-hard me-2">Qiyin</span>
+                            {% endif %}
+                            <strong>{{ diff_name }}</strong>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-9">
+            <!-- Zaif tomonlar -->
+            {% if weak_areas %}
+            <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px; border-left: 5px solid var(--danger);">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border-bottom: 2px solid var(--danger); border-radius: 20px 20px 0 0;">
+                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                        <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Zaif tomonlar
+                    </h5>
+                    <p class="mb-0 mt-2" style="font-size: 0.875rem; color: var(--gray-600);">
+                        Quyidagi kategoriyalarda yaxshilash kerak
+                    </p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        {% for area in weak_areas %}
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <div class="card border-0 shadow-sm" style="border-left: 3px solid var(--danger);">
+                                <div class="card-body p-3">
+                                    <h6 class="mb-2" style="font-weight: 700;">{{ area.category_name }}</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted" style="font-size: 0.875rem;">O'rtacha:</span>
+                                        <span class="badge bg-danger">{{ area.avg_score }}%</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <span class="text-muted" style="font-size: 0.875rem;">Testlar:</span>
+                                        <span class="text-muted">{{ area.count }}</span>
+                                    </div>
+                                    <a href="{% url 'core:test_list' %}?category={{ area.category_slug }}" class="btn btn-sm btn-outline-danger mt-2 w-100">
+                                        <i class="fas fa-arrow-right me-1"></i>Yaxshilash
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Adaptive Testing - Tavsiya qilingan testlar -->
+            {% if recommended_tests %}
+            <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px; border-left: 5px solid var(--info);">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%); border-bottom: 2px solid var(--info); border-radius: 20px 20px 0 0;">
+                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                        <i class="fas fa-star me-2 text-info"></i>Sizga Tavsiya Qilingan Testlar
+                    </h5>
+                    <p class="mb-0 mt-2" style="font-size: 0.875rem; color: var(--gray-600);">
+                        {% if user_avg_score > 0 %}
+                        Sizning o'rtacha balingiz: <strong>{{ user_avg_score }}%</strong> - 
+                        {% if user_avg_score < 50 %}
+                        Boshlang'ich daraja (Oson testlar tavsiya qilinadi)
+                        {% elif user_avg_score < 70 %}
+                        O'rta daraja (O'rta qiyinlikdagi testlar tavsiya qilinadi)
+                        {% else %}
+                        Yuqori daraja (Qiyin testlar tavsiya qilinadi)
+                        {% endif %}
+                        {% else %}
+                        Sizning darajangizga mos testlar
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        {% for test in recommended_tests %}
+                        <div class="col-12 col-md-6">
+                            <div class="test-card hover-lift">
+                                <div class="test-card-gradient"></div>
+                                <div class="test-card-body">
+                                    <div class="test-card-header">
+                                        <div class="test-card-icon">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h5 class="test-card-title">{{ test.title }}</h5>
+                                            <div class="test-card-badges">
+                                                <span class="badge-category">{{ test.category.name }}</span>
+                                                <span class="badge-type">{{ test.get_test_type_display }}</span>
+                                                {% if test.difficulty == 'easy' %}
+                                                <span class="badge-difficulty-easy">Oson</span>
+                                                {% elif test.difficulty == 'medium' %}
+                                                <span class="badge-difficulty-medium">O'rta</span>
+                                                {% elif test.difficulty == 'hard' %}
+                                                <span class="badge-difficulty-hard">Qiyin</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="test-card-description">{{ test.description|truncatewords:20 }}</p>
+                                    <div class="test-card-stats">
+                                        <span class="badge-questions">
+                                            <i class="fas fa-question-circle me-1"></i>{{ test.total_questions }} savol
+                                        </span>
+                                        {% if test.duration_minutes %}
+                                        <span class="badge-duration">
+                                            <i class="fas fa-clock me-1"></i>{{ test.duration_minutes }} daqiqa
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{% url 'core:test_detail' test.pk %}" class="btn btn-start">
+                                        <i class="fas fa-play me-2"></i>Boshlash
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Results count -->
+            {% if tests %}
+            <div class="mb-3">
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <strong>{{ tests|length }}</strong> ta test topildi
+                </p>
+            </div>
+            {% endif %}
+            
+            {% include 'core/tests/partial_list.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time search with debounce
+    const searchInput = document.getElementById('search-input');
+    const searchForm = document.getElementById('search-form');
+    let searchTimeout;
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            // Auto-submit after 500ms of no typing
+            searchTimeout = setTimeout(function() {
+                if (searchInput.value.length >= 2 || searchInput.value.length === 0) {
+                    searchForm.submit();
+                }
+            }, 500);
+        });
+        
+        // Enter key to submit immediately
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                e.preventDefault();
+                searchForm.submit();
+            }
+        });
+    }
+    
+    // Filter sidebar collapse animation
+    const filterSidebar = document.getElementById('filterSidebar');
+    if (filterSidebar) {
+        filterSidebar.addEventListener('show.bs.collapse', function() {
+            const btn = document.querySelector('[data-bs-target="#filterSidebar"]');
+            if (btn) {
+                const icon = btn.querySelector('.fa-chevron-down');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            }
+        });
+        
+        filterSidebar.addEventListener('hide.bs.collapse', function() {
+            const btn = document.querySelector('[data-bs-target="#filterSidebar"]');
+            if (btn) {
+                const icon = btn.querySelector('.fa-chevron-up');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

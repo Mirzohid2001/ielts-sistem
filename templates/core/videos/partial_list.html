@@ -1,0 +1,140 @@
+{% load core_filters %}
+
+{% if videos_by_category %}
+    {% for category, category_videos in videos_by_category.items %}
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center">
+                {% if category.icon %}
+                <div class="category-icon-small me-3">
+                    <i class="{{ category.icon }}"></i>
+                </div>
+                {% else %}
+                <div class="category-icon-small me-3">
+                    <i class="fas fa-folder"></i>
+                </div>
+                {% endif %}
+                <div>
+                    <h3 class="category-title-small">{{ category.name }}</h3>
+                    <p class="category-count-small">{{ category_videos.count }} ta video</p>
+                </div>
+            </div>
+            <a href="{% url 'core:video_list' %}?category={{ category.slug }}" 
+               class="btn btn-outline-primary btn-sm">
+                Barchasini ko'rish <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+        
+        <div class="row">
+            {% for video in category_videos|slice:":6" %}
+            <div class="col-12 col-sm-6 col-md-4 mb-4">
+                <div class="video-card">
+                    <div class="video-card-image-wrapper">
+                        {% if video.youtube_thumbnail %}
+                        <img src="{{ video.youtube_thumbnail }}" alt="{{ video.title }}" class="video-card-image">
+                        {% else %}
+                        <div class="video-card-placeholder">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        {% endif %}
+                        {% if user_progress|get_item:video.id %}
+                        <div class="video-card-badge-watched">
+                            <span class="badge bg-success">Ko'rilgan</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="video-card-body">
+                        <h5 class="video-card-title">{{ video.title|truncatewords:12 }}</h5>
+                        <p class="video-card-description">{{ video.description|truncatewords:15|default:"Tavsif mavjud emas" }}</p>
+                        <div class="video-card-badges">
+                            <span class="badge badge-category">{{ video.category.name }}</span>
+                        </div>
+                        <div class="video-card-actions">
+                            <a href="{% url 'core:video_detail' video.pk %}" 
+                               class="btn btn-primary btn-watch">
+                                <i class="fas fa-play me-2"></i>Ko'rish
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="row">
+        {% for video in videos %}
+        <div class="col-12 col-sm-6 col-md-4 mb-4">
+            <div class="video-card">
+                <div class="video-card-image-wrapper">
+                    {% if video.youtube_thumbnail %}
+                    <img src="{{ video.youtube_thumbnail }}" alt="{{ video.title }}" class="video-card-image">
+                    {% else %}
+                    <div class="video-card-placeholder">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    {% endif %}
+                    {% if user_progress|get_item:video.id %}
+                    <div class="video-card-badge-watched">
+                        <span class="badge bg-success">Ko'rilgan</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="video-card-body">
+                    <h5 class="video-card-title">{{ video.title|truncatewords:12 }}</h5>
+                    <p class="video-card-description">{{ video.description|truncatewords:15|default:"Tavsif mavjud emas" }}</p>
+                    <div class="video-card-badges">
+                        <span class="badge badge-category">{{ video.category.name }}</span>
+                    </div>
+                    <div class="video-card-actions">
+                        <a href="{% url 'core:video_detail' video.pk %}" 
+                           class="btn btn-primary btn-watch">
+                            <i class="fas fa-play me-2"></i>Ko'rish
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <h4 class="empty-state-title">Videolar topilmadi</h4>
+                <p class="empty-state-text">Qidiruv so'zini o'zgartiring yoki boshqa kategoriyani tanlang</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if videos.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if videos.has_previous %}
+            <li class="page-item">
+                <a class="page-link" 
+                   href="?page={{ videos.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left me-1"></i>Oldingi
+                </a>
+            </li>
+            {% endif %}
+            {% for num in videos.paginator.page_range %}
+            <li class="page-item {% if videos.number == num %}active{% endif %}">
+                <a class="page-link" 
+                   href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if videos.has_next %}
+            <li class="page-item">
+                <a class="page-link" 
+                   href="?page={{ videos.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Keyingi<i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% endif %}

@@ -1,0 +1,655 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Admin panel kengligini to'liq qilish */
+    body {
+        overflow-x: hidden;
+    }
+    
+    #content {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px 30px !important;
+    }
+    
+    #content-main {
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+    }
+    
+    #content-related {
+        display: none !important;
+    }
+    
+    .admin-dashboard {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+        padding: 25px;
+        border-radius: 16px;
+        color: white;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card h3 {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        opacity: 0.95;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-card .stat-value {
+        margin: 0;
+        font-size: 42px;
+        font-weight: 700;
+        line-height: 1;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .stat-card .stat-icon {
+        position: absolute;
+        bottom: 15px;
+        right: 20px;
+        font-size: 48px;
+        opacity: 0.2;
+    }
+    
+    .dashboard-section {
+        background: white;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .dashboard-section:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+    
+    .dashboard-section h2 {
+        color: #1a1a1a;
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-top: 20px;
+    }
+    
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 15px;
+    }
+    
+    .modern-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .modern-table th {
+        padding: 14px 12px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+    
+    .modern-table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .modern-table tbody tr:hover {
+        background: #f8f9ff;
+        transform: scale(1.01);
+    }
+    
+    .modern-table td {
+        padding: 12px;
+        font-size: 13px;
+        color: #333;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-success {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+    }
+    
+    .badge-danger {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        color: white;
+    }
+    
+    .progress-bar-container {
+        width: 100%;
+        height: 8px;
+        background: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+    
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        width: 100%;
+    }
+    
+    .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+        width: 100%;
+    }
+    
+    @media (max-width: 1400px) {
+        .grid-3 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 1200px) {
+        .grid-2, .grid-3 {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        #content {
+            padding: 15px !important;
+        }
+        
+        .stat-card {
+            padding: 20px;
+        }
+        
+        .stat-card .stat-value {
+            font-size: 32px;
+        }
+    }
+    
+    .link-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        margin-top: 15px;
+        transition: all 0.2s ease;
+    }
+    
+    .link-btn:hover {
+        color: #764ba2;
+        gap: 12px;
+    }
+    
+    .empty-state {
+        padding: 40px;
+        text-align: center;
+        color: #999;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <!-- Umumiy Statistika -->
+    <div style="margin-bottom: 30px;">
+        <h1 style="color: #1a1a1a; margin-bottom: 25px; font-size: 28px; font-weight: 700; display: flex; align-items: center; gap: 12px;">
+            <span>📊</span> Umumiy Statistika
+        </h1>
+        
+        <div class="grid-3" style="margin-bottom: 30px;">
+            <div class="stat-card" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
+                <h3>👥 Jami Foydalanuvchilar</h3>
+                <p class="stat-value">{{ total_users }}</p>
+                <div class="stat-icon">👥</div>
+            </div>
+            
+            <div class="stat-card" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
+                <h3>📝 Jami Testlar</h3>
+                <p class="stat-value">{{ total_tests }}</p>
+                <div class="stat-icon">📝</div>
+            </div>
+            
+            <div class="stat-card" style="--gradient-start: #4facfe; --gradient-end: #00f2fe;">
+                <h3>🎥 Jami Video Darslar</h3>
+                <p class="stat-value">{{ total_videos }}</p>
+                <div class="stat-icon">🎥</div>
+            </div>
+            
+            <div class="stat-card" style="--gradient-start: #43e97b; --gradient-end: #38f9d7;">
+                <h3>✅ Ishlangan Testlar</h3>
+                <p class="stat-value">{{ total_test_results }}</p>
+                <div class="stat-icon">✅</div>
+            </div>
+            
+            <div class="stat-card" style="--gradient-start: #fa709a; --gradient-end: #fee140;">
+                <h3>👀 Ko'rilgan Videolar</h3>
+                <p class="stat-value">{{ total_video_views }}</p>
+                <div class="stat-icon">👀</div>
+            </div>
+            
+            <div class="stat-card" style="--gradient-start: #a8edea; --gradient-end: #fed6e3;">
+                <h3>📈 O'rtacha Ball</h3>
+                <p class="stat-value">{{ avg_score|default:"0"|floatformat:1 }}%</p>
+                <div class="stat-icon">📈</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chartlar -->
+    <div class="grid-2">
+        <!-- Test Natijalari Chart -->
+        <div class="dashboard-section">
+            <h2>📊 Test Natijalari Statistikasi</h2>
+            <div class="chart-container">
+                <canvas id="testResultsChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Kategoriya bo'yicha Chart -->
+        <div class="dashboard-section">
+            <h2>📚 Kategoriya bo'yicha Testlar</h2>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Oxirgi Test Natijalari va Video Ko'rishlar -->
+    <div class="grid-2" style="margin-bottom: 25px;">
+        <!-- Oxirgi Test Natijalari -->
+        <div class="dashboard-section">
+            <h2>📝 Oxirgi Test Natijalari</h2>
+            <div style="overflow-x: auto;">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Foydalanuvchi</th>
+                            <th>Test</th>
+                            <th style="text-align: center;">Ball</th>
+                            <th style="text-align: center;">Holat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in recent_results %}
+                        <tr>
+                            <td><strong>{{ result.user.username }}</strong></td>
+                            <td>
+                                <a href="{% url 'admin:core_usertestresult_change' result.pk %}" style="color: #667eea; text-decoration: none;">
+                                    {{ result.test.title|truncatewords:5 }}
+                                </a>
+                            </td>
+                            <td style="text-align: center; font-weight: bold;">
+                                {{ result.score }}/{{ result.total_questions }}<br>
+                                <small style="color: #666;">({{ result.percentage|floatformat:1 }}%)</small>
+                            </td>
+                            <td style="text-align: center;">
+                                {% if result.is_passed %}
+                                    <span class="badge badge-success">✓ O'tdi</span>
+                                {% else %}
+                                    <span class="badge badge-danger">✗ O'tmadi</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="empty-state">Hozircha test natijalari yo'q</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'admin:core_usertestresult_changelist' %}" class="link-btn">
+                Barcha test natijalari →
+            </a>
+        </div>
+        
+        <!-- Oxirgi Video Ko'rishlar -->
+        <div class="dashboard-section">
+            <h2>🎥 Oxirgi Video Ko'rishlar</h2>
+            <div style="overflow-x: auto;">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Foydalanuvchi</th>
+                            <th>Video</th>
+                            <th style="text-align: center;">Progress</th>
+                            <th style="text-align: center;">Sana</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for view in recent_video_views %}
+                        <tr>
+                            <td><strong>{{ view.user.username }}</strong></td>
+                            <td>
+                                <a href="{% url 'admin:core_uservideoprogress_change' view.pk %}" style="color: #667eea; text-decoration: none;">
+                                    {{ view.video.title|truncatewords:5 }}
+                                </a>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong>{{ view.watch_percentage|floatformat:0 }}%</strong>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" style="width: {{ view.watch_percentage }}%"></div>
+                                </div>
+                            </td>
+                            <td style="text-align: center; font-size: 12px; color: #666;">
+                                {{ view.completed_at|date:"d.m.Y H:i"|default:"-" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="empty-state">Hozircha video ko'rishlar yo'q</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'admin:core_uservideoprogress_changelist' %}" class="link-btn">
+                Barcha video ko'rishlar →
+            </a>
+        </div>
+    </div>
+
+    <!-- Faol Foydalanuvchilar -->
+    <div class="dashboard-section">
+        <h2>👥 Faol Foydalanuvchilar (Oxirgi 7 kun)</h2>
+        <div style="overflow-x: auto;">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Foydalanuvchi</th>
+                        <th style="text-align: center;">Ishlangan Testlar</th>
+                        <th style="text-align: center;">Ko'rilgan Videolar</th>
+                        <th style="text-align: center;">Oxirgi Kirish</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in active_users %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'admin:auth_user_change' user.pk %}" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                                {{ user.username }}
+                            </a>
+                        </td>
+                        <td style="text-align: center; font-weight: bold; color: #667eea;">{{ user.test_count|default:0 }}</td>
+                        <td style="text-align: center; font-weight: bold; color: #764ba2;">{{ user.video_count|default:0 }}</td>
+                        <td style="text-align: center; font-size: 12px; color: #666;">{{ user.last_login|date:"d.m.Y H:i"|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="empty-state">Hozircha faol foydalanuvchilar yo'q</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Chart.js yuklanishini tekshirish
+if (typeof Chart === 'undefined') {
+    console.error('Chart.js yuklanmadi! CDN linkini tekshiring.');
+    // Alternativ CDN
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+    script.onload = function() {
+        console.log('Chart.js alternativ CDN dan yuklandi');
+        initializeCharts();
+    };
+    script.onerror = function() {
+        console.error('Chart.js yuklanmadi! Internetga ulanishni tekshiring.');
+    };
+    document.head.appendChild(script);
+} else {
+    console.log('Chart.js muvaffaqiyatli yuklandi');
+}
+
+function initializeCharts() {
+    // Test Natijalari Chart
+    const testResultsCtx = document.getElementById('testResultsChart');
+    if (testResultsCtx) {
+        const passedCount = {{ passed_tests|default:0 }};
+        const failedCount = {{ failed_tests|default:0 }};
+        const total = passedCount + failedCount;
+        
+        // Debug
+        console.log('Test Results Chart - Passed:', passedCount, 'Failed:', failedCount);
+        
+        if (typeof Chart !== 'undefined') {
+            // Agar ma'lumotlar bo'sh bo'lsa, default qiymatlar
+            const chartData = total > 0 ? [passedCount, failedCount] : [0, 0];
+            
+            new Chart(testResultsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['O\'tdi', 'O\'tmadi'],
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: [
+                        'rgba(67, 233, 123, 0.8)',
+                        'rgba(250, 112, 154, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(67, 233, 123, 1)',
+                        'rgba(250, 112, 154, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 13,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+            });
+        } else {
+            console.error('Chart.js is not loaded!');
+        }
+    } else {
+        console.error('testResultsChart canvas element not found!');
+    }
+    
+    // Kategoriya bo'yicha Chart
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx) {
+        const categories = [
+            {% for stat in category_test_stats %}
+            '{{ stat.name|escapejs }}',
+            {% empty %}
+            'Ma\'lumotlar yo\'q'
+            {% endfor %}
+        ];
+        const testCounts = [
+            {% for stat in category_test_stats %}
+            {{ stat.test_count|default:0 }},
+            {% empty %}
+            0
+            {% endfor %}
+        ];
+        const resultCounts = [
+            {% for stat in category_test_stats %}
+            {{ stat.result_count|default:0 }},
+            {% empty %}
+            0
+            {% endfor %}
+        ];
+        
+        // Debug
+        console.log('Category Chart - Categories:', categories);
+        console.log('Category Chart - Test Counts:', testCounts);
+        console.log('Category Chart - Result Counts:', resultCounts);
+        
+        if (typeof Chart !== 'undefined') {
+            // Agar kategoriyalar bo'sh bo'lsa yoki faqat "Ma'lumotlar yo'q" bo'lsa
+            if (categories.length === 0 || (categories.length === 1 && categories[0] === 'Ma\'lumotlar yo\'q')) {
+                console.warn('Kategoriya ma\'lumotlari yo\'q, chart yaratilmaydi');
+                categoryCtx.parentElement.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">Kategoriya ma\'lumotlari yo\'q</div>';
+            } else {
+                new Chart(categoryCtx, {
+                type: 'bar',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        label: 'Jami Testlar',
+                        data: testCounts,
+                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2
+                    }, {
+                        label: 'Ishlangan Testlar',
+                        data: resultCounts,
+                    backgroundColor: 'rgba(118, 75, 162, 0.6)',
+                    borderColor: 'rgba(118, 75, 162, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 13,
+                                weight: '600'
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+                });
+            }
+        } else {
+            console.error('Chart.js is not loaded!');
+        }
+    } else {
+        console.error('categoryChart canvas element not found!');
+    }
+}
+
+// DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart !== 'undefined') {
+        initializeCharts();
+    } else {
+        // Agar Chart.js hali yuklanmagan bo'lsa, kutish
+        setTimeout(function() {
+            if (typeof Chart !== 'undefined') {
+                initializeCharts();
+            } else {
+                console.error('Chart.js yuklanmadi!');
+            }
+        }, 1000);
+    }
+});
+</script>
+
+<!-- Django Admin Standart Index -->
+{{ block.super }}
+{% endblock %}

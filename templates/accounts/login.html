@@ -1,0 +1,591 @@
+{% extends 'base.html' %}
+
+{% block title %}Kirish - IELTS Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Login page specific styles */
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+    }
+    
+    /* Hide navbar and footer on login page */
+    body > nav,
+    body > footer {
+        display: none !important;
+    }
+    
+    /* Hide messages container margin on login */
+    #messages-container {
+        margin: 0;
+        padding: 1rem;
+    }
+    
+    main {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+    
+    .login-wrapper {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 480px;
+    }
+    
+    .login-card {
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        border: 1px solid #e5e7eb;
+        position: relative;
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    @media (min-width: 768px) {
+        .login-card {
+            padding: 3rem 2.5rem;
+        }
+    }
+    
+    .login-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+        background-size: 200% 100%;
+        animation: gradientBar 3s ease infinite;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes gradientBar {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+    
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .login-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2.5rem;
+        color: white;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        animation: float 6s ease-in-out infinite;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    @media (min-width: 768px) {
+        .login-icon-wrapper {
+            width: 100px;
+            height: 100px;
+            font-size: 3rem;
+        }
+    }
+    
+    .login-icon-wrapper::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+        transform: rotate(45deg);
+        animation: shimmer 3s infinite;
+    }
+    
+    .login-title {
+        font-weight: 800;
+        font-size: clamp(1.75rem, 4vw, 2.25rem);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.02em;
+    }
+    
+    .login-subtitle {
+        color: #4b5563;
+        font-size: clamp(1rem, 2.5vw, 1.125rem);
+        font-weight: 500;
+    }
+    
+    .login-form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .login-form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.75rem;
+        font-size: 0.9375rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .login-form-label i {
+        margin-right: 0.75rem;
+        color: #6366f1;
+        font-size: 1.125rem;
+    }
+    
+    .login-form-input {
+        width: 100%;
+        padding: 0.875rem 1.25rem;
+        border: 2px solid #d1d5db;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        font-family: inherit;
+    }
+    
+    @media (min-width: 768px) {
+        .login-form-input {
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+        }
+    }
+    
+    .login-form-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 4px 20px rgba(102, 126, 234, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .login-btn {
+        width: 100%;
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        margin-top: 0.5rem;
+        cursor: pointer;
+    }
+    
+    @media (min-width: 768px) {
+        .login-btn {
+            padding: 1rem 1.5rem;
+            font-size: 1.0625rem;
+        }
+    }
+    
+    .login-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .login-btn:hover::before {
+        left: 100%;
+    }
+    
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+    }
+    
+    .login-btn:active {
+        transform: translateY(0);
+    }
+    
+    .login-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    
+    .login-help {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+    
+    .login-help-title {
+        font-weight: 600;
+        font-size: 0.9375rem;
+        color: #374151;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .login-help-title i {
+        margin-right: 0.75rem;
+        color: #6366f1;
+        font-size: 1.125rem;
+    }
+    
+    .login-help-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .login-help-item {
+        font-size: 0.875rem;
+        color: #4b5563;
+        margin-bottom: 0.875rem;
+        display: flex;
+        align-items: flex-start;
+        line-height: 1.6;
+    }
+    
+    .login-help-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .login-help-item i {
+        margin-right: 0.75rem;
+        color: #10b981;
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+        font-size: 1rem;
+    }
+    
+    @media (min-width: 768px) {
+        .login-help {
+            padding: 1.75rem;
+        }
+        
+        .login-help-item {
+            font-size: 0.9375rem;
+        }
+    }
+    
+    .login-error {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+        border-left: 4px solid #ef4444;
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.1);
+        animation: shake 0.5s ease;
+    }
+    
+    .login-error-content {
+        display: flex;
+        align-items: center;
+        font-size: clamp(0.875rem, 2vw, 1rem);
+    }
+    
+    .login-error-content i {
+        margin-right: 0.75rem;
+        color: #ef4444;
+        font-size: 1.25rem;
+    }
+    
+    .login-error-text {
+        font-weight: 600;
+        color: #ef4444;
+    }
+    
+    @media (max-width: 575.98px) {
+        main {
+            padding: 1rem;
+        }
+        
+        .login-wrapper {
+            max-width: 100%;
+        }
+        
+        .login-card {
+            padding: 2rem 1.5rem;
+            border-radius: 20px;
+        }
+        
+        .login-icon-wrapper {
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+            margin-bottom: 1.25rem;
+        }
+        
+        .login-help {
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-icon-wrapper">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1 class="login-title">IELTS Center</h1>
+            <p class="login-subtitle">Tizimga kirish</p>
+        </div>
+        
+        <form method="post" action="{% url 'accounts:login' %}" id="login-form">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="login-error">
+                <div class="login-error-content">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <div class="login-error-text">{{ error }}</div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                    <div class="login-error">
+                        <div class="login-error-content">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div class="login-error-text">{{ message }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
+            <div class="login-form-group">
+                <label for="{{ form.username.id_for_label }}" class="login-form-label">
+                    <i class="fas fa-user"></i>
+                    {{ form.username.label }}
+                </label>
+                <input 
+                    type="text" 
+                    name="{{ form.username.name }}" 
+                    id="{{ form.username.id_for_label }}"
+                    class="login-form-input"
+                    placeholder="Foydalanuvchi nomini kiriting"
+                    autocomplete="username"
+                    required
+                    value="{{ form.username.value|default:'' }}"
+                >
+            </div>
+            
+            <div class="login-form-group">
+                <label for="{{ form.otp_code.id_for_label }}" class="login-form-label">
+                    <i class="fas fa-key"></i>
+                    {{ form.otp_code.label }}
+                </label>
+                <input 
+                    type="text" 
+                    name="{{ form.otp_code.name }}" 
+                    id="{{ form.otp_code.id_for_label }}"
+                    class="login-form-input"
+                    placeholder="OTP kodni kiriting"
+                    autocomplete="off"
+                    required
+                    value="{{ form.otp_code.value|default:'' }}"
+                >
+            </div>
+            
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt me-2"></i>Kirish
+            </button>
+        </form>
+        
+        <div class="login-help">
+            <div class="login-help-title">
+                <i class="fas fa-info-circle"></i>
+                Qanday foydalanish?
+            </div>
+            <ul class="login-help-list">
+                <li class="login-help-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Foydalanuvchi nomingizni kiriting (admin panel orqali yaratilgan)</span>
+                </li>
+                <li class="login-help-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Admin panel orqali olingan OTP kodni kiriting</span>
+                </li>
+                <li class="login-help-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>"Kirish" tugmasini bosing va tizimga kiring</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('login-form');
+        const usernameInput = form.querySelector('[name="username"]');
+        const otpInput = form.querySelector('[name="otp_code"]');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        // Remove existing error messages after a delay
+        const existingErrors = form.querySelectorAll('.login-error');
+        existingErrors.forEach(error => {
+            setTimeout(() => {
+                error.style.opacity = '0';
+                error.style.transition = 'opacity 0.5s';
+                setTimeout(() => error.remove(), 500);
+            }, 5000);
+        });
+        
+        // Form validation
+        form.addEventListener('submit', function(e) {
+            const username = usernameInput.value.trim();
+            const otp = otpInput.value.trim();
+            
+            // Remove existing errors
+            const existingError = form.querySelector('.login-error');
+            if (existingError && !existingError.querySelector('.login-error-text').textContent.includes('Noto')) {
+                existingError.remove();
+            }
+            
+            if (!username || !otp) {
+                e.preventDefault();
+                
+                // Error animation
+                if (!username) {
+                    usernameInput.style.borderColor = '#ef4444';
+                    setTimeout(() => {
+                        usernameInput.style.borderColor = '#d1d5db';
+                    }, 2000);
+                }
+                if (!otp) {
+                    otpInput.style.borderColor = '#ef4444';
+                    setTimeout(() => {
+                        otpInput.style.borderColor = '#d1d5db';
+                    }, 2000);
+                }
+                
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'login-error';
+                errorDiv.innerHTML = `
+                    <div class="login-error-content">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div class="login-error-text">Iltimos, barcha maydonlarni to'ldiring!</div>
+                    </div>
+                `;
+                
+                // Insert error before form groups
+                const firstGroup = form.querySelector('.login-form-group');
+                if (firstGroup) {
+                    form.insertBefore(errorDiv, firstGroup);
+                } else {
+                    form.insertBefore(errorDiv, form.firstChild);
+                }
+                
+                // Scroll to error
+                errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // Remove error after 5 seconds
+                setTimeout(() => {
+                    errorDiv.style.opacity = '0';
+                    errorDiv.style.transition = 'opacity 0.5s';
+                    setTimeout(() => errorDiv.remove(), 500);
+                }, 5000);
+                
+                return false;
+            }
+        });
+        
+        // Input focus effects
+        [usernameInput, otpInput].forEach(input => {
+            input.addEventListener('focus', function() {
+                this.style.transform = 'scale(1.01)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.style.transform = 'scale(1)';
+            });
+            
+            // Clear error border on input
+            input.addEventListener('input', function() {
+                if (this.style.borderColor === 'rgb(239, 68, 68)' || this.style.borderColor === '#ef4444') {
+                    this.style.borderColor = '#d1d5db';
+                }
+            });
+        });
+        
+        // Button loading state
+        form.addEventListener('submit', function(e) {
+            const username = usernameInput.value.trim();
+            const otp = otpInput.value.trim();
+            
+            if (username && otp) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kirilmoqda...';
+            }
+        });
+    });
+</script>
+{% endblock %}
+

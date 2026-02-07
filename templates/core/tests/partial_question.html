@@ -1,0 +1,330 @@
+{% load core_filters %}
+<div class="card border-0 shadow-lg question-card">
+    <div class="card-body p-3 p-md-4">
+        <div class="d-flex align-items-center mb-3 mb-md-4">
+            <div class="question-number" style="width: clamp(40px, 8vw, 48px); height: clamp(40px, 8vw, 48px); background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: clamp(1rem, 3vw, 1.25rem); margin-right: 0.75rem; margin-right: clamp(0.75rem, 2vw, 1rem); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); flex-shrink: 0;">
+                {{ question_number }}
+            </div>
+            <h4 class="card-title mb-0" style="font-weight: 700; font-size: clamp(1.1rem, 3vw, 1.5rem);">Savol</h4>
+        </div>
+        
+        {% if current_question %}
+        <form method="post" 
+              action="{% url 'core:test_take' test.pk %}?q={{ question_number }}"
+              hx-post="{% url 'core:test_take' test.pk %}?q={{ question_number }}"
+              hx-target="#question-container"
+              hx-swap="innerHTML"
+              hx-trigger="submit"
+              hx-headers='{"HX-Request": "true"}'
+              id="question-form-{{ current_question.pk }}">
+            {% csrf_token %}
+            <input type="hidden" name="question_id" value="{{ current_question.pk }}">
+            
+            <p class="mb-3 mb-md-4" style="font-size: clamp(0.95rem, 2.2vw, 1rem); line-height: 1.6;">{{ current_question.question_text|linebreaks }}</p>
+            
+            {% if current_question.question_image %}
+            <img src="{{ current_question.question_image.url }}" class="img-fluid mb-4" alt="Savol rasmi">
+            {% endif %}
+            
+            {% if test.test_type == 'listening' and current_question.audio_timestamp %}
+            <!-- Listening test: Audio timestamp tugmasi -->
+            <div class="alert alert-info d-flex flex-column flex-md-row align-items-start align-items-md-center mb-3 mb-md-4 audio-timestamp-alert" style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); padding: 0.75rem 1rem; gap: 0.75rem;">
+                <i class="fas fa-headphones me-0 me-md-3" style="font-size: clamp(1.25rem, 3vw, 1.5rem); color: var(--primary); flex-shrink: 0;"></i>
+                <div class="flex-grow-1" style="font-size: clamp(0.85rem, 2vw, 1rem);">
+                    <strong>Audio eshiting:</strong> Bu savol uchun audio qismini eshitish uchun quyidagi tugmani bosing.
+                </div>
+                <button type="button" class="btn btn-primary" style="font-size: clamp(0.8rem, 2vw, 0.875rem); white-space: nowrap; flex-shrink: 0;" onclick="playAudioAtTimestamp({{ current_question.audio_timestamp }})">
+                    <i class="fas fa-play me-1 me-md-2"></i>{{ current_question.audio_timestamp|floatformat:0 }}s dan eshitish
+                </button>
+            </div>
+            {% endif %}
+            
+            <div class="mb-3 mb-md-4">
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" 
+                       style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'a' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}"
+                       onclick="selectAnswer('a')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="a" id="answer_a" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;"
+                               {% if current_answer == 'a' %}checked{% endif %}>
+                        <div style="flex-grow: 1;">
+                            <strong style="color: var(--primary); font-size: clamp(1rem, 2.2vw, 1.1rem);">A)</strong>
+                            <span style="margin-left: 0.5rem; font-size: clamp(0.9rem, 2vw, 1rem);">{{ current_question.option_a }}</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" 
+                       style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'b' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}"
+                       onclick="selectAnswer('b')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="b" id="answer_b" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;"
+                               {% if current_answer == 'b' %}checked{% endif %}>
+                        <div style="flex-grow: 1;">
+                            <strong style="color: var(--primary); font-size: clamp(1rem, 2.2vw, 1.1rem);">B)</strong>
+                            <span style="margin-left: 0.5rem; font-size: clamp(0.9rem, 2vw, 1rem);">{{ current_question.option_b }}</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" 
+                       style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'c' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}"
+                       onclick="selectAnswer('c')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="c" id="answer_c" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;"
+                               {% if current_answer == 'c' %}checked{% endif %}>
+                        <div style="flex-grow: 1;">
+                            <strong style="color: var(--primary); font-size: clamp(1rem, 2.2vw, 1.1rem);">C)</strong>
+                            <span style="margin-left: 0.5rem; font-size: clamp(0.9rem, 2vw, 1rem);">{{ current_question.option_c }}</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" 
+                       style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'd' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}"
+                       onclick="selectAnswer('d')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="d" id="answer_d" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;"
+                               {% if current_answer == 'd' %}checked{% endif %}>
+                        <div style="flex-grow: 1;">
+                            <strong style="color: var(--primary); font-size: clamp(1rem, 2.2vw, 1.1rem);">D)</strong>
+                            <span style="margin-left: 0.5rem; font-size: clamp(0.9rem, 2vw, 1rem);">{{ current_question.option_d }}</span>
+                        </div>
+                    </div>
+                </label>
+            </div>
+            
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-2 gap-md-3 test-navigation">
+                {% if question_number > 1 %}
+                <button type="button" 
+                        onclick="loadQuestion({{ question_number|add:'-1' }})"
+                        class="btn btn-outline-secondary flex-grow-1 order-1 order-md-0" style="font-size: clamp(0.85rem, 2vw, 0.875rem);">
+                    <i class="fas fa-arrow-left me-1 me-md-2"></i>Oldingi
+                </button>
+                {% else %}
+                <div class="flex-grow-1 order-1 order-md-0 d-none d-md-block"></div>
+                {% endif %}
+                
+                <!-- Savollar ro'yxati (navigation) -->
+                <div class="d-flex align-items-center gap-1 flex-wrap justify-content-center order-0 order-md-1 question-pagination" style="max-width: 100%; margin: 0.5rem 0;">
+                    {% for q_pk in questions_list %}
+                    <a href="#" 
+                       onclick="loadQuestion({{ forloop.counter }}); return false;"
+                       class="btn btn-sm {% if forloop.counter == question_number %}btn-primary{% elif q_pk in answered_questions %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                       style="min-width: clamp(32px, 6vw, 36px); padding: clamp(0.2rem, 0.8vw, 0.25rem) clamp(0.4rem, 1.2vw, 0.5rem); font-size: clamp(0.75rem, 1.8vw, 0.875rem);"
+                       title="Savol {{ forloop.counter }}">
+                        {{ forloop.counter }}
+                    </a>
+                    {% endfor %}
+                </div>
+                
+                {% if question_number < total_questions %}
+                <button type="submit" class="btn btn-primary flex-grow-1 order-2" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
+                    <span class="d-none d-sm-inline">Keyingi</span><span class="d-sm-none">Keyin</span> <i class="fas fa-arrow-right ms-1 ms-md-2"></i>
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-success flex-grow-1 order-2" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
+                    <i class="fas fa-check me-1 me-md-2"></i>Yakunlash
+                </button>
+                {% endif %}
+            </div>
+            
+            <script>
+                function selectAnswer(value) {
+                    // Radio buttonni tanlash
+                    const radio = document.getElementById('answer_' + value);
+                    if (radio) {
+                        radio.checked = true;
+                        
+                        // Barcha option'larni yangilash
+                        document.querySelectorAll('.answer-option').forEach(option => {
+                            option.style.borderColor = 'var(--gray-200)';
+                            option.style.background = '';
+                        });
+                        
+                        // Tanlangan option'ni highlight qilish
+                        const selectedOption = document.querySelector('#answer_' + value).closest('.answer-option');
+                        if (selectedOption) {
+                            selectedOption.style.borderColor = 'var(--primary)';
+                            selectedOption.style.background = 'rgba(37, 99, 235, 0.05)';
+                        }
+                    }
+                }
+                
+                function validateAnswer() {
+                    const selectedAnswer = document.querySelector('input[name="answer"]:checked');
+                    if (!selectedAnswer) {
+                        // Bootstrap alert yoki toast ko'rsatish
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+                        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                        alertDiv.innerHTML = `
+                            <strong>Diqqat!</strong> Iltimos, javobni tanlang!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        document.body.appendChild(alertDiv);
+                        
+                        // 3 soniyadan keyin avtomatik yopish
+                        setTimeout(() => {
+                            if (alertDiv.parentNode) {
+                                alertDiv.remove();
+                            }
+                        }, 3000);
+                        
+                        return false;
+                    }
+                    return true;
+                }
+                
+                // Form submit event listener - HTMX bilan ishlash uchun
+                (function() {
+                    const form = document.getElementById('question-form-{{ current_question.pk }}');
+                    if (form) {
+                        // Target elementni tekshirish
+                        function checkTarget() {
+                            const target = document.getElementById('question-container');
+                            if (!target) {
+                                console.error('HTMX target element (#question-container) topilmadi!');
+                                return false;
+                            }
+                            return true;
+                        }
+                        
+                        // HTMX beforeRequest event - javobni tekshirish
+                        form.addEventListener('htmx:beforeRequest', function(event) {
+                            if (!checkTarget()) {
+                                event.preventDefault();
+                                // Fallback - oddiy form submit
+                                form.submit();
+                                return false;
+                            }
+                            
+                            if (!validateAnswer()) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                return false;
+                            }
+                        });
+                        
+                        // HTMX error handling
+                        form.addEventListener('htmx:targetError', function(event) {
+                            console.error('HTMX target error:', event.detail);
+                            // Fallback - oddiy form submit
+                            const formData = new FormData(form);
+                            fetch(form.action, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                                }
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    window.location.reload();
+                                } else {
+                                    alert('Xatolik yuz berdi. Sahifani yangilab qayta urinib ko\'ring.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Xatolik yuz berdi. Sahifani yangilab qayta urinib ko\'ring.');
+                            });
+                        });
+                        
+                        // HTMX response error handling
+                        form.addEventListener('htmx:responseError', function(event) {
+                            console.error('HTMX response error:', event.detail);
+                            alert('Server xatoligi. Iltimos, qayta urinib ko\'ring.');
+                        });
+                        
+                        // Form submit event - javobni tekshirish
+                        form.addEventListener('submit', function(e) {
+                            if (!checkTarget()) {
+                                // Target topilmasa, oddiy form submit
+                                if (!validateAnswer()) {
+                                    e.preventDefault();
+                                    return false;
+                                }
+                                return true; // Oddiy form submit
+                            }
+                            
+                            if (!validateAnswer()) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                return false;
+                            }
+                        });
+                    }
+                })();
+                
+                function loadQuestion(qNum) {
+                    const url = '{% url "core:test_take" test.pk %}?q=' + qNum;
+                    const targetElement = document.getElementById('question-container');
+                    
+                    if (!targetElement) {
+                        console.error('Target element (#question-container) topilmadi!');
+                        // Fallback - sahifani yangilash
+                        window.location.href = url;
+                        return;
+                    }
+                    
+                    // HTMX orqali yuklash
+                    if (typeof htmx !== 'undefined') {
+                        htmx.ajax('GET', url, {
+                            target: '#question-container',
+                            swap: 'innerHTML',
+                            headers: {
+                                'HX-Request': 'true'
+                            }
+                        });
+                    } else {
+                        // Fallback - fetch API
+                        fetch(url, {
+                            headers: {
+                                'HX-Request': 'true'
+                            }
+                        })
+                        .then(response => response.text())
+                        .then(html => {
+                            if (targetElement) {
+                                targetElement.innerHTML = html;
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading question:', error);
+                            window.location.href = url;
+                        });
+                    }
+                }
+                
+                // Listening testlar uchun audio timestamp funksiyasi
+                {% if test.test_type == 'listening' %}
+                function playAudioAtTimestamp(timestamp) {
+                    const audio = document.getElementById('test-audio');
+                    if (audio && audio.src) {
+                        audio.currentTime = timestamp || 0;
+                        audio.play().catch(error => {
+                            console.error('Audio play error:', error);
+                            alert('Audio eshitishda xatolik yuz berdi.');
+                        });
+                    } else {
+                        // Audio fayl mavjud emas
+                        alert('Bu test uchun audio fayl hozircha yuklanmagan. Admin panel orqali audio fayl yuklashingiz mumkin.');
+                    }
+                }
+                {% endif %}
+                
+                // Radio button change event
+                document.addEventListener('DOMContentLoaded', function() {
+                    const radios = document.querySelectorAll('input[name="answer"]');
+                    radios.forEach(radio => {
+                        radio.addEventListener('change', function() {
+                            selectAnswer(this.value);
+                        });
+                    });
+                });
+            </script>
+        </form>
+        {% else %}
+        <div class="alert alert-warning">Savol topilmadi.</div>
+        {% endif %}
+    </div>
+</div>
+

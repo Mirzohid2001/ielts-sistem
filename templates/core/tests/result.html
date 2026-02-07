@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load core_filters %}
+
+{% block title %}Test Natijasi - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 col-md-10 mx-auto">
+            <!-- Natija kartasi -->
+            <div class="card mb-4 border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="card-body text-center p-4">
+                    <h2 class="mb-3" style="font-weight: 700; font-size: 1.75rem; color: var(--gray-900);">{{ test_result.test.title }}</h2>
+                    
+                    {% if test_result.attempt_number > 1 %}
+                    <div class="mb-3">
+                        <span class="badge bg-info" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-redo me-1"></i>Urinish: {{ test_result.attempt_number }}
+                        </span>
+                        {% if test_result.completed_at %}
+                        <span class="badge bg-secondary ms-2" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-calendar me-1"></i>{{ test_result.completed_at|date:"d.m.Y H:i" }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-12 col-sm-6 col-md-4 mb-3">
+                            <div class="stat-card stat-card-primary">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">Ball</p>
+                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{{ test_result.score }}/{{ test_result.total_questions }}</h3>
+                                    </div>
+                                    <i class="fas fa-star fa-2x text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="stat-card {% if test_result.is_passed %}stat-card-success{% else %}stat-card-danger{% endif %}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">Foiz</p>
+                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{{ test_result.percentage|floatformat:1 }}%</h3>
+                                    </div>
+                                    <i class="fas fa-percent fa-2x text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="stat-card stat-card-info">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">To'g'ri javoblar</p>
+                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{{ test_result.correct_answers }}</h3>
+                                    </div>
+                                    <i class="fas fa-check-circle fa-2x text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if test_result.time_taken %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info border-0 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%); border-radius: 12px; padding: 1rem;">
+                                <i class="fas fa-clock me-2" style="color: var(--info); font-size: 1.25rem;"></i>
+                                <span style="font-weight: 600; color: var(--gray-700);">
+                                    Sarflangan vaqt: 
+                                    <strong style="color: var(--info);">
+                                        {% if time_taken_hours %}
+                                            {{ time_taken_hours }} soat 
+                                            {{ time_taken_minutes }} daqiqa
+                                        {% elif time_taken_minutes %}
+                                            {{ time_taken_minutes }} daqiqa 
+                                            {{ time_taken_seconds }} soniya
+                                        {% else %}
+                                            {{ time_taken_seconds }} soniya
+                                        {% endif %}
+                                    </strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if test_result.is_passed %}
+                    <div class="alert alert-success border-0" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; box-shadow: var(--shadow-md); border-radius: 12px;">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Tebriklar!</strong> Siz testdan muvaffaqiyatli o'tdingiz!
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger border-0" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; box-shadow: var(--shadow-md); border-radius: 12px;">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Testdan o'tish uchun kamida {{ test_result.test.passing_score }}% bo'lishi kerak.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Javoblar -->
+            <div class="card border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%); border-bottom: 2px solid var(--primary); border-radius: 20px 20px 0 0;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                            <i class="fas fa-list-check me-2 text-primary"></i>Javoblar (Test Review)
+                        </h5>
+                        <div>
+                            <span class="badge bg-success me-2" style="padding: 0.5rem 1rem;">
+                                <i class="fas fa-check me-1"></i>{{ test_result.correct_answers }} To'g'ri
+                            </span>
+                            <span class="badge bg-danger" style="padding: 0.5rem 1rem;">
+                                <i class="fas fa-times me-1"></i>{{ test_result.wrong_answers }} Noto'g'ri
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    {% for question in test_result.test.questions.all %}
+                    {% with answer=user_answers|get_item:question.id %}
+                    <div class="card mb-4 border-0 shadow-sm" 
+                         style="border-left: 4px solid {% if answer and answer.is_correct %}var(--success){% elif answer %}var(--danger){% else %}var(--gray-400){% endif %} !important; 
+                                background: {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.05){% elif answer %}rgba(239, 68, 68, 0.05){% else %}rgba(107, 114, 128, 0.05){% endif %}; 
+                                border-radius: 16px;">
+                        <div class="card-body p-4">
+                            <!-- Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div style="width: 48px; height: 48px; background: {% if answer and answer.is_correct %}linear-gradient(135deg, var(--success) 0%, #059669 100%){% elif answer %}linear-gradient(135deg, var(--danger) 0%, #dc2626 100%){% else %}linear-gradient(135deg, var(--gray-400) 0%, var(--gray-500) 100%){% endif %}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; margin-right: 1rem; box-shadow: 0 4px 12px {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.3){% elif answer %}rgba(239, 68, 68, 0.3){% else %}rgba(107, 114, 128, 0.3){% endif %}; font-size: 1.1rem;">
+                                    {{ question.order }}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2" style="font-weight: 700; font-size: 1.1rem; color: var(--gray-900);">Savol {{ question.order }}</h6>
+                                </div>
+                                {% if answer %}
+                                    {% if answer.is_correct %}
+                                    <span class="badge" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border-radius: 10px; font-weight: 600;">
+                                        <i class="fas fa-check me-1"></i>To'g'ri
+                                    </span>
+                                    {% else %}
+                                    <span class="badge" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); border-radius: 10px; font-weight: 600;">
+                                        <i class="fas fa-times me-1"></i>Noto'g'ri
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-secondary" style="padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3); border-radius: 10px; font-weight: 600;">
+                                    <i class="fas fa-question me-1"></i>Javob berilmagan
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Question text -->
+                            <p class="mb-4" style="font-size: 1.05rem; line-height: 1.8; color: var(--gray-800); font-weight: 500;">{{ question.question_text|linebreaks }}</p>
+                            
+                            <!-- Answers - Bir xil dizayn -->
+                            <div class="row g-3">
+                                <!-- Sizning javobingiz -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card" style="background: {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.1){% elif answer %}rgba(239, 68, 68, 0.1){% else %}rgba(107, 114, 128, 0.1){% endif %}; 
+                                                              border: 2px solid {% if answer and answer.is_correct %}var(--success){% elif answer %}var(--danger){% else %}var(--gray-400){% endif %}; 
+                                                              border-radius: 12px; min-height: 100px;">
+                                        <div class="card-body p-3">
+                                            <p class="mb-2" style="font-weight: 700; font-size: 0.875rem; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px;">
+                                                <i class="fas fa-user me-1"></i>Sizning javobingiz:
+                                            </p>
+                                            {% if answer %}
+                                            <p class="mb-0" style="color: {% if answer.is_correct %}var(--success){% else %}var(--danger){% endif %}; font-weight: 700; font-size: 1.05rem;">
+                                                <strong style="font-size: 1.25rem;">{{ answer.user_answer|upper }})</strong> 
+                                                {{ question|get_option:answer.user_answer }}
+                                            </p>
+                                            {% else %}
+                                            <p class="mb-0" style="color: var(--gray-500); font-weight: 600; font-size: 1.05rem; font-style: italic;">
+                                                Javob berilmagan
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- To'g'ri javob -->
+                                <div class="col-md-6">
+                                    <div class="card" style="background: rgba(16, 185, 129, 0.1); border: 2px solid var(--success); border-radius: 12px; min-height: 100px;">
+                                        <div class="card-body p-3">
+                                            <p class="mb-2" style="font-weight: 700; font-size: 0.875rem; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px;">
+                                                <i class="fas fa-check-circle me-1"></i>To'g'ri javob:
+                                            </p>
+                                            <p class="mb-0" style="color: var(--success); font-weight: 700; font-size: 1.05rem;">
+                                                <strong style="font-size: 1.25rem;">{{ question.correct_answer|upper }})</strong> 
+                                                {{ question|get_option:question.correct_answer }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Explanation -->
+                            {% if question.explanation %}
+                            <div class="alert border-0 mt-4 mb-0" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%); border-left: 4px solid var(--info); border-radius: 12px;">
+                                <strong style="color: var(--info); font-weight: 700;">
+                                    <i class="fas fa-lightbulb me-2"></i>Tushuntirish:
+                                </strong> 
+                                <span style="color: var(--gray-700); font-size: 0.95rem; line-height: 1.7;">{{ question.explanation|linebreaks }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Test Results Comparison -->
+            {% if comparison_data %}
+            <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px;">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%); border-bottom: 2px solid var(--info); border-radius: 20px 20px 0 0;">
+                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                        <i class="fas fa-chart-line me-2 text-info"></i>Oldingi Natijalar bilan Solishtirish
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="font-weight: 700; color: var(--gray-700);">Urinish</th>
+                                    <th style="font-weight: 700; color: var(--gray-700);">Ball</th>
+                                    <th style="font-weight: 700; color: var(--gray-700);">Foiz</th>
+                                    <th style="font-weight: 700; color: var(--gray-700);">O'zgarish</th>
+                                    <th style="font-weight: 700; color: var(--gray-700);">Sana</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for comp in comparison_data %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary" style="padding: 0.5rem 1rem;">
+                                            #{{ comp.result.attempt_number }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ comp.result.score }}/{{ comp.result.total_questions }}</strong>
+                                        {% if comp.score_diff > 0 %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="fas fa-arrow-up"></i> +{{ comp.score_diff }}
+                                        </span>
+                                        {% elif comp.score_diff < 0 %}
+                                        <span class="badge bg-danger ms-2">
+                                            <i class="fas fa-arrow-down"></i> {{ comp.score_diff }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary ms-2">=</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ comp.result.percentage|floatformat:1 }}%</strong>
+                                        {% if comp.percentage_diff > 0 %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="fas fa-arrow-up"></i> +{{ comp.percentage_diff }}%
+                                        </span>
+                                        {% elif comp.percentage_diff < 0 %}
+                                        <span class="badge bg-danger ms-2">
+                                            <i class="fas fa-arrow-down"></i> {{ comp.percentage_diff }}%
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary ms-2">=</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if comp.time_diff is not None %}
+                                            {% if comp.time_diff < 0 %}
+                                            <span class="text-success">
+                                                <i class="fas fa-arrow-down"></i> {{ comp.time_diff_abs }}s tezroq
+                                            </span>
+                                            {% elif comp.time_diff > 0 %}
+                                            <span class="text-danger">
+                                                <i class="fas fa-arrow-up"></i> {{ comp.time_diff }}s sekinroq
+                                            </span>
+                                            {% else %}
+                                            <span class="text-muted">Bir xil</span>
+                                            {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ comp.result.completed_at|date:"d.m.Y H:i" }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action buttons -->
+            <div class="text-center mt-4 d-flex gap-3 justify-content-center flex-wrap">
+                <a href="{% url 'core:test_list' %}" 
+                   class="btn btn-primary hover-lift" 
+                   style="min-width: 200px; border-radius: 12px; padding: 0.875rem 1.5rem; font-weight: 600;"
+                   hx-get="{% url 'core:test_list' %}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true">
+                    <i class="fas fa-arrow-left me-2"></i>Testlar ro'yxatiga qaytish
+                </a>
+                <a href="{% url 'core:profile' %}" 
+                   class="btn btn-outline-primary hover-lift" 
+                   style="min-width: 200px; border-radius: 12px; padding: 0.875rem 1.5rem; font-weight: 600;"
+                   hx-get="{% url 'core:profile' %}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true">
+                    <i class="fas fa-user me-2"></i>Profilga o'tish
+                </a>
+                {% if can_retake %}
+                <a href="{% url 'core:test_retake' test_result.test.pk %}" 
+                   class="btn btn-success hover-lift" 
+                   style="min-width: 200px; border-radius: 12px; padding: 0.875rem 1.5rem; font-weight: 600;"
+                   hx-post="{% url 'core:test_retake' test_result.test.pk %}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true">
+                    <i class="fas fa-redo me-2"></i>Qayta ishlash
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

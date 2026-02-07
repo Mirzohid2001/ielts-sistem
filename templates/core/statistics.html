@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistika - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0" style="background: linear-gradient(135deg, var(--info) 0%, #0891b2 100%); color: white; box-shadow: var(--shadow-lg);">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-right: 1.5rem; backdrop-filter: blur(10px);">
+                            <i class="fas fa-chart-bar fa-3x text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="mb-1" style="font-weight: 700; font-size: 2rem; color: white;">Statistika</h1>
+                            <p class="mb-0" style="color: rgba(255,255,255,0.9); font-size: 1.1rem;">Batafsil statistika va tahlillar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kategoriya bo'yicha statistika -->
+    {% if category_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0" style="font-weight: 600;">Kategoriya bo'yicha natijalar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Kategoriya</th>
+                                    <th class="text-center">Testlar soni</th>
+                                    <th class="text-center">O'rtacha ball</th>
+                                    <th class="text-center">Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in category_stats %}
+                                <tr>
+                                    <td><strong>{{ stat.test__category__name }}</strong></td>
+                                    <td class="text-center">{{ stat.count }}</td>
+                                    <td class="text-center">
+                                        <strong>{{ stat.avg_score|floatformat:1 }}%</strong>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 24px; background: var(--gray-200); border-radius: 12px; overflow: hidden;">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                                 style="width: {{ stat.avg_score }}%; background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%); font-weight: 600; display: flex; align-items: center; padding-left: 0.5rem;">
+                                                {{ stat.avg_score|floatformat:0 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Test turi bo'yicha statistika -->
+    {% if type_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0" style="font-weight: 600;">Test turi bo'yicha natijalar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for stat in type_stats %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-0 hover-lift" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: var(--shadow-md);">
+                                <div class="card-body text-center p-4">
+                                    <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; backdrop-filter: blur(10px);">
+                                        <i class="fas fa-clipboard-list fa-2x text-white"></i>
+                                    </div>
+                                    <h6 class="mb-2" style="color: rgba(255,255,255,0.9); font-weight: 600;">{{ stat.test__test_type|title }}</h6>
+                                    <h3 class="mb-1" style="color: white; font-weight: 700; font-size: 2.5rem;">{{ stat.avg_score|floatformat:1 }}%</h3>
+                                    <p class="mb-0" style="color: rgba(255,255,255,0.8); font-size: 0.875rem;">{{ stat.count }} test</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Oylik statistika -->
+    {% if monthly_stats %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0" style="font-weight: 600;">Oylik statistika</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Oy</th>
+                                    <th class="text-center">Testlar soni</th>
+                                    <th class="text-center">O'rtacha ball</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in monthly_stats %}
+                                <tr>
+                                    <td><strong>{{ stat.month|date:"F Y" }}</strong></td>
+                                    <td class="text-center">{{ stat.count }}</td>
+                                    <td class="text-center">
+                                        <strong>{{ stat.avg_score|floatformat:1 }}%</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not category_stats and not type_stats and not monthly_stats %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Hozircha statistika mavjud emas</h5>
+                    <p class="text-muted">Testlar ishlaganingizdan keyin statistika ko'rinadi</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

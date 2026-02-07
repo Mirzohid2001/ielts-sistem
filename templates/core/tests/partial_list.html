@@ -1,0 +1,88 @@
+{% load core_filters %}
+<div class="row">
+    {% for test in tests %}
+    <div class="col-12 col-md-6 mb-4">
+        <div class="test-card">
+            <div class="test-card-gradient"></div>
+            <div class="test-card-body">
+                <div class="test-card-header">
+                    <div class="test-card-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="test-card-title">{{ test.title }}</h5>
+                        <div class="test-card-badges">
+                            <span class="badge badge-category">
+                                <i class="fas fa-folder me-1"></i>{{ test.category.name }}
+                            </span>
+                            <span class="badge badge-type">
+                                {{ test.get_test_type_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="test-card-description">
+                    {{ test.description|truncatewords:20 }}
+                </p>
+                
+                <div class="test-card-stats">
+                    {% if test.difficulty == 'easy' %}
+                    <span class="badge badge-difficulty-easy">
+                        <i class="fas fa-check-circle me-1"></i>Oson
+                    </span>
+                    {% elif test.difficulty == 'medium' %}
+                    <span class="badge badge-difficulty-medium">
+                        <i class="fas fa-equals me-1"></i>O'rta
+                    </span>
+                    {% elif test.difficulty == 'hard' %}
+                    <span class="badge badge-difficulty-hard">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Qiyin
+                    </span>
+                    {% endif %}
+                    <span class="badge badge-questions">
+                        <i class="fas fa-question-circle me-1"></i>{{ test.total_questions }} savol
+                    </span>
+                    {% if test.duration_minutes %}
+                    <span class="badge badge-duration">
+                        <i class="fas fa-clock me-1"></i>{{ test.duration_minutes }} daqiqa
+                    </span>
+                    {% endif %}
+                </div>
+                
+                {% with result=user_results|get_item:test.id %}
+                {% if result %}
+                <div class="test-card-result">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-trophy me-2 text-success"></i>
+                            <small class="text-muted">Oxirgi natija:</small>
+                        </div>
+                        <strong class="test-card-result-score">{{ result.percentage|floatformat:1 }}%</strong>
+                    </div>
+                    <div class="test-card-result-progress">
+                        <div class="test-card-result-progress-bar" style="width: {{ result.percentage }}%;"></div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endwith %}
+                
+                <a href="{% url 'core:test_detail' test.pk %}" class="btn btn-start">
+                    <i class="fas fa-play me-2"></i>Boshlash
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <h4 class="empty-state-title">Testlar topilmadi</h4>
+            <p class="empty-state-text">Qidiruv so'zini o'zgartiring yoki boshqa filterni tanlang</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+

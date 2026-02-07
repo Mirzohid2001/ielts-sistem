@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ test.title }} - Test{% endblock %}
+
+{% block content %}
+<div class="container mt-4 fade-in">
+    <div class="row">
+        <div class="col-12 col-md-10 mx-auto">
+            <!-- Header va Progress -->
+            <div class="card mb-4 border-0 test-header-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: var(--shadow-lg);">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2 gap-md-3">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-1 mb-md-2" style="font-weight: 700; font-size: 1.25rem; font-size: clamp(1.1rem, 2.5vw, 1.5rem); color: white;">{{ test.title }}</h3>
+                            <p class="mb-0" style="color: rgba(255,255,255,0.9); font-size: 0.875rem; font-size: clamp(0.8rem, 2vw, 1rem);">{{ test.category.name }} • {{ test.get_test_type_display }}</p>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            {% if test.duration_minutes %}
+                            <div id="timer-container" style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 0.5rem 1rem; padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2vw, 1.25rem); backdrop-filter: blur(10px); white-space: nowrap;">
+                                <i class="fas fa-clock me-2"></i>
+                                <span id="timer" style="font-weight: 700; font-size: clamp(0.9rem, 2vw, 1.1rem);">
+                                    {% if timer_minutes is not None %}{{ timer_minutes }}:{{ timer_seconds|stringformat:"02d" }}{% else %}{{ test.duration_minutes }}:00{% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <button type="button" id="pause-resume-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 12px; padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2vw, 1.25rem); white-space: nowrap;">
+                                <i class="fas {% if is_paused %}fa-play{% else %}fa-pause{% endif %}" id="pause-resume-icon"></i>
+                                <span id="pause-resume-text" class="d-none d-sm-inline ms-1">{% if is_paused %}Davom ettirish{% else %}To'xtatish{% endif %}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <span style="color: rgba(255,255,255,0.9); font-size: clamp(0.85rem, 2vw, 1rem);">
+                                Savol <strong style="color: white;">{{ question_number }}</strong> / <strong style="color: white;">{{ total_questions }}</strong>
+                            </span>
+                            <span style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 0.375rem 0.75rem; padding: clamp(0.375rem, 1vw, 0.5rem) clamp(0.75rem, 1.5vw, 1rem); font-weight: 600; font-size: clamp(0.85rem, 2vw, 1rem); white-space: nowrap;">
+                                {{ progress_percentage }}%
+                            </span>
+                        </div>
+                        <div class="progress" style="height: clamp(8px, 1.5vw, 12px); background: rgba(255,255,255,0.2);">
+                            <div class="progress-bar bg-white" role="progressbar" style="width: {{ progress_percentage }}%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test turiga qarab kontent -->
+            {% if test.test_type == 'listening' %}
+            <!-- Listening test: Audio player -->
+            <div class="card border-0 shadow-lg mb-3 mb-md-4" id="audio-player-container">
+                <div class="card-body p-3 p-md-4">
+                    <h5 class="mb-2 mb-md-3" style="font-weight: 700; color: var(--primary); font-size: clamp(1rem, 2.5vw, 1.25rem);">
+                        <i class="fas fa-headphones me-2"></i>Audio eshiting
+                    </h5>
+                    {% if test.audio_file %}
+                    <audio id="test-audio" controls style="width: 100%; max-width: 100%;" preload="auto">
+                        <source src="{{ test.audio_file.url }}" type="audio/mpeg">
+                        <source src="{{ test.audio_file.url }}" type="audio/wav">
+                        <source src="{{ test.audio_file.url }}" type="audio/ogg">
+                        Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
+                    </audio>
+                    <div class="mt-2 mt-md-3 d-flex flex-wrap align-items-center gap-2 gap-md-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: clamp(0.8rem, 2vw, 0.875rem);" onclick="if(typeof playAudio === 'function') playAudio(); else window.playAudio();">
+                            <i class="fas fa-play me-1 me-md-2"></i><span class="d-none d-sm-inline">Qayta eshitish</span><span class="d-sm-none">Qayta</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size: clamp(0.8rem, 2vw, 0.875rem);" onclick="if(typeof pauseAudio === 'function') pauseAudio(); else window.pauseAudio();">
+                            <i class="fas fa-pause me-1 me-md-2"></i>To'xtatish
+                        </button>
+                        <span class="text-muted" id="audio-time" style="font-size: clamp(0.75rem, 1.8vw, 0.875rem);">00:00 / 00:00</span>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0" style="font-size: clamp(0.85rem, 2vw, 1rem); padding: 0.75rem 1rem;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Eslatma:</strong> Bu test uchun audio fayl hozircha yuklanmagan. 
+                        Admin panel orqali audio fayl yuklashingiz mumkin.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif test.test_type == 'reading' and test.reading_text %}
+            <!-- Reading test: Matn -->
+            <div class="card border-0 shadow-lg mb-4">
+                <div class="card-body p-4">
+                    <h5 class="mb-3" style="font-weight: 700; color: var(--primary);">
+                        <i class="fas fa-book me-2"></i>O'qish matni
+                    </h5>
+                    <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; line-height: 1.8; font-size: 1.05rem; color: var(--gray-800); max-height: 400px; overflow-y: auto;">
+                        {{ test.reading_text|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Savol -->
+            <div id="question-container">
+                {% include 'core/tests/partial_question.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Timer va Time Tracking (agar mavjud bo'lsa)
+    {% if test.duration_minutes %}
+    let timeLeft = {% if timer_seconds_left %}{{ timer_seconds_left }}{% else %}{{ test.duration_minutes }} * 60{% endif %};
+    let elapsedTime = {% if elapsed_time %}{{ elapsed_time }}{% else %}0{% endif %};
+    let isPaused = {% if is_paused %}true{% else %}false{% endif %};
+    const timerElement = document.getElementById('timer');
+    const timerContainer = document.getElementById('timer-container');
+    let timerInterval = null;
+    let timeUpdateInterval = null;
+    
+    function updateTimer() {
+        if (isPaused) return;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            clearInterval(timeUpdateInterval);
+            // Vaqt tugadi - testni avtomatik yakunlash
+            autoSubmitTest();
+            return;
+        }
+        
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        if (timerElement) {
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Vaqt kamayganda rang o'zgartiradi
+            if (timerContainer) {
+                if (timeLeft <= 300) { // 5 daqiqa
+                    timerContainer.style.background = 'rgba(239, 68, 68, 0.4)';
+                    timerElement.style.color = '#dc2626';
+                    timerElement.style.fontWeight = '700';
+                } else if (timeLeft <= 600) { // 10 daqiqa
+                    timerContainer.style.background = 'rgba(245, 158, 11, 0.4)';
+                    timerElement.style.color = '#f59e0b';
+                } else {
+                    timerContainer.style.background = 'rgba(255,255,255,0.2)';
+                    timerElement.style.color = 'white';
+                }
+            }
+        }
+        timeLeft--;
+        elapsedTime++;
+    }
+    
+    function updateTimeTracking() {
+        if (isPaused) return;
+        
+        // Serverga vaqtni yuborish (har 30 soniyada bir marta)
+        if (elapsedTime % 30 === 0) {
+            const formData = new FormData();
+            formData.append('elapsed_time', elapsedTime);
+            formData.append('timer_seconds_left', timeLeft);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            fetch('{% url "core:test_update_time" test.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).catch(error => {
+                console.error('Time update error:', error);
+            });
+        }
+    }
+    
+    function autoSubmitTest() {
+        // Barcha javoblarni saqlash va testni yakunlash
+        const form = document.querySelector('form');
+        if (form) {
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            }).then(() => {
+                // Testni yakunlash
+                window.location.href = '{% url "core:test_result" test_result.pk %}';
+            });
+        } else {
+            window.location.href = '{% url "core:test_result" test_result.pk %}';
+        }
+    }
+    
+    // Timer boshlash (agar to'xtatilmagan bo'lsa)
+    if (!isPaused) {
+        timerInterval = setInterval(updateTimer, 1000);
+        timeUpdateInterval = setInterval(updateTimeTracking, 1000);
+        updateTimer(); // Birinchi marta darhol ko'rsatish
+    }
+    
+    // Pause/Resume button
+    const pauseResumeBtn = document.getElementById('pause-resume-btn');
+    const pauseResumeIcon = document.getElementById('pause-resume-icon');
+    const pauseResumeText = document.getElementById('pause-resume-text');
+    
+    if (pauseResumeBtn) {
+        pauseResumeBtn.addEventListener('click', function() {
+            if (isPaused) {
+                // Resume
+                fetch('{% url "core:test_resume" test.pk %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        isPaused = false;
+                        pauseResumeIcon.className = 'fas fa-pause';
+                        pauseResumeText.textContent = 'To\'xtatish';
+                        // Timer qayta boshlash
+                        timerInterval = setInterval(updateTimer, 1000);
+                        timeUpdateInterval = setInterval(updateTimeTracking, 1000);
+                    }
+                });
+            } else {
+                // Pause
+                fetch('{% url "core:test_pause" test.pk %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        isPaused = true;
+                        pauseResumeIcon.className = 'fas fa-play';
+                        pauseResumeText.textContent = 'Davom ettirish';
+                        // Timer to'xtatish
+                        clearInterval(timerInterval);
+                        clearInterval(timeUpdateInterval);
+                    }
+                });
+            }
+        });
+    }
+    
+    // Sahifa yopilganda timer ni to'xtatish va vaqtni saqlash
+    window.addEventListener('beforeunload', function() {
+        clearInterval(timerInterval);
+        clearInterval(timeUpdateInterval);
+        
+        // Oxirgi marta vaqtni saqlash
+        const formData = new FormData();
+        formData.append('elapsed_time', elapsedTime);
+        formData.append('timer_seconds_left', timeLeft);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        navigator.sendBeacon('{% url "core:test_update_time" test.pk %}', formData);
+    });
+    {% endif %}
+    
+    // Audio player funksiyalari (Listening testlar uchun)
+    {% if test.test_type == 'listening' %}
+    // Global audio funksiyalari
+    window.playAudio = function() {
+        const audio = document.getElementById('test-audio');
+        if (audio) {
+            audio.play().catch(error => {
+                console.error('Audio play error:', error);
+            });
+        }
+    };
+    
+    window.pauseAudio = function() {
+        const audio = document.getElementById('test-audio');
+        if (audio) {
+            audio.pause();
+        }
+    };
+    
+    // Global playAudioAt funksiyasi - audio timestamp dan eshitish
+    window.playAudioAt = function(timestamp) {
+        const audio = document.getElementById('test-audio');
+        if (audio) {
+            audio.currentTime = timestamp || 0;
+            audio.play().catch(error => {
+                console.error('Audio play error:', error);
+            });
+        } else {
+            console.error('Audio element topilmadi!');
+        }
+    };
+    
+    // Audio element va vaqt ko'rsatish
+    const audio = document.getElementById('test-audio');
+    const audioTimeDisplay = document.getElementById('audio-time');
+    
+    // Audio vaqtini ko'rsatish
+    if (audio && audioTimeDisplay) {
+        function updateAudioTime() {
+            const current = formatTime(audio.currentTime);
+            const total = formatTime(audio.duration || 0);
+            if (audioTimeDisplay) {
+                audioTimeDisplay.textContent = `${current} / ${total}`;
+            }
+        }
+        
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        audio.addEventListener('loadedmetadata', function() {
+            updateAudioTime();
+        });
+        
+        audio.addEventListener('timeupdate', function() {
+            updateAudioTime();
+        });
+        
+        // Audio xatoliklarini tutish
+        audio.addEventListener('error', function(e) {
+            console.error('Audio error:', e);
+            if (audioTimeDisplay) {
+                audioTimeDisplay.textContent = 'Audio yuklanmadi';
+                audioTimeDisplay.style.color = 'red';
+            }
+        });
+    }
+    {% endif %}
+    
+    // Question navigation HTMX bilan
+    document.addEventListener('DOMContentLoaded', function() {
+        // Oldingi savolga o'tish
+        const prevLinks = document.querySelectorAll('a[href*="test_take"]');
+        prevLinks.forEach(link => {
+            if (link.textContent.includes('Oldingi')) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('href');
+                    fetch(url, {
+                        headers: {
+                            'HX-Request': 'true'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('question-container').innerHTML = html;
+                        // Scroll to top
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}
+

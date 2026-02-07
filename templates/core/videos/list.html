@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}Video Darslar - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="page-header page-header-primary">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="fade-in-left">
+                            <div class="page-header-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <h1 class="page-header-title">Video Darslar</h1>
+                            <p class="page-header-subtitle">IELTS tayyorgarlik uchun video darslar</p>
+                        </div>
+                        <div class="fade-in-right">
+                            <a href="{% url 'core:dashboard' %}" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Orqaga
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Animated background elements -->
+                <div style="position: absolute; top: -30%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); border-radius: 50%; animation: float 8s ease-in-out infinite; pointer-events: none;"></div>
+                <div style="position: absolute; bottom: -20%; left: -5%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); border-radius: 50%; animation: float 10s ease-in-out infinite reverse; pointer-events: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Qidiruv va Filterlar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-3">
+                    <form method="get" id="search-form" class="d-flex gap-2 flex-wrap align-items-end">
+                        <!-- Qidiruv -->
+                        <div class="search-wrapper flex-grow-1" style="min-width: 200px;">
+                            <label class="form-label mb-1" style="font-size: 0.875rem; font-weight: 600;">
+                                <i class="fas fa-search me-1"></i>Qidirish
+                            </label>
+                            <div class="position-relative">
+                                <i class="fas fa-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-400); pointer-events: none;"></i>
+                                <input type="text" 
+                                       name="search" 
+                                       id="search-input"
+                                       class="form-control ps-5" 
+                                       placeholder="Video nomi, kategoriya..." 
+                                       value="{{ search_query }}"
+                                       autocomplete="off"
+                                       style="border-radius: 10px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Sort -->
+                        <div style="min-width: 150px;">
+                            <label class="form-label mb-1" style="font-size: 0.875rem; font-weight: 600;">
+                                <i class="fas fa-sort me-1"></i>Tartiblash
+                            </label>
+                            <select name="sort" class="form-select" style="border-radius: 10px;">
+                                <option value="order" {% if request.GET.sort == 'order' or not request.GET.sort %}selected{% endif %}>Tartib</option>
+                                <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>Yangi</option>
+                                <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Eski</option>
+                                <option value="title_asc" {% if request.GET.sort == 'title_asc' %}selected{% endif %}>Nomi (A-Z)</option>
+                                <option value="title_desc" {% if request.GET.sort == 'title_desc' %}selected{% endif %}>Nomi (Z-A)</option>
+                                <option value="views" {% if request.GET.sort == 'views' %}selected{% endif %}>Ko'rilganlar</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filterlar -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" style="border-radius: 10px;">
+                                <i class="fas fa-filter me-1"></i><span class="d-none d-sm-inline">Qidirish</span>
+                            </button>
+                            {% if search_query or selected_category %}
+                            <a href="{% url 'core:video_list' %}" class="btn btn-outline-secondary" style="border-radius: 10px;">
+                                <i class="fas fa-times me-1"></i><span class="d-none d-sm-inline">Tozalash</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Hidden fields for filters -->
+                        {% if selected_category %}
+                        <input type="hidden" name="category" value="{{ selected_category }}">
+                        {% endif %}
+                    </form>
+                    
+                    <!-- Active filters -->
+                    {% if search_query or selected_category %}
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <span class="text-muted" style="font-size: 0.875rem; font-weight: 600;">Faol filterlar:</span>
+                            {% if search_query %}
+                            <span class="badge bg-primary" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                <i class="fas fa-search me-1"></i>{{ search_query }}
+                                <a href="?{% if selected_category %}category={{ selected_category }}{% endif %}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                            </span>
+                            {% endif %}
+                            {% if selected_category %}
+                            <span class="badge bg-success" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                <i class="fas fa-folder me-1"></i>Kategoriya: {{ selected_category }}
+                                <a href="?{% if search_query %}search={{ search_query }}{% endif %}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-md-3 mb-4">
+            <!-- Mobile filter toggle -->
+            <div class="d-md-none mb-3">
+                <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#filterSidebar" aria-expanded="false" aria-controls="filterSidebar" style="border-radius: 10px;">
+                    <i class="fas fa-filter me-2"></i>Filterlar
+                    <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+            </div>
+            
+            <div class="collapse d-md-block" id="filterSidebar">
+            <div class="filter-sidebar">
+                <div class="filter-header filter-header-primary">
+                    <i class="fas fa-filter me-2"></i>Kategoriyalar
+                </div>
+                <ul class="filter-list">
+                    <li>
+                        <a href="{% url 'core:video_list' %}" 
+                           class="filter-item {% if not selected_category %}active{% endif %}">
+                            <i class="fas fa-th me-2"></i>Barchasi
+                        </a>
+                    </li>
+                    {% for category in categories %}
+                    <li>
+                        <a href="{% url 'core:video_list' %}?category={{ category.slug }}" 
+                           class="filter-item {% if selected_category == category.slug %}active{% endif %}">
+                            {% if category.icon %}<i class="{{ category.icon }} me-2"></i>{% endif %}
+                            {{ category.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-9">
+            <!-- Results count -->
+            {% if videos %}
+            <div class="mb-3">
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <strong>{{ videos|length }}</strong> ta video topildi
+                </p>
+            </div>
+            {% endif %}
+            
+            {% include 'core/videos/partial_list.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time search with debounce
+    const searchInput = document.getElementById('search-input');
+    const searchForm = document.getElementById('search-form');
+    let searchTimeout;
+    
+    if (searchInput && searchForm) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            // Auto-submit after 500ms of no typing
+            searchTimeout = setTimeout(function() {
+                if (searchInput.value.length >= 2 || searchInput.value.length === 0) {
+                    searchForm.submit();
+                }
+            }, 500);
+        });
+        
+        // Enter key to submit immediately
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                e.preventDefault();
+                searchForm.submit();
+            }
+        });
+    }
+    
+    // Filter sidebar collapse animation
+    const filterSidebar = document.getElementById('filterSidebar');
+    if (filterSidebar) {
+        filterSidebar.addEventListener('show.bs.collapse', function() {
+            const btn = document.querySelector('[data-bs-target="#filterSidebar"]');
+            if (btn) {
+                const icon = btn.querySelector('.fa-chevron-down');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            }
+        });
+        
+        filterSidebar.addEventListener('hide.bs.collapse', function() {
+            const btn = document.querySelector('[data-bs-target="#filterSidebar"]');
+            if (btn) {
+                const icon = btn.querySelector('.fa-chevron-up');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,536 @@
+from django.contrib import admin
+from django.utils.html import format_html
+from django.urls import reverse, path
+from django.shortcuts import render
+from django.db.models import Count, Avg, Q, Sum
+from django.utils import timezone
+from datetime import timedelta
+from import_export.admin import ImportExportModelAdmin
+from import_export import resources
+from .models import (
+    Category, VideoLesson, Test, Question,
+    UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
+    Bookmark, StudyStreak, VideoNote, VideoRating,
+    VideoComment, VideoPlaylist, PlaylistVideo
+)
+from django.contrib.auth.models import User
+
+
+# Category Admin
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'icon', 'color_display', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name', 'slug', 'description']
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ['order', 'name']
+    
+    def color_display(self, obj):
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
+            obj.color, obj.color
+        )
+    color_display.short_description = "Rang"
+
+
+# VideoLesson Admin
+@admin.register(VideoLesson)
+class VideoLessonAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category', 'youtube_id', 'duration_display', 'views_count', 'is_active', 'created_at']
+    list_filter = ['category', 'is_active', 'created_at']
+    search_fields = ['title', 'description', 'youtube_id']
+    ordering = ['order', 'created_at']
+    readonly_fields = ['youtube_id', 'youtube_thumbnail', 'views_count', 'created_at', 'updated_at']
+    
+    def save_model(self, request, obj, form, change):
+        """Admin panelda saqlashda YouTube ID ni yangilash"""
+        if obj.youtube_url:
+            extracted_id = obj.extract_youtube_id(obj.youtube_url)
+            if extracted_id and len(extracted_id) == 11:
+                obj.youtube_id = extracted_id
+                if not obj.youtube_thumbnail:
+                    obj.youtube_thumbnail = f"https://img.youtube.com/vi/{obj.youtube_id}/maxresdefault.jpg"
+            elif not extracted_id:
+                # Agar extract qilinmasa, youtube_id ni tozalash
+                obj.youtube_id = ''
+        super().save_model(request, obj, form, change)
+    
+    fieldsets = (
+        ('Asosiy ma\'lumotlar', {
+            'fields': ('title', 'category', 'description', 'is_active')
+        }),
+        ('YouTube', {
+            'fields': ('youtube_url', 'youtube_id', 'youtube_thumbnail', 'duration')
+        }),
+        ('Tartib', {
+            'fields': ('order',)
+        }),
+        ('Statistika', {
+            'fields': ('views_count', 'created_at', 'updated_at')
+        }),
+    )
+    
+    def duration_display(self, obj):
+        if obj.duration:
+            minutes = obj.duration // 60
+            seconds = obj.duration % 60
+            return f"{minutes}:{seconds:02d}"
+        return "-"
+    duration_display.short_description = "Davomiyligi"
+
+
+# Question Inline
+class QuestionInline(admin.TabularInline):
+    model = Question
+    extra = 1
+    fields = ['order', 'question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'points']
+
+
+# Test Admin
+@admin.register(Test)
+class TestAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category', 'test_type', 'difficulty', 'total_questions_display', 'duration_minutes', 'passing_score', 'allow_retake', 'max_attempts', 'is_active', 'created_at']
+    list_filter = ['category', 'test_type', 'difficulty', 'allow_retake', 'is_active', 'created_at']
+    search_fields = ['title', 'description']
+    ordering = ['-created_at']
+    inlines = [QuestionInline]
+    
+    fieldsets = (
+        ('Asosiy ma\'lumotlar', {
+            'fields': ('title', 'category', 'test_type', 'difficulty', 'description', 'is_active')
+        }),
+        ('Parametrlar', {
+            'fields': ('duration_minutes', 'passing_score', 'allow_retake', 'max_attempts')
+        }),
+        ('Test kontenti', {
+            'fields': ('audio_file', 'reading_text'),
+            'description': 'Listening testlar uchun audio fayl, Reading testlar uchun matn qo\'shing.'
+        }),
+    )
+    
+    def total_questions_display(self, obj):
+        count = obj.total_questions
+        return format_html('<strong>{}</strong>', count)
+    total_questions_display.short_description = "Savollar soni"
+
+
+# Question Admin
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ['test', 'order', 'question_text_short', 'correct_answer', 'audio_timestamp', 'points', 'created_at']
+    list_filter = ['test', 'test__category', 'created_at']
+    search_fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
+    ordering = ['test', 'order']
+    fieldsets = (
+        ('Asosiy ma\'lumotlar', {
+            'fields': ('test', 'order', 'question_text', 'question_image', 'points')
+        }),
+        ('Javoblar', {
+            'fields': ('option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'explanation')
+        }),
+        ('Listening testlar uchun', {
+            'fields': ('audio_timestamp',),
+            'description': 'Listening testlar uchun audio timestamp (soniya) qo\'shing. Masalan: 15.5 (15.5 soniyadan boshlash)'
+        }),
+    )
+    
+    def question_text_short(self, obj):
+        return obj.question_text[:100] + "..." if len(obj.question_text) > 100 else obj.question_text
+    question_text_short.short_description = "Savol"
+
+
+# UserTestAnswer Inline
+class UserTestAnswerInline(admin.TabularInline):
+    model = UserTestAnswer
+    extra = 0
+    readonly_fields = ['question', 'user_answer', 'is_correct', 'answered_at']
+    can_delete = False
+
+
+# UserTestResult Admin - Yaxshilangan
+@admin.register(UserTestResult)
+class UserTestResultAdmin(ImportExportModelAdmin):
+    list_display = ['user', 'test', 'score', 'total_questions', 'percentage', 'correct_answers', 'attempt_number', 'is_passed_display', 'completed_at']
+    list_filter = ['test', 'test__category', 'completed_at', 'started_at', 'test__test_type']
+    search_fields = ['user__username', 'user__email', 'user__first_name', 'user__last_name', 'test__title']
+    readonly_fields = ['score', 'percentage', 'correct_answers', 'wrong_answers', 'answers_json', 'attempt_number', 'started_at', 'completed_at']
+    ordering = ['-completed_at', '-started_at']
+    inlines = [UserTestAnswerInline]
+    list_per_page = 50
+    
+    fieldsets = (
+        ('Asosiy ma\'lumotlar', {
+            'fields': ('user', 'test')
+        }),
+        ('Natija', {
+            'fields': ('score', 'total_questions', 'percentage', 'correct_answers', 'wrong_answers', 'time_taken', 'attempt_number')
+        }),
+        ('Vaqt', {
+            'fields': ('started_at', 'completed_at')
+        }),
+        ('Javoblar', {
+            'fields': ('answers_json',)
+        }),
+    )
+    
+    def is_passed_display(self, obj):
+        if obj.is_passed():
+            return format_html('<span style="color: green; font-weight: bold;">✓ O\'tdi</span>')
+        return format_html('<span style="color: red; font-weight: bold;">✗ O\'tmadi</span>')
+    is_passed_display.short_description = "Holat"
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('user', 'test', 'test__category')
+
+
+# UserVideoProgress Admin - Yaxshilangan
+@admin.register(UserVideoProgress)
+class UserVideoProgressAdmin(admin.ModelAdmin):
+    list_display = ['user', 'video', 'category_display', 'watched', 'watch_percentage', 'last_watched_at', 'completed_at']
+    list_filter = ['watched', 'video__category', 'last_watched_at', 'completed_at']
+    search_fields = ['user__username', 'user__email', 'user__first_name', 'user__last_name', 'video__title']
+    readonly_fields = ['last_watched_at', 'completed_at']
+    ordering = ['-last_watched_at']
+    list_per_page = 50
+    
+    fieldsets = (
+        ('Asosiy ma\'lumotlar', {
+            'fields': ('user', 'video')
+        }),
+        ('Progress', {
+            'fields': ('watched', 'watch_percentage', 'last_watched_at', 'completed_at')
+        }),
+    )
+    
+    def category_display(self, obj):
+        return obj.video.category.name if obj.video.category else "-"
+    category_display.short_description = "Kategoriya"
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('user', 'video', 'video__category')
+
+
+# UserActivity Admin
+@admin.register(UserActivity)
+class UserActivityAdmin(admin.ModelAdmin):
+    list_display = ['user', 'activity_type', 'related_object_type', 'created_at']
+    list_filter = ['activity_type', 'related_object_type', 'created_at']
+    search_fields = ['user__username', 'user__email']
+    readonly_fields = ['created_at']
+    ordering = ['-created_at']
+    list_per_page = 100
+    
+    fieldsets = (
+        ('Asosiy ma\'lumotlar', {
+            'fields': ('user', 'activity_type')
+        }),
+        ('Bog\'liq obyekt', {
+            'fields': ('related_object_type', 'related_object_id', 'metadata')
+        }),
+        ('Vaqt', {
+            'fields': ('created_at',)
+        }),
+    )
+
+
+@admin.register(Bookmark)
+class BookmarkAdmin(admin.ModelAdmin):
+    list_display = ['user', 'video', 'test', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__username', 'video__title', 'test__title']
+    readonly_fields = ['created_at']
+    ordering = ['-created_at']
+
+
+@admin.register(StudyStreak)
+class StudyStreakAdmin(admin.ModelAdmin):
+    list_display = ['user', 'date', 'activities_count', 'created_at']
+    list_filter = ['date', 'created_at']
+    search_fields = ['user__username']
+    readonly_fields = ['created_at']
+    ordering = ['-date', '-created_at']
+
+
+@admin.register(VideoNote)
+class VideoNoteAdmin(admin.ModelAdmin):
+    list_display = ['user', 'video', 'timestamp_display', 'note_text_short', 'created_at']
+    list_filter = ['video', 'created_at']
+    search_fields = ['user__username', 'video__title', 'note_text']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+    
+    def timestamp_display(self, obj):
+        return obj.get_timestamp_display()
+    timestamp_display.short_description = "Vaqt"
+    
+    def note_text_short(self, obj):
+        return obj.note_text[:50] + "..." if len(obj.note_text) > 50 else obj.note_text
+    note_text_short.short_description = "Eslatma"
+
+
+@admin.register(VideoRating)
+class VideoRatingAdmin(admin.ModelAdmin):
+    list_display = ['user', 'video', 'rating', 'created_at']
+    list_filter = ['rating', 'created_at']
+    search_fields = ['user__username', 'video__title']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+
+
+@admin.register(VideoComment)
+class VideoCommentAdmin(admin.ModelAdmin):
+    list_display = ['user', 'video', 'comment_text_short', 'parent', 'is_edited', 'created_at']
+    list_filter = ['video', 'is_edited', 'created_at']
+    search_fields = ['user__username', 'video__title', 'comment_text']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+    
+    def comment_text_short(self, obj):
+        return obj.comment_text[:50] + "..." if len(obj.comment_text) > 50 else obj.comment_text
+    comment_text_short.short_description = "Izoh"
+
+
+class PlaylistVideoInline(admin.TabularInline):
+    model = PlaylistVideo
+    extra = 1
+    fields = ['video', 'order']
+    ordering = ['order']
+
+
+@admin.register(VideoPlaylist)
+class VideoPlaylistAdmin(admin.ModelAdmin):
+    list_display = ['name', 'user', 'videos_count', 'is_public', 'created_at']
+    list_filter = ['is_public', 'created_at']
+    search_fields = ['name', 'user__username', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    inlines = [PlaylistVideoInline]
+    ordering = ['-created_at']
+    
+    def videos_count(self, obj):
+        return obj.videos_count
+    videos_count.short_description = "Videolar soni"
+
+
+# Custom Admin Site - Statistikalar bilan
+class CustomAdminSite(admin.AdminSite):
+    site_header = "IELTS Center - Admin Panel"
+    site_title = "IELTS Admin"
+    index_title = "Boshqaruv paneli"
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('statistics/', self.admin_view(self.statistics_view), name='statistics'),
+        ]
+        return custom_urls + urls
+    
+    def statistics_view(self, request):
+        """Umumiy statistikalar"""
+        # Foydalanuvchilar statistikasi
+        total_users = User.objects.count()
+        active_users_30d = User.objects.filter(
+            last_login__gte=timezone.now() - timedelta(days=30)
+        ).count()
+        active_users_7d = User.objects.filter(
+            last_login__gte=timezone.now() - timedelta(days=7)
+        ).count()
+        
+        # Test statistikasi
+        total_tests = Test.objects.filter(is_active=True).count()
+        total_test_results = UserTestResult.objects.filter(completed_at__isnull=False).count()
+        passed_tests = UserTestResult.objects.filter(completed_at__isnull=False).filter(
+            score__gte=Q(test__passing_score)
+        ).count()
+        failed_tests = total_test_results - passed_tests
+        
+        # O'rtacha ball
+        avg_score = UserTestResult.objects.filter(
+            completed_at__isnull=False
+        ).aggregate(avg=Avg('percentage'))['avg'] or 0
+        
+        # Video statistikasi
+        total_videos = VideoLesson.objects.filter(is_active=True).count()
+        total_video_views = UserVideoProgress.objects.filter(watched=True).count()
+        total_video_watches = UserVideoProgress.objects.count()
+        
+        # Kategoriya bo'yicha test natijalari
+        category_test_stats = Category.objects.annotate(
+            test_count=Count('test', filter=Q(test__is_active=True)),
+            result_count=Count('test__results', filter=Q(test__results__completed_at__isnull=False)),
+            avg_score=Avg('test__results__percentage', filter=Q(test__results__completed_at__isnull=False))
+        ).order_by('order')
+        
+        # Eng ko'p ishlangan testlar
+        popular_tests = Test.objects.annotate(
+            result_count=Count('results', filter=Q(results__completed_at__isnull=False)),
+            avg_score=Avg('results__percentage', filter=Q(results__completed_at__isnull=False))
+        ).filter(result_count__gt=0).order_by('-result_count')[:10]
+        
+        # Eng ko'p ko'rilgan videolar
+        popular_videos = VideoLesson.objects.annotate(
+            view_count=Count('progress', filter=Q(progress__watched=True))
+        ).filter(view_count__gt=0).order_by('-view_count')[:10]
+        
+        # Foydalanuvchilar bo'yicha statistikalar
+        top_users = User.objects.annotate(
+            test_count=Count('test_results', filter=Q(test_results__completed_at__isnull=False)),
+            avg_score=Avg('test_results__percentage', filter=Q(test_results__completed_at__isnull=False)),
+            video_count=Count('video_progress', filter=Q(video_progress__watched=True))
+        ).filter(test_count__gt=0).order_by('-test_count')[:10]
+        
+        # Oxirgi 30 kundagi faollik
+        recent_activities = UserActivity.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)
+        ).values('activity_type').annotate(count=Count('id')).order_by('-count')
+        
+        context = {
+            **self.each_context(request),
+            'total_users': total_users,
+            'active_users_30d': active_users_30d,
+            'active_users_7d': active_users_7d,
+            'total_tests': total_tests,
+            'total_test_results': total_test_results,
+            'passed_tests': passed_tests,
+            'failed_tests': failed_tests,
+            'avg_score': round(avg_score, 2),
+            'total_videos': total_videos,
+            'total_video_views': total_video_views,
+            'total_video_watches': total_video_watches,
+            'category_test_stats': category_test_stats,
+            'popular_tests': popular_tests,
+            'popular_videos': popular_videos,
+            'top_users': top_users,
+            'recent_activities': recent_activities,
+        }
+        
+        return render(request, 'admin/statistics.html', context)
+
+
+# Custom Admin Index View
+def custom_admin_index(request):
+    """Admin index sahifasini yaxshilash"""
+    # Asosiy statistikalar
+    total_users = User.objects.count()
+    total_tests = Test.objects.filter(is_active=True).count()
+    total_videos = VideoLesson.objects.filter(is_active=True).count()
+    total_test_results = UserTestResult.objects.filter(completed_at__isnull=False).count()
+    total_video_views = UserVideoProgress.objects.filter(watched=True).count()
+    
+    # Oxirgi test natijalari
+    recent_results = UserTestResult.objects.filter(
+        completed_at__isnull=False
+    ).select_related('user', 'test', 'test__category').order_by('-completed_at')[:10]
+    
+    # Oxirgi video ko'rishlar
+    recent_video_views = UserVideoProgress.objects.filter(
+        watched=True
+    ).select_related('user', 'video', 'video__category').order_by('-completed_at')[:10]
+    
+    # Eng faol foydalanuvchilar (oxirgi 7 kun)
+    active_users = User.objects.filter(
+        last_login__gte=timezone.now() - timedelta(days=7)
+    ).annotate(
+        test_count=Count('test_results', filter=Q(test_results__completed_at__isnull=False)),
+        video_count=Count('video_progress', filter=Q(video_progress__watched=True))
+    ).order_by('-last_login')[:10]
+    
+    # Chartlar uchun ma'lumotlar
+    # Test natijalari (o'tgan/o'tmagan)
+    # Har bir test natijasini alohida tekshirish kerak
+    all_results = UserTestResult.objects.filter(
+        completed_at__isnull=False
+    ).select_related('test')
+    passed_tests = sum(1 for r in all_results if r.is_passed())
+    failed_tests = total_test_results - passed_tests
+    
+    # O'rtacha ball
+    avg_score = UserTestResult.objects.filter(
+        completed_at__isnull=False
+    ).aggregate(avg=Avg('percentage'))['avg'] or 0
+    
+    # Kategoriya bo'yicha statistikalar
+    # Barcha kategoriyalarni olish, hatto testlari bo'lmasa ham
+    category_test_stats = Category.objects.filter(is_active=True).annotate(
+        test_count=Count('tests', filter=Q(tests__is_active=True), distinct=True),
+        result_count=Count('tests__results', filter=Q(tests__results__completed_at__isnull=False), distinct=True),
+        avg_score=Avg('tests__results__percentage', filter=Q(tests__results__completed_at__isnull=False))
+    ).order_by('order')
+    
+    context = {
+        'total_users': total_users,
+        'total_tests': total_tests,
+        'total_videos': total_videos,
+        'total_test_results': total_test_results,
+        'total_video_views': total_video_views,
+        'recent_results': recent_results,
+        'recent_video_views': recent_video_views,
+        'active_users': active_users,
+        'passed_tests': passed_tests,
+        'failed_tests': failed_tests,
+        'avg_score': round(avg_score, 2),
+        'category_test_stats': category_test_stats,
+    }
+    
+    # Django admin index template ni override qilish
+    from django.contrib.admin.views.decorators import staff_member_required
+    from django.contrib.admin import site
+    
+    return render(request, 'admin/index.html', {
+        **site.each_context(request),
+        **context,
+    })
+
+
+# Admin index ni override qilish
+admin.site.index_template = 'admin/custom_index.html'
+admin.site.site_header = "IELTS Center - Admin Panel"
+admin.site.site_title = "IELTS Admin"
+admin.site.index_title = "Boshqaruv paneli"
+
+# Admin index view ni override qilish
+original_index = admin.site.index
+
+def custom_index(request, extra_context=None):
+    """Admin index sahifasini yaxshilash"""
+    # Asosiy statistikalar
+    total_users = User.objects.count()
+    total_tests = Test.objects.filter(is_active=True).count()
+    total_videos = VideoLesson.objects.filter(is_active=True).count()
+    total_test_results = UserTestResult.objects.filter(completed_at__isnull=False).count()
+    total_video_views = UserVideoProgress.objects.filter(watched=True).count()
+    
+    # Oxirgi test natijalari
+    recent_results = UserTestResult.objects.filter(
+        completed_at__isnull=False
+    ).select_related('user', 'test', 'test__category').order_by('-completed_at')[:10]
+    
+    # Oxirgi video ko'rishlar
+    recent_video_views = UserVideoProgress.objects.filter(
+        watched=True
+    ).select_related('user', 'video', 'video__category').order_by('-completed_at')[:10]
+    
+    # Eng faol foydalanuvchilar (oxirgi 7 kun)
+    active_users = User.objects.filter(
+        last_login__gte=timezone.now() - timedelta(days=7)
+    ).annotate(
+        test_count=Count('test_results', filter=Q(test_results__completed_at__isnull=False)),
+        video_count=Count('video_progress', filter=Q(video_progress__watched=True))
+    ).order_by('-last_login')[:10]
+    
+    extra_context = extra_context or {}
+    extra_context.update({
+        'total_users': total_users,
+        'total_tests': total_tests,
+        'total_videos': total_videos,
+        'total_test_results': total_test_results,
+        'total_video_views': total_video_views,
+        'recent_results': recent_results,
+        'recent_video_views': recent_video_views,
+        'active_users': active_users,
+    })
+    
+    return original_index(request, extra_context=extra_context)
+
+admin.site.index = custom_index

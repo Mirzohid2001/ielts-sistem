@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Reyting - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="page-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #fbbf24 100%);">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="fade-in-left">
+                            <div class="page-header-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <h1 class="page-header-title">Reyting</h1>
+                            <p class="page-header-subtitle">Eng yaxshi natijalar</p>
+                        </div>
+                        <div class="fade-in-right">
+                            <a href="{% url 'core:dashboard' %}" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Orqaga
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Animated background elements -->
+                <div style="position: absolute; top: -30%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); border-radius: 50%; animation: float 8s ease-in-out infinite; pointer-events: none;"></div>
+                <div style="position: absolute; bottom: -20%; left: -5%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); border-radius: 50%; animation: float 10s ease-in-out infinite reverse; pointer-events: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Foydalanuvchi pozitsiyasi -->
+    {% if user_position %}
+    <div class="row mb-5 fade-in-up">
+        <div class="col-12">
+            <div class="card border-0" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: var(--shadow-2xl); border-radius: 28px; position: relative; overflow: hidden;">
+                <div class="card-body p-5">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div>
+                            <h5 class="mb-3" style="color: rgba(255,255,255,0.95); font-weight: 700; font-size: 1.25rem;">Sizning pozitsiyangiz</h5>
+                            <p class="mb-0" style="color: rgba(255,255,255,0.9); font-size: 1.125rem;">O'rtacha ball: <strong style="color: white; font-size: 1.5rem; font-weight: 800;">{{ user_avg }}%</strong></p>
+                        </div>
+                        <div class="text-end mt-3 mt-md-0">
+                            <div class="glass" style="border-radius: 20px; padding: 2rem 2.5rem; backdrop-filter: blur(20px); border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                                <div style="font-size: 0.9375rem; opacity: 0.95; margin-bottom: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Pozitsiya</div>
+                                <h2 class="mb-0" style="color: white; font-weight: 900; font-size: 4rem; text-shadow: 0 4px 20px rgba(0,0,0,0.3);">#{{ user_position }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Animated background -->
+                <div style="position: absolute; top: -20%; right: -10%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); border-radius: 50%; animation: float 6s ease-in-out infinite; pointer-events: none;"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Leaderboard -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(30px); border-radius: 28px; box-shadow: var(--shadow-2xl); border: 1px solid rgba(255, 255, 255, 0.5);">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%); border-bottom: 3px solid var(--warning); padding: 2rem; border-radius: 28px 28px 0 0;">
+                    <h5 class="mb-0 gradient-text" style="font-weight: 900; font-size: 1.5rem;">Top 10</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);">
+                                    <th style="width: 80px; padding: 1.5rem 1rem; font-weight: 800; color: var(--gray-700);">#</th>
+                                    <th style="padding: 1.5rem 1rem; font-weight: 800; color: var(--gray-700);">Foydalanuvchi</th>
+                                    <th class="text-center" style="padding: 1.5rem 1rem; font-weight: 800; color: var(--gray-700);">O'rtacha ball</th>
+                                    <th class="text-center" style="padding: 1.5rem 1rem; font-weight: 800; color: var(--gray-700);">Testlar soni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in leaderboard %}
+                                <tr class="leaderboard-row {% if item.user.id == user.id %}leaderboard-row-current{% endif %}" style="transition: all var(--transition-base);">
+                                    <td style="padding: 1.5rem 1rem; vertical-align: middle;">
+                                        {% if forloop.counter == 1 %}
+                                        <div class="leaderboard-medal leaderboard-medal-gold">
+                                            <span style="font-size: 2rem;">🥇</span>
+                                        </div>
+                                        {% elif forloop.counter == 2 %}
+                                        <div class="leaderboard-medal leaderboard-medal-silver">
+                                            <span style="font-size: 2rem;">🥈</span>
+                                        </div>
+                                        {% elif forloop.counter == 3 %}
+                                        <div class="leaderboard-medal leaderboard-medal-bronze">
+                                            <span style="font-size: 2rem;">🥉</span>
+                                        </div>
+                                        {% else %}
+                                        <div class="leaderboard-position">
+                                            #{{ forloop.counter }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 1.5rem 1rem; vertical-align: middle;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="leaderboard-avatar">
+                                                {{ item.user.first_name|default:item.user.username|first|upper }}
+                                            </div>
+                                            <div>
+                                                <strong style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">{{ item.user.first_name|default:item.user.username }}</strong>
+                                                {% if item.user.id == user.id %}
+                                                <span class="badge bg-primary ms-2" style="font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem;">Siz</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center" style="padding: 1.5rem 1rem; vertical-align: middle;">
+                                        <div class="leaderboard-score">
+                                            {{ item.avg_score }}%
+                                        </div>
+                                    </td>
+                                    <td class="text-center" style="padding: 1.5rem 1rem; vertical-align: middle;">
+                                        <span class="badge" style="background: var(--gray-200); color: var(--gray-700); font-size: 0.875rem; font-weight: 700; padding: 0.625rem 1rem; border-radius: 12px;">{{ item.total_tests }} test</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-5">
+                                        <div class="empty-state-icon" style="width: 100px; height: 100px; margin: 0 auto 1.5rem;">
+                                            <i class="fas fa-trophy"></i>
+                                        </div>
+                                        <h5 class="empty-state-title">Hozircha reyting mavjud emas</h5>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

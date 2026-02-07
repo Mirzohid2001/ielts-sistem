@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Oylik Hisobot - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="fade-in-left">
+                            <div class="page-header-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <h1 class="page-header-title">Oylik Hisobot</h1>
+                            <p class="page-header-subtitle">
+                                {{ month_start|date:"F Y" }}
+                            </p>
+                        </div>
+                        <div class="fade-in-right">
+                            <a href="{% url 'core:profile' %}" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Orqaga
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistika -->
+    <div class="row mb-4">
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-list fa-2x fa-md-3x mb-2 mb-md-3 text-primary" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ total_tests }}</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Testlar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-2x fa-md-3x mb-2 mb-md-3 text-success" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ avg_score }}%</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">O'rtacha ball</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-video fa-2x fa-md-3x mb-2 mb-md-3 text-info" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ total_videos }}</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Videolar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-fire fa-3x mb-3 text-warning"></i>
+                    <h3 class="mb-0">{{ study_days }}</h3>
+                    <p class="text-muted mb-0">O'qish kunlari</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kategoriya bo'yicha statistika -->
+    {% if category_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Kategoriya bo'yicha statistika</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Kategoriya</th>
+                                    <th>Testlar soni</th>
+                                    <th>O'rtacha ball</th>
+                                    <th>O'tgan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in category_stats %}
+                                <tr>
+                                    <td><strong>{{ stat.test__category__name }}</strong></td>
+                                    <td>{{ stat.count }}</td>
+                                    <td>
+                                        <span class="badge {% if stat.avg_score >= 70 %}bg-success{% elif stat.avg_score >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ stat.avg_score|floatformat:1 }}%
+                                        </span>
+                                    </td>
+                                    <td><span class="text-success">{{ stat.passed }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Test natijalari -->
+    {% if test_results %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Test natijalari</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sana</th>
+                                    <th>Test</th>
+                                    <th>Kategoriya</th>
+                                    <th>Ball</th>
+                                    <th>Foiz</th>
+                                    <th>Holat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in test_results %}
+                                <tr>
+                                    <td>{{ result.completed_at|date:"d.m.Y H:i" }}</td>
+                                    <td><a href="{% url 'core:test_result' result.pk %}">{{ result.test.title }}</a></td>
+                                    <td>{{ result.test.category.name }}</td>
+                                    <td>{{ result.score }}/{{ result.total_questions }}</td>
+                                    <td>
+                                        <span class="badge {% if result.percentage >= 70 %}bg-success{% elif result.percentage >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ result.percentage|floatformat:1 }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if result.is_passed %}
+                                        <span class="badge bg-success">O'tdi</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">O'tmadi</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}Batafsil Tahlillar - IELTS Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="fade-in-left">
+                            <div class="page-header-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h1 class="page-header-title">Batafsil Tahlillar</h1>
+                            <p class="page-header-subtitle">Sizning natijalaringiz va progress tahlili</p>
+                        </div>
+                        <div class="fade-in-right">
+                            <a href="{% url 'core:profile' %}" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Orqaga
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <span class="text-muted d-none d-sm-inline">Vaqt oralig'i:</span>
+                        <a href="?period=all" class="btn btn-sm {% if period == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Barchasi</a>
+                        <a href="?period=week" class="btn btn-sm {% if period == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Hafta</a>
+                        <a href="?period=month" class="btn btn-sm {% if period == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Oy</a>
+                        <a href="?period=year" class="btn btn-sm {% if period == 'year' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Yil</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asosiy Statistika -->
+    <div class="row mb-4">
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-list fa-2x fa-md-3x mb-2 mb-md-3 text-primary" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ total_tests }}</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Jami testlar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-2x fa-md-3x mb-2 mb-md-3 text-success" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ avg_score }}%</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">O'rtacha ball</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x fa-md-3x mb-2 mb-md-3 text-info" style="font-size: clamp(1.5rem, 4vw, 3rem);"></i>
+                    <h3 class="mb-0" style="font-size: clamp(1.25rem, 3vw, 2rem);">{{ passed_tests }}</h3>
+                    <p class="text-muted mb-0" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">O'tgan testlar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 mb-3">
+            <div class="card border-0 shadow-lg stat-card stat-card-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-3x mb-3 text-warning"></i>
+                    <h3 class="mb-0">
+                        {% if avg_time >= 3600 %}
+                            {% widthratio avg_time 3600 1 %}s
+                        {% elif avg_time >= 60 %}
+                            {% widthratio avg_time 60 1 %}m
+                        {% else %}
+                            {{ avg_time }}s
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted mb-0">O'rtacha vaqt</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafiklar -->
+    <div class="row mb-4">
+        <div class="col-12 col-md-6 mb-4">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0" style="font-size: clamp(1rem, 2.5vw, 1.25rem);"><i class="fas fa-chart-bar me-2"></i>Kategoriya bo'yicha natijalar</h5>
+                </div>
+                <div class="card-body" style="position: relative; height: 300px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0" style="font-size: clamp(1rem, 2.5vw, 1.25rem);"><i class="fas fa-chart-line me-2"></i>Kunlik progress</h5>
+                </div>
+                <div class="card-body" style="position: relative; height: 300px;">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kategoriya bo'yicha batafsil -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0" style="font-size: clamp(1rem, 2.5vw, 1.25rem);"><i class="fas fa-list me-2"></i>Kategoriya bo'yicha batafsil natijalar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Kategoriya</th>
+                                    <th style="font-size: clamp(0.75rem, 2vw, 0.875rem);">Testlar soni</th>
+                                    <th style="font-size: clamp(0.75rem, 2vw, 0.875rem);">O'rtacha ball</th>
+                                    <th class="d-none d-md-table-cell" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">O'tgan</th>
+                                    <th class="d-none d-md-table-cell" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">O'tmagan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in category_performance %}
+                                <tr>
+                                    <td style="font-size: clamp(0.875rem, 2vw, 1rem);"><strong>{{ item.test__category__name }}</strong></td>
+                                    <td style="font-size: clamp(0.875rem, 2vw, 1rem);">{{ item.count }}</td>
+                                    <td style="font-size: clamp(0.875rem, 2vw, 1rem);">
+                                        <span class="badge {% if item.avg_score >= 70 %}bg-success{% elif item.avg_score >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">
+                                            {{ item.avg_score|floatformat:1 }}%
+                                        </span>
+                                    </td>
+                                    <td class="d-none d-md-table-cell" style="font-size: clamp(0.875rem, 2vw, 1rem);"><span class="text-success">{{ item.passed }}</span></td>
+                                    <td class="d-none d-md-table-cell" style="font-size: clamp(0.875rem, 2vw, 1rem);"><span class="text-danger">{{ item.failed }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Hozircha natijalar yo'q</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <span class="text-muted d-none d-sm-inline">Export:</span>
+                        <a href="{% url 'core:export_to_excel' %}" class="btn btn-sm btn-success" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">
+                            <i class="fas fa-file-excel me-1"></i><span class="d-none d-md-inline">Excel'ga export</span><span class="d-md-none">Excel</span>
+                        </a>
+                        <a href="{% url 'core:export_results' %}" class="btn btn-sm btn-primary" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">
+                            <i class="fas fa-file-csv me-1"></i><span class="d-none d-md-inline">CSV'ga export</span><span class="d-md-none">CSV</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const chartData = {{ chart_data|safe }};
+
+// Kategoriya grafigi
+const categoryCtx = document.getElementById('categoryChart');
+if (categoryCtx && chartData.category_labels.length > 0) {
+    new Chart(categoryCtx, {
+        type: 'bar',
+        data: {
+            labels: chartData.category_labels,
+            datasets: [{
+                label: 'O\'rtacha ball (%)',
+                data: chartData.category_scores,
+                backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                borderColor: 'rgba(37, 99, 235, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Kunlik progress grafigi
+const dailyCtx = document.getElementById('dailyChart');
+if (dailyCtx && chartData.daily_labels.length > 0) {
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.daily_labels,
+            datasets: [{
+                label: 'O\'rtacha ball (%)',
+                data: chartData.daily_scores,
+                borderColor: 'rgba(16, 185, 129, 1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}
