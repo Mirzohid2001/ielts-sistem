@@ -937,7 +937,8 @@ footer p {
     display: flex;
     gap: 0.75rem;
     margin-top: auto;
-}
+} 
+
 
 .btn-watch {
     flex-grow: 1;

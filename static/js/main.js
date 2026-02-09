@@ -18,6 +18,8 @@ window.addEventListener('scroll', function() {
     lastScroll = currentScroll;
 });
 
+
+
 // Navbar collapse toggle
 function initNavbarCollapse() {
     const navbarToggler = document.querySelector('.navbar-toggler');
