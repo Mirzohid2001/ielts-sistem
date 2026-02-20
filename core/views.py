@@ -18,6 +18,77 @@ from .models import (
     VideoComment, VideoPlaylist, PlaylistVideo
 )
 
+FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 
+              'table_completion', 'short_answer')
+MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info', 
+                  'matching_sentences', 'classification')
+
+
+def _get_question_context_extra(question, current_answer):
+    """Savol turiga qarab answer_fields, matching_fields, list_options qaytarish"""
+    ans_fields, matching_fields, list_options = [], [], []
+    opts = question.options_json or {}
+    correct = question.correct_answer_json or {}
+    
+    if question.question_type in FILL_TYPES:
+        cl = question.get_correct_answers_list()
+        ca_blanks = []
+        if current_answer:
+            if len(cl) > 1:
+                try:
+                    d = json.loads(current_answer)
+                    ca_blanks = d if isinstance(d, list) else [str(d.get(str(i+1), '')) for i in range(len(cl))]
+                except (json.JSONDecodeError, TypeError):
+                    ca_blanks = [current_answer]
+            else:
+                ca_blanks = [current_answer]
+        while len(ca_blanks) < len(cl):
+            ca_blanks.append('')
+        ans_fields = [{'num': i + 1, 'value': ca_blanks[i] if i < len(ca_blanks) else ''} for i in range(len(cl))]
+    
+    elif question.question_type in MATCHING_TYPES:
+        items = opts.get('items', opts.get('paragraphs', []))
+        if not items and isinstance(correct, dict):
+            items = [{'num': k, 'label': f'Element {k}'} for k in sorted(correct.keys(), key=lambda x: int(x) if str(x).isdigit() else 0)]
+        options = opts.get('options', opts.get('headings', []))
+        if not options and isinstance(correct, dict):
+            all_letters = sorted(set(str(v) for v in correct.values()))
+            options = [{'letter': l, 'text': l} for l in all_letters]
+        if isinstance(items, list) and (items or correct):
+            cur_dict = {}
+            if current_answer:
+                try:
+                    cur_dict = json.loads(current_answer) if isinstance(current_answer, str) and current_answer.startswith('{') else {}
+                except json.JSONDecodeError:
+                    pass
+            opts_list = options if isinstance(options, list) else []
+            for i, it in enumerate(items):
+                num = it.get('num', i + 1) if isinstance(it, dict) else (i + 1)
+                label = it.get('label', str(it)) if isinstance(it, dict) else str(it)
+                val = cur_dict.get(str(num), '') if isinstance(cur_dict, dict) else ''
+                matching_fields.append({
+                    'num': num, 'label': label, 'value': val,
+                    'options': [{'letter': o.get('letter', o) if isinstance(o, dict) else o, 'text': o.get('text', o) if isinstance(o, dict) else str(o)} for o in opts_list]
+                })
+    
+    elif question.question_type == 'list_selection':
+        options = opts.get('options', [])
+        if not options:
+            options = [{'letter': c, 'text': c} for c in (correct if isinstance(correct, list) else [])]
+        cur_list = []
+        if current_answer:
+            try:
+                cur_list = json.loads(current_answer) if isinstance(current_answer, str) and current_answer.startswith('[') else []
+            except json.JSONDecodeError:
+                cur_list = [current_answer]
+        cur_set = set(str(x).lower() for x in cur_list)
+        for o in options:
+            letter = o.get('letter', o) if isinstance(o, dict) else o
+            text = o.get('text', o) if isinstance(o, dict) else str(o)
+            list_options.append({'letter': letter, 'text': text, 'checked': str(letter).lower() in cur_set})
+    
+    return ans_fields, matching_fields, list_options
+
 
 @login_required
 def dashboard(request):
@@ -489,21 +560,57 @@ def test_take(request, pk):
     # Javob yuborish
     if request.method == 'POST':
         question_id = request.POST.get('question_id')
+        question_obj = Question.objects.filter(pk=question_id, test=test).first() if question_id else None
+        
         user_answer = request.POST.get('answer')
+        if user_answer is None or user_answer == '':
+            # Fill-in: answer_1, answer_2, ...
+            answers_list = []
+            i = 1
+            while request.POST.get(f'answer_{i}') is not None:
+                answers_list.append(request.POST.get(f'answer_{i}', '').strip())
+                i += 1
+            if answers_list:
+                user_answer = json.dumps(answers_list)
+            # Matching: match_1, match_2, ...
+            elif question_obj and question_obj.question_type in MATCHING_TYPES:
+                match_dict = {}
+                i = 1
+                while f'match_{i}' in request.POST:
+                    val = request.POST.get(f'match_{i}', '').strip()
+                    match_dict[str(i)] = val
+                    i += 1
+                if match_dict:
+                    user_answer = json.dumps(match_dict)
+            # List selection: list_a, list_b, ...
+            elif question_obj and question_obj.question_type == 'list_selection':
+                list_vals = []
+                for k, v in request.POST.items():
+                    if k.startswith('list_') and v:
+                        list_vals.append(k.replace('list_', ''))
+                if list_vals:
+                    user_answer = json.dumps(sorted(list_vals))
         
         # Javob tanlanmagan bo'lsa
-        if not user_answer:
+        if not user_answer or (isinstance(user_answer, str) and not user_answer.strip()):
             messages.warning(request, 'Iltimos, javobni tanlang!')
-            # Joriy savolni qaytarish
             questions_list = list(questions.values_list('pk', flat=True))
             answered_questions = [int(q_id) for q_id in answers.keys()]
+            ca_val = answers.get(str(current_question.pk) if current_question else '', '')
+            ans_fields, match_flds, list_opts = [], [], []
+            if current_question:
+                ans_fields, match_flds, list_opts = _get_question_context_extra(current_question, ca_val)
             context = {
                 'test': test,
                 'test_result': test_result,
                 'current_question': current_question,
                 'question_number': question_number,
                 'total_questions': total_questions,
-                'current_answer': answers.get(str(current_question.pk) if current_question else '', ''),
+                'current_answer': ca_val,
+                'current_answer_blanks': [],
+                'answer_fields': ans_fields,
+                'matching_fields': match_flds,
+                'list_options': list_opts,
                 'progress_percentage': int((question_number / total_questions) * 100) if total_questions > 0 else 0,
                 'answered_questions': answered_questions,
                 'questions_list': questions_list,
@@ -527,7 +634,9 @@ def test_take(request, pk):
                         # Keyingi savolni olish
                         next_question = questions[next_question_number - 1] if questions else None
                         current_answer = answers.get(str(next_question.pk) if next_question else '', '')
-                        
+                        ans_fields, match_flds, list_opts = [], [], []
+                        if next_question:
+                            ans_fields, match_flds, list_opts = _get_question_context_extra(next_question, current_answer)
                         context = {
                             'test': test,
                             'test_result': test_result,
@@ -535,6 +644,10 @@ def test_take(request, pk):
                             'question_number': next_question_number,
                             'total_questions': total_questions,
                             'current_answer': current_answer,
+                            'current_answer_blanks': [],
+                            'answer_fields': ans_fields,
+                            'matching_fields': match_flds,
+                            'list_options': list_opts,
                             'progress_percentage': int((next_question_number / total_questions) * 100) if total_questions > 0 else 0,
                             'answered_questions': [int(q_id) for q_id in answers.keys()],
                             'questions_list': list(questions.values_list('pk', flat=True)),
@@ -556,7 +669,7 @@ def test_take(request, pk):
                         for q_id, user_answer in answers.items():
                             try:
                                 question = Question.objects.get(pk=int(q_id), test=test)
-                                is_correct = (user_answer.lower() == question.correct_answer.lower())
+                                is_correct = question.check_user_answer(user_answer)
                                 
                                 UserTestAnswer.objects.update_or_create(
                                     test_result=test_result,
@@ -629,13 +742,22 @@ def test_take(request, pk):
     
     elapsed_time = test_result.get_elapsed_time()
     
+    current_answer_val = answers.get(str(current_question.pk) if current_question else '', '')
+    ans_fields, match_flds, list_opts = [], [], []
+    if current_question:
+        ans_fields, match_flds, list_opts = _get_question_context_extra(current_question, current_answer_val)
+    
     context = {
         'test': test,
         'test_result': test_result,
         'current_question': current_question,
         'question_number': question_number,
         'total_questions': total_questions,
-        'current_answer': answers.get(str(current_question.pk) if current_question else '', ''),
+        'current_answer': current_answer_val,
+        'current_answer_blanks': [],
+        'answer_fields': ans_fields,
+        'matching_fields': match_flds,
+        'list_options': list_opts,
         'progress_percentage': int((question_number / total_questions) * 100) if total_questions > 0 else 0,
         'answered_questions': answered_questions,
         'questions_list': questions_list,
@@ -730,7 +852,7 @@ def test_result(request, pk):
                 for question in questions:
                     user_answer = answers.get(str(question.pk), '')
                     if user_answer:
-                        is_correct = user_answer.lower() == question.correct_answer.lower()
+                        is_correct = question.check_user_answer(user_answer)
                         if is_correct:
                             correct += 1
                         else:

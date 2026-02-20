@@ -1,0 +1,22 @@
+/* Admin - Savol formasi qulayroq */
+.question-mcq-fields textarea,
+.question-fill-fields textarea {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+}
+
+.question-fill-fields .help,
+.question-mcq-fields .help {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Inline savollar - yig'ish mumkin */
+.inline-related h3 {
+    font-size: 13px;
+}
+
+.inline-related .question-fill-fields,
+.inline-related .question-mcq-fields {
+    margin-top: 8px;
+}

@@ -79,63 +79,116 @@ class VideoLessonAdmin(admin.ModelAdmin):
     duration_display.short_description = "Davomiyligi"
 
 
-# Question Inline
-class QuestionInline(admin.TabularInline):
+# Question Inline - StackedInline - savol qo'shish qulayroq
+class QuestionInline(admin.StackedInline):
     model = Question
     extra = 1
-    fields = ['order', 'question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'points']
+    fields = ['order', 'question_type', 'question_text', ('option_a', 'option_b', 'option_c', 'option_d'), 'correct_answer', 'correct_answer_json', 'options_json', 'points', 'explanation']
+    classes = ['collapse']
+    verbose_name = "Savol"
+    verbose_name_plural = "Savollar"
+    show_change_link = True  # Savolni alohida sahifada tahrirlash mumkin
 
 
-# Test Admin
+# Test Admin - yaxshilangan
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category', 'test_type', 'difficulty', 'total_questions_display', 'duration_minutes', 'passing_score', 'allow_retake', 'max_attempts', 'is_active', 'created_at']
+    list_display = ['title', 'category', 'test_type', 'difficulty', 'total_questions_display', 'duration_minutes', 'passing_score', 'is_active', 'created_at']
     list_filter = ['category', 'test_type', 'difficulty', 'allow_retake', 'is_active', 'created_at']
     search_fields = ['title', 'description']
     ordering = ['-created_at']
+    list_editable = ['is_active']
+    list_per_page = 25
     inlines = [QuestionInline]
-    
+    autocomplete_fields = ['category']
+
+    actions = ['duplicate_tests', 'activate_tests', 'deactivate_tests']
+
+    class Media:
+        js = ('core/js/question_admin.js',)
+        css = {'all': ('core/css/question_admin.css',)}
+
     fieldsets = (
         ('Asosiy ma\'lumotlar', {
             'fields': ('title', 'category', 'test_type', 'difficulty', 'description', 'is_active')
         }),
         ('Parametrlar', {
-            'fields': ('duration_minutes', 'passing_score', 'allow_retake', 'max_attempts')
+            'fields': ('duration_minutes', 'passing_score', 'allow_retake', 'max_attempts'),
+            'description': 'duration_minutes - daqiqada. passing_score - foizda (masalan 60).'
         }),
         ('Test kontenti', {
             'fields': ('audio_file', 'reading_text'),
-            'description': 'Listening testlar uchun audio fayl, Reading testlar uchun matn qo\'shing.'
+            'description': 'Listening: audio fayl yuklang. Reading: matn kiriting.'
         }),
     )
-    
+
     def total_questions_display(self, obj):
         count = obj.total_questions
         return format_html('<strong>{}</strong>', count)
-    total_questions_display.short_description = "Savollar soni"
+    total_questions_display.short_description = "Savollar"
+
+    @admin.action(description="Testni nusxalash")
+    def duplicate_tests(self, request, queryset):
+        for test in queryset:
+            questions = list(test.questions.all().order_by('order'))
+            test.pk = None
+            test._state.adding = True
+            test.title = f"{test.title} (nusxa)"
+            test.save()
+            for q in questions:
+                q.pk = None
+                q.test = test
+                q._state.adding = True
+                q.save()
+        self.message_user(request, f"{queryset.count()} ta test nusxalandi.")
+
+    @admin.action(description="Faollashtirish")
+    def activate_tests(self, request, queryset):
+        n = queryset.update(is_active=True)
+        self.message_user(request, f"{n} ta test faollashtirildi.")
+
+    @admin.action(description="O'chirish (faol emas)")
+    def deactivate_tests(self, request, queryset):
+        n = queryset.update(is_active=False)
+        self.message_user(request, f"{n} ta test o'chirildi.")
 
 
-# Question Admin
+# Question Admin - savol qo'shish qulay
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ['test', 'order', 'question_text_short', 'correct_answer', 'audio_timestamp', 'points', 'created_at']
-    list_filter = ['test', 'test__category', 'created_at']
+    list_display = ['test', 'order', 'question_type', 'question_text_short', 'correct_answer', 'points', 'created_at']
+    list_filter = ['test__category', 'question_type', 'created_at']
     search_fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
     ordering = ['test', 'order']
+    list_per_page = 30
+    autocomplete_fields = ['test']
+
     fieldsets = (
-        ('Asosiy ma\'lumotlar', {
-            'fields': ('test', 'order', 'question_text', 'question_image', 'points')
+        ('Asosiy', {
+            'fields': ('test', 'order', 'question_type', 'question_text', 'question_image', 'points')
         }),
-        ('Javoblar', {
-            'fields': ('option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'explanation')
+        ('MCQ / True-False / Yes-No-Not Given', {
+            'fields': ('option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'),
+            'classes': ('question-mcq-fields',),
+            'description': 'MCQ: A/B/C/D. True/False: A=True, B=False. Yes/No/Not Given: A=Yes, B=No, C=Not Given.'
         }),
-        ('Listening testlar uchun', {
-            'fields': ('audio_timestamp',),
-            'description': 'Listening testlar uchun audio timestamp (soniya) qo\'shing. Masalan: 15.5 (15.5 soniyadan boshlash)'
+        ('Fill-in / Matching / List Selection (JSON)', {
+            'fields': ('correct_answer_json', 'options_json'),
+            'classes': ('question-fill-fields',),
+            'description': 'Fill-in: ["so\'z1","so\'z2"]. Matching: {"1":"ii","2":"v"}. List: ["A","C"]. options_json da instruction, items, headings.'
+        }),
+        ('Tushuntirish va Listening', {
+            'fields': ('explanation', 'audio_timestamp')
         }),
     )
-    
+
+    class Media:
+        js = ('core/js/question_admin.js',)
+        css = {'all': ('core/css/question_admin.css',)}
+
     def question_text_short(self, obj):
-        return obj.question_text[:100] + "..." if len(obj.question_text) > 100 else obj.question_text
+        t = obj.question_text or ''
+        return (t[:80] + '...') if len(t) > 80 else t
     question_text_short.short_description = "Savol"
 
 

@@ -16,7 +16,8 @@
               hx-swap="innerHTML"
               hx-trigger="submit"
               hx-headers='{"HX-Request": "true"}'
-              id="question-form-{{ current_question.pk }}">
+              id="question-form-{{ current_question.pk }}"
+              data-question-type="{{ current_question.question_type }}">
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{ current_question.pk }}">
             
@@ -39,7 +40,73 @@
             </div>
             {% endif %}
             
-            <div class="mb-3 mb-md-4">
+            {% if current_question.question_type == 'mcq' or current_question.question_type == 'true_false' or current_question.question_type == 'true_false_not_given' or current_question.question_type == 'yes_no_not_given' %}
+            <!-- Tanlov variantlari: MCQ, True/False, True/False/Not Given, Yes/No/Not Given -->
+            <div class="mb-3 mb-md-4" id="answer-options-mcq">
+                {% if current_question.question_type == 'true_false' %}
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" 
+                       style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'a' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}"
+                       onclick="selectAnswer('a')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="a" id="answer_a" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;"
+                               {% if current_answer == 'a' %}checked{% endif %}>
+                        <div style="flex-grow: 1;">
+                            <strong style="color: var(--primary); font-size: clamp(1rem, 2.2vw, 1.1rem);">True</strong>
+                            {% if current_question.option_a %}<span style="margin-left: 0.5rem; font-size: clamp(0.9rem, 2vw, 1rem);">– {{ current_question.option_a }}</span>{% endif %}
+                        </div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" 
+                       style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'b' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}"
+                       onclick="selectAnswer('b')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="b" id="answer_b" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;"
+                               {% if current_answer == 'b' %}checked{% endif %}>
+                        <div style="flex-grow: 1;">
+                            <strong style="color: var(--primary); font-size: clamp(1rem, 2.2vw, 1.1rem);">False</strong>
+                            {% if current_question.option_b %}<span style="margin-left: 0.5rem; font-size: clamp(0.9rem, 2vw, 1rem);">– {{ current_question.option_b }}</span>{% endif %}
+                        </div>
+                    </div>
+                </label>
+                {% elif current_question.question_type == 'true_false_not_given' %}
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'a' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}" onclick="selectAnswer('a')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="a" id="answer_a" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;" {% if current_answer == 'a' %}checked{% endif %}>
+                        <div style="flex-grow: 1;"><strong style="color: var(--primary);">True</strong></div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'b' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}" onclick="selectAnswer('b')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="b" id="answer_b" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;" {% if current_answer == 'b' %}checked{% endif %}>
+                        <div style="flex-grow: 1;"><strong style="color: var(--primary);">False</strong></div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'c' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}" onclick="selectAnswer('c')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="c" id="answer_c" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;" {% if current_answer == 'c' %}checked{% endif %}>
+                        <div style="flex-grow: 1;"><strong style="color: var(--primary);">Not Given</strong></div>
+                    </div>
+                </label>
+                {% elif current_question.question_type == 'yes_no_not_given' %}
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'a' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}" onclick="selectAnswer('a')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="a" id="answer_a" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;" {% if current_answer == 'a' %}checked{% endif %}>
+                        <div style="flex-grow: 1;"><strong style="color: var(--primary);">Yes</strong></div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'b' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}" onclick="selectAnswer('b')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="b" id="answer_b" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;" {% if current_answer == 'b' %}checked{% endif %}>
+                        <div style="flex-grow: 1;"><strong style="color: var(--primary);">No</strong></div>
+                    </div>
+                </label>
+                <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'c' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}" onclick="selectAnswer('c')">
+                    <div class="d-flex align-items-center">
+                        <input type="radio" name="answer" value="c" id="answer_c" class="form-check-input me-2 me-md-3" style="width: clamp(18px, 4vw, 20px); height: clamp(18px, 4vw, 20px); cursor: pointer; flex-shrink: 0;" {% if current_answer == 'c' %}checked{% endif %}>
+                        <div style="flex-grow: 1;"><strong style="color: var(--primary);">Not Given</strong></div>
+                    </div>
+                </label>
+                {% else %}
                 <label class="card mb-2 mb-md-3 p-2 p-md-3 answer-option" 
                        style="cursor: pointer; border: 2px solid var(--gray-200); transition: all 0.2s; {% if current_answer == 'a' %}border-color: var(--primary); background: rgba(37, 99, 235, 0.05);{% endif %}"
                        onclick="selectAnswer('a')">
@@ -88,7 +155,74 @@
                         </div>
                     </div>
                 </label>
+                {% endif %}
             </div>
+            {% elif current_question.question_type == 'fill_blank' or current_question.question_type == 'summary_completion' or current_question.question_type == 'notes_completion' or current_question.question_type == 'sentence_completion' or current_question.question_type == 'table_completion' or current_question.question_type == 'short_answer' %}
+            <!-- Fill-in / Summary / Notes / Sentence / Table / Short answer -->
+            <div class="mb-3 mb-md-4" id="answer-options-fill">
+                {% if current_question.options_json.instruction %}
+                <p class="text-muted mb-3" style="font-size: 0.9rem;"><i class="fas fa-info-circle me-1"></i>{{ current_question.options_json.instruction }}</p>
+                {% endif %}
+                {% if answer_fields|length > 1 %}
+                    {% for field in answer_fields %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="color: var(--gray-700);">{{ field.num }}.</label>
+                        <input type="text" name="answer_{{ field.num }}" id="answer_{{ field.num }}" 
+                               class="form-control form-control-lg fill-answer-input" placeholder="Javobingizni yozing..."
+                               value="{{ field.value }}"
+                               maxlength="100" style="border-radius: 10px; border: 2px solid var(--gray-200);" 
+                               autocomplete="off">
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <input type="text" name="answer" id="answer_single" 
+                           class="form-control form-control-lg fill-answer-input" placeholder="Javobingizni yozing..."
+                           value="{{ current_answer }}"
+                           maxlength="100" style="border-radius: 10px; border: 2px solid var(--gray-200);" 
+                           autocomplete="off">
+                {% endif %}
+            </div>
+            {% elif current_question.question_type == 'matching_headings' or current_question.question_type == 'matching_features' or current_question.question_type == 'matching_info' or current_question.question_type == 'matching_sentences' or current_question.question_type == 'classification' %}
+            <!-- Matching va Classification -->
+            <div class="mb-3 mb-md-4" id="answer-options-matching">
+                {% if current_question.options_json.instruction %}
+                <p class="text-muted mb-3" style="font-size: 0.9rem;"><i class="fas fa-info-circle me-1"></i>{{ current_question.options_json.instruction }}</p>
+                {% endif %}
+                {% if not matching_fields %}
+                <p class="text-warning">Admin panelda options_json ni to'ldiring (items, options).</p>
+                {% endif %}
+                {% for field in matching_fields %}
+                <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+                    <label class="form-label mb-0 fw-semibold" style="min-width: 40px;">{{ field.num }}.</label>
+                    <span class="flex-grow-1" style="font-size: 0.95rem;">{{ field.label }}</span>
+                    <select name="match_{{ field.num }}" class="form-select form-select-lg match-select" style="max-width: 120px; border-radius: 10px;">
+                        <option value="">--</option>
+                        {% for opt in field.options %}
+                        <option value="{{ opt.letter }}" {% if field.value == opt.letter %}selected{% endif %}>{{ opt.letter }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif current_question.question_type == 'list_selection' %}
+            <!-- List Selection - bir nechta tanlash -->
+            <div class="mb-3 mb-md-4" id="answer-options-list">
+                {% if current_question.options_json.instruction %}
+                <p class="text-muted mb-3" style="font-size: 0.9rem;"><i class="fas fa-info-circle me-1"></i>{{ current_question.options_json.instruction }}</p>
+                {% endif %}
+                {% if not list_options %}
+                <p class="text-warning">Admin panelda options_json ni to'ldiring (options ro'yxati).</p>
+                {% endif %}
+                <div class="border rounded p-3" style="background: var(--gray-50);">
+                    {% for opt in list_options %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input list-select-input" type="checkbox" name="list_{{ opt.letter }}" value="{{ opt.letter }}" id="list_{{ opt.letter }}" {% if opt.checked %}checked{% endif %}>
+                        <label class="form-check-label" for="list_{{ opt.letter }}">{{ opt.letter }}) {{ opt.text }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             
             <div class="d-flex flex-column flex-md-row justify-content-between gap-2 gap-md-3 test-navigation">
                 {% if question_number > 1 %}
@@ -148,28 +282,38 @@
                 }
                 
                 function validateAnswer() {
-                    const selectedAnswer = document.querySelector('input[name="answer"]:checked');
-                    if (!selectedAnswer) {
-                        // Bootstrap alert yoki toast ko'rsatish
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed';
-                        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                        alertDiv.innerHTML = `
-                            <strong>Diqqat!</strong> Iltimos, javobni tanlang!
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        document.body.appendChild(alertDiv);
-                        
-                        // 3 soniyadan keyin avtomatik yopish
-                        setTimeout(() => {
-                            if (alertDiv.parentNode) {
-                                alertDiv.remove();
-                            }
-                        }, 3000);
-                        
-                        return false;
+                    const form = document.getElementById('question-form-{{ current_question.pk }}');
+                    const qType = form ? form.getAttribute('data-question-type') : '';
+                    const singleChoice = ['mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given'];
+                    const fillTypes = ['fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'];
+                    const matchingTypes = ['matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'];
+                    
+                    if (singleChoice.includes(qType)) {
+                        const selected = form ? form.querySelector('input[name="answer"]:checked') : null;
+                        if (!selected) { showValidationAlert('Iltimos, javobni tanlang!'); return false; }
+                    } else if (fillTypes.includes(qType)) {
+                        const inputs = form ? form.querySelectorAll('.fill-answer-input, input[name="answer"]') : [];
+                        if (!Array.from(inputs).some(inp => inp.value && inp.value.trim())) {
+                            showValidationAlert('Iltimos, javobni yozing!'); return false;
+                        }
+                    } else if (matchingTypes.includes(qType)) {
+                        const selects = form ? form.querySelectorAll('.match-select') : [];
+                        const filled = Array.from(selects).some(s => s.value && s.value.trim());
+                        if (!filled) { showValidationAlert('Iltimos, barcha joylarni to\'ldiring!'); return false; }
+                    } else if (qType === 'list_selection') {
+                        const checked = form ? form.querySelectorAll('.list-select-input:checked') : [];
+                        if (checked.length === 0) { showValidationAlert('Iltimos, kamida bitta variantni tanlang!'); return false; }
                     }
                     return true;
+                }
+                
+                function showValidationAlert(msg) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+                    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                    alertDiv.innerHTML = '<strong>Diqqat!</strong> ' + msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                    document.body.appendChild(alertDiv);
+                    setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 3000);
                 }
                 
                 // Form submit event listener - HTMX bilan ishlash uchun
