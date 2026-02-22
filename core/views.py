@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
 from django.db import transaction
+from django.views.decorators.http import require_POST
 from datetime import timedelta, datetime
 from calendar import monthrange
 import json
@@ -15,13 +16,14 @@ from .models import (
     Category, VideoLesson, Test, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
-    VideoComment, VideoPlaylist, PlaylistVideo
+    VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard
 )
 
 FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 
               'table_completion', 'short_answer')
 MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info', 
                   'matching_sentences', 'classification')
+QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
 
 
 def _get_question_context_extra(question, current_answer):
@@ -455,6 +457,96 @@ def test_list(request):
 
 
 @login_required
+def test_collection_by_type(request, test_type):
+    """Engnovate uslubida test collection sahifasi (reading/listening/writing)."""
+    valid_types = {code for code, _ in Test.TEST_TYPES}
+    if test_type not in valid_types:
+        return redirect('core:test_list')
+
+    search_query = request.GET.get('search', '').strip()
+    question_type = request.GET.get('qtype', '').strip()
+    length_filter = request.GET.get('length', '').strip()  # full | parts
+    module_filter = request.GET.get('module', '').strip()  # academic | general
+
+    tests = (
+        Test.objects.filter(is_active=True, test_type=test_type)
+        .select_related('category')
+        .prefetch_related('questions')
+        .annotate(questions_count=Count('questions', distinct=True))
+    )
+
+    if search_query:
+        tests = tests.filter(
+            Q(title__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(category__name__icontains=search_query)
+        )
+
+    if question_type:
+        tests = tests.filter(questions__question_type=question_type).distinct()
+
+    if length_filter == 'full':
+        tests = tests.filter(questions_count__gte=30)
+    elif length_filter == 'parts':
+        tests = tests.filter(questions_count__lt=30)
+
+    if module_filter == 'academic':
+        tests = tests.filter(
+            Q(title__icontains='academic') | Q(category__name__icontains='academic')
+        )
+    elif module_filter == 'general':
+        tests = tests.filter(
+            Q(title__icontains='general') | Q(category__name__icontains='general')
+        )
+
+    tests = tests.order_by('-created_at')
+
+    available_types_qs = (
+        Question.objects.filter(test__is_active=True, test__test_type=test_type)
+        .values_list('question_type', flat=True)
+        .distinct()
+    )
+    available_question_types = [
+        (q_code, QUESTION_TYPE_LABELS.get(q_code, q_code.replace('_', ' ').title()))
+        for q_code in available_types_qs
+    ]
+    available_question_types.sort(key=lambda item: item[1])
+
+    paginator = Paginator(tests, 12)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    for test in page_obj:
+        title_lower = (test.title or '').lower()
+        test.is_part_test = ('questions' in title_lower) or (getattr(test, 'questions_count', 0) < 30)
+        first_question = test.questions.all().order_by('order').first()
+        if first_question:
+            test.primary_question_type = first_question.question_type
+            test.primary_question_type_label = QUESTION_TYPE_LABELS.get(
+                first_question.question_type,
+                first_question.question_type.replace('_', ' ').title()
+            )
+        else:
+            test.primary_question_type = ''
+            test.primary_question_type_label = 'General'
+
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+
+    context = {
+        'collection_test_type': test_type,
+        'collection_test_type_display': dict(Test.TEST_TYPES).get(test_type, test_type.title()),
+        'tests': page_obj,
+        'available_question_types': available_question_types,
+        'selected_question_type': question_type,
+        'selected_length': length_filter,
+        'selected_module': module_filter,
+        'search_query': search_query,
+        'query_string': query_params.urlencode(),
+    }
+    return render(request, 'core/tests/type_collection.html', context)
+
+
+@login_required
 def test_detail(request, pk):
     """Test detallari va boshlash"""
     test = get_object_or_404(Test, pk=pk, is_active=True)
@@ -614,6 +706,7 @@ def test_take(request, pk):
                 'progress_percentage': int((question_number / total_questions) * 100) if total_questions > 0 else 0,
                 'answered_questions': answered_questions,
                 'questions_list': questions_list,
+                'flashcard_sets': FlashcardSet.objects.filter(user=request.user).order_by('name'),
             }
             if request.headers.get('HX-Request'):
                 return render(request, 'core/tests/partial_question.html', context)
@@ -766,6 +859,7 @@ def test_take(request, pk):
         'timer_seconds': timer_seconds,
         'elapsed_time': elapsed_time,
         'is_paused': test_result.is_paused,
+        'flashcard_sets': FlashcardSet.objects.filter(user=request.user).order_by('name'),
     }
     
     # HTMX request bo'lsa faqat savol qaytarish
@@ -773,6 +867,52 @@ def test_take(request, pk):
         return render(request, 'core/tests/partial_question.html', context)
     
     return render(request, 'core/tests/take.html', context)
+
+
+@login_required
+@require_POST
+def add_test_flashcard(request, pk):
+    """Test sahifasidan flashcard qo'shish."""
+    test = get_object_or_404(Test, pk=pk, is_active=True)
+
+    term = (request.POST.get('term') or '').strip()
+    definition = (request.POST.get('definition') or '').strip()
+    set_id = (request.POST.get('set_id') or '').strip()
+    new_set_name = (request.POST.get('new_set_name') or '').strip()
+    question_id = (request.POST.get('question_id') or '').strip()
+
+    if not term:
+        return JsonResponse({'success': False, 'error': 'Term bo\'sh bo\'lishi mumkin emas.'}, status=400)
+
+    flashcard_set = None
+    if new_set_name:
+        flashcard_set, _ = FlashcardSet.objects.get_or_create(
+            user=request.user,
+            name=new_set_name[:120],
+        )
+    elif set_id:
+        flashcard_set = FlashcardSet.objects.filter(pk=set_id, user=request.user).first()
+    if not flashcard_set:
+        return JsonResponse({'success': False, 'error': 'Set tanlang yoki yangi set nomini kiriting.'}, status=400)
+
+    source_question = None
+    if question_id.isdigit():
+        source_question = Question.objects.filter(pk=int(question_id), test=test).first()
+
+    card = Flashcard.objects.create(
+        user=request.user,
+        flashcard_set=flashcard_set,
+        term=term[:255],
+        definition=definition[:2000],
+        source_test=test,
+        source_question=source_question,
+    )
+    return JsonResponse({
+        'success': True,
+        'id': card.pk,
+        'set_id': flashcard_set.pk,
+        'set_name': flashcard_set.name,
+    })
 
 
 @login_required
@@ -939,6 +1079,65 @@ def test_result(request, pk):
             'time_diff_abs': time_diff_abs,
         })
     
+    # Performance insights: question type bo'yicha aniqlik
+    question_type_labels = dict(Question.QUESTION_TYPES)
+    type_stats_map = {}
+    all_questions = list(test_result.test.questions.all().order_by('order'))
+    for q in all_questions:
+        q_type = q.question_type or 'unknown'
+        if q_type not in type_stats_map:
+            type_stats_map[q_type] = {
+                'question_type': q_type,
+                'label': question_type_labels.get(q_type, q_type.replace('_', ' ').title()),
+                'total': 0,
+                'answered': 0,
+                'correct': 0,
+                'accuracy': 0.0,
+            }
+        type_stats_map[q_type]['total'] += 1
+        ans = user_answers.get(q.id)
+        if ans:
+            type_stats_map[q_type]['answered'] += 1
+            if ans.is_correct:
+                type_stats_map[q_type]['correct'] += 1
+
+    type_stats = []
+    for item in type_stats_map.values():
+        if item['answered'] > 0:
+            item['accuracy'] = round((item['correct'] / item['answered']) * 100, 1)
+        else:
+            item['accuracy'] = 0.0
+        # CSS width uchun lokalizatsiyasiz, xavfsiz qiymat
+        item['accuracy_width'] = max(0, min(100, int(round(item['accuracy']))))
+        type_stats.append(item)
+    type_stats.sort(key=lambda x: x['accuracy'])
+
+    weak_areas = [s for s in type_stats if s['answered'] > 0 and s['accuracy'] < 60][:3]
+    top_strengths = sorted(type_stats, key=lambda x: x['accuracy'], reverse=True)[:3]
+
+    seconds_per_question = 0
+    if test_result.time_taken and test_result.total_questions:
+        seconds_per_question = round(test_result.time_taken / max(test_result.total_questions, 1), 1)
+
+    # Qisqa tavsiya generator
+    tip_map = {
+        'matching_headings': "Paragraphlarning asosiy g'oyasini 5-7 so'z bilan belgilash mashqini qiling.",
+        'matching_features': "Ism/joy/obyektlarni alohida belgilab, keyin mapping qiling.",
+        'matching_info': "Kalit so'zlarni sinonim bilan qidiring, to'g'ridan-to'g'ri so'zga bog'lanmang.",
+        'true_false_not_given': "Gap ma'nosini 'True/False/Not Given'ga qat'iy ajratib tahlil qiling.",
+        'yes_no_not_given': "Muallif fikri va faktni alohida baholang.",
+        'fill_blank': "Word limitga qat'iy rioya qilib, imlo ustida ishlang.",
+        'notes_completion': "Audio'da raqamlar, ism-sharif va joy nomlarini tez yozishga odatlaning.",
+        'summary_completion': "Matnning mantiqiy oqimini (before/after) ushlashga e'tibor bering.",
+        'sentence_completion': "Grammar mosligini (singular/plural, tense) tekshirib yozing.",
+        'table_completion': "Jadval kategoriyalarini oldindan skanerlab oling.",
+        'short_answer': "Qisqa va aniq javob yozing; keraksiz so'z qo'shmang.",
+        'mcq': "Noto'g'ri variantlarni eliminatsiya usuli bilan qisqartiring.",
+        'list_selection': "Kamida 2 marta qayta tekshirib, ortiqcha variantlarni olib tashlang.",
+        'classification': "Har bir variantning xos belgisini bitta keyword bilan eslab boring.",
+    }
+    improvement_tips = [tip_map.get(w['question_type'], "Ushbu savol turida ko'proq amaliy test ishlang.") for w in weak_areas]
+
     context = {
         'test_result': test_result,
         'user_answers': user_answers,
@@ -948,6 +1147,11 @@ def test_result(request, pk):
         'time_taken_hours': time_taken_hours,
         'time_taken_minutes': time_taken_minutes,
         'time_taken_seconds': time_taken_seconds,
+        'type_stats': type_stats,
+        'weak_areas': weak_areas,
+        'top_strengths': top_strengths,
+        'seconds_per_question': seconds_per_question,
+        'improvement_tips': improvement_tips,
     }
     return render(request, 'core/tests/result.html', context)
 

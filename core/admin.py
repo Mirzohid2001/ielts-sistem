@@ -1,19 +1,85 @@
 from django.contrib import admin
+from django import forms
 from django.utils.html import format_html
 from django.urls import reverse, path
 from django.shortcuts import render
 from django.db.models import Count, Avg, Q, Sum
 from django.utils import timezone
+from django.db.models.functions import TruncDate
 from datetime import timedelta
+import json
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources
 from .models import (
     Category, VideoLesson, Test, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
-    VideoComment, VideoPlaylist, PlaylistVideo
+    VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard
 )
 from django.contrib.auth.models import User
+
+
+class TestResource(resources.ModelResource):
+    class Meta:
+        model = Test
+        fields = (
+            'id', 'title', 'category__name', 'test_type', 'difficulty', 'duration_minutes',
+            'passing_score', 'allow_retake', 'max_attempts', 'is_active', 'created_at'
+        )
+
+
+class QuestionResource(resources.ModelResource):
+    class Meta:
+        model = Question
+        fields = (
+            'id', 'test__title', 'order', 'question_type', 'question_text',
+            'correct_answer', 'points', 'created_at'
+        )
+
+
+class QuestionAdminForm(forms.ModelForm):
+    """Savol turiga qarab admin validatsiya."""
+    class Meta:
+        model = Question
+        fields = '__all__'
+
+    def clean(self):
+        cleaned = super().clean()
+        q_type = cleaned.get('question_type')
+        correct_answer = (cleaned.get('correct_answer') or '').strip().lower()
+        correct_json = cleaned.get('correct_answer_json')
+
+        single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+        fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer')
+        matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+
+        if q_type in single_choice:
+            allowed_map = {
+                'mcq': {'a', 'b', 'c', 'd'},
+                'true_false': {'a', 'b'},
+                'true_false_not_given': {'a', 'b', 'c'},
+                'yes_no_not_given': {'a', 'b', 'c'},
+            }
+            if not correct_answer:
+                raise forms.ValidationError("Bu savol turida 'To'g'ri javob' maydoni majburiy.")
+            if correct_answer not in allowed_map.get(q_type, set()):
+                raise forms.ValidationError("To'g'ri javob qiymati savol turiga mos emas.")
+
+        if q_type in fill_types:
+            if not correct_json and not correct_answer:
+                raise forms.ValidationError("Fill-in turlarida correct_answer_json yoki correct_answer kiriting.")
+            if correct_json and not isinstance(correct_json, list):
+                raise forms.ValidationError("Fill-in turlarida correct_answer_json ro'yxat (list) bo'lishi kerak.")
+
+        if q_type in matching_types:
+            if not isinstance(correct_json, dict) or not correct_json:
+                raise forms.ValidationError("Matching/Classification turlarida correct_answer_json obyekt (dict) bo'lishi kerak.")
+
+        if q_type == 'list_selection':
+            if not isinstance(correct_json, list) or not correct_json:
+                raise forms.ValidationError("List selection uchun correct_answer_json ro'yxat (list) bo'lishi kerak.")
+
+        return cleaned
 
 
 # Category Admin
@@ -82,6 +148,7 @@ class VideoLessonAdmin(admin.ModelAdmin):
 # Question Inline - StackedInline - savol qo'shish qulayroq
 class QuestionInline(admin.StackedInline):
     model = Question
+    form = QuestionAdminForm
     extra = 1
     fields = ['order', 'question_type', 'question_text', ('option_a', 'option_b', 'option_c', 'option_d'), 'correct_answer', 'correct_answer_json', 'options_json', 'points', 'explanation']
     classes = ['collapse']
@@ -92,7 +159,7 @@ class QuestionInline(admin.StackedInline):
 
 # Test Admin - yaxshilangan
 @admin.register(Test)
-class TestAdmin(admin.ModelAdmin):
+class TestAdmin(ImportExportModelAdmin):
     list_display = ['title', 'category', 'test_type', 'difficulty', 'total_questions_display', 'duration_minutes', 'passing_score', 'is_active', 'created_at']
     list_filter = ['category', 'test_type', 'difficulty', 'allow_retake', 'is_active', 'created_at']
     search_fields = ['title', 'description']
@@ -101,6 +168,11 @@ class TestAdmin(admin.ModelAdmin):
     list_per_page = 25
     inlines = [QuestionInline]
     autocomplete_fields = ['category']
+    list_select_related = ['category']
+    save_as = True
+    save_on_top = True
+    date_hierarchy = 'created_at'
+    resource_class = TestResource
 
     actions = ['duplicate_tests', 'activate_tests', 'deactivate_tests']
 
@@ -155,13 +227,18 @@ class TestAdmin(admin.ModelAdmin):
 
 # Question Admin - savol qo'shish qulay
 @admin.register(Question)
-class QuestionAdmin(admin.ModelAdmin):
+class QuestionAdmin(ImportExportModelAdmin):
+    form = QuestionAdminForm
     list_display = ['test', 'order', 'question_type', 'question_text_short', 'correct_answer', 'points', 'created_at']
     list_filter = ['test__category', 'question_type', 'created_at']
     search_fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
     ordering = ['test', 'order']
     list_per_page = 30
     autocomplete_fields = ['test']
+    list_select_related = ['test', 'test__category']
+    save_as = True
+    save_on_top = True
+    resource_class = QuestionResource
 
     fieldsets = (
         ('Asosiy', {
@@ -204,12 +281,15 @@ class UserTestAnswerInline(admin.TabularInline):
 @admin.register(UserTestResult)
 class UserTestResultAdmin(ImportExportModelAdmin):
     list_display = ['user', 'test', 'score', 'total_questions', 'percentage', 'correct_answers', 'attempt_number', 'is_passed_display', 'completed_at']
-    list_filter = ['test', 'test__category', 'completed_at', 'started_at', 'test__test_type']
+    list_filter = ['test', 'test__category', 'completed_at', 'started_at', 'test__test_type', 'is_paused']
     search_fields = ['user__username', 'user__email', 'user__first_name', 'user__last_name', 'test__title']
     readonly_fields = ['score', 'percentage', 'correct_answers', 'wrong_answers', 'answers_json', 'attempt_number', 'started_at', 'completed_at']
     ordering = ['-completed_at', '-started_at']
     inlines = [UserTestAnswerInline]
     list_per_page = 50
+    autocomplete_fields = ['user', 'test']
+    date_hierarchy = 'completed_at'
+    actions = ['recalculate_selected_results']
     
     fieldsets = (
         ('Asosiy ma\'lumotlar', {
@@ -235,6 +315,30 @@ class UserTestResultAdmin(ImportExportModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('user', 'test', 'test__category')
+
+    @admin.action(description="Tanlangan natijalarni qayta hisoblash")
+    def recalculate_selected_results(self, request, queryset):
+        updated = 0
+        for result in queryset.select_related('test'):
+            total_questions = result.test.total_questions
+            correct = result.answers.filter(is_correct=True).count()
+            result.total_questions = total_questions
+            result.correct_answers = correct
+            result.wrong_answers = max(total_questions - correct, 0)
+            result.calculate_score()
+            updated += 1
+        self.message_user(request, f"{updated} ta natija qayta hisoblandi.")
+
+
+@admin.register(UserTestAnswer)
+class UserTestAnswerAdmin(admin.ModelAdmin):
+    list_display = ['test_result', 'question', 'is_correct', 'answered_at']
+    list_filter = ['is_correct', 'answered_at', 'question__question_type', 'question__test__test_type']
+    search_fields = ['test_result__user__username', 'question__question_text', 'user_answer']
+    readonly_fields = ['answered_at']
+    autocomplete_fields = ['test_result', 'question']
+    ordering = ['-answered_at']
+    list_per_page = 50
 
 
 # UserVideoProgress Admin - Yaxshilangan
@@ -364,6 +468,33 @@ class VideoPlaylistAdmin(admin.ModelAdmin):
     def videos_count(self, obj):
         return obj.videos_count
     videos_count.short_description = "Videolar soni"
+
+
+@admin.register(FlashcardSet)
+class FlashcardSetAdmin(admin.ModelAdmin):
+    list_display = ['name', 'user', 'cards_count', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['name', 'user__username']
+    autocomplete_fields = ['user']
+    ordering = ['name', '-created_at']
+
+    def cards_count(self, obj):
+        return obj.cards.count()
+    cards_count.short_description = "Cardlar"
+
+
+@admin.register(Flashcard)
+class FlashcardAdmin(admin.ModelAdmin):
+    list_display = ['term_short', 'flashcard_set', 'user', 'source_test', 'created_at']
+    list_filter = ['flashcard_set', 'created_at']
+    search_fields = ['term', 'definition', 'user__username', 'flashcard_set__name']
+    autocomplete_fields = ['user', 'flashcard_set', 'source_test', 'source_question']
+    ordering = ['-created_at']
+    list_per_page = 50
+
+    def term_short(self, obj):
+        return obj.term[:60] + "..." if len(obj.term) > 60 else obj.term
+    term_short.short_description = "Term"
 
 
 # Custom Admin Site - Statistikalar bilan
@@ -571,6 +702,51 @@ def custom_index(request, extra_context=None):
         test_count=Count('test_results', filter=Q(test_results__completed_at__isnull=False)),
         video_count=Count('video_progress', filter=Q(video_progress__watched=True))
     ).order_by('-last_login')[:10]
+
+    # O'tdi/O'tmadi statistikasi
+    all_results = UserTestResult.objects.filter(
+        completed_at__isnull=False
+    ).select_related('test')
+    passed_tests = sum(1 for r in all_results if r.is_passed())
+    failed_tests = max(total_test_results - passed_tests, 0)
+
+    avg_score = UserTestResult.objects.filter(
+        completed_at__isnull=False
+    ).aggregate(avg=Avg('percentage'))['avg'] or 0
+
+    # Kategoriya bo'yicha statistikalar
+    category_test_stats = list(
+        Category.objects.filter(is_active=True).annotate(
+            test_count=Count('tests', filter=Q(tests__is_active=True), distinct=True),
+            result_count=Count('tests__results', filter=Q(tests__results__completed_at__isnull=False), distinct=True),
+            avg_score=Avg('tests__results__percentage', filter=Q(tests__results__completed_at__isnull=False))
+        ).order_by('order').values('name', 'test_count', 'result_count', 'avg_score')
+    )
+
+    # Oxirgi 14 kunlik trend (test yakunlashlar soni)
+    start_date = timezone.now() - timedelta(days=13)
+    daily_map = {
+        row['day']: row['count']
+        for row in UserTestResult.objects.filter(
+            completed_at__isnull=False,
+            completed_at__gte=start_date
+        ).annotate(day=TruncDate('completed_at')).values('day').annotate(count=Count('id'))
+    }
+    trend_labels = []
+    trend_counts = []
+    for i in range(14):
+        d = (start_date + timedelta(days=i)).date()
+        trend_labels.append(d.strftime('%d.%m'))
+        trend_counts.append(daily_map.get(d, 0))
+
+    chart_payload = {
+        'pass_fail': [passed_tests, failed_tests],
+        'category_labels': [c['name'] for c in category_test_stats],
+        'category_tests': [c['test_count'] or 0 for c in category_test_stats],
+        'category_results': [c['result_count'] or 0 for c in category_test_stats],
+        'trend_labels': trend_labels,
+        'trend_counts': trend_counts,
+    }
     
     extra_context = extra_context or {}
     extra_context.update({
@@ -582,6 +758,11 @@ def custom_index(request, extra_context=None):
         'recent_results': recent_results,
         'recent_video_views': recent_video_views,
         'active_users': active_users,
+        'passed_tests': passed_tests,
+        'failed_tests': failed_tests,
+        'avg_score': round(avg_score, 2),
+        'category_test_stats': category_test_stats,
+        'chart_payload_json': json.dumps(chart_payload),
     })
     
     return original_index(request, extra_context=extra_context)

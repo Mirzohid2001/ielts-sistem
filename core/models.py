@@ -809,3 +809,45 @@ class PlaylistVideo(models.Model):
 
     def __str__(self):
         return f"{self.playlist.name} - {self.video.title}"
+
+
+class FlashcardSet(models.Model):
+    """Foydalanuvchi flashcard to'plami."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='flashcard_sets', verbose_name="Foydalanuvchi")
+    name = models.CharField(max_length=120, verbose_name="Set nomi")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqt")
+
+    class Meta:
+        verbose_name = "Flashcard Set"
+        verbose_name_plural = "Flashcard Setlar"
+        ordering = ['name', '-created_at']
+        unique_together = ['user', 'name']
+        indexes = [
+            models.Index(fields=['user', 'name']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"
+
+
+class Flashcard(models.Model):
+    """Test/reading matnidan saqlanadigan flashcard."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='flashcards', verbose_name="Foydalanuvchi")
+    flashcard_set = models.ForeignKey(FlashcardSet, on_delete=models.CASCADE, related_name='cards', verbose_name="Set")
+    term = models.CharField(max_length=255, verbose_name="Term")
+    definition = models.TextField(blank=True, verbose_name="Definition")
+    source_test = models.ForeignKey(Test, on_delete=models.SET_NULL, null=True, blank=True, related_name='flashcards', verbose_name="Manba test")
+    source_question = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True, blank=True, related_name='flashcards', verbose_name="Manba savol")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqt")
+
+    class Meta:
+        verbose_name = "Flashcard"
+        verbose_name_plural = "Flashcardlar"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['flashcard_set']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.term[:50]}"

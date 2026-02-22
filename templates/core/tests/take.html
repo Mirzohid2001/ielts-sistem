@@ -2,10 +2,122 @@
 
 {% block title %}{{ test.title }} - Test{% endblock %}
 
+{% block extra_css %}
+<style>
+    .exam-shell {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: .75rem;
+    }
+    .exam-split-layout { display: flex; gap: 0; position: relative; align-items: stretch; }
+    .exam-left-pane { flex: 1.1; min-width: 0; }
+    .exam-right-pane { flex: 0.9; min-width: min(320px, 100%); }
+    .exam-left-pane .card, .exam-right-pane .card { border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .exam-split-divider {
+        width: 4px; background: #e5e7eb; cursor: col-resize; flex-shrink: 0;
+        border-radius: 2px; margin: 0 4px; align-self: stretch;
+    }
+    .exam-split-divider:hover { background: var(--primary); }
+    .exam-right-pane { position: sticky; top: 88px; align-self: start; max-height: calc(100vh - 100px); overflow: auto; background: #fafbfc; border-radius: 10px; padding: 1rem; border: 1px solid #e5e7eb; }
+    .reading-text { font-size: 1rem !important; line-height: 1.8 !important; max-height: calc(100vh - 280px) !important; background: #fff !important; padding: 1.25rem !important; }
+    .reading-tools { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+    .reading-mark { background: #fff59d; padding: 0 .15rem; border-radius: .2rem; }
+    .reading-note-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .5rem .65rem; margin-bottom: .5rem; }
+    .exam-save-status { font-size: .78rem; opacity: .9; }
+    .exam-question-footer { border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 1rem; }
+    .part-label { font-size: .8rem; font-weight: 600; color: #64748b; margin-right: .5rem; }
+    .part-btn {
+        min-width: 32px; height: 32px;
+        border-radius: 6px; padding: 0 !important;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: .85rem !important; font-weight: 600;
+        border: 1px solid #e2e8f0; transition: all .2s;
+    }
+    .part-btn.btn-primary { box-shadow: 0 2px 6px rgba(99, 102, 241, .35); border-color: var(--primary); }
+    .part-btn.btn-success { border-color: var(--success); }
+    .part-btn.is-flagged {
+        background: rgba(245, 158, 11, .12) !important;
+        border-color: #f59e0b !important;
+        color: #92400e !important;
+        box-shadow: 0 0 0 1px rgba(245, 158, 11, .15) inset;
+    }
+    #flag-question-btn.active {
+        background: #f59e0b;
+        border-color: #f59e0b;
+        color: #fff;
+    }
+    #flagged-only-btn.active {
+        background: #334155;
+        border-color: #334155;
+        color: #fff;
+    }
+    .btn-submit-exam { background: #10b981; border: none; color: #fff; font-weight: 700; padding: .6rem 1.25rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(16,185,129,.4); }
+    .btn-submit-exam:hover { background: #059669; color: #fff; transform: translateY(-1px); }
+    .test-header-card { border-radius: 12px !important; }
+    .test-header-card .card-body { padding: .85rem 1.25rem !important; }
+    .question-card {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 14px 30px rgba(2, 6, 23, .06) !important;
+    }
+    .answer-option { border-radius: 10px !important; }
+    .answer-option:hover {
+        border-color: #93c5fd !important;
+        background: rgba(37, 99, 235, .04) !important;
+    }
+    .test-header-card .btn.btn-sm {
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+        font-weight: 600;
+    }
+    .exam-shell { box-shadow: 0 10px 30px rgba(2, 6, 23, .05); }
+    .flashcard-selection-btn {
+        position: fixed;
+        z-index: 1080;
+        display: none;
+        border: 0;
+        border-radius: 999px;
+        width: 38px;
+        height: 38px;
+        background: #2563eb;
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(37, 99, 235, .35);
+    }
+    .flashcard-selection-btn:hover { background: #1d4ed8; }
+    body.exam-mode .navbar, body.exam-mode footer, body.exam-mode #messages-container { display: none !important; }
+    body.exam-mode .container.mt-4.fade-in { max-width: 100%; margin-top: .2rem !important; }
+    body.exam-mode .exam-right-pane { top: 8px; max-height: calc(100vh - 20px); }
+    .writing-inline-blank {
+        border: 0;
+        border-bottom: 2px solid #94a3b8;
+        border-radius: 0;
+        background: transparent;
+        min-width: 140px;
+        width: 160px;
+        display: inline-block;
+        padding: 2px 6px;
+        margin: 0 4px;
+        vertical-align: baseline;
+    }
+    .writing-inline-blank:focus {
+        outline: none;
+        border-bottom-color: #2563eb;
+        box-shadow: none;
+    }
+    #audio-player-container { margin-bottom: 0 !important; }
+    @media (max-width: 991.98px) {
+        .exam-split-layout { flex-direction: column; }
+        .exam-right-pane { position: static; max-height: none; overflow: visible; }
+        .reading-text { max-height: 320px !important; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4 fade-in">
     <div class="row">
         <div class="col-12 col-md-10 mx-auto">
+            <div class="exam-shell mb-3">
             <!-- Header va Progress -->
             <div class="card mb-4 border-0 test-header-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: var(--shadow-lg);">
                 <div class="card-body p-3 p-md-4">
@@ -27,6 +139,9 @@
                                 <i class="fas {% if is_paused %}fa-play{% else %}fa-pause{% endif %}" id="pause-resume-icon"></i>
                                 <span id="pause-resume-text" class="d-none d-sm-inline ms-1">{% if is_paused %}Davom ettirish{% else %}To'xtatish{% endif %}</span>
                             </button>
+                            <button type="button" id="exam-mode-toggle" class="btn btn-sm" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 12px;">
+                                <i class="fas fa-expand me-1"></i><span class="d-none d-sm-inline">Exam Mode</span>
+                            </button>
                         </div>
                     </div>
                     <div>
@@ -42,60 +157,138 @@
                             <div class="progress-bar bg-white" role="progressbar" style="width: {{ progress_percentage }}%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                             </div>
                         </div>
+                        <div class="mt-2 exam-save-status" id="autosave-status">Auto-save: active</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Test turiga qarab kontent -->
-            {% if test.test_type == 'listening' %}
-            <!-- Listening test: Audio player -->
-            <div class="card border-0 shadow-lg mb-3 mb-md-4" id="audio-player-container">
-                <div class="card-body p-3 p-md-4">
-                    <h5 class="mb-2 mb-md-3" style="font-weight: 700; color: var(--primary); font-size: clamp(1rem, 2.5vw, 1.25rem);">
-                        <i class="fas fa-headphones me-2"></i>Audio eshiting
-                    </h5>
-                    {% if test.audio_file %}
-                    <audio id="test-audio" controls style="width: 100%; max-width: 100%;" preload="auto">
-                        <source src="{{ test.audio_file.url }}" type="audio/mpeg">
-                        <source src="{{ test.audio_file.url }}" type="audio/wav">
-                        <source src="{{ test.audio_file.url }}" type="audio/ogg">
-                        Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
-                    </audio>
-                    <div class="mt-2 mt-md-3 d-flex flex-wrap align-items-center gap-2 gap-md-3">
-                        <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: clamp(0.8rem, 2vw, 0.875rem);" onclick="if(typeof playAudio === 'function') playAudio(); else window.playAudio();">
-                            <i class="fas fa-play me-1 me-md-2"></i><span class="d-none d-sm-inline">Qayta eshitish</span><span class="d-sm-none">Qayta</span>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size: clamp(0.8rem, 2vw, 0.875rem);" onclick="if(typeof pauseAudio === 'function') pauseAudio(); else window.pauseAudio();">
-                            <i class="fas fa-pause me-1 me-md-2"></i>To'xtatish
-                        </button>
-                        <span class="text-muted" id="audio-time" style="font-size: clamp(0.75rem, 1.8vw, 0.875rem);">00:00 / 00:00</span>
+            <div class="exam-split-layout">
+                <div class="exam-left-pane">
+                    {% if test.test_type == 'listening' %}
+                    <div class="card border-0 shadow-lg mb-3 mb-md-4" id="audio-player-container">
+                        <div class="card-body p-3 p-md-4">
+                            <h5 class="mb-2 mb-md-3" style="font-weight: 700; color: var(--primary); font-size: clamp(1rem, 2.5vw, 1.25rem);">
+                                <i class="fas fa-headphones me-2"></i>Part {{ question_number }}: Audio
+                            </h5>
+                            {% if test.audio_file %}
+                            <audio id="test-audio" controls style="width: 100%; max-width: 100%;" preload="auto">
+                                <source src="{{ test.audio_file.url }}" type="audio/mpeg">
+                                <source src="{{ test.audio_file.url }}" type="audio/wav">
+                                <source src="{{ test.audio_file.url }}" type="audio/ogg">
+                                Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
+                            </audio>
+                            <div class="mt-2 mt-md-3 d-flex flex-wrap align-items-center gap-2 gap-md-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="if(typeof playAudio === 'function') playAudio(); else window.playAudio();">
+                                    <i class="fas fa-play me-1 me-md-2"></i>Qayta eshitish
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="if(typeof pauseAudio === 'function') pauseAudio(); else window.pauseAudio();">
+                                    <i class="fas fa-pause me-1 me-md-2"></i>To'xtatish
+                                </button>
+                                <span class="text-muted" id="audio-time">00:00 / 00:00</span>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Eslatma:</strong> Bu test uchun audio fayl hozircha yuklanmagan.
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% else %}
-                    <div class="alert alert-info mb-0" style="font-size: clamp(0.85rem, 2vw, 1rem); padding: 0.75rem 1rem;">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Eslatma:</strong> Bu test uchun audio fayl hozircha yuklanmagan. 
-                        Admin panel orqali audio fayl yuklashingiz mumkin.
+                    {% elif test.test_type == 'reading' and test.reading_text %}
+                    <div class="card border-0 shadow-lg">
+                        <div class="card-body p-4">
+                            <h5 class="mb-3" style="font-weight: 700; color: var(--primary);">
+                                <i class="fas fa-book me-2"></i>Reading Passage
+                            </h5>
+                            <div class="reading-tools">
+                                <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-reading">
+                                    <i class="fas fa-highlighter me-1"></i>Highlight
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" id="btn-note-reading">
+                                    <i class="fas fa-note-sticky me-1"></i>Add Note
+                                </button>
+                            </div>
+                            <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; overflow-y: auto;">
+                                {{ test.reading_text|linebreaks }}
+                            </div>
+                            <div class="mt-3">
+                                <h6 class="mb-2" style="font-weight: 700;">My Reading Notes</h6>
+                                <div id="reading-notes-panel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% elif test.test_type == 'writing' %}
+                    <div class="card border-0 shadow-lg">
+                        <div class="card-body p-4">
+                            <h5 class="mb-3" style="font-weight: 700; color: var(--primary);">
+                                <i class="fas fa-pen me-2"></i>Writing Task
+                            </h5>
+                            <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; overflow-y: auto;">
+                                <div id="writing-inline-editor"
+                                     data-raw="{{ current_question.question_text|escapejs }}"
+                                     data-qtype="{{ current_question.question_type }}"
+                                     data-current="{{ current_answer|default:''|escapejs }}">
+                                    {{ current_question.question_text|linebreaks }}
+                                </div>
+                                {% if current_question.question_image %}
+                                <img src="{{ current_question.question_image.url }}" class="img-fluid mt-3" alt="Task image">
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                     {% endif %}
                 </div>
-            </div>
-            {% elif test.test_type == 'reading' and test.reading_text %}
-            <!-- Reading test: Matn -->
-            <div class="card border-0 shadow-lg mb-4">
-                <div class="card-body p-4">
-                    <h5 class="mb-3" style="font-weight: 700; color: var(--primary);">
-                        <i class="fas fa-book me-2"></i>O'qish matni
-                    </h5>
-                    <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; line-height: 1.8; font-size: 1.05rem; color: var(--gray-800); max-height: 400px; overflow-y: auto;">
-                        {{ test.reading_text|linebreaks }}
+                <div class="exam-split-divider d-none d-lg-block" aria-hidden="true"></div>
+                <div class="exam-right-pane">
+                    <div id="question-container">
+                        {% include 'core/tests/partial_question.html' %}
                     </div>
                 </div>
             </div>
-            {% endif %}
-            
-            <!-- Savol -->
-            <div id="question-container">
-                {% include 'core/tests/partial_question.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<button type="button" id="flashcard-selection-btn" class="flashcard-selection-btn" title="Flashcardga saqlash">
+    <i class="fas fa-plus"></i>
+</button>
+
+<div class="modal fade" id="flashcardModal" tabindex="-1" aria-labelledby="flashcardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="flashcardModalLabel"><i class="fas fa-layer-group me-2"></i>Add New Flashcard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select set</label>
+                    <select id="flashcard-set-select" class="form-select">
+                        <option value="">Select set</option>
+                        {% for s in flashcard_sets %}
+                        <option value="{{ s.pk }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Or create new set</label>
+                    <input type="text" id="flashcard-new-set" class="form-control" placeholder="Masalan: Writing vocabulary">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Term</label>
+                    <input type="text" id="flashcard-term" class="form-control" maxlength="255" placeholder="Selected text...">
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Definition</label>
+                    <textarea id="flashcard-definition" class="form-control" rows="4" placeholder="Ma'nosi yoki izohi..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="save-flashcard-btn">
+                    <i class="fas fa-floppy-disk me-1"></i>Save
+                </button>
             </div>
         </div>
     </div>
@@ -336,6 +529,481 @@
     
     // Question navigation HTMX bilan
     document.addEventListener('DOMContentLoaded', function() {
+        const examModeToggle = document.getElementById('exam-mode-toggle');
+        const autosaveStatus = document.getElementById('autosave-status');
+        const applyExamMode = (enabled) => {
+            document.body.classList.toggle('exam-mode', enabled);
+            if (examModeToggle) {
+                examModeToggle.innerHTML = enabled
+                    ? '<i class="fas fa-compress me-1"></i><span class="d-none d-sm-inline">Exit Mode</span>'
+                    : '<i class="fas fa-expand me-1"></i><span class="d-none d-sm-inline">Exam Mode</span>';
+            }
+            localStorage.setItem('examModeEnabled', enabled ? '1' : '0');
+        };
+        if (localStorage.getItem('examModeEnabled') === '1') applyExamMode(true);
+        if (examModeToggle) {
+            examModeToggle.addEventListener('click', function() {
+                applyExamMode(!document.body.classList.contains('exam-mode'));
+            });
+        }
+
+        // Resizable splitter between left and right panes
+        (function initSplitter() {
+            const layout = document.querySelector('.exam-split-layout');
+            const divider = document.querySelector('.exam-split-divider');
+            const leftPane = document.querySelector('.exam-left-pane');
+            const rightPane = document.querySelector('.exam-right-pane');
+            if (!layout || !divider || !leftPane || !rightPane) return;
+            let startX, startLeftW;
+            divider.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+                e.preventDefault();
+                startX = e.clientX;
+                startLeftW = leftPane.getBoundingClientRect().width;
+                const minLeft = 280, minRight = 280;
+                function move(e) {
+                    const dx = e.clientX - startX;
+                    const total = layout.getBoundingClientRect().width;
+                    const divW = divider.getBoundingClientRect().width;
+                    let w = Math.max(minLeft, Math.min(total - divW - minRight, startLeftW + dx));
+                    leftPane.style.flex = '0 0 ' + w + 'px';
+                    rightPane.style.flex = '1 1 0';
+                }
+                function up() {
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            });
+        })();
+
+        function escapeHtml(str) {
+            return (str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function markSaved(text) {
+            if (!autosaveStatus) return;
+            autosaveStatus.textContent = text || 'Saved';
+            autosaveStatus.style.opacity = '1';
+            clearTimeout(window.__saveStatusTimer);
+            window.__saveStatusTimer = setTimeout(() => {
+                if (autosaveStatus) autosaveStatus.textContent = 'Auto-save: active';
+            }, 1800);
+        }
+
+        // Flashcard helper (selected text -> modal -> save)
+        const flashcardSelectionBtn = document.getElementById('flashcard-selection-btn');
+        const flashcardTerm = document.getElementById('flashcard-term');
+        const flashcardDefinition = document.getElementById('flashcard-definition');
+        const flashcardSetSelect = document.getElementById('flashcard-set-select');
+        const flashcardNewSet = document.getElementById('flashcard-new-set');
+        const saveFlashcardBtn = document.getElementById('save-flashcard-btn');
+        const flashcardModalEl = document.getElementById('flashcardModal');
+        const flashcardModal = flashcardModalEl && window.bootstrap ? new bootstrap.Modal(flashcardModalEl) : null;
+        let lastSelectedText = '';
+
+        function getSelectionFromExamText() {
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount) return '';
+            const selectedText = (sel.toString() || '').trim().replace(/\s+/g, ' ');
+            if (!selectedText) return '';
+            const anchor = sel.anchorNode && sel.anchorNode.nodeType === 1 ? sel.anchorNode : (sel.anchorNode ? sel.anchorNode.parentElement : null);
+            const inReading = anchor && anchor.closest ? anchor.closest('.reading-text') : null;
+            return inReading ? selectedText.slice(0, 255) : '';
+        }
+
+        function hideFlashcardSelectionBtn() {
+            if (!flashcardSelectionBtn) return;
+            flashcardSelectionBtn.style.display = 'none';
+        }
+
+        document.addEventListener('mouseup', function(e) {
+            if (!flashcardSelectionBtn) return;
+            const selectedText = getSelectionFromExamText();
+            if (!selectedText) {
+                hideFlashcardSelectionBtn();
+                return;
+            }
+            lastSelectedText = selectedText;
+            flashcardSelectionBtn.style.display = 'inline-flex';
+            flashcardSelectionBtn.style.alignItems = 'center';
+            flashcardSelectionBtn.style.justifyContent = 'center';
+            flashcardSelectionBtn.style.left = Math.max(12, e.clientX + 8) + 'px';
+            flashcardSelectionBtn.style.top = Math.max(12, e.clientY - 44) + 'px';
+        });
+        document.addEventListener('scroll', hideFlashcardSelectionBtn, true);
+        document.addEventListener('mousedown', function(e) {
+            if (flashcardSelectionBtn && !e.target.closest('#flashcard-selection-btn')) {
+                setTimeout(hideFlashcardSelectionBtn, 0);
+            }
+        });
+
+        if (flashcardSelectionBtn) {
+            flashcardSelectionBtn.addEventListener('click', function() {
+                hideFlashcardSelectionBtn();
+                if (!flashcardModal) return;
+                flashcardTerm.value = lastSelectedText || '';
+                flashcardDefinition.value = '';
+                flashcardNewSet.value = '';
+                flashcardSetSelect.value = flashcardSetSelect.value || '';
+                flashcardModal.show();
+            });
+        }
+
+        if (saveFlashcardBtn) {
+            saveFlashcardBtn.addEventListener('click', function() {
+                const term = (flashcardTerm.value || '').trim();
+                const definition = (flashcardDefinition.value || '').trim();
+                const setId = (flashcardSetSelect.value || '').trim();
+                const newSetName = (flashcardNewSet.value || '').trim();
+                const currentQuestionId = (document.querySelector('#question-container form input[name="question_id"]') || {}).value || '';
+
+                if (!term) {
+                    alert('Term kiriting');
+                    return;
+                }
+                if (!setId && !newSetName) {
+                    alert('Set tanlang yoki yangi set kiriting');
+                    return;
+                }
+
+                const body = new FormData();
+                body.append('term', term);
+                body.append('definition', definition);
+                body.append('set_id', setId);
+                body.append('new_set_name', newSetName);
+                body.append('question_id', currentQuestionId);
+                body.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                saveFlashcardBtn.disabled = true;
+                fetch('{% url "core:add_test_flashcard" test.pk %}', {
+                    method: 'POST',
+                    body: body,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        throw new Error((data && data.error) || 'Saqlashda xatolik');
+                    }
+                    return data;
+                })
+                .then((data) => {
+                    if (data.set_id && data.set_name && !flashcardSetSelect.querySelector('option[value="' + data.set_id + '"]')) {
+                        const opt = document.createElement('option');
+                        opt.value = data.set_id;
+                        opt.textContent = data.set_name;
+                        flashcardSetSelect.appendChild(opt);
+                    }
+                    if (data.set_id) flashcardSetSelect.value = String(data.set_id);
+                    flashcardNewSet.value = '';
+                    markSaved('Flashcard saved');
+                    if (flashcardModal) flashcardModal.hide();
+                })
+                .catch((err) => {
+                    alert(err.message || 'Xatolik yuz berdi');
+                })
+                .finally(() => {
+                    saveFlashcardBtn.disabled = false;
+                });
+            });
+        }
+
+        const flaggedStorageKey = 'flagged_questions_test_{{ test.pk }}';
+        const flaggedOnlyStorageKey = 'flagged_only_test_{{ test.pk }}';
+        function getFlaggedQuestions() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(flaggedStorageKey) || '[]');
+                if (!Array.isArray(parsed)) return [];
+                return parsed.map(v => parseInt(v, 10)).filter(Number.isFinite);
+            } catch (e) {
+                return [];
+            }
+        }
+        function setFlaggedQuestions(arr) {
+            localStorage.setItem(flaggedStorageKey, JSON.stringify(arr));
+        }
+        function isQuestionFlagged(qNumber) {
+            return getFlaggedQuestions().includes(parseInt(qNumber, 10));
+        }
+        function isFlaggedOnlyMode() {
+            return localStorage.getItem(flaggedOnlyStorageKey) === '1';
+        }
+        function setFlaggedOnlyMode(enabled) {
+            localStorage.setItem(flaggedOnlyStorageKey, enabled ? '1' : '0');
+        }
+        function refreshFlagUI() {
+            const flagged = getFlaggedQuestions();
+            const form = document.querySelector('#question-container form');
+            const currentQ = form ? parseInt(form.dataset.questionNumber || '0', 10) : 0;
+            const flaggedOnly = isFlaggedOnlyMode();
+
+            document.querySelectorAll('.question-pagination .part-btn[data-question-number]').forEach((btn) => {
+                const n = parseInt(btn.dataset.questionNumber || '0', 10);
+                if (!n) return;
+                const flaggedNow = flagged.includes(n);
+                btn.classList.toggle('is-flagged', flaggedNow);
+                btn.setAttribute('title', flaggedNow ? ('Savol ' + n + ' (Belgilangan)') : ('Savol ' + n));
+                const hide = flaggedOnly && !flaggedNow && n !== currentQ;
+                btn.style.display = hide ? 'none' : '';
+            });
+
+            const flagBtn = document.getElementById('flag-question-btn');
+            if (flagBtn) {
+                const active = currentQ && flagged.includes(currentQ);
+                flagBtn.classList.toggle('active', active);
+                flagBtn.dataset.questionNumber = String(currentQ || parseInt(flagBtn.dataset.questionNumber || '0', 10) || 0);
+                flagBtn.innerHTML = active
+                    ? '<i class="fas fa-flag me-1"></i><span class="d-none d-sm-inline">Belgilangan</span>'
+                    : '<i class="far fa-flag me-1"></i><span class="d-none d-sm-inline">Belgilash</span>';
+            }
+            const flaggedOnlyBtn = document.getElementById('flagged-only-btn');
+            if (flaggedOnlyBtn) {
+                flaggedOnlyBtn.classList.toggle('active', flaggedOnly);
+                flaggedOnlyBtn.innerHTML = flaggedOnly
+                    ? '<i class="fas fa-filter me-1"></i><span class="d-none d-sm-inline">All questions</span>'
+                    : '<i class="fas fa-filter me-1"></i><span class="d-none d-sm-inline">Flagged only</span>';
+            }
+        }
+        function toggleCurrentQuestionFlag() {
+            const form = document.querySelector('#question-container form');
+            const currentQ = form ? parseInt(form.dataset.questionNumber || '0', 10) : 0;
+            if (!currentQ) return;
+            const flagged = getFlaggedQuestions();
+            const idx = flagged.indexOf(currentQ);
+            if (idx >= 0) {
+                flagged.splice(idx, 1);
+                markSaved('Flag removed');
+            } else {
+                flagged.push(currentQ);
+                markSaved('Question flagged');
+            }
+            setFlaggedQuestions(flagged.sort((a, b) => a - b));
+            refreshFlagUI();
+        }
+        function toggleFlaggedOnlyMode() {
+            setFlaggedOnlyMode(!isFlaggedOnlyMode());
+            refreshFlagUI();
+        }
+
+        function initReadingTools() {
+            const readingPane = document.querySelector('.reading-text');
+            const notesPanel = document.getElementById('reading-notes-panel');
+            const hlBtn = document.getElementById('btn-highlight-reading');
+            const noteBtn = document.getElementById('btn-note-reading');
+            if (!readingPane || !notesPanel) return;
+
+            const storageKey = 'reading_notes_test_{{ test.pk }}';
+            const getNotes = () => {
+                try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch (e) { return []; }
+            };
+            const setNotes = (arr) => localStorage.setItem(storageKey, JSON.stringify(arr));
+            const renderNotes = () => {
+                const notes = getNotes();
+                if (!notes.length) {
+                    notesPanel.innerHTML = '<div class="text-muted small">Hozircha note yo\'q.</div>';
+                    return;
+                }
+                notesPanel.innerHTML = notes.map(n =>
+                    '<div class="reading-note-item"><strong>Text:</strong> ' + escapeHtml(n.text) +
+                    '<div class="small text-muted mt-1">' + escapeHtml(n.note) + '</div></div>'
+                ).join('');
+            };
+            renderNotes();
+
+            const getSelectionRange = () => {
+                const sel = window.getSelection();
+                if (!sel || !sel.rangeCount) return null;
+                const range = sel.getRangeAt(0);
+                if (!readingPane.contains(range.commonAncestorContainer)) return null;
+                if (sel.toString().trim().length === 0) return null;
+                return range;
+            };
+
+            if (hlBtn) hlBtn.addEventListener('click', function() {
+                const range = getSelectionRange();
+                if (!range) return;
+                const mark = document.createElement('span');
+                mark.className = 'reading-mark';
+                try {
+                    range.surroundContents(mark);
+                } catch (e) {
+                    const frag = range.extractContents();
+                    mark.appendChild(frag);
+                    range.insertNode(mark);
+                }
+                window.getSelection().removeAllRanges();
+                markSaved('Highlight saved');
+            });
+
+            if (noteBtn) noteBtn.addEventListener('click', function() {
+                const range = getSelectionRange();
+                if (!range) return;
+                const selectedText = window.getSelection().toString().trim();
+                const note = window.prompt('Qisqa note yozing:');
+                if (!note) return;
+                const notes = getNotes();
+                notes.unshift({ text: selectedText.slice(0, 180), note: note.slice(0, 400), ts: Date.now() });
+                setNotes(notes.slice(0, 30));
+                renderNotes();
+                markSaved('Note saved');
+            });
+        }
+
+        function syncWritingInlineWithRightForm() {
+            const editor = document.getElementById('writing-inline-editor');
+            if (!editor) return;
+
+            const qType = editor.dataset.qtype || '';
+            const fillTypes = ['fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'];
+            if (!fillTypes.includes(qType)) return;
+
+            const raw = editor.dataset.raw || '';
+            const form = document.querySelector('#question-container form');
+            if (!form) return;
+
+            const hasNumbered = /\[\d+\]/.test(raw);
+            const hasUnderscore = /____+/.test(raw);
+            if (!hasNumbered && !hasUnderscore) return;
+
+            const rightSingle = form.querySelector('input[name="answer"]');
+
+            const readRightValue = (n) => {
+                const direct = form.querySelector('input[name="answer_' + n + '"], .inline-fill-input[name="answer_' + n + '"]');
+                if (direct) return direct.value || '';
+                if (n === 1 && rightSingle) return rightSingle.value || '';
+                return '';
+            };
+
+            let autoIndex = 0;
+            const parts = raw.split(hasNumbered ? /(\[\d+\])/g : /(____+)/g);
+            const html = parts.map((part) => {
+                const numberedMatch = hasNumbered ? part.match(/^\[(\d+)\]$/) : null;
+                const blankMatch = !hasNumbered ? /^____+$/.test(part) : false;
+
+                if (numberedMatch) {
+                    const n = parseInt(numberedMatch[1], 10);
+                    return '<input type="text" class="writing-inline-blank" data-blank="' + n + '" autocomplete="off" />';
+                }
+                if (blankMatch) {
+                    autoIndex += 1;
+                    return '<input type="text" class="writing-inline-blank" data-blank="' + autoIndex + '" autocomplete="off" />';
+                }
+                return escapeHtml(part).replace(/\n/g, '<br>');
+            }).join('');
+
+            editor.innerHTML = '<div>' + html + '</div>';
+
+            const inlineInputs = Array.from(editor.querySelectorAll('.writing-inline-blank[data-blank]'));
+            if (!inlineInputs.length) return;
+
+            const setRightValue = (n, val) => {
+                const enabledTargets = form.querySelectorAll(
+                    'input[name="answer_' + n + '"]:not([disabled]), .inline-fill-input[name="answer_' + n + '"]:not([disabled])'
+                );
+                if (enabledTargets.length) {
+                    enabledTargets.forEach((el) => { el.value = val; });
+                    return;
+                }
+
+                if (n === 1) {
+                    const singleEnabled = form.querySelector('input[name="answer"]:not([disabled])');
+                    if (singleEnabled) {
+                        singleEnabled.value = val;
+                        return;
+                    }
+                }
+
+                const hiddenKey = 'inline-shadow-' + n;
+                let hidden = form.querySelector('input[data-inline-shadow="' + hiddenKey + '"]');
+                if (!hidden) {
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = n === 1 && !form.querySelector('input[name="answer_1"], .inline-fill-input[name="answer_1"]')
+                        ? 'answer'
+                        : ('answer_' + n);
+                    hidden.setAttribute('data-inline-shadow', hiddenKey);
+                    form.appendChild(hidden);
+                }
+                hidden.value = val;
+            };
+
+            const setInlineValue = (n, val) => {
+                const input = editor.querySelector('.writing-inline-blank[data-blank="' + n + '"]');
+                if (input) input.value = val || '';
+            };
+
+            inlineInputs.forEach((input) => {
+                const n = parseInt(input.getAttribute('data-blank') || '1', 10);
+                input.value = readRightValue(n) || '';
+                input.addEventListener('input', function() {
+                    setRightValue(n, this.value);
+                });
+                setRightValue(n, input.value);
+            });
+
+            const rightAllInputs = form.querySelectorAll('input[name="answer"], input[name^="answer_"], .inline-fill-input[name^="answer_"]');
+            rightAllInputs.forEach((el) => {
+                el.addEventListener('input', function() {
+                    const match = (this.name || '').match(/^answer_(\d+)$/);
+                    const n = match ? parseInt(match[1], 10) : 1;
+                    setInlineValue(n, this.value);
+                });
+            });
+
+            form.addEventListener('submit', function() {
+                inlineInputs.forEach((input) => {
+                    const n = parseInt(input.getAttribute('data-blank') || '1', 10);
+                    setRightValue(n, input.value);
+                });
+            });
+        }
+
+        function refreshExamQuestionUI() {
+            syncWritingInlineWithRightForm();
+            refreshFlagUI();
+            const form = document.querySelector('#question-container form');
+            if (form) {
+                form.addEventListener('input', function() { markSaved('Draft saved'); }, { passive: true });
+            }
+        }
+        window.__refreshExamQuestionUI = refreshExamQuestionUI;
+
+        refreshExamQuestionUI();
+        initReadingTools();
+
+        document.body.addEventListener('click', function(e) {
+            const flagBtn = e.target.closest('#flag-question-btn');
+            if (flagBtn) {
+                e.preventDefault();
+                toggleCurrentQuestionFlag();
+                return;
+            }
+            const flaggedOnlyBtn = e.target.closest('#flagged-only-btn');
+            if (flaggedOnlyBtn) {
+                e.preventDefault();
+                toggleFlaggedOnlyMode();
+            }
+        });
+
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt && evt.detail && evt.detail.target && evt.detail.target.id === 'question-container') {
+                refreshExamQuestionUI();
+            }
+        });
+
         // Oldingi savolga o'tish
         const prevLinks = document.querySelectorAll('a[href*="test_take"]');
         prevLinks.forEach(link => {
@@ -355,6 +1023,25 @@
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     });
                 });
+            }
+        });
+
+        // Exam keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            const form = document.querySelector('#question-container form');
+            if (!form) return;
+            if (e.altKey && e.key === 'ArrowRight') {
+                e.preventDefault();
+                form.requestSubmit();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                form.requestSubmit();
+            }
+            if (e.altKey && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const prevBtn = document.querySelector('.test-navigation button[onclick*="loadQuestion"]');
+                if (prevBtn) prevBtn.click();
             }
         });
     });

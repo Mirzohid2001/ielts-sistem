@@ -17,11 +17,14 @@
               hx-trigger="submit"
               hx-headers='{"HX-Request": "true"}'
               id="question-form-{{ current_question.pk }}"
-              data-question-type="{{ current_question.question_type }}">
+              data-question-type="{{ current_question.question_type }}"
+              data-question-number="{{ question_number }}">
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{ current_question.pk }}">
             
+            {% if test.test_type != 'writing' and current_question.question_type != 'fill_blank' and current_question.question_type != 'summary_completion' and current_question.question_type != 'notes_completion' and current_question.question_type != 'sentence_completion' and current_question.question_type != 'table_completion' and current_question.question_type != 'short_answer' %}
             <p class="mb-3 mb-md-4" style="font-size: clamp(0.95rem, 2.2vw, 1rem); line-height: 1.6;">{{ current_question.question_text|linebreaks }}</p>
+            {% endif %}
             
             {% if current_question.question_image %}
             <img src="{{ current_question.question_image.url }}" class="img-fluid mb-4" alt="Savol rasmi">
@@ -163,6 +166,11 @@
                 {% if current_question.options_json.instruction %}
                 <p class="text-muted mb-3" style="font-size: 0.9rem;"><i class="fas fa-info-circle me-1"></i>{{ current_question.options_json.instruction }}</p>
                 {% endif %}
+                <div class="fill-inline-render mb-3"
+                     data-raw="{{ current_question.question_text|escapejs }}"
+                     data-blanks="{{ answer_fields|length|default:'1' }}"
+                     style="display:none;"></div>
+                <div class="fill-fallback">
                 {% if answer_fields|length > 1 %}
                     {% for field in answer_fields %}
                     <div class="mb-3">
@@ -181,6 +189,7 @@
                            maxlength="100" style="border-radius: 10px; border: 2px solid var(--gray-200);" 
                            autocomplete="off">
                 {% endif %}
+                </div>
             </div>
             {% elif current_question.question_type == 'matching_headings' or current_question.question_type == 'matching_features' or current_question.question_type == 'matching_info' or current_question.question_type == 'matching_sentences' or current_question.question_type == 'classification' %}
             <!-- Matching va Classification -->
@@ -224,11 +233,11 @@
             </div>
             {% endif %}
             
-            <div class="d-flex flex-column flex-md-row justify-content-between gap-2 gap-md-3 test-navigation">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-2 gap-md-3 test-navigation exam-question-footer">
                 {% if question_number > 1 %}
                 <button type="button" 
                         onclick="loadQuestion({{ question_number|add:'-1' }})"
-                        class="btn btn-outline-secondary flex-grow-1 order-1 order-md-0" style="font-size: clamp(0.85rem, 2vw, 0.875rem);">
+                        class="btn btn-outline-secondary order-1 order-md-0" style="font-size: clamp(0.85rem, 2vw, 0.875rem); white-space: nowrap; min-width: 120px;">
                     <i class="fas fa-arrow-left me-1 me-md-2"></i>Oldingi
                 </button>
                 {% else %}
@@ -237,10 +246,12 @@
                 
                 <!-- Savollar ro'yxati (navigation) -->
                 <div class="d-flex align-items-center gap-1 flex-wrap justify-content-center order-0 order-md-1 question-pagination" style="max-width: 100%; margin: 0.5rem 0;">
+                    <span class="part-label">Savol:</span>
                     {% for q_pk in questions_list %}
                     <a href="#" 
                        onclick="loadQuestion({{ forloop.counter }}); return false;"
-                       class="btn btn-sm {% if forloop.counter == question_number %}btn-primary{% elif q_pk in answered_questions %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                       class="btn btn-sm part-btn {% if forloop.counter == question_number %}btn-primary{% elif q_pk in answered_questions %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                       data-question-number="{{ forloop.counter }}"
                        style="min-width: clamp(32px, 6vw, 36px); padding: clamp(0.2rem, 0.8vw, 0.25rem) clamp(0.4rem, 1.2vw, 0.5rem); font-size: clamp(0.75rem, 1.8vw, 0.875rem);"
                        title="Savol {{ forloop.counter }}">
                         {{ forloop.counter }}
@@ -249,12 +260,12 @@
                 </div>
                 
                 {% if question_number < total_questions %}
-                <button type="submit" class="btn btn-primary flex-grow-1 order-2" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
+                <button type="submit" class="btn btn-primary flex-grow-1 order-3" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
                     <span class="d-none d-sm-inline">Keyingi</span><span class="d-sm-none">Keyin</span> <i class="fas fa-arrow-right ms-1 ms-md-2"></i>
                 </button>
                 {% else %}
-                <button type="submit" class="btn btn-success flex-grow-1 order-2" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
-                    <i class="fas fa-check me-1 me-md-2"></i>Yakunlash
+                <button type="submit" class="btn btn-submit-exam flex-grow-1 order-3" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
+                    <i class="fas fa-paper-plane me-1 me-md-2"></i>Submit
                 </button>
                 {% endif %}
             </div>
@@ -292,7 +303,7 @@
                         const selected = form ? form.querySelector('input[name="answer"]:checked') : null;
                         if (!selected) { showValidationAlert('Iltimos, javobni tanlang!'); return false; }
                     } else if (fillTypes.includes(qType)) {
-                        const inputs = form ? form.querySelectorAll('.fill-answer-input, input[name="answer"]') : [];
+                        const inputs = form ? form.querySelectorAll('.fill-answer-input, .inline-fill-input, input[name="answer"]') : [];
                         if (!Array.from(inputs).some(inp => inp.value && inp.value.trim())) {
                             showValidationAlert('Iltimos, javobni yozing!'); return false;
                         }
@@ -305,6 +316,69 @@
                         if (checked.length === 0) { showValidationAlert('Iltimos, kamida bitta variantni tanlang!'); return false; }
                     }
                     return true;
+                }
+
+                function escapeHtml(str) {
+                    return (str || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+
+                function initInlineFillInputs(form) {
+                    if (!form) return;
+                    const qType = form.getAttribute('data-question-type') || '';
+                    const fillTypes = ['fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'];
+                    if (!fillTypes.includes(qType)) return;
+
+                    const renderBox = form.querySelector('.fill-inline-render');
+                    const fallback = form.querySelector('.fill-fallback');
+                    if (!renderBox) return;
+
+                    const raw = renderBox.dataset.raw || '';
+                    const hasNumbered = /\[\d+\]/.test(raw);
+                    const hasUnderscore = /____+/.test(raw);
+                    if (!hasNumbered && !hasUnderscore) return;
+
+                    const maxBlanks = parseInt(renderBox.dataset.blanks || '1', 10) || 1;
+                    const getInitialValue = (i) => {
+                        const named = fallback ? fallback.querySelector('[name="answer_' + i + '"]') : null;
+                        if (named) return named.value || '';
+                        const single = fallback ? fallback.querySelector('[name="answer"]') : null;
+                        return i === 1 && single ? (single.value || '') : '';
+                    };
+
+                    let index = 0;
+                    const parts = raw.split(hasNumbered ? /(\[\d+\])/g : /(____+)/g);
+                    const html = parts.map((part) => {
+                        const numberedMatch = hasNumbered ? part.match(/^\[(\d+)\]$/) : null;
+                        const blankMatch = !hasNumbered ? /^____+$/.test(part) : false;
+                        if (numberedMatch) {
+                            const n = parseInt(numberedMatch[1], 10);
+                            const val = escapeHtml(getInitialValue(n));
+                            return '<input class="form-control form-control-sm d-inline-block inline-fill-input" ' +
+                                   'style="width:120px; margin:0 .25rem; vertical-align:middle;" ' +
+                                   'name="answer_' + n + '" value="' + val + '" autocomplete="off" />';
+                        }
+                        if (blankMatch && index < maxBlanks) {
+                            index += 1;
+                            const val = escapeHtml(getInitialValue(index));
+                            return '<input class="form-control form-control-sm d-inline-block inline-fill-input" ' +
+                                   'style="width:120px; margin:0 .25rem; vertical-align:middle;" ' +
+                                   'name="answer_' + index + '" value="' + val + '" autocomplete="off" />';
+                        }
+                        return escapeHtml(part).replace(/\n/g, '<br>');
+                    }).join('');
+
+                    renderBox.innerHTML = html;
+                    renderBox.style.display = 'block';
+
+                    if (fallback) {
+                        fallback.style.display = 'none';
+                        fallback.querySelectorAll('input').forEach(inp => inp.disabled = true);
+                    }
                 }
                 
                 function showValidationAlert(msg) {
@@ -320,6 +394,7 @@
                 (function() {
                     const form = document.getElementById('question-form-{{ current_question.pk }}');
                     if (form) {
+                        initInlineFillInputs(form);
                         // Target elementni tekshirish
                         function checkTarget() {
                             const target = document.getElementById('question-container');
@@ -428,6 +503,9 @@
                         .then(html => {
                             if (targetElement) {
                                 targetElement.innerHTML = html;
+                                if (typeof window.__refreshExamQuestionUI === 'function') {
+                                    window.__refreshExamQuestionUI();
+                                }
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }
                         })

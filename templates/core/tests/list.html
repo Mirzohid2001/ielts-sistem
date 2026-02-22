@@ -2,6 +2,29 @@
 
 {% block title %}Testlar - IELTS Center{% endblock %}
 
+{% block extra_css %}
+<style>
+    .collection-shortcut {
+        border-radius: 999px;
+        padding: .44rem .9rem;
+        font-weight: 600;
+        border: 1px solid #dbe3ef;
+        background: #fff;
+        transition: all .2s ease;
+    }
+    .collection-shortcut:hover {
+        transform: translateY(-1px);
+        border-color: #2563eb;
+        color: #2563eb;
+    }
+    .test-search-shell {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 10px 24px rgba(2, 6, 23, .05);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="row mb-5">
@@ -30,10 +53,24 @@
         </div>
     </div>
 
+    <div class="row mb-3">
+        <div class="col-12 d-flex flex-wrap gap-2">
+            <a href="{% url 'core:test_collection_by_type' 'reading' %}" class="btn btn-sm collection-shortcut">
+                <i class="fas fa-book-open me-1"></i>Reading Collection
+            </a>
+            <a href="{% url 'core:test_collection_by_type' 'listening' %}" class="btn btn-sm collection-shortcut">
+                <i class="fas fa-headphones me-1"></i>Listening Collection
+            </a>
+            <a href="{% url 'core:test_collection_by_type' 'writing' %}" class="btn btn-sm collection-shortcut">
+                <i class="fas fa-pen me-1"></i>Writing Collection
+            </a>
+        </div>
+    </div>
+
     <!-- Qidiruv va Filterlar -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-0 shadow-sm mb-3">
+            <div class="card border-0 shadow-sm mb-3 test-search-shell">
                 <div class="card-body p-3">
                     <form method="get" id="search-form" class="d-flex gap-2 flex-wrap align-items-end">
                         <!-- Qidiruv -->

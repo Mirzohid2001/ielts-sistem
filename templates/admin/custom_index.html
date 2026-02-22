@@ -308,7 +308,7 @@
     </div>
 
     <!-- Chartlar -->
-    <div class="grid-2">
+    <div class="grid-3">
         <!-- Test Natijalari Chart -->
         <div class="dashboard-section">
             <h2>📊 Test Natijalari Statistikasi</h2>
@@ -322,6 +322,14 @@
             <h2>📚 Kategoriya bo'yicha Testlar</h2>
             <div class="chart-container">
                 <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 14 kunlik trend -->
+        <div class="dashboard-section">
+            <h2>📈 Oxirgi 14 kun trendi</h2>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
             </div>
         </div>
     </div>
@@ -460,193 +468,123 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// Chart.js yuklanishini tekshirish
-if (typeof Chart === 'undefined') {
-    console.error('Chart.js yuklanmadi! CDN linkini tekshiring.');
-    // Alternativ CDN
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
-    script.onload = function() {
-        console.log('Chart.js alternativ CDN dan yuklandi');
-        initializeCharts();
-    };
-    script.onerror = function() {
-        console.error('Chart.js yuklanmadi! Internetga ulanishni tekshiring.');
-    };
-    document.head.appendChild(script);
-} else {
-    console.log('Chart.js muvaffaqiyatli yuklandi');
+const chartPayload = {{ chart_payload_json|safe }};
+
+function renderEmptyChartMessage(canvasId, message) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !canvas.parentElement) return;
+    canvas.parentElement.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">' + message + '</div>';
 }
 
-function initializeCharts() {
-    // Test Natijalari Chart
-    const testResultsCtx = document.getElementById('testResultsChart');
-    if (testResultsCtx) {
-        const passedCount = {{ passed_tests|default:0 }};
-        const failedCount = {{ failed_tests|default:0 }};
-        const total = passedCount + failedCount;
-        
-        // Debug
-        console.log('Test Results Chart - Passed:', passedCount, 'Failed:', failedCount);
-        
-        if (typeof Chart !== 'undefined') {
-            // Agar ma'lumotlar bo'sh bo'lsa, default qiymatlar
-            const chartData = total > 0 ? [passedCount, failedCount] : [0, 0];
-            
-            new Chart(testResultsCtx, {
+function initDashboardCharts() {
+    if (typeof Chart === 'undefined') {
+        return;
+    }
+
+    // 1) O'tdi / O'tmadi
+    const testCtx = document.getElementById('testResultsChart');
+    const passFail = chartPayload.pass_fail || [0, 0];
+    if (testCtx && (passFail[0] + passFail[1] > 0)) {
+        new Chart(testCtx, {
             type: 'doughnut',
             data: {
-                labels: ['O\'tdi', 'O\'tmadi'],
+                labels: ["O'tdi", "O'tmadi"],
                 datasets: [{
-                    data: chartData,
-                    backgroundColor: [
-                        'rgba(67, 233, 123, 0.8)',
-                        'rgba(250, 112, 154, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(67, 233, 123, 1)',
-                        'rgba(250, 112, 154, 1)'
-                    ],
+                    data: passFail,
+                    backgroundColor: ['rgba(16, 185, 129, .85)', 'rgba(239, 68, 68, .82)'],
+                    borderColor: ['rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)'],
                     borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 13,
-                                weight: '600'
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return label + ': ' + value + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
+                plugins: { legend: { position: 'bottom' } }
             }
-            });
-        } else {
-            console.error('Chart.js is not loaded!');
-        }
+        });
     } else {
-        console.error('testResultsChart canvas element not found!');
+        renderEmptyChartMessage('testResultsChart', "Test natijalari hali yo'q");
     }
-    
-    // Kategoriya bo'yicha Chart
-    const categoryCtx = document.getElementById('categoryChart');
-    if (categoryCtx) {
-        const categories = [
-            {% for stat in category_test_stats %}
-            '{{ stat.name|escapejs }}',
-            {% empty %}
-            'Ma\'lumotlar yo\'q'
-            {% endfor %}
-        ];
-        const testCounts = [
-            {% for stat in category_test_stats %}
-            {{ stat.test_count|default:0 }},
-            {% empty %}
-            0
-            {% endfor %}
-        ];
-        const resultCounts = [
-            {% for stat in category_test_stats %}
-            {{ stat.result_count|default:0 }},
-            {% empty %}
-            0
-            {% endfor %}
-        ];
-        
-        // Debug
-        console.log('Category Chart - Categories:', categories);
-        console.log('Category Chart - Test Counts:', testCounts);
-        console.log('Category Chart - Result Counts:', resultCounts);
-        
-        if (typeof Chart !== 'undefined') {
-            // Agar kategoriyalar bo'sh bo'lsa yoki faqat "Ma'lumotlar yo'q" bo'lsa
-            if (categories.length === 0 || (categories.length === 1 && categories[0] === 'Ma\'lumotlar yo\'q')) {
-                console.warn('Kategoriya ma\'lumotlari yo\'q, chart yaratilmaydi');
-                categoryCtx.parentElement.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">Kategoriya ma\'lumotlari yo\'q</div>';
-            } else {
-                new Chart(categoryCtx, {
-                type: 'bar',
-                data: {
-                    labels: categories,
-                    datasets: [{
-                        label: 'Jami Testlar',
-                        data: testCounts,
-                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 2
-                    }, {
-                        label: 'Ishlangan Testlar',
-                        data: resultCounts,
-                    backgroundColor: 'rgba(118, 75, 162, 0.6)',
-                    borderColor: 'rgba(118, 75, 162, 1)',
-                    borderWidth: 2
+
+    // 2) Kategoriyalar bo'yicha testlar
+    const catCtx = document.getElementById('categoryChart');
+    const labels = chartPayload.category_labels || [];
+    const tests = chartPayload.category_tests || [];
+    const results = chartPayload.category_results || [];
+    if (catCtx && labels.length) {
+        new Chart(catCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Jami testlar',
+                        data: tests,
+                        backgroundColor: 'rgba(59, 130, 246, .75)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Ishlangan testlar',
+                        data: results,
+                        backgroundColor: 'rgba(139, 92, 246, .75)',
+                        borderColor: 'rgba(139, 92, 246, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    } else {
+        renderEmptyChartMessage('categoryChart', "Kategoriya ma'lumotlari yo'q");
+    }
+
+    // 3) Oxirgi 14 kun trend
+    const trendCtx = document.getElementById('trendChart');
+    const trendLabels = chartPayload.trend_labels || [];
+    const trendCounts = chartPayload.trend_counts || [];
+    const hasTrend = trendCounts.some(v => v > 0);
+    if (trendCtx && trendLabels.length && hasTrend) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Kunlik yakunlangan testlar',
+                    data: trendCounts,
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    backgroundColor: 'rgba(37, 99, 235, .14)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 13,
-                                weight: '600'
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
+                plugins: { legend: { display: true } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
             }
-                });
-            }
-        } else {
-            console.error('Chart.js is not loaded!');
-        }
+        });
     } else {
-        console.error('categoryChart canvas element not found!');
+        renderEmptyChartMessage('trendChart', "Oxirgi 14 kunda natija topilmadi");
     }
 }
 
-// DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof Chart !== 'undefined') {
-        initializeCharts();
-    } else {
-        // Agar Chart.js hali yuklanmagan bo'lsa, kutish
-        setTimeout(function() {
-            if (typeof Chart !== 'undefined') {
-                initializeCharts();
-            } else {
-                console.error('Chart.js yuklanmadi!');
-            }
-        }, 1000);
+        initDashboardCharts();
+        return;
     }
+    const fallbackScript = document.createElement('script');
+    fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+    fallbackScript.onload = initDashboardCharts;
+    document.head.appendChild(fallbackScript);
 });
 </script>
 

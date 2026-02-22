@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ collection_test_type_display }} Tests - IELTS Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .collection-hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 45%, #0ea5e9 100%);
+        border-radius: 18px;
+        padding: 1.1rem 1.25rem;
+        color: #fff;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, .22);
+    }
+    .collection-back-btn {
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, .35);
+        color: #fff;
+        background: rgba(255, 255, 255, .1);
+        backdrop-filter: blur(6px);
+    }
+    .collection-back-btn:hover { color: #fff; background: rgba(255, 255, 255, .2); }
+    .collection-filter-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(2, 6, 23, .06);
+    }
+    .collection-tabs .btn {
+        border-radius: 999px;
+        padding: .42rem .95rem;
+        font-weight: 600;
+    }
+    .test-collection-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 10px 24px rgba(2, 6, 23, .05);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .test-collection-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 28px rgba(2, 6, 23, .1);
+    }
+    .collection-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        padding: .3rem .62rem;
+        font-size: .78rem;
+        color: #334155;
+        font-weight: 600;
+    }
+    .btn-collection-take {
+        border-radius: 10px;
+        padding: .42rem .9rem;
+        font-weight: 700;
+    }
+    .collection-pagination .page-link {
+        border-radius: 8px;
+        margin: 0 .2rem;
+        border: 1px solid #dbe3ef;
+        color: #0f172a;
+    }
+    .collection-pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+        border-color: #2563eb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="collection-hero d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="mb-1" style="font-weight: 700;">{{ collection_test_type_display }} Test Collection</h2>
+                    <p class="mb-0" style="opacity: .92;">Filterlangan, tezkor va zamonaviy test katalogi</p>
+                </div>
+                <a href="{% url 'core:test_list' %}" class="btn collection-back-btn">
+                    <i class="fas fa-arrow-left me-1"></i>Umumiy testlar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card collection-filter-card border-0 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Cambridge, test nomi...">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">Question type</label>
+                    <select name="qtype" class="form-select">
+                        <option value="">All</option>
+                        {% for code, label in available_question_types %}
+                        <option value="{{ code }}" {% if selected_question_type == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">Length</label>
+                    <select name="length" class="form-select">
+                        <option value="">All</option>
+                        <option value="full" {% if selected_length == 'full' %}selected{% endif %}>Full Tests</option>
+                        <option value="parts" {% if selected_length == 'parts' %}selected{% endif %}>Parts</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">Module</label>
+                    <select name="module" class="form-select">
+                        <option value="">All</option>
+                        <option value="academic" {% if selected_module == 'academic' %}selected{% endif %}>Academic</option>
+                        <option value="general" {% if selected_module == 'general' %}selected{% endif %}>General</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2 d-grid">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                </div>
+                <div class="col-6 col-md-2 d-grid">
+                    <a href="{% url 'core:test_collection_by_type' collection_test_type %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-rotate-left me-1"></i>Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mb-3 d-flex gap-2 flex-wrap collection-tabs">
+        <a href="{% url 'core:test_collection_by_type' 'reading' %}" class="btn {% if collection_test_type == 'reading' %}btn-dark{% else %}btn-outline-dark{% endif %} btn-sm">Reading</a>
+        <a href="{% url 'core:test_collection_by_type' 'listening' %}" class="btn {% if collection_test_type == 'listening' %}btn-dark{% else %}btn-outline-dark{% endif %} btn-sm">Listening</a>
+        <a href="{% url 'core:test_collection_by_type' 'writing' %}" class="btn {% if collection_test_type == 'writing' %}btn-dark{% else %}btn-outline-dark{% endif %} btn-sm">Writing</a>
+    </div>
+
+    <div class="row g-3">
+        {% for test in tests %}
+        <div class="col-12 col-md-6">
+            <div class="card h-100 test-collection-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-light text-dark border">{{ test.get_test_type_display }}</span>
+                        {% if test.is_part_test %}
+                        <span class="badge bg-info-subtle text-info-emphasis">Part</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success-emphasis">Full Test</span>
+                        {% endif %}
+                    </div>
+                    <h5 class="card-title mb-2">{{ test.title }}</h5>
+                    <p class="text-muted small mb-3">{{ test.description|default:"Tavsif yo'q"|truncatewords:20 }}</p>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="collection-chip"><i class="fas fa-question-circle"></i>{{ test.questions_count }} savol</span>
+                        {% if test.duration_minutes %}
+                        <span class="collection-chip"><i class="fas fa-clock"></i>{{ test.duration_minutes }} daqiqa</span>
+                        {% endif %}
+                        {% if test.primary_question_type_label %}
+                        <span class="collection-chip"><i class="fas fa-layer-group"></i>{{ test.primary_question_type_label }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <a href="{% url 'core:test_detail' test.pk %}" class="btn btn-primary btn-sm btn-collection-take">
+                            <i class="fas fa-play me-1"></i>Take Test
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-light border">Test topilmadi. Filterlarni o'zgartirib ko'ring.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if tests.paginator.num_pages > 1 %}
+    <nav class="mt-4" aria-label="Pagination">
+        <ul class="pagination justify-content-center collection-pagination">
+            {% if tests.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ tests.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>
+            </li>
+            {% endif %}
+
+            {% for num in tests.paginator.page_range %}
+                {% if num == tests.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num >= tests.number|add:'-2' and num <= tests.number|add:'2' %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if tests.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ tests.next_page_number }}"><i class="fas fa-chevron-right"></i></a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

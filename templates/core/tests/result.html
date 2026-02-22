@@ -99,6 +99,63 @@
                 </div>
             </div>
 
+            <!-- Performance Insights -->
+            <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px;">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%); border-bottom: 2px solid var(--primary); border-radius: 20px 20px 0 0;">
+                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>Performance Insights
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 rounded" style="background: rgba(99, 102, 241, 0.08);">
+                                <small class="text-muted d-block">O'rtacha tezlik</small>
+                                <strong style="font-size: 1.15rem;">{{ seconds_per_question }} soniya / savol</strong>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 rounded" style="background: rgba(16, 185, 129, 0.08);">
+                                <small class="text-muted d-block">Kuchli tomonlar</small>
+                                <strong style="font-size: 1.15rem;">{{ top_strengths|length }} ta tur</strong>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 rounded" style="background: rgba(239, 68, 68, 0.08);">
+                                <small class="text-muted d-block">Yaxshilash kerak</small>
+                                <strong style="font-size: 1.15rem;">{{ weak_areas|length }} ta tur</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if type_stats %}
+                    <div class="mb-3">
+                        <h6 style="font-weight: 700;">Question type bo'yicha aniqlik</h6>
+                        {% for item in type_stats %}
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>{{ item.label }}</small>
+                                <small><strong>{{ item.accuracy }}%</strong> ({{ item.correct }}/{{ item.answered }})</small>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar {% if item.accuracy >= 80 %}bg-success{% elif item.accuracy >= 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ item.accuracy_width }}%;"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if improvement_tips %}
+                    <div class="alert alert-light border mb-0">
+                        <strong class="d-block mb-2"><i class="fas fa-lightbulb text-warning me-1"></i>Keyingi urinish uchun aniq tavsiyalar</strong>
+                        {% for tip in improvement_tips %}
+                        <div style="font-size: 0.92rem;">- {{ tip }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Javoblar -->
             <div class="card border-0 shadow-lg" style="border-radius: 20px;">
                 <div class="card-header" style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%); border-bottom: 2px solid var(--primary); border-radius: 20px 20px 0 0;">
@@ -193,7 +250,11 @@
                                                 <strong style="font-size: 1.25rem;">{{ question.correct_answer|upper }})</strong> 
                                                 {{ question|get_option:question.correct_answer }}
                                                 {% else %}
-                                                {% with correct_ans=question.correct_answer_json or question.get_correct_answers_list %}{{ correct_ans|format_user_answer }}{% endwith %}
+                                                {% if question.correct_answer_json %}
+                                                {{ question.correct_answer_json|format_user_answer }}
+                                                {% else %}
+                                                {{ question.get_correct_answers_list|format_user_answer }}
+                                                {% endif %}
                                                 {% endif %}
                                             </p>
                                         </div>
