@@ -39,19 +39,164 @@ class QuestionResource(resources.ModelResource):
 
 class QuestionAdminForm(forms.ModelForm):
     """Savol turiga qarab admin validatsiya."""
+    instruction_text = forms.CharField(
+        required=False,
+        label="Ko'rsatma (Instruction)",
+        help_text="Masalan: ONE WORD ONLY",
+    )
+    fill_answers = forms.CharField(
+        required=False,
+        label="Fill javoblari",
+        help_text="Bir nechta javob bo'lsa vergul bilan yozing. Masalan: smart,fuel,waiting",
+    )
+    matching_items = forms.CharField(
+        required=False,
+        label="Matching itemlar",
+        widget=forms.Textarea(attrs={'rows': 4}),
+        help_text="Har satr: 1|Paragraph A",
+    )
+    matching_options = forms.CharField(
+        required=False,
+        label="Matching variantlar",
+        widget=forms.Textarea(attrs={'rows': 4}),
+        help_text="Har satr: A|Heading text",
+    )
+    matching_correct = forms.CharField(
+        required=False,
+        label="Matching to'g'ri javob",
+        widget=forms.Textarea(attrs={'rows': 4}),
+        help_text="Har satr: 1:A",
+    )
+    list_options_simple = forms.CharField(
+        required=False,
+        label="List options",
+        widget=forms.Textarea(attrs={'rows': 4}),
+        help_text="Har satr: A|Option text",
+    )
+    list_correct_simple = forms.CharField(
+        required=False,
+        label="List to'g'ri javob",
+        help_text="Masalan: A,C",
+    )
+
     class Meta:
         model = Question
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        inst = self.instance
+        opts = inst.options_json or {}
+        corr = inst.correct_answer_json
+
+        self.fields['instruction_text'].initial = opts.get('instruction', '')
+
+        if inst.question_type in ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'):
+            if isinstance(corr, list):
+                self.fields['fill_answers'].initial = ', '.join(str(x) for x in corr)
+            elif inst.correct_answer:
+                self.fields['fill_answers'].initial = inst.correct_answer
+
+        if inst.question_type in ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'):
+            items = opts.get('items', [])
+            headings = opts.get('headings', [])
+            if items:
+                self.fields['matching_items'].initial = "\n".join(
+                    f"{i.get('num', idx+1)}|{i.get('label', '')}" for idx, i in enumerate(items) if isinstance(i, dict)
+                )
+            if headings:
+                self.fields['matching_options'].initial = "\n".join(
+                    f"{h.get('letter', '')}|{h.get('text', '')}" for h in headings if isinstance(h, dict)
+                )
+            if isinstance(corr, dict):
+                self.fields['matching_correct'].initial = "\n".join(f"{k}:{v}" for k, v in corr.items())
+
+        if inst.question_type == 'list_selection':
+            options = opts.get('options', [])
+            if options:
+                self.fields['list_options_simple'].initial = "\n".join(
+                    f"{o.get('letter', '')}|{o.get('text', '')}" for o in options if isinstance(o, dict)
+                )
+            if isinstance(corr, list):
+                self.fields['list_correct_simple'].initial = ",".join(str(x) for x in corr)
 
     def clean(self):
         cleaned = super().clean()
         q_type = cleaned.get('question_type')
         correct_answer = (cleaned.get('correct_answer') or '').strip().lower()
         correct_json = cleaned.get('correct_answer_json')
+        options_json = cleaned.get('options_json') or {}
+        instruction_text = (cleaned.get('instruction_text') or '').strip()
+        fill_answers = (cleaned.get('fill_answers') or '').strip()
+        matching_items = (cleaned.get('matching_items') or '').strip()
+        matching_options = (cleaned.get('matching_options') or '').strip()
+        matching_correct = (cleaned.get('matching_correct') or '').strip()
+        list_options_simple = (cleaned.get('list_options_simple') or '').strip()
+        list_correct_simple = (cleaned.get('list_correct_simple') or '').strip()
 
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
         fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer')
         matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+
+        if instruction_text:
+            options_json['instruction'] = instruction_text
+
+        if q_type in fill_types and fill_answers:
+            parsed = [x.strip() for x in fill_answers.replace('\n', ',').split(',') if x.strip()]
+            if parsed:
+                cleaned['correct_answer_json'] = parsed
+                options_json['blanks_count'] = len(parsed)
+                correct_json = parsed
+
+        if q_type in matching_types and (matching_items or matching_options or matching_correct):
+            items = []
+            for idx, line in enumerate([ln.strip() for ln in matching_items.splitlines() if ln.strip()]):
+                if '|' in line:
+                    left, right = line.split('|', 1)
+                    left = left.strip()
+                    right = right.strip()
+                    num = int(left) if left.isdigit() else (idx + 1)
+                    items.append({'num': num, 'label': right})
+                else:
+                    items.append({'num': idx + 1, 'label': line})
+
+            headings = []
+            for line in [ln.strip() for ln in matching_options.splitlines() if ln.strip()]:
+                if '|' in line:
+                    letter, text = line.split('|', 1)
+                    headings.append({'letter': letter.strip(), 'text': text.strip()})
+
+            corr_map = {}
+            for line in [ln.strip() for ln in matching_correct.splitlines() if ln.strip()]:
+                if ':' in line:
+                    k, v = line.split(':', 1)
+                    corr_map[k.strip()] = v.strip()
+
+            if items:
+                options_json['items'] = items
+            if headings:
+                options_json['headings'] = headings
+            if corr_map:
+                cleaned['correct_answer_json'] = corr_map
+                correct_json = corr_map
+
+        if q_type == 'list_selection' and (list_options_simple or list_correct_simple):
+            options = []
+            for line in [ln.strip() for ln in list_options_simple.splitlines() if ln.strip()]:
+                if '|' in line:
+                    letter, text = line.split('|', 1)
+                    options.append({'letter': letter.strip(), 'text': text.strip()})
+                else:
+                    options.append({'letter': line[:1].upper(), 'text': line})
+
+            corr_list = [x.strip() for x in list_correct_simple.replace(' ', '').split(',') if x.strip()]
+            if options:
+                options_json['options'] = options
+            if corr_list:
+                cleaned['correct_answer_json'] = corr_list
+                correct_json = corr_list
+
+        cleaned['options_json'] = options_json
 
         if q_type in single_choice:
             allowed_map = {
@@ -150,7 +295,11 @@ class QuestionInline(admin.StackedInline):
     model = Question
     form = QuestionAdminForm
     extra = 1
-    fields = ['order', 'question_type', 'question_text', ('option_a', 'option_b', 'option_c', 'option_d'), 'correct_answer', 'correct_answer_json', 'options_json', 'points', 'explanation']
+    fields = [
+        'order', 'question_type', 'question_text',
+        ('option_a', 'option_b', 'option_c', 'option_d'),
+        'correct_answer', 'instruction_text', 'fill_answers', 'points', 'explanation'
+    ]
     classes = ['collapse']
     verbose_name = "Savol"
     verbose_name_plural = "Savollar"
@@ -249,10 +398,23 @@ class QuestionAdmin(ImportExportModelAdmin):
             'classes': ('question-mcq-fields',),
             'description': 'MCQ: A/B/C/D. True/False: A=True, B=False. Yes/No/Not Given: A=Yes, B=No, C=Not Given.'
         }),
-        ('Fill-in / Matching / List Selection (JSON)', {
-            'fields': ('correct_answer_json', 'options_json'),
+        ('Fill-in / Matching / List Selection (Oddiy rejim)', {
+            'fields': (
+                'instruction_text',
+                'fill_answers',
+                'matching_items',
+                'matching_options',
+                'matching_correct',
+                'list_options_simple',
+                'list_correct_simple',
+            ),
             'classes': ('question-fill-fields',),
-            'description': 'Fill-in: ["so\'z1","so\'z2"]. Matching: {"1":"ii","2":"v"}. List: ["A","C"]. options_json da instruction, items, headings.'
+            'description': 'JSON bilmasangiz shu maydonlarni to\'ldiring. Tizim JSON ni o\'zi yig\'adi.'
+        }),
+        ('Advanced JSON (ixtiyoriy)', {
+            'fields': ('correct_answer_json', 'options_json'),
+            'classes': ('collapse',),
+            'description': 'Faqat power-userlar uchun. Oddiy rejim yetarli.'
         }),
         ('Tushuntirish va Listening', {
             'fields': ('explanation', 'audio_timestamp')
