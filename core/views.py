@@ -784,8 +784,9 @@ def test_take(request, pk):
         mcq_opts = []
         if q.question_type in single_choice:
             opts_json = q.options_json or {}
-            mcq_opts = opts_json.get('options')
+            mcq_opts = opts_json.get('options') or []
             if not mcq_opts and any([q.option_a, q.option_b, q.option_c, q.option_d]):
+                mcq_opts = []
                 for letter, txt in [('a', q.option_a), ('b', q.option_b), ('c', q.option_c), ('d', q.option_d)]:
                     if txt:
                         mcq_opts.append({'letter': letter, 'text': txt})
