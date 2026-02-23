@@ -136,6 +136,7 @@
     body.exam-mode .exam-offer-strip { display: none !important; }
     body.exam-mode .container.mt-4.fade-in { max-width: 100%; margin-top: .2rem !important; }
     body.exam-mode .exam-right-pane { top: 8px; max-height: calc(100vh - 20px); }
+    body.exam-mode .exam-container { max-width: 100% !important; padding-left: 0.5rem; padding-right: 0.5rem; }
     .writing-inline-blank {
         border: 0;
         border-bottom: 2px solid #94a3b8;
@@ -316,11 +317,79 @@
         .exam-right-pane { position: static; max-height: none; overflow: visible; }
         .reading-text { max-height: 320px !important; }
     }
+    /* Telefon - 576px va pastroq */
+    @media (max-width: 575.98px) {
+        .exam-container { max-width: 100% !important; padding-left: 0.5rem; padding-right: 0.5rem; margin-top: 0.5rem !important; }
+        .exam-shell { padding: 0.25rem; overflow-x: hidden; }
+        .exam-offer-strip { font-size: 0.8rem; padding: 0.3rem 0.5rem; }
+        .test-header-card .card-body { padding: 0.5rem 0.75rem !important; }
+        .test-header-card h3 { font-size: 1rem !important; }
+        .test-header-card p { font-size: 0.8rem !important; }
+        #timer-container { padding: 0.25rem 0.6rem !important; font-size: 0.85rem !important; }
+        #timer { font-size: 0.85rem !important; }
+        .test-header-card .btn.btn-sm { padding: 0.25rem 0.5rem !important; font-size: 0.8rem; }
+        .test-header-card .d-flex.gap-2 { flex-wrap: wrap; gap: 0.4rem !important; }
+        .listening-questions-header { flex-direction: column; align-items: flex-start !important; }
+        .listening-questions-header h5 { font-size: 0.95rem !important; }
+        .listening-questions-header .badge { font-size: 0.75rem !important; }
+        #answered-badge { font-size: 0.75rem !important; }
+        .listening-questions-header .badge { font-size: 0.75rem !important; }
+        .listening-part-bar { font-size: 0.9rem; padding: 0.5rem 0.75rem; }
+        .part-read-header h5 { font-size: 0.95rem !important; }
+        .part-read-header .font-size-btn { width: 26px; height: 26px; font-size: 0.9rem; }
+        .reading-tools .btn { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+        .reading-text { max-height: 220px !important; padding: 0.75rem !important; font-size: 0.9rem !important; word-wrap: break-word; overflow-wrap: break-word; }
+        .writing-task-card .card-body { padding: 0.75rem 1rem !important; }
+        .writing-task-content { font-size: 0.9rem; }
+        .writing-part-bar { font-size: 0.9rem; padding: 0.5rem 0.75rem; }
+        .writing-image-carousel .writing-img-nav { width: 32px; height: 32px; font-size: 0.8rem; }
+        .part-section-header { font-size: 0.9rem; padding: 0.45rem 0.6rem; }
+        .part-q-card { padding: 0.6rem 0.5rem; }
+        .part-q-buttons .part-label { font-size: 0.75rem; margin-right: 0.35rem; }
+        .part-q-buttons .q-num-btn { width: 24px; height: 24px; font-size: 0.7rem; }
+        .part-summary-block { font-size: 0.7rem; padding: 0.2rem 0.4rem; }
+        .exam-bottom-dock { flex-direction: column; align-items: stretch; padding: 0.5rem; gap: 0.5rem; }
+        .exam-bottom-dock > div:first-child { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.25rem; }
+        .exam-nav-arrows .nav-arrow { width: 32px; height: 32px; font-size: 0.9rem; }
+        .btn-submit-exam { width: 100%; padding: 0.6rem 1rem; font-size: 1rem; }
+        .inline-blank-input { width: 70px; min-width: 50px; max-width: 100px; font-size: 0.9rem; }
+        .inline-blank-num { min-width: 20px; padding: 2px 4px; font-size: 0.8rem; }
+        .engnovate-notes-format { line-height: 1.8; font-size: 0.9rem; word-wrap: break-word; overflow-wrap: break-word; }
+        .listening-audio-card .card-body { padding: 0.5rem !important; }
+        .writing-answer-ta { min-height: 120px !important; font-size: 0.95rem; }
+        .tip-bar { font-size: 0.7rem; padding: 0.3rem 0.5rem; }
+        .exam-split-divider { width: 4px; cursor: default; }
+        .exam-split-divider::after { font-size: 0.65rem; }
+    }
+    /* Kichik telefonlar - 375px va pastroq */
+    @media (max-width: 374.98px) {
+        .container.mt-4 { padding-left: 0.4rem; padding-right: 0.4rem; }
+        .test-header-card h3 { font-size: 0.95rem !important; }
+        #timer-container { padding: 0.2rem 0.5rem !important; }
+        #timer { font-size: 0.8rem !important; }
+        .part-q-buttons .q-num-btn { width: 22px; height: 22px; font-size: 0.65rem; }
+        .inline-blank-input { width: 60px; min-width: 45px; }
+        .reading-text { max-height: 180px !important; }
+        .writing-answer-ta { min-height: 100px !important; }
+    }
+    /* Touch uchun - tugmalar va inputlar (44px min - Apple HIG) */
+    @media (hover: none) and (pointer: coarse) {
+        .part-q-buttons .q-num-btn { min-width: 36px; min-height: 36px; }
+        .inline-blank-input { min-height: 36px; }
+        .exam-nav-arrows .nav-arrow { min-width: 44px; min-height: 44px; }
+        .btn-submit-exam { min-height: 48px; }
+        .writing-image-carousel .writing-img-nav { min-width: 44px; min-height: 44px; }
+    }
+    /* Notch/Island - safe area (iPhone X va boshqalar) */
+    @supports (padding: max(0px)) {
+        .exam-shell { padding-left: max(0.35rem, env(safe-area-inset-left)); padding-right: max(0.35rem, env(safe-area-inset-right)); }
+        .exam-bottom-dock { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4 fade-in">
+<div class="container mt-4 fade-in exam-container">
     <div class="exam-offer-strip">24 Hours Only: Get 39% OFF on Our Premium Plan - Check Out Now!</div>
     <div class="row">
         <div class="col-12 mx-auto">
