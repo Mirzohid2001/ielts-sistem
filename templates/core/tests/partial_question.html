@@ -233,40 +233,64 @@
             </div>
             {% endif %}
             
-            <div class="d-flex flex-column flex-md-row justify-content-between gap-2 gap-md-3 test-navigation exam-question-footer">
-                {% if question_number > 1 %}
-                <button type="button" 
-                        onclick="loadQuestion({{ question_number|add:'-1' }})"
-                        class="btn btn-outline-secondary order-1 order-md-0" style="font-size: clamp(0.85rem, 2vw, 0.875rem); white-space: nowrap; min-width: 120px;">
-                    <i class="fas fa-arrow-left me-1 me-md-2"></i>Oldingi
-                </button>
-                {% else %}
-                <div class="flex-grow-1 order-1 order-md-0 d-none d-md-block"></div>
-                {% endif %}
-                
-                <!-- Savollar ro'yxati (navigation) -->
-                <div class="d-flex align-items-center gap-1 flex-wrap justify-content-center order-0 order-md-1 question-pagination" style="max-width: 100%; margin: 0.5rem 0;">
-                    <span class="part-label">Savol:</span>
-                    {% for q_pk in questions_list %}
-                    <a href="#" 
-                       onclick="loadQuestion({{ forloop.counter }}); return false;"
-                       class="btn btn-sm part-btn {% if forloop.counter == question_number %}btn-primary{% elif q_pk in answered_questions %}btn-success{% else %}btn-outline-secondary{% endif %}"
-                       data-question-number="{{ forloop.counter }}"
-                       style="min-width: clamp(32px, 6vw, 36px); padding: clamp(0.2rem, 0.8vw, 0.25rem) clamp(0.4rem, 1.2vw, 0.5rem); font-size: clamp(0.75rem, 1.8vw, 0.875rem);"
-                       title="Savol {{ forloop.counter }}">
-                        {{ forloop.counter }}
-                    </a>
-                    {% endfor %}
+            <div class="test-navigation exam-question-footer">
+                <div class="exam-nav-main">
+                    {% if question_number > 1 %}
+                    <button type="button" onclick="loadQuestion({{ question_number|add:'-1' }})"
+                            class="btn btn-outline-secondary"
+                            style="width:38px;height:38px;padding:0;border-radius:4px;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-outline-secondary" disabled
+                            style="width:38px;height:38px;padding:0;border-radius:4px;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    {% endif %}
+
+                    <div class="d-flex align-items-center gap-1 flex-wrap justify-content-start question-pagination" style="max-width: 100%;">
+                        {% for q_pk in questions_list %}
+                        <a href="#"
+                           onclick="loadQuestion({{ forloop.counter }}); return false;"
+                           class="btn btn-sm part-btn {% if forloop.counter == question_number %}btn-primary{% elif q_pk in answered_questions %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                           data-question-number="{{ forloop.counter }}"
+                           style="min-width: 28px; height: 28px; font-size: .76rem;"
+                           title="Savol {{ forloop.counter }}">
+                            {{ forloop.counter }}
+                        </a>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="btn btn-outline-primary" style="min-width:86px;border-radius:4px;">
+                        Saqlash
+                    </button>
                 </div>
-                
-                {% if question_number < total_questions %}
-                <button type="submit" class="btn btn-primary flex-grow-1 order-3" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
-                    <span class="d-none d-sm-inline">Keyingi</span><span class="d-sm-none">Keyin</span> <i class="fas fa-arrow-right ms-1 ms-md-2"></i>
-                </button>
-                {% else %}
-                <button type="submit" class="btn btn-submit-exam flex-grow-1 order-3" style="min-width: clamp(120px, 25vw, 150px); font-size: clamp(0.85rem, 2vw, 0.875rem);">
-                    <i class="fas fa-paper-plane me-1 me-md-2"></i>Submit
-                </button>
+
+                <div class="exam-part-tabs">
+                    {% if test.test_type == 'reading' %}
+                    <div class="exam-part-tab active">Part 1</div>
+                    <div class="exam-part-tab">Part 2</div>
+                    <div class="exam-part-tab">Part 3</div>
+                    <div class="exam-part-tab">Review</div>
+                    {% elif test.test_type == 'listening' %}
+                    <div class="exam-part-tab active">Part 1</div>
+                    <div class="exam-part-tab">Part 2</div>
+                    <div class="exam-part-tab">Part 3</div>
+                    <div class="exam-part-tab">Part 4</div>
+                    {% else %}
+                    <div class="exam-part-tab active">Part 1</div>
+                    <div class="exam-part-tab">Part 2</div>
+                    <div class="exam-part-tab">Draft</div>
+                    <div class="exam-part-tab">Review</div>
+                    {% endif %}
+                </div>
+
+                {% if question_number == total_questions %}
+                <div class="d-flex justify-content-end mt-2">
+                    <button type="submit" class="btn btn-submit-exam" name="finish_test" value="1" style="min-width:110px;">
+                        Submit <i class="fas fa-paper-plane ms-1"></i>
+                    </button>
+                </div>
                 {% endif %}
             </div>
             
@@ -475,6 +499,7 @@
                 function loadQuestion(qNum) {
                     const url = '{% url "core:test_take" test.pk %}?q=' + qNum;
                     const targetElement = document.getElementById('question-container');
+                    const currentForm = document.querySelector('#question-container form');
                     
                     if (!targetElement) {
                         console.error('Target element (#question-container) topilmadi!');
@@ -482,38 +507,57 @@
                         window.location.href = url;
                         return;
                     }
-                    
-                    // HTMX orqali yuklash
-                    if (typeof htmx !== 'undefined') {
-                        htmx.ajax('GET', url, {
-                            target: '#question-container',
-                            swap: 'innerHTML',
-                            headers: {
-                                'HX-Request': 'true'
-                            }
-                        });
-                    } else {
-                        // Fallback - fetch API
-                        fetch(url, {
-                            headers: {
-                                'HX-Request': 'true'
-                            }
-                        })
-                        .then(response => response.text())
-                        .then(html => {
-                            if (targetElement) {
-                                targetElement.innerHTML = html;
-                                if (typeof window.__refreshExamQuestionUI === 'function') {
-                                    window.__refreshExamQuestionUI();
+
+                    // Joriy savol javobini fon rejimida saqlab, keyin target savolga o'tish
+                    const goToTarget = function() {
+                        if (typeof htmx !== 'undefined') {
+                            htmx.ajax('GET', url, {
+                                target: '#question-container',
+                                swap: 'innerHTML',
+                                headers: {
+                                    'HX-Request': 'true'
                                 }
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error loading question:', error);
-                            window.location.href = url;
-                        });
+                            });
+                        } else {
+                            fetch(url, {
+                                headers: {
+                                    'HX-Request': 'true'
+                                }
+                            })
+                            .then(response => response.text())
+                            .then(html => {
+                                if (targetElement) {
+                                    targetElement.innerHTML = html;
+                                    if (typeof window.__refreshExamQuestionUI === 'function') {
+                                        window.__refreshExamQuestionUI();
+                                    }
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error loading question:', error);
+                                window.location.href = url;
+                            });
+                        }
+                    };
+
+                    if (!currentForm) {
+                        goToTarget();
+                        return;
                     }
+
+                    const saveUrl = currentForm.getAttribute('action') || window.location.href;
+                    const saveFormData = new FormData(currentForm);
+                    // Oddiy saqlash (yakunlamasdan)
+                    saveFormData.delete('finish_test');
+                    
+                    fetch(saveUrl, {
+                        method: 'POST',
+                        body: saveFormData,
+                        headers: { 'HX-Request': 'true' }
+                    })
+                    .catch(() => null)
+                    .finally(goToTarget);
                 }
                 
                 // Listening testlar uchun audio timestamp funksiyasi

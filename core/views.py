@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from datetime import timedelta, datetime
 from calendar import monthrange
 import json
+import re
 from .models import (
     Category, VideoLesson, Test, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
@@ -24,6 +25,28 @@ FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_
 MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info', 
                   'matching_sentences', 'classification')
 QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
+
+
+def _build_inline_fill_parts(question, ans_fields):
+    """question_text ichidagi [1],[2]... ni inline input qilish uchun bo'laklarga ajratadi."""
+    if not ans_fields:
+        return None
+    text = question.question_text or ''
+    parts = []
+    last = 0
+    for m in re.finditer(r'\[(\d+)\]', text):
+        num = int(m.group(1))
+        if num < 1 or num > len(ans_fields):
+            continue
+        if m.start() > last:
+            parts.append({'type': 'text', 'content': text[last:m.start()]})
+        field = next((f for f in ans_fields if f['num'] == num), None)
+        if field:
+            parts.append({'type': 'input', 'num': num, 'value': field.get('value', '')})
+        last = m.end()
+    if last < len(text):
+        parts.append({'type': 'text', 'content': text[last:]})
+    return parts if parts else None
 
 
 def _get_question_context_extra(question, current_answer):
@@ -637,187 +660,103 @@ def test_take(request, pk):
     if test_result.answers_json:
         answers = test_result.answers_json
     
-    # Joriy savol
-    question_number = int(request.GET.get('q', 1))
-    questions = test.questions.all().order_by('order')
-    total_questions = questions.count()
-    
-    if question_number < 1:
-        question_number = 1
-    elif question_number > total_questions:
-        question_number = total_questions
-    
-    current_question = questions[question_number - 1] if questions else None
-    
-    # Javob yuborish
+    # Hamma savollarni bitta sahifada ko'rsatamiz
+    questions = list(test.questions.all().order_by('order'))
+    total_questions = len(questions)
+
+    # Barcha javoblarni bir POST bilan saqlash
     if request.method == 'POST':
-        question_id = request.POST.get('question_id')
-        question_obj = Question.objects.filter(pk=question_id, test=test).first() if question_id else None
-        
-        user_answer = request.POST.get('answer')
-        if user_answer is None or user_answer == '':
-            # Fill-in: answer_1, answer_2, ...
-            answers_list = []
-            i = 1
-            while request.POST.get(f'answer_{i}') is not None:
-                answers_list.append(request.POST.get(f'answer_{i}', '').strip())
-                i += 1
-            if answers_list:
-                user_answer = json.dumps(answers_list)
-            # Matching: match_1, match_2, ...
-            elif question_obj and question_obj.question_type in MATCHING_TYPES:
+        updated_answers = {}
+        single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+        fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer')
+
+        for q in questions:
+            val = ''
+            if q.question_type in single_choice:
+                val = (request.POST.get(f'answer_{q.pk}') or '').strip()
+            elif q.question_type in fill_types:
+                expected = max(len(q.get_correct_answers_list()), 1)
+                vals = []
+                for i in range(1, expected + 1):
+                    vals.append((request.POST.get(f'answer_{q.pk}_{i}') or '').strip())
+                if any(v for v in vals):
+                    val = json.dumps(vals)
+            elif q.question_type in MATCHING_TYPES:
                 match_dict = {}
-                i = 1
-                while f'match_{i}' in request.POST:
-                    val = request.POST.get(f'match_{i}', '').strip()
-                    match_dict[str(i)] = val
-                    i += 1
+                opts = q.options_json or {}
+                items = opts.get('items', [])
+                if not items:
+                    items = [{'num': i + 1} for i in range(len((q.correct_answer_json or {})))]
+                for idx, it in enumerate(items):
+                    num = str(it.get('num', idx + 1))
+                    mval = (request.POST.get(f'match_{q.pk}_{num}') or '').strip()
+                    if mval:
+                        match_dict[num] = mval
                 if match_dict:
-                    user_answer = json.dumps(match_dict)
-            # List selection: list_a, list_b, ...
-            elif question_obj and question_obj.question_type == 'list_selection':
-                list_vals = []
-                for k, v in request.POST.items():
-                    if k.startswith('list_') and v:
-                        list_vals.append(k.replace('list_', ''))
-                if list_vals:
-                    user_answer = json.dumps(sorted(list_vals))
-        
-        # Javob tanlanmagan bo'lsa
-        if not user_answer or (isinstance(user_answer, str) and not user_answer.strip()):
-            messages.warning(request, 'Iltimos, javobni tanlang!')
-            questions_list = list(questions.values_list('pk', flat=True))
-            answered_questions = [int(q_id) for q_id in answers.keys()]
-            ca_val = answers.get(str(current_question.pk) if current_question else '', '')
-            ans_fields, match_flds, list_opts = [], [], []
-            if current_question:
-                ans_fields, match_flds, list_opts = _get_question_context_extra(current_question, ca_val)
-            context = {
-                'test': test,
-                'test_result': test_result,
-                'current_question': current_question,
-                'question_number': question_number,
-                'total_questions': total_questions,
-                'current_answer': ca_val,
-                'current_answer_blanks': [],
-                'answer_fields': ans_fields,
-                'matching_fields': match_flds,
-                'list_options': list_opts,
-                'progress_percentage': int((question_number / total_questions) * 100) if total_questions > 0 else 0,
-                'answered_questions': answered_questions,
-                'questions_list': questions_list,
-                'flashcard_sets': FlashcardSet.objects.filter(user=request.user).order_by('name'),
-            }
-            if request.headers.get('HX-Request'):
-                return render(request, 'core/tests/partial_question.html', context)
-            return render(request, 'core/tests/take.html', context)
-        
-        if question_id and user_answer:
-            try:
-                question = Question.objects.get(pk=question_id, test=test)
-                answers[str(question_id)] = user_answer
-                test_result.answers_json = answers
-                test_result.save()
-                
-                # Keyingi savol
-                next_question_number = question_number + 1
-                if next_question_number <= total_questions:
-                    # HTMX request bo'lsa keyingi savolni render qilish
-                    if request.headers.get('HX-Request'):
-                        # Keyingi savolni olish
-                        next_question = questions[next_question_number - 1] if questions else None
-                        current_answer = answers.get(str(next_question.pk) if next_question else '', '')
-                        ans_fields, match_flds, list_opts = [], [], []
-                        if next_question:
-                            ans_fields, match_flds, list_opts = _get_question_context_extra(next_question, current_answer)
-                        context = {
-                            'test': test,
-                            'test_result': test_result,
-                            'current_question': next_question,
-                            'question_number': next_question_number,
-                            'total_questions': total_questions,
-                            'current_answer': current_answer,
-                            'current_answer_blanks': [],
-                            'answer_fields': ans_fields,
-                            'matching_fields': match_flds,
-                            'list_options': list_opts,
-                            'progress_percentage': int((next_question_number / total_questions) * 100) if total_questions > 0 else 0,
-                            'answered_questions': [int(q_id) for q_id in answers.keys()],
-                            'questions_list': list(questions.values_list('pk', flat=True)),
-                        }
-                        return render(request, 'core/tests/partial_question.html', context)
-                    
-                    # Oddiy request bo'lsa redirect
-                    return redirect(f'{request.path}?q={next_question_number}')
-                else:
-                    # Test yakunlandi - barcha savollar javob berildi
-                    # Testni yakunlash
-                    from django.db import transaction
-                    from django.urls import reverse
-                    from django.http import HttpResponse
-                    
-                    with transaction.atomic():
-                        # Javoblarni saqlash va hisoblash
-                        correct_count = 0
-                        for q_id, user_answer in answers.items():
-                            try:
-                                question = Question.objects.get(pk=int(q_id), test=test)
-                                is_correct = question.check_user_answer(user_answer)
-                                
-                                UserTestAnswer.objects.update_or_create(
-                                    test_result=test_result,
-                                    question=question,
-                                    defaults={
-                                        'user_answer': user_answer,
-                                        'is_correct': is_correct
-                                    }
-                                )
-                                
-                                if is_correct:
-                                    correct_count += 1
-                            except (Question.DoesNotExist, ValueError):
-                                continue
-                        
-                        # Test natijasini hisoblash
-                        test_result.total_questions = total_questions
-                        test_result.correct_answers = correct_count
-                        test_result.wrong_answers = total_questions - correct_count
-                        test_result.completed_at = timezone.now()
-                        test_result.attempt_number = test_result.attempt_number or 1
-                        # Time tracking - sarflangan vaqtni hisoblash
-                        test_result.time_taken = test_result.get_elapsed_time()
-                        # calculate_score() metodini chaqirish - bu score va percentage ni hisoblaydi
-                        test_result.calculate_score()
-                        # Obyektni refresh qilish - yangilangan ma'lumotlarni olish uchun
-                        test_result.refresh_from_db()
-                        
-                        # Faollik yozish
-                        UserActivity.objects.create(
-                            user=request.user,
-                            activity_type='test_complete',
-                            related_object_id=test.pk,
-                            related_object_type='Test',
-                            metadata={'test_title': test.title, 'score': correct_count, 'total': total_questions}
-                        )
-                        # Study streak yangilash
-                        StudyStreak.update_streak(request.user)
-                    
-                    result_url = reverse('core:test_result', kwargs={'pk': test_result.pk})
-                    
-                    # HTMX request bo'lsa HX-Redirect header ishlatish
-                    if request.headers.get('HX-Request'):
-                        response = HttpResponse()
-                        response['HX-Redirect'] = result_url
-                        return response
-                    
-                    # Oddiy request bo'lsa to'g'ridan-to'g'ri redirect
-                    return redirect('core:test_result', pk=test_result.pk)
-            except Question.DoesNotExist:
-                messages.error(request, 'Savol topilmadi.')
-    
-    # Savollar ro'yxati (navigation uchun)
-    questions_list = list(questions.values_list('pk', flat=True))
-    answered_questions = [int(q_id) for q_id in answers.keys()]
+                    val = json.dumps(match_dict)
+            elif q.question_type == 'list_selection':
+                selected = []
+                for opt in (q.options_json or {}).get('options', []):
+                    letter = str(opt.get('letter', '')).strip()
+                    if letter and request.POST.get(f'list_{q.pk}_{letter}'):
+                        selected.append(letter)
+                if selected:
+                    val = json.dumps(sorted(selected))
+            elif q.question_type == 'essay':
+                val = (request.POST.get(f'answer_{q.pk}') or '').strip()
+            else:
+                val = (request.POST.get(f'answer_{q.pk}') or '').strip()
+
+            if val:
+                updated_answers[str(q.pk)] = val
+
+        test_result.answers_json = updated_answers
+        test_result.save(update_fields=['answers_json'])
+        answers = updated_answers
+
+        if request.POST.get('finish_test') == '1':
+            with transaction.atomic():
+                correct_count = 0
+                gradable_count = 0  # Essay dan tashqari baholash mumkin bo'lgan savollar
+                for q in questions:
+                    user_answer = answers.get(str(q.pk), '')
+                    if not user_answer:
+                        continue
+                    is_correct = q.check_user_answer(user_answer)
+                    UserTestAnswer.objects.update_or_create(
+                        test_result=test_result,
+                        question=q,
+                        defaults={'user_answer': user_answer, 'is_correct': is_correct}
+                    )
+                    if q.question_type != 'essay':
+                        gradable_count += 1
+                        if is_correct:
+                            correct_count += 1
+
+                test_result.total_questions = total_questions
+                test_result.correct_answers = correct_count
+                test_result.wrong_answers = max(0, gradable_count - correct_count)
+                test_result.completed_at = timezone.now()
+                test_result.attempt_number = test_result.attempt_number or 1
+                test_result.time_taken = test_result.get_elapsed_time()
+                test_result.calculate_score()
+                test_result.refresh_from_db()
+
+                UserActivity.objects.create(
+                    user=request.user,
+                    activity_type='test_complete',
+                    related_object_id=test.pk,
+                    related_object_type='Test',
+                    metadata={'test_title': test.title, 'score': correct_count, 'total': total_questions}
+                )
+                StudyStreak.update_streak(request.user)
+
+            return redirect('core:test_result', pk=test_result.pk)
+        else:
+            messages.success(request, "Javoblar saqlandi.")
+            return redirect(request.path)
+
+    answered_questions = [int(q_id) for q_id in answers.keys() if str(q_id).isdigit()]
     
     # Timer va vaqt ma'lumotlari
     timer_seconds_left = None
@@ -834,26 +773,178 @@ def test_take(request, pk):
             timer_seconds = int(timer_seconds_left % 60)
     
     elapsed_time = test_result.get_elapsed_time()
-    
-    current_answer_val = answers.get(str(current_question.pk) if current_question else '', '')
-    ans_fields, match_flds, list_opts = [], [], []
-    if current_question:
-        ans_fields, match_flds, list_opts = _get_question_context_extra(current_question, current_answer_val)
-    
+    answered_count = len(answered_questions)
+    progress_percentage = int((answered_count / max(total_questions, 1)) * 100) if total_questions > 0 else 0
+
+    question_cards = []
+    single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+    for q in questions:
+        current_answer_val = answers.get(str(q.pk), '')
+        ans_fields, match_flds, list_opts = _get_question_context_extra(q, current_answer_val)
+        mcq_opts = []
+        if q.question_type in single_choice:
+            opts_json = q.options_json or {}
+            mcq_opts = opts_json.get('options')
+            if not mcq_opts and any([q.option_a, q.option_b, q.option_c, q.option_d]):
+                for letter, txt in [('a', q.option_a), ('b', q.option_b), ('c', q.option_c), ('d', q.option_d)]:
+                    if txt:
+                        mcq_opts.append({'letter': letter, 'text': txt})
+        inline_parts = None
+        if q.question_type in FILL_TYPES and ans_fields and re.search(r'\[\d+\]', q.question_text or ''):
+            inline_parts = _build_inline_fill_parts(q, ans_fields)
+        task_images = []
+        if test.test_type == 'writing' and hasattr(q, 'get_task_images'):
+            task_images = q.get_task_images(request)
+        question_cards.append({
+            'question': q,
+            'current_answer': current_answer_val,
+            'answer_fields': ans_fields,
+            'matching_fields': match_flds,
+            'list_options': list_opts,
+            'mcq_options': mcq_opts,
+            'inline_fill_parts': inline_parts,
+            'question_images': task_images,
+        })
+
+    # Part bloklari: explicit part bo'lsa shuni olamiz, bo'lmasa test turiga qarab bo'lamiz
+    explicit_parts = []
+    for idx, q in enumerate(questions):
+        opts = q.options_json or {}
+        raw_part = opts.get('part', opts.get('section'))
+        if raw_part is None:
+            explicit_parts = []
+            break
+        try:
+            explicit_parts.append(int(raw_part))
+        except (TypeError, ValueError):
+            explicit_parts = []
+            break
+
+    part_indexes = []
+    if explicit_parts and len(explicit_parts) == len(questions):
+        min_part = min(explicit_parts) if explicit_parts else 1
+        part_indexes = [max(1, p - min_part + 1) for p in explicit_parts]
+    else:
+        default_parts = 1
+        if test.test_type == 'reading':
+            default_parts = 3
+        elif test.test_type == 'listening':
+            default_parts = 4
+        elif test.test_type == 'writing':
+            default_parts = 2
+        default_parts = max(1, min(default_parts, total_questions or 1))
+
+        base_size = total_questions // default_parts if default_parts else total_questions
+        extra = total_questions % default_parts if default_parts else 0
+        ranges = []
+        start = 0
+        for p in range(default_parts):
+            size = base_size + (1 if p < extra else 0)
+            end = start + size
+            ranges.append((start, end))
+            start = end
+
+        for idx in range(total_questions):
+            assigned = 1
+            for p_idx, (s, e) in enumerate(ranges, start=1):
+                if s <= idx < e:
+                    assigned = p_idx
+                    break
+            part_indexes.append(assigned)
+
+    part_groups = []
+    for idx, card in enumerate(question_cards):
+        part_no = part_indexes[idx] if idx < len(part_indexes) else 1
+        if not part_groups or part_groups[-1]['part_number'] != part_no:
+            part_groups.append({
+                'part_number': part_no,
+                'title': f'Part {part_no}',
+                'cards': [],
+                'start_order': card['question'].order,
+                'end_order': card['question'].order,
+            })
+        part_groups[-1]['cards'].append(card)
+        part_groups[-1]['end_order'] = card['question'].order
+
+    for pg in part_groups:
+        pg['question_count'] = len(pg['cards'])
+        pg['slug'] = f"part-{pg['part_number']}"
+        blank_buttons = []
+        if pg['part_number'] == 1:
+            for card in pg['cards']:
+                q = card['question']
+                if card.get('inline_fill_parts'):
+                    for p in card['inline_fill_parts']:
+                        if p.get('type') == 'input':
+                            blank_buttons.append({
+                                'num': p['num'],
+                                'blank_id': f"blank-{q.pk}-{p['num']}",
+                                'is_blank': True,
+                            })
+                elif card.get('answer_fields') and len(card['answer_fields']) > 1:
+                    for f in card['answer_fields']:
+                        blank_buttons.append({
+                            'num': f['num'],
+                            'blank_id': f"blank-{q.pk}-{f['num']}",
+                            'is_blank': True,
+                        })
+                else:
+                    # MCQ, essay, boshqa: savol order bo'yicha
+                    blank_buttons.append({
+                        'num': q.order,
+                        'question_id': f"question-{q.order}",
+                        'is_blank': False,
+                    })
+        pg['blank_buttons'] = blank_buttons
+        # range_label: blank_buttons bo'lsa 1-N, yo'qsa savol orderlar
+        if blank_buttons and all(b.get('is_blank') for b in blank_buttons):
+            nums = [b['num'] for b in blank_buttons]
+            pg['range_label'] = f"{min(nums)}-{max(nums)}" if len(nums) > 1 else str(nums[0])
+        else:
+            pg['range_label'] = f"{pg['start_order']}-{pg['end_order']}" if pg['start_order'] != pg['end_order'] else str(pg['start_order'])
+
+    current_question = questions[0] if questions else None
+    # "Questions 1-10" yoki "Questions 1-7" ko'rsatish uchun
+    first_pg = part_groups[0] if part_groups else {}
+    first_blanks = first_pg.get('blank_buttons', [])
+    if first_blanks and all(b.get('is_blank') for b in first_blanks):
+        nums = [b['num'] for b in first_blanks]
+        questions_range_display = f"{min(nums)}-{max(nums)}" if len(nums) > 1 else str(nums[0])
+    else:
+        questions_range_display = f"1-{total_questions}" if total_questions > 1 else "1"
+
+    # Blank-based answered count (notes/summary: 3/10)
+    total_blanks = len(first_blanks) if first_blanks and all(b.get('is_blank') for b in first_blanks) else 0
+    answered_blanks = 0
+    if total_blanks:
+        for card in first_pg.get('cards', []):
+            q = card.get('question')
+            if not q:
+                continue
+            raw = answers.get(str(q.pk), '')
+            if not raw:
+                continue
+            try:
+                vals = json.loads(raw) if isinstance(raw, str) and raw.startswith('[') else [raw]
+                answered_blanks += sum(1 for v in vals if str(v).strip())
+            except (json.JSONDecodeError, TypeError):
+                if str(raw).strip():
+                    answered_blanks += 1
+
     context = {
         'test': test,
+        'questions_range_display': questions_range_display,
+        'total_blanks': total_blanks,
+        'answered_blanks': answered_blanks,
         'test_result': test_result,
         'current_question': current_question,
-        'question_number': question_number,
+        'current_answer': answers.get(str(current_question.pk), '') if current_question else '',
+        'question_number': answered_count,
         'total_questions': total_questions,
-        'current_answer': current_answer_val,
-        'current_answer_blanks': [],
-        'answer_fields': ans_fields,
-        'matching_fields': match_flds,
-        'list_options': list_opts,
-        'progress_percentage': int((question_number / total_questions) * 100) if total_questions > 0 else 0,
+        'progress_percentage': progress_percentage,
         'answered_questions': answered_questions,
-        'questions_list': questions_list,
+        'question_cards': question_cards,
+        'part_groups': part_groups,
         'timer_seconds_left': timer_seconds_left,
         'timer_minutes': timer_minutes,
         'timer_seconds': timer_seconds,
@@ -861,11 +952,7 @@ def test_take(request, pk):
         'is_paused': test_result.is_paused,
         'flashcard_sets': FlashcardSet.objects.filter(user=request.user).order_by('name'),
     }
-    
-    # HTMX request bo'lsa faqat savol qaytarish
-    if request.headers.get('HX-Request'):
-        return render(request, 'core/tests/partial_question.html', context)
-    
+
     return render(request, 'core/tests/take.html', context)
 
 
@@ -982,21 +1069,20 @@ def test_result(request, pk):
                 # Javoblarni tekshirish va natijani hisoblash
                 answers = test_result.answers_json
                 correct = 0
-                wrong = 0
+                gradable_count = 0
                 
                 # Barcha savollarni bir martada olish
                 questions = list(test_result.test.questions.all().order_by('order'))
                 
                 # Javoblarni to'plab, keyin bulk update qilish
-                answers_to_create = []
                 for question in questions:
                     user_answer = answers.get(str(question.pk), '')
                     if user_answer:
                         is_correct = question.check_user_answer(user_answer)
-                        if is_correct:
-                            correct += 1
-                        else:
-                            wrong += 1
+                        if question.question_type != 'essay':
+                            gradable_count += 1
+                            if is_correct:
+                                correct += 1
                         
                         # UserTestAnswer yaratish yoki yangilash
                         UserTestAnswer.objects.update_or_create(
@@ -1009,7 +1095,7 @@ def test_result(request, pk):
                         )
                 
                 test_result.correct_answers = correct
-                test_result.wrong_answers = wrong
+                test_result.wrong_answers = max(0, gradable_count - correct)
                 test_result.completed_at = timezone.now()
                 test_result.attempt_number = test_result.attempt_number or 1
                 # Time tracking - sarflangan vaqtni hisoblash

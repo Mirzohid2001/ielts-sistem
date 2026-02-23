@@ -42,12 +42,12 @@ class QuestionAdminForm(forms.ModelForm):
     instruction_text = forms.CharField(
         required=False,
         label="Ko'rsatma (Instruction)",
-        help_text="Masalan: ONE WORD ONLY",
+        help_text="Masalan: ONE WORD ONLY yoki ONE WORD AND/OR A NUMBER (Listening uchun)",
     )
     fill_answers = forms.CharField(
         required=False,
-        label="Fill javoblari",
-        help_text="Bir nechta javob bo'lsa vergul bilan yozing. Masalan: smart,fuel,waiting",
+        label="To'g'ri javoblar (vergul bilan)",
+        help_text="Har bir bo'sh joy uchun to'g'ri javob. Masalan: teacher,charcoal,skyscrapers,flowers,rocks,landscape,sky",
     )
     matching_items = forms.CharField(
         required=False,
@@ -78,6 +78,13 @@ class QuestionAdminForm(forms.ModelForm):
         label="List to'g'ri javob",
         help_text="Masalan: A,C",
     )
+    part_number = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=10,
+        label="Part raqami",
+        help_text="Reading: 1–3, Listening: 1–4, Writing: 1–2. Har bir part alohida ko'rsatiladi.",
+    )
 
     class Meta:
         model = Question
@@ -85,19 +92,36 @@ class QuestionAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Notes/Summary completion uchun format yo'riqnomasi
+        fill_note_types = ('notes_completion', 'summary_completion', 'sentence_completion', 'table_completion')
+        if self.instance and self.instance.question_type in fill_note_types:
+            self.fields['question_text'].help_text = (
+                "Matnda bo'sh joylar uchun [1], [2], [3] yozing. "
+                "Misol: 'Accommodation: [1] Hotel on George Street. Cost: £ [2] (approx.)' "
+                "Keyin 'To'g'ri javoblar' maydonida: central,85"
+            )
+        elif self.instance and self.instance.question_type == 'essay':
+            self.fields['question_text'].help_text = (
+                "To'liq task matni. Masalan: 'You should spend about 20 minutes...' va savol/diagram tavsifi."
+            )
         inst = self.instance
-        opts = inst.options_json or {}
-        corr = inst.correct_answer_json
+        opts = (inst.options_json or {}) if inst else {}
+        corr = (inst.correct_answer_json if inst else None)
 
         self.fields['instruction_text'].initial = opts.get('instruction', '')
+        if opts.get('part') is not None:
+            try:
+                self.fields['part_number'].initial = int(opts['part'])
+            except (TypeError, ValueError):
+                pass
 
-        if inst.question_type in ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'):
+        if inst and inst.question_type in ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'):
             if isinstance(corr, list):
                 self.fields['fill_answers'].initial = ', '.join(str(x) for x in corr)
             elif inst.correct_answer:
                 self.fields['fill_answers'].initial = inst.correct_answer
 
-        if inst.question_type in ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'):
+        if inst and inst.question_type in ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'):
             items = opts.get('items', [])
             headings = opts.get('headings', [])
             if items:
@@ -111,7 +135,7 @@ class QuestionAdminForm(forms.ModelForm):
             if isinstance(corr, dict):
                 self.fields['matching_correct'].initial = "\n".join(f"{k}:{v}" for k, v in corr.items())
 
-        if inst.question_type == 'list_selection':
+        if inst and inst.question_type == 'list_selection':
             options = opts.get('options', [])
             if options:
                 self.fields['list_options_simple'].initial = "\n".join(
@@ -127,6 +151,7 @@ class QuestionAdminForm(forms.ModelForm):
         correct_json = cleaned.get('correct_answer_json')
         options_json = cleaned.get('options_json') or {}
         instruction_text = (cleaned.get('instruction_text') or '').strip()
+        part_number = cleaned.get('part_number')
         fill_answers = (cleaned.get('fill_answers') or '').strip()
         matching_items = (cleaned.get('matching_items') or '').strip()
         matching_options = (cleaned.get('matching_options') or '').strip()
@@ -140,6 +165,8 @@ class QuestionAdminForm(forms.ModelForm):
 
         if instruction_text:
             options_json['instruction'] = instruction_text
+        if part_number is not None and part_number >= 1:
+            options_json['part'] = part_number
 
         if q_type in fill_types and fill_answers:
             parsed = [x.strip() for x in fill_answers.replace('\n', ',').split(',') if x.strip()]
@@ -296,14 +323,17 @@ class QuestionInline(admin.StackedInline):
     form = QuestionAdminForm
     extra = 1
     fields = [
-        'order', 'question_type', 'question_text',
+        'order', 'question_type', 'question_text', 'question_image',
         ('option_a', 'option_b', 'option_c', 'option_d'),
-        'correct_answer', 'instruction_text', 'fill_answers', 'points', 'explanation'
+        'correct_answer', 'part_number', 'instruction_text', 'fill_answers',
+        'matching_items', 'matching_options', 'matching_correct',
+        'list_options_simple', 'list_correct_simple',
+        'points', 'explanation', 'audio_timestamp',
     ]
     classes = ['collapse']
     verbose_name = "Savol"
     verbose_name_plural = "Savollar"
-    show_change_link = True  # Savolni alohida sahifada tahrirlash mumkin
+    show_change_link = True
 
 
 # Test Admin - yaxshilangan
@@ -339,7 +369,10 @@ class TestAdmin(ImportExportModelAdmin):
         }),
         ('Test kontenti', {
             'fields': ('audio_file', 'reading_text'),
-            'description': 'Listening: audio fayl yuklang. Reading: matn kiriting.'
+            'description': (
+                "Listening: audio fayl yuklang (MP3). Reading: o'qish matnini kiriting. "
+                "Writing: audio va reading bo'sh qoladi, savollar Essay tipida."
+            )
         }),
     )
 
@@ -400,6 +433,7 @@ class QuestionAdmin(ImportExportModelAdmin):
         }),
         ('Fill-in / Matching / List Selection (Oddiy rejim)', {
             'fields': (
+                'part_number',
                 'instruction_text',
                 'fill_answers',
                 'matching_items',
@@ -409,12 +443,20 @@ class QuestionAdmin(ImportExportModelAdmin):
                 'list_correct_simple',
             ),
             'classes': ('question-fill-fields',),
-            'description': 'JSON bilmasangiz shu maydonlarni to\'ldiring. Tizim JSON ni o\'zi yig\'adi.'
+            'description': (
+                "Notes/Summary completion: Savol matnida [1], [2], [3] yozing (masalan: 'Accommodation: [1] Hotel'). "
+                "To'g'ri javoblar: vergul bilan (teacher,charcoal,skyscrapers). "
+                "Instruction: ONE WORD ONLY yoki ONE WORD AND/OR A NUMBER."
+            )
         }),
         ('Advanced JSON (ixtiyoriy)', {
             'fields': ('correct_answer_json', 'options_json'),
             'classes': ('collapse',),
-            'description': 'Faqat power-userlar uchun. Oddiy rejim yetarli.'
+            'description': (
+                'Faqat power-userlar uchun. Oddiy rejim yetarli. '
+                'Writing: Bir nechta rasm uchun options_json.images: [{"path": "questions/rasm2.png"}, {"path": "questions/rasm3.png"}]. '
+                'question_image birinchi rasm, images qo\'shimcha rasmlar (←→ navigatsiya).'
+            )
         }),
         ('Tushuntirish va Listening', {
             'fields': ('explanation', 'audio_timestamp')
@@ -435,8 +477,9 @@ class QuestionAdmin(ImportExportModelAdmin):
 class UserTestAnswerInline(admin.TabularInline):
     model = UserTestAnswer
     extra = 0
-    readonly_fields = ['question', 'user_answer', 'is_correct', 'answered_at']
+    readonly_fields = ['question', 'user_answer', 'answered_at']
     can_delete = False
+    # is_correct – tahrirlash mumkin (essay baholash uchun). O'zgartirsangiz "Qayta hisoblash" actionini ishlating.
 
 
 # UserTestResult Admin - Yaxshilangan
@@ -482,25 +525,33 @@ class UserTestResultAdmin(ImportExportModelAdmin):
     def recalculate_selected_results(self, request, queryset):
         updated = 0
         for result in queryset.select_related('test'):
-            total_questions = result.test.total_questions
-            correct = result.answers.filter(is_correct=True).count()
-            result.total_questions = total_questions
-            result.correct_answers = correct
-            result.wrong_answers = max(total_questions - correct, 0)
-            result.calculate_score()
+            result.total_questions = result.total_questions or (result.test.total_questions if result.test else 0)
+            result.recalculate_from_answers()
             updated += 1
         self.message_user(request, f"{updated} ta natija qayta hisoblandi.")
 
 
 @admin.register(UserTestAnswer)
 class UserTestAnswerAdmin(admin.ModelAdmin):
-    list_display = ['test_result', 'question', 'is_correct', 'answered_at']
+    list_display = ['test_result', 'question_type_display', 'user_answer_short', 'is_correct', 'answered_at']
+    list_editable = ['is_correct']
     list_filter = ['is_correct', 'answered_at', 'question__question_type', 'question__test__test_type']
     search_fields = ['test_result__user__username', 'question__question_text', 'user_answer']
     readonly_fields = ['answered_at']
     autocomplete_fields = ['test_result', 'question']
     ordering = ['-answered_at']
     list_per_page = 50
+
+    def question_type_display(self, obj):
+        return obj.question.get_question_type_display() if obj.question_id else '-'
+
+    question_type_display.short_description = "Tur"
+
+    def user_answer_short(self, obj):
+        t = (obj.user_answer or '')[:60]
+        return (t + '...') if len(obj.user_answer or '') > 60 else t
+
+    user_answer_short.short_description = "Javob"
 
 
 # UserVideoProgress Admin - Yaxshilangan

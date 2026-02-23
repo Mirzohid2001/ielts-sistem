@@ -237,6 +237,7 @@ class Question(models.Model):
         ('sentence_completion', 'Sentence Completion'),
         ('table_completion', 'Table Completion'),
         ('short_answer', "Qisqa javob"),
+        ('essay', 'Essay (Writing Task)'),
         # Moslashtirish turlari
         ('matching_headings', 'Matching Headings (matnga sarlavha)'),
         ('matching_sentences', 'Matching Sentence Endings'),
@@ -280,6 +281,31 @@ class Question(models.Model):
     def __str__(self):
         return f"{self.test.title} - Savol #{self.order}"
 
+    @property
+    def question_instruction(self):
+        """Ko'rsatma matni (options_json.instruction)"""
+        opts = self.options_json or {}
+        return opts.get('instruction', '')
+
+    def get_task_images(self, request=None):
+        """Writing task uchun rasmlar ro'yxati (carousel). question_image + options_json.images"""
+        from django.conf import settings
+        urls = []
+        if self.question_image:
+            url = self.question_image.url
+            if request and not url.startswith(('http://', 'https://')):
+                url = request.build_absolute_uri(url)
+            urls.append(url)
+        for item in (self.options_json or {}).get('images', []):
+            path = item if isinstance(item, str) else (item.get('path') or item.get('url', ''))
+            if path:
+                base = (settings.MEDIA_URL or '/media/').rstrip('/') + '/'
+                full = base + path.lstrip('/') if not path.startswith(('http', '/')) else path
+                if request and not full.startswith(('http://', 'https://')):
+                    full = request.build_absolute_uri(full)
+                urls.append(full)
+        return urls
+
     def get_user_answer_display(self, user_answer):
         """Foydalanuvchi javobini ko'rsatish"""
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
@@ -298,6 +324,9 @@ class Question(models.Model):
     
     def check_user_answer(self, user_answer):
         """Foydalanuvchi javobi to'g'rimi tekshirish"""
+        if self.question_type == 'essay':
+            # Essay avtomatik baholanmaydi – faqat bo'sh emasligi tekshiriladi
+            return False
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
         if self.question_type in single_choice:
             return str(user_answer).strip().lower() == str(self.correct_answer).strip().lower()
@@ -402,6 +431,16 @@ class UserTestResult(models.Model):
         self.score = correct
         self.percentage = round((correct / total) * 100, 2)
         self.wrong_answers = total - correct
+        self.save()
+
+    def recalculate_from_answers(self):
+        """Javoblar asosida correct/wrong ni qayta hisoblash (admin baholagach chaqiriladi)"""
+        self.correct_answers = self.answers.filter(is_correct=True).count()
+        gradable = self.answers.exclude(question__question_type='essay')
+        self.wrong_answers = gradable.filter(is_correct=False).count()
+        total = self.total_questions or (self.test.total_questions if self.test else 0)
+        self.score = self.correct_answers
+        self.percentage = round((self.correct_answers / total) * 100, 2) if total else 0.0
         self.save()
 
     def is_passed(self):
@@ -851,3 +890,17 @@ class Flashcard(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.term[:50]}"
+
+
+# Signal: UserTestAnswer o'zgarganda natijani qayta hisoblash (admin essay baholaganda)
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+@receiver(post_save, sender=UserTestAnswer)
+def recalc_result_on_answer_save(sender, instance, created, **kwargs):
+    """UserTestAnswerAdmin orqali is_correct o'zgartirilganda natijani yangilash"""
+    if created:
+        return  # finish_test da view o'zi hisoblaydi
+    if instance.test_result_id:
+        instance.test_result.recalculate_from_answers()

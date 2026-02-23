@@ -4,28 +4,75 @@
 
 {% block extra_css %}
 <style>
+    .exam-offer-strip {
+        background: #d90416;
+        color: #fff;
+        text-align: center;
+        font-weight: 700;
+        font-size: .95rem;
+        padding: .35rem .75rem;
+        border-radius: 0;
+        margin-bottom: .4rem;
+    }
     .exam-shell {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: .75rem;
+        background: #f4f4f5;
+        border: 1px solid #d4d4d8;
+        border-radius: 0;
+        padding: .35rem;
     }
     .exam-split-layout { display: flex; gap: 0; position: relative; align-items: stretch; }
     .exam-left-pane { flex: 1.1; min-width: 0; }
     .exam-right-pane { flex: 0.9; min-width: min(320px, 100%); }
-    .exam-left-pane .card, .exam-right-pane .card { border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .exam-left-pane .card, .exam-right-pane .card { border-radius: 0; box-shadow: none; border: 1px solid #d4d4d8; }
     .exam-split-divider {
-        width: 4px; background: #e5e7eb; cursor: col-resize; flex-shrink: 0;
-        border-radius: 2px; margin: 0 4px; align-self: stretch;
+        width: 8px; background: #c4c4c9; cursor: col-resize; flex-shrink: 0;
+        border-radius: 0; margin: 0 2px; align-self: stretch; position: relative;
     }
-    .exam-split-divider:hover { background: var(--primary); }
-    .exam-right-pane { position: sticky; top: 88px; align-self: start; max-height: calc(100vh - 100px); overflow: auto; background: #fafbfc; border-radius: 10px; padding: 1rem; border: 1px solid #e5e7eb; }
-    .reading-text { font-size: 1rem !important; line-height: 1.8 !important; max-height: calc(100vh - 280px) !important; background: #fff !important; padding: 1.25rem !important; }
+    .exam-split-divider::after {
+        content: '\f0b2';
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #111827;
+        font-size: .8rem;
+    }
+    .exam-split-divider:hover { background: #9ca3af; }
+    .exam-right-pane { position: sticky; top: 52px; align-self: start; max-height: calc(100vh - 58px); overflow: auto; background: #f3f4f6; border-radius: 0; padding: .5rem; border: 1px solid #d4d4d8; }
+    .reading-text { font-size: 1rem !important; line-height: 1.8 !important; max-height: calc(100vh - 240px) !important; background: #fff !important; padding: 1rem !important; border-radius: 0 !important; }
     .reading-tools { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
     .reading-mark { background: #fff59d; padding: 0 .15rem; border-radius: .2rem; }
     .reading-note-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .5rem .65rem; margin-bottom: .5rem; }
     .exam-save-status { font-size: .78rem; opacity: .9; }
-    .exam-question-footer { border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 1rem; }
+    .exam-question-footer { border-top: 1px solid #d1d5db; padding-top: .7rem; margin-top: .7rem; }
+    .exam-nav-main {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: .6rem;
+        align-items: center;
+    }
+    .exam-part-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: .4rem;
+        margin-top: .55rem;
+    }
+    .exam-part-tab {
+        border: 1px solid #d1d5db;
+        background: #fff;
+        border-radius: 3px;
+        font-weight: 600;
+        font-size: .86rem;
+        color: #374151;
+        padding: .35rem .45rem;
+        text-align: center;
+    }
+    .exam-part-tab.active {
+        background: #f8fafc;
+        border-color: #9ca3af;
+    }
     .part-label { font-size: .8rem; font-weight: 600; color: #64748b; margin-right: .5rem; }
     .part-btn {
         min-width: 32px; height: 32px;
@@ -52,10 +99,11 @@
         border-color: #334155;
         color: #fff;
     }
-    .btn-submit-exam { background: #10b981; border: none; color: #fff; font-weight: 700; padding: .6rem 1.25rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(16,185,129,.4); }
-    .btn-submit-exam:hover { background: #059669; color: #fff; transform: translateY(-1px); }
-    .test-header-card { border-radius: 12px !important; }
-    .test-header-card .card-body { padding: .85rem 1.25rem !important; }
+    .btn-submit-exam { background: #16a34a; border: none; color: #fff; font-weight: 700; padding: .45rem .9rem; border-radius: 4px; box-shadow: none; }
+    .btn-submit-exam:hover { background: #15803d; color: #fff; transform: none; }
+    .test-header-card { border-radius: 0 !important; border: 1px solid #d1d5db !important; }
+    .test-header-card .card-body { padding: .55rem .9rem !important; }
+    .exam-topbar-card { background: #fff !important; color: #111827 !important; box-shadow: none !important; }
     .question-card {
         border-radius: 12px;
         border: 1px solid #e2e8f0;
@@ -70,7 +118,7 @@
         box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
         font-weight: 600;
     }
-    .exam-shell { box-shadow: 0 10px 30px rgba(2, 6, 23, .05); }
+    .exam-shell { box-shadow: none; }
     .flashcard-selection-btn {
         position: fixed;
         z-index: 1080;
@@ -85,6 +133,7 @@
     }
     .flashcard-selection-btn:hover { background: #1d4ed8; }
     body.exam-mode .navbar, body.exam-mode footer, body.exam-mode #messages-container { display: none !important; }
+    body.exam-mode .exam-offer-strip { display: none !important; }
     body.exam-mode .container.mt-4.fade-in { max-width: 100%; margin-top: .2rem !important; }
     body.exam-mode .exam-right-pane { top: 8px; max-height: calc(100vh - 20px); }
     .writing-inline-blank {
@@ -104,9 +153,166 @@
         border-bottom-color: #2563eb;
         box-shadow: none;
     }
-    #audio-player-container { margin-bottom: 0 !important; }
+    .part-section {
+        border: 1px solid #d1d5db;
+        background: #fff;
+        margin-bottom: .75rem;
+    }
+    .part-section-header {
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+        padding: .55rem .75rem;
+        font-size: .95rem;
+        font-weight: 700;
+        color: #111827;
+    }
+    .exam-split-layout .part-section-header.writing-answer-header {
+        background: #4b5563;
+        color: #fff;
+        border-bottom: none;
+    }
+    .part-q-card {
+        border-bottom: 1px solid #f1f5f9;
+        padding: .8rem .75rem;
+    }
+    .part-q-card:last-child { border-bottom: 0; }
+    .exam-bottom-dock {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        background: #f8fafc;
+        border: 1px solid #d1d5db;
+        padding: .4rem;
+        margin-top: .65rem;
+    }
+    .exam-bottom-dock .dock-part {
+        border: 1px solid #d1d5db;
+        background: #fff;
+        padding: .3rem .45rem;
+        font-size: .84rem;
+        cursor: pointer;
+    }
+    .exam-bottom-dock .dock-part.active {
+        background: #111827;
+        color: #fff;
+        border-color: #111827;
+    }
+    .exam-nav-arrows { display: flex; gap: 2px; }
+    .exam-nav-arrows .nav-arrow {
+        width: 36px; height: 36px;
+        border: 1px solid #9ca3af;
+        background: #f3f4f6;
+        color: #374151;
+        display: inline-flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: 1rem;
+    }
+    .exam-nav-arrows .nav-arrow:hover { background: #e5e7eb; }
+    .exam-nav-arrows .nav-arrow.active { background: #374151; color: #fff; border-color: #374151; }
+    .part-q-buttons { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .part-q-buttons .part-label { font-size: .85rem; font-weight: 600; color: #374151; margin-right: 6px; }
+    .part-q-buttons .q-num-btn {
+        width: 28px; height: 28px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        font-size: .8rem; font-weight: 600;
+        cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .part-q-buttons .q-num-btn:hover { background: #f3f4f6; }
+    .part-q-buttons .q-num-btn.active { background: #fff; border-color: #111827; color: #111827; box-shadow: 0 0 0 2px #111827; }
+    .part-summary-block {
+        border: 1px solid #d1d5db;
+        background: #f9fafb;
+        padding: .25rem .5rem;
+        font-size: .8rem;
+        color: #4b5563;
+    }
+    .inline-blank-wrap { display: inline; }
+    .inline-blank-num {
+        display: inline-block;
+        min-width: 24px;
+        padding: 2px 6px;
+        margin-right: 4px;
+        border: 1px solid #9ca3af;
+        border-radius: 2px;
+        font-size: .85rem;
+        font-weight: 600;
+        color: #374151;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .inline-blank-input {
+        display: inline-block;
+        width: 90px;
+        min-width: 60px;
+        max-width: 140px;
+        border: 1px solid #9ca3af;
+        border-radius: 2px;
+        padding: 2px 6px;
+        font-size: 0.95rem;
+        vertical-align: baseline;
+        margin: 0 2px;
+    }
+    .inline-blank-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+    .engnovate-notes-format { line-height: 2; }
+    .listening-part-bar {
+        background: #111827;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: .65rem 1rem;
+        margin: 0 -0.35rem .5rem -0.35rem;
+    }
+    .exam-split-layout.listening-layout { flex-direction: column !important; }
+    .exam-split-layout.listening-layout .exam-listening-wrap { max-width: 900px; margin: 0 auto; }
+    .exam-split-layout.listening-layout .exam-split-divider { display: none; }
+    .exam-split-layout.listening-layout .exam-left-pane,
+    .exam-split-layout.listening-layout .exam-right-pane { flex: none; width: 100%; }
+    .exam-split-layout.listening-layout .exam-right-pane { position: static; max-height: none; }
+    .listening-audio-card {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 0;
+        margin-bottom: .75rem;
+    }
+    .writing-part-bar {
+        background: #111827;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: .65rem 1rem;
+    }
+    .writing-task-card { border: 1px solid #d1d5db; border-radius: 0; }
+    .writing-task-content { font-size: 0.95rem; line-height: 1.7; }
+    .writing-image-carousel { position: relative; display: flex; align-items: center; gap: .5rem; }
+    .writing-image-carousel .writing-img-slides { flex: 1; position: relative; min-height: 120px; }
+    .writing-image-carousel .writing-img-slide { display: none; }
+    .writing-image-carousel .writing-img-slide.active { display: block; }
+    .writing-image-carousel .writing-img-slide img { max-width: 100%; }
+    .writing-image-carousel .writing-img-nav {
+        width: 36px; height: 36px; border-radius: 50%;
+        border: 1px solid #d1d5db; background: #fff; color: #374151;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; flex-shrink: 0;
+    }
+    .writing-image-carousel .writing-img-nav:hover { background: #f3f4f6; }
+    .listening-audio-card audio { width: 100%; }
+    .listening-questions-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .5rem;
+        margin-bottom: 1rem;
+    }
+    .listening-questions-header h5 { font-weight: 700; color: #111827; margin: 0; }
+    .part-read-header { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+    .part-read-header .font-size-btn { width: 28px; height: 28px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; cursor: pointer; }
+    .tip-bar { font-size: .8rem; color: #6b7280; padding: .4rem .6rem; background: #f9fafb; border-top: 1px solid #e5e7eb; }
     @media (max-width: 991.98px) {
         .exam-split-layout { flex-direction: column; }
+        .exam-part-tabs { grid-template-columns: repeat(2, 1fr); }
         .exam-right-pane { position: static; max-height: none; overflow: visible; }
         .reading-text { max-height: 320px !important; }
     }
@@ -115,46 +321,47 @@
 
 {% block content %}
 <div class="container mt-4 fade-in">
+    <div class="exam-offer-strip">24 Hours Only: Get 39% OFF on Our Premium Plan - Check Out Now!</div>
     <div class="row">
-        <div class="col-12 col-md-10 mx-auto">
+        <div class="col-12 mx-auto">
             <div class="exam-shell mb-3">
             <!-- Header va Progress -->
-            <div class="card mb-4 border-0 test-header-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: var(--shadow-lg);">
+            <div class="card mb-2 border-0 test-header-card exam-topbar-card">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2 gap-md-3">
                         <div class="flex-grow-1">
-                            <h3 class="mb-1 mb-md-2" style="font-weight: 700; font-size: 1.25rem; font-size: clamp(1.1rem, 2.5vw, 1.5rem); color: white;">{{ test.title }}</h3>
-                            <p class="mb-0" style="color: rgba(255,255,255,0.9); font-size: 0.875rem; font-size: clamp(0.8rem, 2vw, 1rem);">{{ test.category.name }} • {{ test.get_test_type_display }}</p>
+                            <h3 class="mb-1 mb-md-1" style="font-weight: 700; font-size: 1.15rem; color: #111827;">{{ test.title }}</h3>
+                            <p class="mb-0" style="color: #4b5563; font-size: 0.9rem;">{{ test.category.name }} • {{ test.get_test_type_display }}</p>
                         </div>
                         <div class="d-flex gap-2 align-items-center">
                             {% if test.duration_minutes %}
-                            <div id="timer-container" style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 0.5rem 1rem; padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2vw, 1.25rem); backdrop-filter: blur(10px); white-space: nowrap;">
-                                <i class="fas fa-clock me-2"></i>
-                                <span id="timer" style="font-weight: 700; font-size: clamp(0.9rem, 2vw, 1.1rem);">
+                            <div id="timer-container" style="background: #111827; border: none; border-radius: 999px; padding: .3rem .9rem; white-space: nowrap;">
+                                <i class="fas fa-clock me-1" style="color: rgba(255,255,255,0.9);"></i>
+                                <span id="timer" style="font-weight: 700; font-size: .95rem; color: #fff;">
                                     {% if timer_minutes is not None %}{{ timer_minutes }}:{{ timer_seconds|stringformat:"02d" }}{% else %}{{ test.duration_minutes }}:00{% endif %}
                                 </span>
                             </div>
                             {% endif %}
-                            <button type="button" id="pause-resume-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 12px; padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2vw, 1.25rem); white-space: nowrap;">
+                            <button type="button" id="pause-resume-btn" class="btn btn-sm" style="background: #fff; border: 1px solid #d1d5db; color: #111827; border-radius: 8px; padding: .3rem .65rem; white-space: nowrap;">
                                 <i class="fas {% if is_paused %}fa-play{% else %}fa-pause{% endif %}" id="pause-resume-icon"></i>
                                 <span id="pause-resume-text" class="d-none d-sm-inline ms-1">{% if is_paused %}Davom ettirish{% else %}To'xtatish{% endif %}</span>
                             </button>
-                            <button type="button" id="exam-mode-toggle" class="btn btn-sm" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 12px;">
+                            <button type="button" id="exam-mode-toggle" class="btn btn-sm" style="background: #fff; border: 1px solid #d1d5db; color: #111827; border-radius: 8px;">
                                 <i class="fas fa-expand me-1"></i><span class="d-none d-sm-inline">Exam Mode</span>
                             </button>
                         </div>
                     </div>
                     <div>
                         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                            <span style="color: rgba(255,255,255,0.9); font-size: clamp(0.85rem, 2vw, 1rem);">
-                                Savol <strong style="color: white;">{{ question_number }}</strong> / <strong style="color: white;">{{ total_questions }}</strong>
+                            <span style="color: #374151; font-size: .9rem;">
+                                Question <strong style="color: #111827;">{{ question_number }}</strong> / <strong style="color: #111827;">{{ total_questions }}</strong>
                             </span>
-                            <span style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 0.375rem 0.75rem; padding: clamp(0.375rem, 1vw, 0.5rem) clamp(0.75rem, 1.5vw, 1rem); font-weight: 600; font-size: clamp(0.85rem, 2vw, 1rem); white-space: nowrap;">
+                            <span style="background: #f3f4f6; border-radius: 6px; padding: .25rem .5rem; font-weight: 600; font-size: .85rem; white-space: nowrap; border: 1px solid #e5e7eb;">
                                 {{ progress_percentage }}%
                             </span>
                         </div>
-                        <div class="progress" style="height: clamp(8px, 1.5vw, 12px); background: rgba(255,255,255,0.2);">
-                            <div class="progress-bar bg-white" role="progressbar" style="width: {{ progress_percentage }}%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        <div class="progress" style="height: 7px; background: #e5e7eb;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%; background: #111827;">
                             </div>
                         </div>
                         <div class="mt-2 exam-save-status" id="autosave-status">Auto-save: active</div>
@@ -162,44 +369,47 @@
                 </div>
             </div>
 
-            <div class="exam-split-layout">
+            <div class="exam-split-layout{% if test.test_type == 'listening' %} listening-layout{% endif %}">
                 <div class="exam-left-pane">
                     {% if test.test_type == 'listening' %}
-                    <div class="card border-0 shadow-lg mb-3 mb-md-4" id="audio-player-container">
-                        <div class="card-body p-3 p-md-4">
-                            <h5 class="mb-2 mb-md-3" style="font-weight: 700; color: var(--primary); font-size: clamp(1rem, 2.5vw, 1.25rem);">
-                                <i class="fas fa-headphones me-2"></i>Part {{ question_number }}: Audio
-                            </h5>
-                            {% if test.audio_file %}
-                            <audio id="test-audio" controls style="width: 100%; max-width: 100%;" preload="auto">
-                                <source src="{{ test.audio_file.url }}" type="audio/mpeg">
-                                <source src="{{ test.audio_file.url }}" type="audio/wav">
-                                <source src="{{ test.audio_file.url }}" type="audio/ogg">
-                                Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
-                            </audio>
-                            <div class="mt-2 mt-md-3 d-flex flex-wrap align-items-center gap-2 gap-md-3">
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="if(typeof playAudio === 'function') playAudio(); else window.playAudio();">
-                                    <i class="fas fa-play me-1 me-md-2"></i>Qayta eshitish
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="if(typeof pauseAudio === 'function') pauseAudio(); else window.pauseAudio();">
-                                    <i class="fas fa-pause me-1 me-md-2"></i>To'xtatish
-                                </button>
-                                <span class="text-muted" id="audio-time">00:00 / 00:00</span>
+                    <div class="exam-listening-wrap">
+                        <div class="listening-part-bar">
+                            <i class="fas fa-headphones me-2"></i>Part 1: Listen and answer questions {{ questions_range_display|default:total_questions }}
+                        </div>
+                        <div class="listening-audio-card card mb-3">
+                            <div class="card-body p-3">
+                                {% if test.audio_file %}
+                                <audio id="test-audio" controls style="width: 100%;" preload="auto">
+                                    <source src="{{ test.audio_file.url }}" type="audio/mpeg">
+                                    <source src="{{ test.audio_file.url }}" type="audio/wav">
+                                    <source src="{{ test.audio_file.url }}" type="audio/ogg">
+                                    Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
+                                </audio>
+                                <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+                                    <span class="text-muted small" id="audio-time">0:00 / 0:00</span>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Eslatma:</strong> Bu test uchun audio fayl hozircha yuklanmagan.
+                                </div>
+                                {% endif %}
                             </div>
-                            {% else %}
-                            <div class="alert alert-info mb-0">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Eslatma:</strong> Bu test uchun audio fayl hozircha yuklanmagan.
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                     {% elif test.test_type == 'reading' and test.reading_text %}
                     <div class="card border-0 shadow-lg">
                         <div class="card-body p-4">
-                            <h5 class="mb-3" style="font-weight: 700; color: var(--primary);">
-                                <i class="fas fa-book me-2"></i>Reading Passage
-                            </h5>
+                            <div class="part-read-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h5 class="mb-0" style="font-weight: 700; color: var(--primary);">
+                                    <i class="fas fa-book me-2"></i>Part 1 Practice Skimming <span id="font-scale-label">(1x)</span>
+                                </h5>
+                                <div class="d-flex align-items-center gap-1">
+                                    <button type="button" class="font-size-btn" id="font-size-minus" title="Kichiklashtirish">−</button>
+                                    <button type="button" class="font-size-btn" id="font-size-plus" title="Kattalashtirish">+</button>
+                                </div>
+                            </div>
+                            <p class="small text-muted mb-2">Read the text and answer questions 1-{{ total_questions }}</p>
                             <div class="reading-tools">
                                 <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-reading">
                                     <i class="fas fa-highlighter me-1"></i>Highlight
@@ -218,33 +428,214 @@
                         </div>
                     </div>
                     {% elif test.test_type == 'writing' %}
-                    <div class="card border-0 shadow-lg">
-                        <div class="card-body p-4">
-                            <h5 class="mb-3" style="font-weight: 700; color: var(--primary);">
-                                <i class="fas fa-pen me-2"></i>Writing Task
-                            </h5>
-                            <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; overflow-y: auto;">
-                                <div id="writing-inline-editor"
-                                     data-raw="{{ current_question.question_text|escapejs }}"
-                                     data-qtype="{{ current_question.question_type }}"
-                                     data-current="{{ current_answer|default:''|escapejs }}">
-                                    {{ current_question.question_text|linebreaks }}
+                    <div class="writing-tasks-pane">
+                        {% for pg in part_groups %}
+                        <div class="writing-task-card card border-0 shadow-sm mb-3">
+                            <div class="writing-part-bar">{{ pg.title }}</div>
+                            <div class="card-body p-3 p-md-4">
+                                <div class="writing-task-content">
+                                    {% for item in pg.cards %}
+                                    {% with q=item.question img_list=item.question_images %}
+                                    {{ q.question_text|linebreaks }}
+                                    {% if img_list %}
+                                    <div class="writing-task-image-wrap mt-3">
+                                        {% if img_list|length > 1 %}
+                                        <div class="writing-image-carousel" data-question-id="{{ q.pk }}">
+                                            <button type="button" class="writing-img-nav writing-img-prev" aria-label="Oldingi rasm"><i class="fas fa-chevron-left"></i></button>
+                                            <div class="writing-img-slides">
+                                                {% for img_url in img_list %}
+                                                <div class="writing-img-slide {% if forloop.first %}active{% endif %}"><img src="{{ img_url }}" class="img-fluid rounded" alt="Task image {{ forloop.counter }}"></div>
+                                                {% endfor %}
+                                            </div>
+                                            <button type="button" class="writing-img-nav writing-img-next" aria-label="Keyingi rasm"><i class="fas fa-chevron-right"></i></button>
+                                        </div>
+                                        {% else %}
+                                        <img src="{{ img_list.0 }}" class="img-fluid rounded" alt="Task image">
+                                        {% endif %}
+                                    </div>
+                                    {% elif q.question_image %}
+                                    <div class="writing-task-image-wrap mt-3">
+                                        <img src="{{ q.question_image.url }}" class="img-fluid rounded" alt="Task image">
+                                    </div>
+                                    {% endif %}
+                                    {% endwith %}
+                                    {% endfor %}
                                 </div>
-                                {% if current_question.question_image %}
-                                <img src="{{ current_question.question_image.url }}" class="img-fluid mt-3" alt="Task image">
-                                {% endif %}
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
                     {% endif %}
                 </div>
                 <div class="exam-split-divider d-none d-lg-block" aria-hidden="true"></div>
                 <div class="exam-right-pane">
                     <div id="question-container">
-                        {% include 'core/tests/partial_question.html' %}
+                        <form method="post" action="{% url 'core:test_take' test.pk %}" data-all-questions="1">
+                            {% csrf_token %}
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-2">
+                                    {% if test.test_type != 'writing' %}
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 {% if test.test_type == 'listening' %}listening-questions-header{% endif %}">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h5 class="mb-0 fw-bold">Questions {{ questions_range_display|default:total_questions }}</h5>
+                                            {% if test.test_type == 'listening' and test.audio_file %}
+                                            <button type="button" class="btn btn-sm btn-primary" id="listen-from-here-btn" onclick="var a=document.getElementById('test-audio'); if(a){a.currentTime=0;a.play();}"><i class="fas fa-headphones me-1"></i>Listen From Here</button>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge bg-light text-dark border" id="answered-badge" data-total-blanks="{{ total_blanks|default:0 }}" data-answered-blanks="{{ answered_blanks|default:0 }}" data-total-questions="{{ total_questions }}" data-answered-questions="{{ answered_questions|length }}">{% if total_blanks %}{{ answered_blanks|default:0 }}/{{ total_blanks }} answered{% else %}{{ answered_questions|length }}/{{ total_questions }} answered{% endif %}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    {% for pg in part_groups %}
+                                    <section class="part-section" id="{{ pg.slug }}" data-part-section="{{ pg.part_number }}">
+                                        {% if test.test_type != 'listening' or part_groups|length > 1 %}
+                                        <div class="part-section-header{% if test.test_type == 'writing' %} writing-answer-header{% endif %}">
+                                            {% if test.test_type == 'writing' %}{{ pg.title }} Answer{% else %}{{ pg.title }}: Questions {{ pg.range_label }}{% endif %}
+                                        </div>
+                                        {% endif %}
+                                        {% for item in pg.cards %}
+                                        {% with q=item.question %}
+                                        <div class="part-q-card" id="question-{{ q.order }}" data-question-id="{{ q.pk }}">
+                                            {% if not item.inline_fill_parts and test.test_type != 'writing' %}
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="badge bg-primary">Question {{ q.order }}</span>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if test.test_type != 'writing' %}
+                                            {% if q.question_instruction %}
+                                            <div class="small text-muted mb-2">{{ q.question_instruction }}</div>
+                                            {% endif %}
+                                            {% if not item.inline_fill_parts %}
+                                            <div class="mb-3">{{ q.question_text|linebreaks }}</div>
+                                            {% endif %}
+                                            {% endif %}
+
+                                            {% if q.question_type == 'mcq' or q.question_type == 'true_false' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' %}
+                                                {% for option in item.mcq_options %}
+                                                <label class="d-flex align-items-start gap-2 mb-2">
+                                                    <input type="radio"
+                                                           name="answer_{{ q.pk }}"
+                                                           value="{{ option.letter }}"
+                                                           {% if item.current_answer == option.letter %}checked{% endif %}>
+                                                    <span><strong>{{ option.letter }}.</strong> {{ option.text }}</span>
+                                                </label>
+                                                {% endfor %}
+
+                                            {% elif q.question_type == 'fill_blank' or q.question_type == 'summary_completion' or q.question_type == 'notes_completion' or q.question_type == 'sentence_completion' or q.question_type == 'table_completion' or q.question_type == 'short_answer' %}
+                                                {% if item.inline_fill_parts %}
+                                                <div class="engnovate-notes-format">
+                                                    {% for p in item.inline_fill_parts %}
+                                                    {% if p.type == 'text' %}{{ p.content|linebreaksbr }}{% endif %}
+                                                    {% if p.type == 'input' %}
+                                                    <span class="inline-blank-wrap">
+                                                        <span class="inline-blank-num">[{{ p.num }}]</span>
+                                                        <input type="text" class="inline-blank-input" name="answer_{{ q.pk }}_{{ p.num }}" value="{{ p.value }}" maxlength="80" placeholder="" title="Answer {{ p.num }}" data-blank-id="blank-{{ q.pk }}-{{ p.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ p.num }}">
+                                                    </span>
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                {% else %}
+                                                <div class="row g-2">
+                                                    {% for f in item.answer_fields %}
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label mb-1 small">Blank {{ f.num }}</label>
+                                                        <input type="text" class="form-control"
+                                                               name="answer_{{ q.pk }}_{{ f.num }}"
+                                                               value="{{ f.value }}"
+                                                               data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}">
+                                                    </div>
+                                                    {% empty %}
+                                                    <div class="col-12">
+                                                        <input type="text" class="form-control"
+                                                               name="answer_{{ q.pk }}_1"
+                                                               value="{{ item.current_answer }}">
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                                {% endif %}
+
+                                            {% elif q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
+                                                {% for mf in item.matching_fields %}
+                                                <div class="d-flex align-items-center gap-2 mb-2">
+                                                    <span class="small text-muted" style="min-width: 28px;">{{ mf.num }}.</span>
+                                                    <span class="flex-grow-1">{{ mf.label }}</span>
+                                                    <select class="form-select" style="max-width: 220px;" name="match_{{ q.pk }}_{{ mf.num }}">
+                                                        <option value="">--</option>
+                                                        {% for op in mf.options %}
+                                                        <option value="{{ op.letter }}" {% if mf.value == op.letter %}selected{% endif %}>
+                                                            {{ op.letter }}{% if op.text %}. {{ op.text }}{% endif %}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                {% endfor %}
+
+                                            {% elif q.question_type == 'list_selection' %}
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    {% for op in item.list_options %}
+                                                    <label class="px-2 py-1 border rounded">
+                                                        <input type="checkbox" name="list_{{ q.pk }}_{{ op.letter }}" value="1" {% if op.checked %}checked{% endif %}>
+                                                        <span class="ms-1">{{ op.letter }}{% if op.text %}. {{ op.text }}{% endif %}</span>
+                                                    </label>
+                                                    {% endfor %}
+                                                </div>
+
+                                            {% else %}
+                                                {% if test.test_type == 'writing' %}
+                                                <div class="d-flex justify-content-end mb-1">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-image-to-text" data-image-url="{% if q.question_image %}{% if request.is_secure %}https{% else %}http{% endif %}://{{ request.get_host }}{{ q.question_image.url }}{% endif %}" data-target-textarea="answer_{{ q.pk }}">
+                                                        <i class="fas fa-image me-1"></i>Image to Text
+                                                    </button>
+                                                </div>
+                                                <textarea class="form-control writing-answer-ta" rows="8" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target>{{ item.current_answer }}</textarea>
+                                                <div class="mt-1 small text-muted"><span class="word-count-label">Word Count: <strong id="wc-{{ q.pk }}">0</strong></span></div>
+                                                {% else %}
+                                                <textarea class="form-control" rows="4" name="answer_{{ q.pk }}">{{ item.current_answer }}</textarea>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        {% endwith %}
+                                        {% endfor %}
+                                    </section>
+                                    {% endfor %}
+
+                                    <div class="exam-bottom-dock d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                                            <div class="exam-nav-arrows">
+                                                <button type="button" class="nav-arrow" id="nav-prev" title="Oldingi"><i class="fas fa-arrow-left"></i></button>
+                                                <button type="button" class="nav-arrow" id="nav-next" title="Keyingi"><i class="fas fa-arrow-right"></i></button>
+                                            </div>
+                                            {% for pg in part_groups %}
+                                            <div class="part-q-buttons">
+                                                <span class="part-label">{{ pg.title }}:</span>
+                                                {% if pg.blank_buttons %}
+                                                {% for bb in pg.blank_buttons %}
+                                                <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
+                                                {% endfor %}
+                                                {% else %}
+                                                <button type="button" class="part-summary-block dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" style="cursor:pointer;border:1px solid #d1d5db;background:#f9fafb;padding:.25rem .5rem;font-size:.8rem;color:#4b5563;">{{ pg.title }}: {{ pg.question_count }} questions</button>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-success btn-submit-exam" name="finish_test" value="1"><i class="fas fa-paper-plane me-1"></i>Submit</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2 justify-content-end exam-question-footer">
+                                        <small class="text-muted">Auto-save: active</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
+            </div>
+            <div class="tip-bar mt-2">
+                Tip: Press F11 (Windows) or Ctrl+Cmd+F (Mac) to cycle between normal, focus, and fullscreen modes.
             </div>
         </div>
     </div>
@@ -253,6 +644,33 @@
 <button type="button" id="flashcard-selection-btn" class="flashcard-selection-btn" title="Flashcardga saqlash">
     <i class="fas fa-plus"></i>
 </button>
+
+<div class="modal fade" id="imageToTextModal" tabindex="-1" aria-labelledby="imageToTextModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageToTextModalLabel"><i class="fas fa-image me-2"></i>Image to Text</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="imageToTextProgress" class="mb-2" style="display:none;">
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="imageToTextProgressBar"></div>
+                    </div>
+                    <small class="text-muted" id="imageToTextStatus">Recognizing...</small>
+                </div>
+                <div id="imageToTextResult" style="display:none;">
+                    <p class="small text-muted mb-2">Extracted text from image. You can insert it into your answer or copy.</p>
+                    <textarea class="form-control" rows="6" id="imageToTextOutput" readonly></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" id="imageToTextFooter" style="display:none;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="imageToTextInsertBtn"><i class="fas fa-plus me-1"></i>Insert into answer</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="flashcardModal" tabindex="-1" aria-labelledby="flashcardModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -318,10 +736,12 @@
             return;
         }
         
-        const minutes = Math.floor(timeLeft / 60);
+        const hours = Math.floor(timeLeft / 3600);
+        const minutes = Math.floor((timeLeft % 3600) / 60);
         const seconds = timeLeft % 60;
         if (timerElement) {
-            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            const parts = [hours, minutes, seconds].map(function(v) { return v.toString().padStart(2, '0'); });
+            timerElement.textContent = parts.join(':');
             
             // Vaqt kamayganda rang o'zgartiradi
             if (timerContainer) {
@@ -330,11 +750,13 @@
                     timerElement.style.color = '#dc2626';
                     timerElement.style.fontWeight = '700';
                 } else if (timeLeft <= 600) { // 10 daqiqa
-                    timerContainer.style.background = 'rgba(245, 158, 11, 0.4)';
-                    timerElement.style.color = '#f59e0b';
+                    timerContainer.style.background = 'rgba(245, 158, 11, 0.15)';
+                    timerElement.style.color = '#b45309';
+                    timerElement.style.fontWeight = '700';
                 } else {
-                    timerContainer.style.background = 'rgba(255,255,255,0.2)';
-                    timerElement.style.color = 'white';
+                    timerContainer.style.background = '#111827';
+                    timerElement.style.color = '#fff';
+                    timerElement.style.fontWeight = '700';
                 }
             }
         }
@@ -369,18 +791,22 @@
         const form = document.querySelector('form');
         if (form) {
             const formData = new FormData(form);
+            formData.set('finish_test', '1');
             fetch(form.action, {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRFToken': formData.get('csrfmiddlewaretoken')
                 }
-            }).then(() => {
-                // Testni yakunlash
-                window.location.href = '{% url "core:test_result" test_result.pk %}';
+            }).then((res) => {
+                if (res.redirected && res.url) {
+                    window.location.href = res.url;
+                    return;
+                }
+                window.location.reload();
             });
         } else {
-            window.location.href = '{% url "core:test_result" test_result.pk %}';
+            window.location.reload();
         }
     }
     
@@ -666,7 +1092,22 @@
                 const definition = (flashcardDefinition.value || '').trim();
                 const setId = (flashcardSetSelect.value || '').trim();
                 const newSetName = (flashcardNewSet.value || '').trim();
-                const currentQuestionId = (document.querySelector('#question-container form input[name="question_id"]') || {}).value || '';
+                const currentQuestionId = (() => {
+                    const blocks = Array.from(document.querySelectorAll('#question-container .part-q-card[data-question-id]'));
+                    if (!blocks.length) return '';
+                    const anchorLine = window.innerHeight * 0.35;
+                    let nearest = blocks[0];
+                    let best = Number.POSITIVE_INFINITY;
+                    blocks.forEach((el) => {
+                        const r = el.getBoundingClientRect();
+                        const dist = Math.abs(r.top - anchorLine);
+                        if (dist < best) {
+                            best = dist;
+                            nearest = el;
+                        }
+                    });
+                    return nearest ? (nearest.getAttribute('data-question-id') || '') : '';
+                })();
 
                 if (!term) {
                     alert('Term kiriting');
@@ -755,7 +1196,7 @@
                 if (!n) return;
                 const flaggedNow = flagged.includes(n);
                 btn.classList.toggle('is-flagged', flaggedNow);
-                btn.setAttribute('title', flaggedNow ? ('Savol ' + n + ' (Belgilangan)') : ('Savol ' + n));
+                btn.setAttribute('title', flaggedNow ? ('Question ' + n + ' (Belgilangan)') : ('Question ' + n));
                 const hide = flaggedOnly && !flaggedNow && n !== currentQ;
                 btn.style.display = hide ? 'none' : '';
             });
@@ -832,34 +1273,43 @@
                 return range;
             };
 
-            if (hlBtn) hlBtn.addEventListener('click', function() {
-                const range = getSelectionRange();
-                if (!range) return;
-                const mark = document.createElement('span');
-                mark.className = 'reading-mark';
-                try {
-                    range.surroundContents(mark);
-                } catch (e) {
-                    const frag = range.extractContents();
-                    mark.appendChild(frag);
-                    range.insertNode(mark);
-                }
-                window.getSelection().removeAllRanges();
-                markSaved('Highlight saved');
-            });
-
-            if (noteBtn) noteBtn.addEventListener('click', function() {
-                const range = getSelectionRange();
-                if (!range) return;
-                const selectedText = window.getSelection().toString().trim();
-                const note = window.prompt('Qisqa note yozing:');
-                if (!note) return;
-                const notes = getNotes();
-                notes.unshift({ text: selectedText.slice(0, 180), note: note.slice(0, 400), ts: Date.now() });
-                setNotes(notes.slice(0, 30));
-                renderNotes();
-                markSaved('Note saved');
-            });
+            function showSelectFirstTip() {
+                if (typeof markSaved === 'function') markSaved('Avval matndan so\'z yoki qismni tanlang');
+                else alert('Avval matndan so\'z yoki qismni tanlang.');
+            }
+            if (hlBtn) {
+                hlBtn.addEventListener('mousedown', function(e) { e.preventDefault(); });
+                hlBtn.addEventListener('click', function() {
+                    const range = getSelectionRange();
+                    if (!range) { showSelectFirstTip(); return; }
+                    const mark = document.createElement('span');
+                    mark.className = 'reading-mark';
+                    try {
+                        range.surroundContents(mark);
+                    } catch (e) {
+                        const frag = range.extractContents();
+                        mark.appendChild(frag);
+                        range.insertNode(mark);
+                    }
+                    window.getSelection().removeAllRanges();
+                    markSaved('Highlight saved');
+                });
+            }
+            if (noteBtn) {
+                noteBtn.addEventListener('mousedown', function(e) { e.preventDefault(); });
+                noteBtn.addEventListener('click', function() {
+                    const range = getSelectionRange();
+                    if (!range) { showSelectFirstTip(); return; }
+                    const selectedText = window.getSelection().toString().trim();
+                    const note = window.prompt('Qisqa note yozing:');
+                    if (!note) return;
+                    const notes = getNotes();
+                    notes.unshift({ text: selectedText.slice(0, 180), note: note.slice(0, 400), ts: Date.now() });
+                    setNotes(notes.slice(0, 30));
+                    renderNotes();
+                    markSaved('Note saved');
+                });
+            }
         }
 
         function syncWritingInlineWithRightForm() {
@@ -873,6 +1323,7 @@
             const raw = editor.dataset.raw || '';
             const form = document.querySelector('#question-container form');
             if (!form) return;
+            if (form.dataset.allQuestions === '1') return;
 
             const hasNumbered = /\[\d+\]/.test(raw);
             const hasUnderscore = /____+/.test(raw);
@@ -971,9 +1422,192 @@
             });
         }
 
+        function initPartDock() {
+            if (window.__partDockInitDone) return;
+            const dockButtons = Array.from(document.querySelectorAll('.dock-part[data-part-target]'));
+            const sections = Array.from(document.querySelectorAll('[data-part-section]'));
+            const qNumBtns = Array.from(document.querySelectorAll('.q-num-btn'));
+            const navPrev = document.getElementById('nav-prev');
+            const navNext = document.getElementById('nav-next');
+
+            qNumBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const blankId = this.getAttribute('data-blank-id');
+                    const questionId = this.getAttribute('data-question-id');
+                    if (blankId) {
+                        const input = document.querySelector('input[data-blank-id="' + blankId + '"]');
+                        if (input) {
+                            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            input.focus();
+                        }
+                    } else if (questionId) {
+                        const el = document.getElementById(questionId);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            let updateQNumActiveFn;
+            const blankInputs = Array.from(document.querySelectorAll('input[data-blank-id]'));
+            const answeredBadge = document.getElementById('answered-badge');
+            const totalBlanks = answeredBadge ? parseInt(answeredBadge.getAttribute('data-total-blanks') || '0', 10) : 0;
+
+            function updateAnsweredBadge() {
+                if (!answeredBadge || totalBlanks <= 0) return;
+                const filled = blankInputs.filter(function(inp) { return (inp.value || '').trim().length > 0; }).length;
+                answeredBadge.textContent = filled + '/' + totalBlanks + ' answered';
+            }
+
+            blankInputs.forEach(function(input) {
+                input.addEventListener('focus', function() {
+                    if (updateQNumActiveFn) updateQNumActiveFn();
+                });
+                input.addEventListener('blur', function() {
+                    setTimeout(function() { if (updateQNumActiveFn) updateQNumActiveFn(); }, 50);
+                });
+                input.addEventListener('input', updateAnsweredBadge);
+            });
+
+            function getVisibleQuestionOrder() {
+                const cards = Array.from(document.querySelectorAll('.part-q-card'));
+                const anchor = window.innerHeight * 0.3;
+                let best = null, bestDist = Infinity;
+                cards.forEach(function(c) {
+                    const r = c.getBoundingClientRect();
+                    const dist = Math.abs(r.top - anchor);
+                    if (dist < bestDist) { bestDist = dist; best = c; }
+                });
+                return best ? parseInt(best.getAttribute('id', '').replace('question-', ''), 10) : 1;
+            }
+
+            function updateQNumActive() {
+                const focusedBlank = document.querySelector('input[data-blank-id]:focus');
+                const part1BlankBtns = qNumBtns.filter(function(b) { return b.getAttribute('data-blank-id'); });
+                if (focusedBlank && part1BlankBtns.length) {
+                    const bid = focusedBlank.getAttribute('data-blank-id');
+                    qNumBtns.forEach(function(btn) {
+                        btn.classList.toggle('active', btn.getAttribute('data-blank-id') === bid);
+                    });
+                    const idx = part1BlankBtns.findIndex(function(b) { return b.getAttribute('data-blank-id') === bid; });
+                    if (navPrev) navPrev.classList.toggle('active', idx > 0);
+                    if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < part1BlankBtns.length - 1);
+                } else {
+                    const current = getVisibleQuestionOrder();
+                    qNumBtns.forEach(function(btn) {
+                        const qId = btn.getAttribute('data-question-id');
+                        const o = parseInt(btn.getAttribute('data-order'), 10);
+                        btn.classList.toggle('active', qId && o === current);
+                    });
+                    const questionBtns = qNumBtns.filter(function(b) { return b.getAttribute('data-question-id'); });
+                    const orders = questionBtns.map(function(b) { return parseInt(b.getAttribute('data-order'), 10); }).filter(Boolean);
+                    const idx = orders.indexOf(current);
+                    if (navPrev) navPrev.classList.toggle('active', idx > 0);
+                    if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < orders.length - 1);
+                }
+            }
+            updateQNumActiveFn = updateQNumActive;
+
+            if (navPrev) navPrev.addEventListener('click', function() {
+                const focusedBlank = document.querySelector('input[data-blank-id]:focus');
+                const part1Btns = Array.from(document.querySelectorAll('.part-q-buttons .q-num-btn[data-blank-id]'));
+                if (focusedBlank && part1Btns.length) {
+                    const bid = focusedBlank.getAttribute('data-blank-id');
+                    const idx = part1Btns.findIndex(function(b) { return b.getAttribute('data-blank-id') === bid; });
+                    const prevBtn = idx > 0 ? part1Btns[idx - 1] : null;
+                    if (prevBtn) {
+                        const prevId = prevBtn.getAttribute('data-blank-id');
+                        const prevInput = document.querySelector('input[data-blank-id="' + prevId + '"]');
+                        if (prevInput) { prevInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); prevInput.focus(); }
+                    }
+                } else {
+                    const current = getVisibleQuestionOrder();
+                    const prevCard = document.querySelector('.part-q-card[id="question-' + (current - 1) + '"]');
+                    if (prevCard) prevCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+            if (navNext) navNext.addEventListener('click', function() {
+                const focusedBlank = document.querySelector('input[data-blank-id]:focus');
+                const part1Btns = Array.from(document.querySelectorAll('.part-q-buttons .q-num-btn[data-blank-id]'));
+                if (focusedBlank && part1Btns.length) {
+                    const bid = focusedBlank.getAttribute('data-blank-id');
+                    const idx = part1Btns.findIndex(function(b) { return b.getAttribute('data-blank-id') === bid; });
+                    const nextBtn = idx >= 0 && idx < part1Btns.length - 1 ? part1Btns[idx + 1] : null;
+                    if (nextBtn) {
+                        const nextId = nextBtn.getAttribute('data-blank-id');
+                        const nextInput = document.querySelector('input[data-blank-id="' + nextId + '"]');
+                        if (nextInput) { nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); nextInput.focus(); }
+                    }
+                } else {
+                    const current = getVisibleQuestionOrder();
+                    const nextCard = document.querySelector('.part-q-card[id="question-' + (current + 1) + '"]');
+                    if (nextCard) nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
+            const rightPane = document.querySelector('.exam-right-pane');
+            const scrollTarget = rightPane || window;
+            scrollTarget.addEventListener('scroll', function() { updateQNumActive(); }, { passive: true });
+            updateQNumActive();
+            if (!dockButtons.length || !sections.length) return;
+
+            dockButtons.forEach((btn) => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-part-target');
+                    const target = targetId ? document.getElementById(targetId) : null;
+                    if (!target) return;
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+
+            const updateActive = () => {
+                const anchor = window.innerHeight * 0.3;
+                let activePart = null;
+                let best = Number.POSITIVE_INFINITY;
+                sections.forEach((sec) => {
+                    const r = sec.getBoundingClientRect();
+                    const dist = Math.abs(r.top - anchor);
+                    if (dist < best) {
+                        best = dist;
+                        activePart = sec.getAttribute('data-part-section');
+                    }
+                });
+                dockButtons.forEach((btn) => {
+                    const partNo = btn.getAttribute('data-part-number');
+                    btn.classList.toggle('active', String(partNo) === String(activePart));
+                });
+            };
+
+            if (rightPane) {
+                rightPane.addEventListener('scroll', updateActive, { passive: true });
+            } else {
+                window.addEventListener('scroll', updateActive, { passive: true });
+            }
+            updateActive();
+            window.__partDockInitDone = true;
+        }
+
+        function initWritingImageCarousel() {
+            document.querySelectorAll('.writing-image-carousel').forEach(function(car) {
+                const slides = car.querySelectorAll('.writing-img-slide');
+                const prevBtn = car.querySelector('.writing-img-prev');
+                const nextBtn = car.querySelector('.writing-img-next');
+                if (slides.length < 2 || (!prevBtn && !nextBtn)) return;
+                let idx = 0;
+                function show(i) {
+                    idx = (i + slides.length) % slides.length;
+                    slides.forEach(function(s, j) { s.classList.toggle('active', j === idx); });
+                }
+                if (prevBtn) prevBtn.addEventListener('click', function() { show(idx - 1); });
+                if (nextBtn) nextBtn.addEventListener('click', function() { show(idx + 1); });
+            });
+        }
+
         function refreshExamQuestionUI() {
             syncWritingInlineWithRightForm();
+            initPartDock();
+            initWritingImageCarousel();
             refreshFlagUI();
+            if (typeof initWordCount === 'function') initWordCount();
             const form = document.querySelector('#question-container form');
             if (form) {
                 form.addEventListener('input', function() { markSaved('Draft saved'); }, { passive: true });
@@ -983,6 +1617,38 @@
 
         refreshExamQuestionUI();
         initReadingTools();
+
+        function initFontSizeButtons() {
+            const readingText = document.querySelector('.reading-text');
+            const plusBtn = document.getElementById('font-size-plus');
+            const minusBtn = document.getElementById('font-size-minus');
+            const scaleLabel = document.getElementById('font-scale-label');
+            if (!readingText || (!plusBtn && !minusBtn)) return;
+            let scale = 1;
+            const updateScale = () => {
+                readingText.style.fontSize = (scale * 100) + '%';
+                if (scaleLabel) scaleLabel.textContent = '(' + scale + 'x)';
+            };
+            if (plusBtn) plusBtn.addEventListener('click', function() { scale = Math.min(1.5, scale + 0.1); updateScale(); });
+            if (minusBtn) minusBtn.addEventListener('click', function() { scale = Math.max(0.8, scale - 0.1); updateScale(); });
+        }
+        initFontSizeButtons();
+
+        function initWordCount() {
+            document.querySelectorAll('.writing-answer-ta[data-word-count-target]').forEach(function(ta) {
+                const id = ta.name.replace(/[^0-9]/g, '');
+                const wcEl = document.getElementById('wc-' + id);
+                if (!wcEl) return;
+                const update = () => {
+                    const text = (ta.value || '').trim();
+                    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+                    wcEl.textContent = words;
+                };
+                ta.addEventListener('input', update);
+                update();
+            });
+        }
+        initWordCount();
 
         document.body.addEventListener('click', function(e) {
             const flagBtn = e.target.closest('#flag-question-btn');
@@ -1044,7 +1710,78 @@
                 if (prevBtn) prevBtn.click();
             }
         });
+
+        // Image to Text (OCR) - Writing test uchun
+        if (document.querySelector('.btn-image-to-text')) {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            s.onload = initImageToText;
+            document.head.appendChild(s);
+        }
     });
+
+    function initImageToText() {
+        const Tesseract = window.Tesseract;
+        if (!Tesseract) return;
+        const modal = new bootstrap.Modal(document.getElementById('imageToTextModal'));
+        const progressEl = document.getElementById('imageToTextProgress');
+        const progressBar = document.getElementById('imageToTextProgressBar');
+        const statusEl = document.getElementById('imageToTextStatus');
+        const resultEl = document.getElementById('imageToTextResult');
+        const outputEl = document.getElementById('imageToTextOutput');
+        const footerEl = document.getElementById('imageToTextFooter');
+
+        document.querySelectorAll('.btn-image-to-text').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const imageUrl = (this.getAttribute('data-image-url') || '').trim();
+                const targetName = this.getAttribute('data-target-textarea');
+                if (!targetName) return;
+                if (!imageUrl) {
+                    alert('Bu savol uchun rasm yuklanmagan. Admin orqali savolga rasm qo\'shing.');
+                    return;
+                }
+
+                progressEl.style.display = 'block';
+                resultEl.style.display = 'none';
+                footerEl.style.display = 'none';
+                outputEl.value = '';
+                progressBar.style.width = '0%';
+                statusEl.textContent = 'Recognizing...';
+                modal.show();
+
+                Tesseract.recognize(imageUrl, 'eng', {
+                    logger: function(m) {
+                        if (m.status === 'recognizing text') {
+                            progressBar.style.width = (m.progress * 100) + '%';
+                        }
+                    }
+                }).then(function(result) {
+                    progressEl.style.display = 'none';
+                    outputEl.value = (result.data.text || '').trim();
+                    resultEl.style.display = 'block';
+                    footerEl.style.display = 'flex';
+
+                    document.getElementById('imageToTextInsertBtn').onclick = function() {
+                        const ta = document.querySelector('textarea[name="' + targetName + '"]');
+                        if (ta) {
+                            const pos = ta.selectionStart || ta.value.length;
+                            const before = ta.value.substring(0, pos);
+                            const after = ta.value.substring(pos);
+                            ta.value = before + outputEl.value + after;
+                            ta.dispatchEvent(new Event('input', { bubbles: true }));
+                            if (typeof initWordCount === 'function') initWordCount();
+                        }
+                        modal.hide();
+                    };
+                }).catch(function(err) {
+                    progressEl.style.display = 'none';
+                    outputEl.value = 'Error: ' + (err.message || 'Could not read image.');
+                    resultEl.style.display = 'block';
+                    footerEl.style.display = 'flex';
+                });
+            });
+        });
+    }
 </script>
 {% endblock %}
 
