@@ -41,7 +41,8 @@
     }
     .exam-split-divider:hover { background: #9ca3af; }
     .exam-right-pane { position: sticky; top: 52px; align-self: start; max-height: calc(100vh - 58px); overflow: auto; background: #f3f4f6; border-radius: 0; padding: .5rem; border: 1px solid #d4d4d8; }
-    .reading-text { font-size: 1rem !important; line-height: 1.8 !important; max-height: calc(100vh - 240px) !important; background: #fff !important; padding: 1rem !important; border-radius: 0 !important; }
+    .reading-text { font-size: 1rem !important; line-height: 1.8 !important; background: #fff !important; padding: 1rem !important; border-radius: 0 !important; }
+    .reading-passages-container { max-height: calc(100vh - 240px) !important; }
     .reading-tools { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
     .reading-mark { background: #fff59d; padding: 0 .15rem; border-radius: .2rem; }
     .reading-note-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .5rem .65rem; margin-bottom: .5rem; }
@@ -315,7 +316,7 @@
         .exam-split-layout { flex-direction: column; }
         .exam-part-tabs { grid-template-columns: repeat(2, 1fr); }
         .exam-right-pane { position: static; max-height: none; overflow: visible; }
-        .reading-text { max-height: 320px !important; }
+        .reading-passages-container { max-height: 320px !important; }
     }
     /* Telefon - 576px va pastroq */
     @media (max-width: 575.98px) {
@@ -338,7 +339,8 @@
         .part-read-header h5 { font-size: 0.95rem !important; }
         .part-read-header .font-size-btn { width: 26px; height: 26px; font-size: 0.9rem; }
         .reading-tools .btn { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
-        .reading-text { max-height: 220px !important; padding: 0.75rem !important; font-size: 0.9rem !important; word-wrap: break-word; overflow-wrap: break-word; }
+        .reading-passages-container { max-height: 220px !important; }
+        .reading-text { padding: 0.75rem !important; font-size: 0.9rem !important; word-wrap: break-word; overflow-wrap: break-word; }
         .writing-task-card .card-body { padding: 0.75rem 1rem !important; }
         .writing-task-content { font-size: 0.9rem; }
         .writing-part-bar { font-size: 0.9rem; padding: 0.5rem 0.75rem; }
@@ -369,7 +371,7 @@
         #timer { font-size: 0.8rem !important; }
         .part-q-buttons .q-num-btn { width: 22px; height: 22px; font-size: 0.65rem; }
         .inline-blank-input { width: 60px; min-width: 45px; }
-        .reading-text { max-height: 180px !important; }
+        .reading-passages-container { max-height: 180px !important; }
         .writing-answer-ta { min-height: 100px !important; }
     }
     /* Touch uchun - tugmalar va inputlar (44px min - Apple HIG) */
@@ -466,19 +468,21 @@
                             </div>
                         </div>
                     </div>
-                    {% elif test.test_type == 'reading' and test.reading_text %}
+                    {% elif test.test_type == 'reading' %}
+                    {% with reading_passages=test.get_reading_passages %}
+                    {% if reading_passages %}
                     <div class="card border-0 shadow-lg">
                         <div class="card-body p-4">
                             <div class="part-read-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <h5 class="mb-0" style="font-weight: 700; color: var(--primary);">
-                                    <i class="fas fa-book me-2"></i>Part 1 Practice Skimming <span id="font-scale-label">(1x)</span>
+                                    <i class="fas fa-book me-2"></i>Reading Passages <span id="font-scale-label">(1x)</span>
                                 </h5>
                                 <div class="d-flex align-items-center gap-1">
                                     <button type="button" class="font-size-btn" id="font-size-minus" title="Kichiklashtirish">−</button>
                                     <button type="button" class="font-size-btn" id="font-size-plus" title="Kattalashtirish">+</button>
                                 </div>
                             </div>
-                            <p class="small text-muted mb-2">Read the text and answer questions 1-{{ total_questions }}</p>
+                            <p class="small text-muted mb-2">Read the passages and answer questions 1-{{ total_questions }}</p>
                             <div class="reading-tools">
                                 <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-reading">
                                     <i class="fas fa-highlighter me-1"></i>Highlight
@@ -487,8 +491,15 @@
                                     <i class="fas fa-note-sticky me-1"></i>Add Note
                                 </button>
                             </div>
-                            <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; overflow-y: auto;">
-                                {{ test.reading_text|linebreaks }}
+                            <div class="reading-passages-container" style="overflow-y: auto;">
+                                {% for passage in reading_passages %}
+                                <div class="reading-passage-block mb-4 pb-4 {% if not forloop.last %}border-bottom border-secondary{% endif %}">
+                                    <h6 class="mb-2 fw-bold text-dark">{{ passage.title }}</h6>
+                                    <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
+                                        {{ passage.text|linebreaks }}
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
                             <div class="mt-3">
                                 <h6 class="mb-2" style="font-weight: 700;">My Reading Notes</h6>
@@ -496,6 +507,8 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
+                    {% endwith %}
                     {% elif test.test_type == 'writing' %}
                     <div class="writing-tasks-pane">
                         {% for pg in part_groups %}
@@ -1113,7 +1126,7 @@
             const selectedText = (sel.toString() || '').trim().replace(/\s+/g, ' ');
             if (!selectedText) return '';
             const anchor = sel.anchorNode && sel.anchorNode.nodeType === 1 ? sel.anchorNode : (sel.anchorNode ? sel.anchorNode.parentElement : null);
-            const inReading = anchor && anchor.closest ? anchor.closest('.reading-text') : null;
+            const inReading = anchor && anchor.closest ? anchor.closest('.reading-passages-container, .reading-text') : null;
             return inReading ? selectedText.slice(0, 255) : '';
         }
 
@@ -1309,7 +1322,7 @@
         }
 
         function initReadingTools() {
-            const readingPane = document.querySelector('.reading-text');
+            const readingPane = document.querySelector('.reading-passages-container') || document.querySelector('.reading-text');
             const notesPanel = document.getElementById('reading-notes-panel');
             const hlBtn = document.getElementById('btn-highlight-reading');
             const noteBtn = document.getElementById('btn-note-reading');
@@ -1688,14 +1701,14 @@
         initReadingTools();
 
         function initFontSizeButtons() {
-            const readingText = document.querySelector('.reading-text');
+            const readingTexts = document.querySelectorAll('.reading-passages-container .reading-text, .reading-text');
             const plusBtn = document.getElementById('font-size-plus');
             const minusBtn = document.getElementById('font-size-minus');
             const scaleLabel = document.getElementById('font-scale-label');
-            if (!readingText || (!plusBtn && !minusBtn)) return;
+            if (!readingTexts.length || (!plusBtn && !minusBtn)) return;
             let scale = 1;
             const updateScale = () => {
-                readingText.style.fontSize = (scale * 100) + '%';
+                readingTexts.forEach(function(el) { el.style.fontSize = (scale * 100) + '%'; });
                 if (scaleLabel) scaleLabel.textContent = '(' + scale + 'x)';
             };
             if (plusBtn) plusBtn.addEventListener('click', function() { scale = Math.min(1.5, scale + 0.1); updateScale(); });

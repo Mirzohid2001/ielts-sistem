@@ -11,7 +11,7 @@ import json
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources
 from .models import (
-    Category, VideoLesson, Test, Question,
+    Category, VideoLesson, Test, ReadingPassage, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard
@@ -336,6 +336,16 @@ class QuestionInline(admin.StackedInline):
     show_change_link = True
 
 
+class ReadingPassageInline(admin.StackedInline):
+    model = ReadingPassage
+    extra = 0
+    min_num = 0
+    ordering = ['order']
+    verbose_name = "Passage"
+    verbose_name_plural = "Passage'lar (Reading test uchun)"
+    fields = ['order', 'title', 'text']
+
+
 # Test Admin - yaxshilangan
 @admin.register(Test)
 class TestAdmin(ImportExportModelAdmin):
@@ -345,7 +355,7 @@ class TestAdmin(ImportExportModelAdmin):
     ordering = ['-created_at']
     list_editable = ['is_active']
     list_per_page = 25
-    inlines = [QuestionInline]
+    inlines = [ReadingPassageInline, QuestionInline]
     autocomplete_fields = ['category']
     list_select_related = ['category']
     save_as = True
@@ -370,8 +380,8 @@ class TestAdmin(ImportExportModelAdmin):
         ('Test kontenti', {
             'fields': ('audio_file', 'reading_text'),
             'description': (
-                "Listening: audio fayl yuklang (MP3). Reading: o'qish matnini kiriting. "
-                "Writing: audio va reading bo'sh qoladi, savollar Essay tipida."
+                "Listening: audio fayl yuklang (MP3). Reading: passage'lar quyidagi blokda (3 ta). "
+                "Agar passage'lar bo'sh bo'lsa, reading_text ishlatiladi. Writing: audio va reading bo'sh qoladi."
             )
         }),
     )
@@ -385,10 +395,16 @@ class TestAdmin(ImportExportModelAdmin):
     def duplicate_tests(self, request, queryset):
         for test in queryset:
             questions = list(test.questions.all().order_by('order'))
+            passages = list(test.reading_passages.all().order_by('order'))
             test.pk = None
             test._state.adding = True
             test.title = f"{test.title} (nusxa)"
             test.save()
+            for p in passages:
+                p.pk = None
+                p.test = test
+                p._state.adding = True
+                p.save()
             for q in questions:
                 q.pk = None
                 q.test = test

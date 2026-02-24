@@ -198,6 +198,8 @@ class Test(models.Model):
     audio_file = models.FileField(upload_to='test_audio/', blank=True, null=True, verbose_name="Audio fayl (Listening)")
     # Reading testlar uchun matn
     reading_text = models.TextField(blank=True, verbose_name="O'qish matni (Reading)")
+    # Reading: 3 ta passage [{"title": "...", "text": "..."}, ...]. Bo'sh bo'lsa reading_text ishlatiladi
+    reading_passages_json = models.JSONField(default=list, blank=True, verbose_name="Passage'lar (3 ta)")
     is_active = models.BooleanField(default=True, verbose_name="Faol")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -220,6 +222,37 @@ class Test(models.Model):
 
     def get_absolute_url(self):
         return reverse('core:test_detail', kwargs={'pk': self.pk})
+
+    def get_reading_passages(self):
+        """Reading: passage'lar ro'yxati. ReadingPassage inline > reading_passages_json > reading_text."""
+        # 1) Inline model (eng qulay)
+        objs = list(self.reading_passages.all().order_by('order'))
+        if objs:
+            return [{'title': p.title or f'Passage {i+1}', 'text': p.text or ''} for i, p in enumerate(objs)]
+        # 2) JSON (eski format)
+        passages = self.reading_passages_json or []
+        if passages and isinstance(passages, list) and len(passages) > 0:
+            return [{'title': p.get('title', f'Passage {i+1}'), 'text': p.get('text', '')} for i, p in enumerate(passages) if isinstance(p, dict)]
+        # 3) Bitta matn
+        if self.reading_text:
+            return [{'title': 'Passage 1', 'text': self.reading_text}]
+        return []
+
+
+class ReadingPassage(models.Model):
+    """Reading test uchun passage - Test inline orqali boshqariladi."""
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='reading_passages', verbose_name="Test")
+    order = models.PositiveIntegerField(default=1, verbose_name="Tartib")
+    title = models.CharField(max_length=255, blank=True, verbose_name="Sarlavha (masalan: Passage 1)")
+    text = models.TextField(blank=True, verbose_name="Matn")
+
+    class Meta:
+        ordering = ['test', 'order']
+        verbose_name = "Passage"
+        verbose_name_plural = "Passage'lar"
+
+    def __str__(self):
+        return self.title or f"Passage {self.order}"
 
 
 class Question(models.Model):
