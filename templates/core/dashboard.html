@@ -11,11 +11,11 @@
                 <div class="card-body dashboard-welcome-content">
                     <div class="d-flex justify-content-between align-items-center flex-wrap">
                         <div class="fade-in-left">
-                            <h1 class="dashboard-welcome-title gradient-text" style="background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.9) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ user.first_name|default:user.username }}! 👋</h1>
+                            <h1 class="dashboard-welcome-title">{{ user.first_name|default:user.username }}! 👋</h1>
                             <p class="dashboard-welcome-subtitle mb-0">Bugun nima o'rganamiz?</p>
                         </div>
                         <div class="text-end fade-in-right" style="margin-top: 1rem;">
-                            <div class="dashboard-stats-card glass pulse-animation">
+                            <div class="dashboard-stats-card pulse-animation">
                                 <div class="dashboard-stats-label">O'rtacha ball</div>
                                 <div class="dashboard-stats-value">{{ user_stats.average_score|floatformat:0 }}%</div>
                                 <div class="progress mt-3" style="height: 6px; background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden;">

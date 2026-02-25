@@ -870,10 +870,14 @@ def test_take(request, pk):
     for pg in part_groups:
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
+        if test.test_type == 'writing':
+            pg['title'] = f"Task {pg['part_number']}"
         blank_buttons = []
-        if pg['part_number'] == 1:
-            for card in pg['cards']:
-                q = card['question']
+        # Reading testda barcha partlar uchun savol raqami tugmalari (har partda o‘z oralig‘i: 1-N, N+1-M, ...)
+        use_question_buttons_only = (test.test_type == 'reading')
+        for card in pg['cards']:
+            q = card['question']
+            if not use_question_buttons_only and pg['part_number'] == 1 and (card.get('inline_fill_parts') or (card.get('answer_fields') and len(card['answer_fields']) > 1)):
                 if card.get('inline_fill_parts'):
                     for p in card['inline_fill_parts']:
                         if p.get('type') == 'input':
@@ -882,22 +886,30 @@ def test_take(request, pk):
                                 'blank_id': f"blank-{q.pk}-{p['num']}",
                                 'is_blank': True,
                             })
-                elif card.get('answer_fields') and len(card['answer_fields']) > 1:
+                else:
                     for f in card['answer_fields']:
                         blank_buttons.append({
                             'num': f['num'],
                             'blank_id': f"blank-{q.pk}-{f['num']}",
                             'is_blank': True,
                         })
-                else:
-                    # MCQ, essay, boshqa: savol order bo'yicha
-                    blank_buttons.append({
-                        'num': q.order,
-                        'question_id': f"question-{q.order}",
-                        'is_blank': False,
-                    })
+            else:
+                blank_buttons.append({
+                    'num': q.order,
+                    'question_id': f"question-{q.order}",
+                    'is_blank': False,
+                })
+        # Reading: partda savollar bor lekin tugmalar bo'sh qolsa (eski ma'lumot), har savol uchun tugma yaratamiz
+        if test.test_type == 'reading' and not blank_buttons and pg['cards']:
+            for card in pg['cards']:
+                q = card['question']
+                blank_buttons.append({
+                    'num': q.order,
+                    'question_id': f"question-{q.order}",
+                    'is_blank': False,
+                })
         pg['blank_buttons'] = blank_buttons
-        # range_label: blank_buttons bo'lsa 1-N, yo'qsa savol orderlar
+        # range_label: har bir part o'z oralig'ini ko'rsatadi (Part 1: 1-13, Part 2: 14-26, Part 3: 27-40)
         if blank_buttons and all(b.get('is_blank') for b in blank_buttons):
             nums = [b['num'] for b in blank_buttons]
             pg['range_label'] = f"{min(nums)}-{max(nums)}" if len(nums) > 1 else str(nums[0])
