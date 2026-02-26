@@ -105,7 +105,11 @@
                     {% endif %}
 
                     <div class="d-grid gap-2 mt-4">
-                        {% if active_test %}
+                        {% if test.total_questions == 0 %}
+                        <button type="button" class="btn btn-outline-secondary btn-lg" disabled title="Savollar qo'shilmagan">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Savollar qo'shilmagan
+                        </button>
+                        {% elif active_test %}
                         <a href="{% url 'core:test_take' test.pk %}" 
                            class="btn btn-warning btn-lg hover-lift">
                             <i class="fas fa-play me-2"></i>Testni davom ettirish

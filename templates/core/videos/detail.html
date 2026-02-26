@@ -57,7 +57,64 @@
                     </div>
                     
                     <div class="ratio ratio-16x9" style="position: relative; background: #000; min-height: 400px;">
-                        {% if video.youtube_id and video.youtube_id|length == 11 %}
+                        {% if video.video_file %}
+                        <!-- Yuklangan video fayl (admin orqali) -->
+                        <div id="video-container-{{ video.pk }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                            <video
+                                id="html5-video-{{ video.pk }}"
+                                class="w-100 h-100"
+                                style="object-fit: contain;"
+                                controls
+                                playsinline
+                                preload="metadata"
+                                data-video-pk="{{ video.pk }}"
+                                src="{{ video.video_file.url }}">
+                                Brauzeringiz video formatini qo‘llamaydi. <a href="{{ video.video_file.url }}" download>Videoni yuklab olish</a>.
+                            </video>
+                        </div>
+                        <script>
+                        (function() {
+                            const videoEl = document.getElementById('html5-video-{{ video.pk }}');
+                            if (!videoEl) return;
+                            const videoPk = videoEl.dataset.videoPk;
+                            const progressFill = document.getElementById('video-progress-fill');
+                            const currentTimeEl = document.getElementById('current-time');
+                            const totalTimeEl = document.getElementById('total-time');
+
+                            function formatTime(sec) {
+                                if (!sec || isNaN(sec)) return '0:00';
+                                const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+                                return m + ':' + (s < 10 ? '0' : '') + s;
+                            }
+                            videoEl.addEventListener('loadedmetadata', function() {
+                                if (totalTimeEl) totalTimeEl.textContent = formatTime(videoEl.duration);
+                            });
+                            videoEl.addEventListener('timeupdate', function() {
+                                if (currentTimeEl) currentTimeEl.textContent = formatTime(videoEl.currentTime);
+                                if (progressFill && videoEl.duration) {
+                                    progressFill.style.width = (videoEl.currentTime / videoEl.duration * 100) + '%';
+                                }
+                            });
+                            videoEl.addEventListener('durationchange', function() {
+                                if (totalTimeEl) totalTimeEl.textContent = formatTime(videoEl.duration);
+                            });
+                            // Progress ni serverga yuborish
+                            let lastProgressSent = 0;
+                            videoEl.addEventListener('timeupdate', function() {
+                                if (Date.now() - lastProgressSent < 5000) return;
+                                lastProgressSent = Date.now();
+                                const pct = videoEl.duration ? Math.round(videoEl.currentTime / videoEl.duration * 100) : 0;
+                                const fd = new FormData();
+                                fd.append('progress', pct);
+                                fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                                fetch('{% url "core:update_video_progress" video.pk %}', {
+                                    method: 'POST',
+                                    body: fd
+                                }).catch(function() {});
+                            });
+                        })();
+                        </script>
+                        {% elif video.youtube_id and video.youtube_id|length == 11 %}
                         <!-- YouTube embed - Ishonchli versiya -->
                         <div id="video-container-{{ video.pk }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
                             <!-- Asosiy iframe - youtube.com ishlatish (eng ishonchli) -->
@@ -490,8 +547,11 @@
                     <a href="{% url 'core:video_detail' related_video.pk %}" 
                        class="list-group-item list-group-item-action related-video-item">
                         <div class="d-flex">
-                            {% if related_video.youtube_thumbnail %}
-                            <img src="{{ related_video.youtube_thumbnail }}" alt="{{ related_video.title }}" 
+                            {% if related_video.cover_image %}
+                            <img src="{{ related_video.cover_image.url }}" alt="{{ related_video.title }}"
+                                 class="me-3 related-video-thumb">
+                            {% elif related_video.youtube_thumbnail %}
+                            <img src="{{ related_video.youtube_thumbnail }}" alt="{{ related_video.title }}"
                                  class="me-3 related-video-thumb">
                             {% endif %}
                             <div class="flex-grow-1">

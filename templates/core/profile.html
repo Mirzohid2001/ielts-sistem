@@ -84,35 +84,39 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <a href="{% url 'core:analytics' %}" class="card border-0 shadow-sm hover-lift text-decoration-none" style="display: block;">
+                            <a href="{% url 'core:analytics' %}" class="card border-0 shadow-sm hover-lift text-decoration-none text-dark" style="display: block;">
                                 <div class="card-body text-center p-4">
                                     <i class="fas fa-chart-bar fa-3x mb-3 text-primary"></i>
                                     <h5 class="mb-2">Batafsil Tahlillar</h5>
-                                    <p class="text-muted mb-0">Grafiklar va batafsil statistika</p>
+                                    <p class="text-muted mb-1 small">Grafiklar va batafsil statistika</p>
+                                    <p class="mb-0 small fw-bold text-primary">{{ analytics_summary.total_tests }} test · {{ analytics_summary.avg_score }}% o'rtacha · {{ analytics_summary.total_videos }} video</p>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="{% url 'core:weekly_summary' %}" class="card border-0 shadow-sm hover-lift text-decoration-none" style="display: block;">
+                            <a href="{% url 'core:weekly_summary' %}" class="card border-0 shadow-sm hover-lift text-decoration-none text-dark" style="display: block;">
                                 <div class="card-body text-center p-4">
                                     <i class="fas fa-calendar-week fa-3x mb-3 text-success"></i>
                                     <h5 class="mb-2">Haftalik Xulosa</h5>
-                                    <p class="text-muted mb-0">Hafta davomidagi faollik</p>
+                                    <p class="text-muted mb-1 small">Hafta davomidagi faollik</p>
+                                    <p class="mb-0 small fw-bold text-success">{{ weekly_summary_stats.total_tests }} test · {{ weekly_summary_stats.avg_score }}% · {{ weekly_summary_stats.total_videos }} video · {{ weekly_summary_stats.study_days }} kun</p>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="{% url 'core:monthly_report' %}" class="card border-0 shadow-sm hover-lift text-decoration-none" style="display: block;">
+                            <a href="{% url 'core:monthly_report' %}" class="card border-0 shadow-sm hover-lift text-decoration-none text-dark" style="display: block;">
                                 <div class="card-body text-center p-4">
                                     <i class="fas fa-calendar-alt fa-3x mb-3 text-info"></i>
                                     <h5 class="mb-2">Oylik Hisobot</h5>
-                                    <p class="text-muted mb-0">Oy davomidagi natijalar</p>
+                                    <p class="text-muted mb-1 small">Oy davomidagi natijalar</p>
+                                    <p class="mb-0 small fw-bold text-info">{{ monthly_summary_stats.total_tests }} test · {{ monthly_summary_stats.avg_score }}% · {{ monthly_summary_stats.total_videos }} video · {{ monthly_summary_stats.study_days }} kun</p>
                                 </div>
                             </a>
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-12">
+                            <p class="text-muted small mb-2">Test natijalaringizni yuklab oling:</p>
                             <div class="d-flex gap-2 flex-wrap">
                                 <a href="{% url 'core:export_to_excel' %}" class="btn btn-success">
                                     <i class="fas fa-file-excel me-1"></i>Excel'ga export
@@ -259,7 +263,9 @@
                         {% for progress in video_progress %}
                         <div class="col-md-4 mb-4 stagger-item">
                             <div class="card profile-video-card hover-lift">
-                                {% if progress.video.youtube_thumbnail %}
+                                {% if progress.video.cover_image %}
+                                <img src="{{ progress.video.cover_image.url }}" class="card-img-top" alt="{{ progress.video.title }}" style="height: 180px; object-fit: cover; border-radius: 20px 20px 0 0;">
+                                {% elif progress.video.youtube_thumbnail %}
                                 <img src="{{ progress.video.youtube_thumbnail }}" class="card-img-top" alt="{{ progress.video.title }}" style="height: 180px; object-fit: cover; border-radius: 20px 20px 0 0;">
                                 {% else %}
                                 <div class="bg-secondary d-flex align-items-center justify-content-center" style="height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-radius: 20px 20px 0 0;">

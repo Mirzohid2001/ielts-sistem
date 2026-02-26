@@ -3,7 +3,7 @@ from django import forms
 from django.utils.html import format_html
 from django.urls import reverse, path
 from django.shortcuts import render
-from django.db.models import Count, Avg, Q, Sum
+from django.db.models import Count, Avg, Q, Sum, F
 from django.utils import timezone
 from django.db.models.functions import TruncDate
 from datetime import timedelta
@@ -274,7 +274,7 @@ class CategoryAdmin(admin.ModelAdmin):
 # VideoLesson Admin
 @admin.register(VideoLesson)
 class VideoLessonAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category', 'youtube_id', 'duration_display', 'views_count', 'is_active', 'created_at']
+    list_display = ['title', 'category', 'video_source_display', 'duration_display', 'views_count', 'is_active', 'created_at']
     list_filter = ['category', 'is_active', 'created_at']
     search_fields = ['title', 'description', 'youtube_id']
     ordering = ['order', 'created_at']
@@ -297,8 +297,13 @@ class VideoLessonAdmin(admin.ModelAdmin):
         ('Asosiy ma\'lumotlar', {
             'fields': ('title', 'category', 'description', 'is_active')
         }),
-        ('YouTube', {
-            'fields': ('youtube_url', 'youtube_id', 'youtube_thumbnail', 'duration')
+        ('Video (afzallik: yuklangan fayl)', {
+            'fields': ('video_file', 'cover_image', 'duration'),
+            'description': 'Video fayl yuklasangiz, saytda shu video ko\'rsatiladi. Obloshka — kartochkada ko\'rinadigan rasm.'
+        }),
+        ('YouTube (ixtiyoriy)', {
+            'fields': ('youtube_url', 'youtube_id', 'youtube_thumbnail'),
+            'description': 'Agar video fayl yuklanmagan bo\'lsa, YouTube link orqali ko\'rsatiladi.'
         }),
         ('Tartib', {
             'fields': ('order',)
@@ -308,6 +313,14 @@ class VideoLessonAdmin(admin.ModelAdmin):
         }),
     )
     
+    def video_source_display(self, obj):
+        if obj.video_file:
+            return "Fayl"
+        if obj.youtube_id:
+            return "YouTube"
+        return "-"
+    video_source_display.short_description = "Manba"
+
     def duration_display(self, obj):
         if obj.duration:
             minutes = obj.duration // 60
@@ -332,7 +345,7 @@ class QuestionInline(admin.StackedInline):
     ]
     classes = ['collapse']
     verbose_name = "Savol"
-    verbose_name_plural = "Savollar"
+    verbose_name_plural = "Savollar (oddiy maydonlarni to'ldiring — JSON yozish shart emas)"
     show_change_link = True
 
 
@@ -342,14 +355,14 @@ class ReadingPassageInline(admin.StackedInline):
     min_num = 0
     ordering = ['order']
     verbose_name = "Passage"
-    verbose_name_plural = "Passage'lar (Reading test uchun)"
+    verbose_name_plural = "Passage'lar (Reading: Part 1 = order 1, Part 2 = order 2, Part 3 = order 3)"
     fields = ['order', 'title', 'text']
 
 
-# Test Admin - yaxshilangan
+# Test Admin - yaxshilangan (yangi format: Reading 3 passage, Listening 4 part, Writing 2 task)
 @admin.register(Test)
 class TestAdmin(ImportExportModelAdmin):
-    list_display = ['title', 'category', 'test_type', 'difficulty', 'total_questions_display', 'duration_minutes', 'passing_score', 'is_active', 'created_at']
+    list_display = ['title', 'category', 'test_type', 'difficulty', 'total_questions_display', 'passages_display', 'duration_minutes', 'passing_score', 'is_active', 'created_at']
     list_filter = ['category', 'test_type', 'difficulty', 'allow_retake', 'is_active', 'created_at']
     search_fields = ['title', 'description']
     ordering = ['-created_at']
@@ -380,8 +393,10 @@ class TestAdmin(ImportExportModelAdmin):
         ('Test kontenti', {
             'fields': ('audio_file', 'reading_text'),
             'description': (
-                "Listening: audio fayl yuklang (MP3). Reading: passage'lar quyidagi blokda (3 ta). "
-                "Agar passage'lar bo'sh bo'lsa, reading_text ishlatiladi. Writing: audio va reading bo'sh qoladi."
+                "Reading: quyidagi Passage'lar blokida 3 ta passage qo'shing (order 1 = Part 1, 2 = Part 2, 3 = Part 3). "
+                "Agar passage'lar bo'sh bo'lsa, reading_text ishlatiladi. "
+                "Listening: audio fayl yuklang (MP3); savollar order bo'yicha 1-10 Part 1, 11-20 Part 2, 21-30 Part 3, 31-40 Part 4. "
+                "Writing: 2 ta savol (order 1 = Task 1, order 2 = Task 2); audio va reading bo'sh qoladi."
             )
         }),
     )
@@ -390,6 +405,16 @@ class TestAdmin(ImportExportModelAdmin):
         count = obj.total_questions
         return format_html('<strong>{}</strong>', count)
     total_questions_display.short_description = "Savollar"
+
+    def passages_display(self, obj):
+        if obj.test_type != 'reading':
+            return '—'
+        n = obj.reading_passages.count()
+        return format_html('<span title="Passage\'lar soni">{}</span>', n)
+    passages_display.short_description = "Passage"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('reading_passages')
 
     @admin.action(description="Testni nusxalash")
     def duplicate_tests(self, request, queryset):
@@ -423,12 +448,12 @@ class TestAdmin(ImportExportModelAdmin):
         self.message_user(request, f"{n} ta test o'chirildi.")
 
 
-# Question Admin - savol qo'shish qulay
+# Question Admin - savol qo'shish qulay (yangi format: part/task ko'rsatish)
 @admin.register(Question)
 class QuestionAdmin(ImportExportModelAdmin):
     form = QuestionAdminForm
-    list_display = ['test', 'order', 'question_type', 'question_text_short', 'correct_answer', 'points', 'created_at']
-    list_filter = ['test__category', 'question_type', 'created_at']
+    list_display = ['test', 'order', 'part_or_task_display', 'question_type', 'question_text_short', 'correct_answer', 'points', 'created_at']
+    list_filter = ['test__category', 'test__test_type', 'question_type', 'created_at']
     search_fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
     ordering = ['test', 'order']
     list_per_page = 30
@@ -438,16 +463,30 @@ class QuestionAdmin(ImportExportModelAdmin):
     save_on_top = True
     resource_class = QuestionResource
 
+    def part_or_task_display(self, obj):
+        opts = obj.options_json or {}
+        part = opts.get('part')
+        if part is not None:
+            if obj.test and obj.test.test_type == 'writing':
+                return f"Task {part}"
+            return f"Part {part}"
+        return '—'
+    part_or_task_display.short_description = "Part / Task"
+
     fieldsets = (
         ('Asosiy', {
-            'fields': ('test', 'order', 'question_type', 'question_text', 'question_image', 'points')
+            'fields': ('test', 'order', 'question_type', 'question_text', 'question_image', 'points'),
+            'description': (
+                "Oddiy foydalanuvchi: JSON yozishingiz shart emas. Quyidagi oddiy maydonlarni to'ldiring — "
+                "sistema avtomatik tarzda kerakli JSON ni yaratadi."
+            )
         }),
         ('MCQ / True-False / Yes-No-Not Given', {
             'fields': ('option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'),
             'classes': ('question-mcq-fields',),
             'description': 'MCQ: A/B/C/D. True/False: A=True, B=False. Yes/No/Not Given: A=Yes, B=No, C=Not Given.'
         }),
-        ('Fill-in / Matching / List Selection (Oddiy rejim)', {
+        ('Fill-in / Matching / List Selection — oddiy maydonlar (JSON emas)', {
             'fields': (
                 'part_number',
                 'instruction_text',
@@ -460,18 +499,17 @@ class QuestionAdmin(ImportExportModelAdmin):
             ),
             'classes': ('question-fill-fields',),
             'description': (
-                "Notes/Summary completion: Savol matnida [1], [2], [3] yozing (masalan: 'Accommodation: [1] Hotel'). "
-                "To'g'ri javoblar: vergul bilan (teacher,charcoal,skyscrapers). "
-                "Instruction: ONE WORD ONLY yoki ONE WORD AND/OR A NUMBER."
+                "Bu maydonlarni to'ldirsangiz, JSON avtomatik yoziladi. Notes/Summary: savol matnida [1], [2], [3] yozing; "
+                "To'g'ri javoblar: vergul bilan (masalan: teacher,charcoal,skyscrapers). "
+                "Instruction: ONE WORD ONLY yoki ONE WORD AND/OR A NUMBER. Part raqami: Reading 1–3, Listening 1–4, Writing 1–2."
             )
         }),
-        ('Advanced JSON (ixtiyoriy)', {
+        ('Advanced JSON (faqat mutaxassis — odatda kerak emas)', {
             'fields': ('correct_answer_json', 'options_json'),
             'classes': ('collapse',),
             'description': (
-                'Faqat power-userlar uchun. Oddiy rejim yetarli. '
-                'Writing: Bir nechta rasm uchun options_json.images: [{"path": "questions/rasm2.png"}, {"path": "questions/rasm3.png"}]. '
-                'question_image birinchi rasm, images qo\'shimcha rasmlar (←→ navigatsiya).'
+                "Oddiy foydalanuvchi bu blokni ochmasin. Yuqoridagi oddiy maydonlar yetarli. "
+                "Faqat maxsus holatlar (masalan, Writing da bir nechta rasm) uchun ishlatiladi."
             )
         }),
         ('Tushuntirish va Listening', {
@@ -754,7 +792,7 @@ class CustomAdminSite(admin.AdminSite):
         total_tests = Test.objects.filter(is_active=True).count()
         total_test_results = UserTestResult.objects.filter(completed_at__isnull=False).count()
         passed_tests = UserTestResult.objects.filter(completed_at__isnull=False).filter(
-            score__gte=Q(test__passing_score)
+            percentage__gte=F('test__passing_score')
         ).count()
         failed_tests = total_test_results - passed_tests
         

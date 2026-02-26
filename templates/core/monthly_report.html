@@ -69,6 +69,23 @@
         </div>
     </div>
 
+    <!-- Bo'sh holat -->
+    {% if not test_results and not video_progress %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-calendar-alt fa-4x text-muted mb-3" style="opacity: 0.5;"></i>
+                    <h5 class="text-muted">Bu oy hali faoliyat yo'q</h5>
+                    <p class="text-muted mb-4">Test yeching yoki video darslarni ko'ring — oylik hisobot shu yerda to'planadi.</p>
+                    <a href="{% url 'core:test_list' %}" class="btn btn-primary me-2"><i class="fas fa-clipboard-list me-1"></i>Testlar</a>
+                    <a href="{% url 'core:video_list' %}" class="btn btn-outline-primary"><i class="fas fa-video me-1"></i>Videolar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Kategoriya bo'yicha statistika -->
     {% if category_stats %}
     <div class="row mb-4">
@@ -150,6 +167,41 @@
                                         <span class="badge bg-danger">O'tmadi</span>
                                         {% endif %}
                                     </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Ko'rilgan videolar (oylik) -->
+    {% if video_progress %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-video me-2"></i>Ko'rilgan videolar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Video</th>
+                                    <th>Kategoriya</th>
+                                    <th>Ko'rilgan sana</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for progress in video_progress %}
+                                <tr>
+                                    <td><a href="{% url 'core:video_detail' progress.video.pk %}">{{ progress.video.title }}</a></td>
+                                    <td>{{ progress.video.category.name }}</td>
+                                    <td>{{ progress.completed_at|date:"d.m.Y"|default:progress.last_watched_at|date:"d.m.Y" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

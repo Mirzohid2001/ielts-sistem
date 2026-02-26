@@ -664,6 +664,10 @@ def test_take(request, pk):
     questions = list(test.questions.all().order_by('order'))
     total_questions = len(questions)
 
+    if total_questions == 0:
+        messages.warning(request, "Bu testda hali savollar qo'shilmagan. Admin orqali savollar qo'shing.")
+        return redirect('core:test_detail', pk=test.pk)
+
     # Barcha javoblarni bir POST bilan saqlash
     if request.method == 'POST':
         updated_answers = {}
@@ -1258,9 +1262,10 @@ def test_result(request, pk):
 @login_required
 def profile(request):
     """Foydalanuvchi profili"""
-    # Test natijalari
+    # Test natijalari (faqat tugallanganlar — jadval va hisobotlar uchun)
     test_results = UserTestResult.objects.filter(
-        user=request.user
+        user=request.user,
+        completed_at__isnull=False
     ).select_related('test', 'test__category').order_by('-completed_at')
     
     # Video progress
@@ -1276,14 +1281,48 @@ def profile(request):
     current_streak = StudyStreak.get_current_streak(request.user)
     recent_streaks = StudyStreak.objects.filter(user=request.user).order_by('-date')[:7]
     
+    completed_results = test_results
+    
     # Statistika
     stats = {
-        'total_tests': test_results.count(),
+        'total_tests': completed_results.count(),
         'total_videos': video_progress.count(),
-        'average_score': test_results.aggregate(Avg('percentage'))['percentage__avg'] or 0,
-        'passed_tests': test_results.filter(percentage__gte=60).count(),
+        'average_score': completed_results.aggregate(Avg('percentage'))['percentage__avg'] or 0,
+        'passed_tests': completed_results.filter(percentage__gte=60).count(),
         'current_streak': current_streak,
         'total_bookmarks': Bookmark.objects.filter(user=request.user).count(),
+    }
+    
+    # Hisobotlar kartochkalari uchun qisqa statistikalar
+    now = timezone.now()
+    week_start = now - timedelta(days=now.weekday())
+    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_day = monthrange(now.year, now.month)[1]
+    month_end = now.replace(day=last_day, hour=23, minute=59, second=59, microsecond=0)
+    
+    weekly_tests = completed_results.filter(completed_at__gte=week_start, completed_at__lte=week_end)
+    weekly_videos = video_progress.filter(completed_at__gte=week_start, completed_at__lte=week_end)
+    monthly_tests = completed_results.filter(completed_at__gte=month_start, completed_at__lte=month_end)
+    monthly_videos = video_progress.filter(completed_at__gte=month_start, completed_at__lte=month_end)
+    
+    analytics_summary = {
+        'total_tests': stats['total_tests'],
+        'avg_score': round(stats['average_score'], 1),
+        'total_videos': stats['total_videos'],
+    }
+    weekly_summary_stats = {
+        'total_tests': weekly_tests.count(),
+        'avg_score': round(weekly_tests.aggregate(Avg('percentage'))['percentage__avg'] or 0, 1),
+        'total_videos': weekly_videos.count(),
+        'study_days': StudyStreak.objects.filter(user=request.user, date__gte=week_start.date(), date__lte=week_end.date()).count(),
+    }
+    monthly_summary_stats = {
+        'total_tests': monthly_tests.count(),
+        'avg_score': round(monthly_tests.aggregate(Avg('percentage'))['percentage__avg'] or 0, 1),
+        'total_videos': monthly_videos.count(),
+        'study_days': StudyStreak.objects.filter(user=request.user, date__gte=month_start.date(), date__lte=month_end.date()).count(),
     }
     
     context = {
@@ -1292,6 +1331,9 @@ def profile(request):
         'bookmarks': bookmarks,
         'recent_streaks': recent_streaks,
         'stats': stats,
+        'analytics_summary': analytics_summary,
+        'weekly_summary_stats': weekly_summary_stats,
+        'monthly_summary_stats': monthly_summary_stats,
     }
     return render(request, 'core/profile.html', context)
 
@@ -1423,32 +1465,36 @@ def statistics(request):
 
 @login_required
 def export_results(request):
-    """Test natijalarini export qilish"""
+    """Test natijalarini CSV'ga export qilish (faqat tugallangan natijalar)"""
     from django.http import HttpResponse
     import csv
     
     test_results = UserTestResult.objects.filter(
-        user=request.user
+        user=request.user,
+        completed_at__isnull=False
     ).select_related('test', 'test__category').order_by('-completed_at')
     
+    filename = f"test_natijalari_{request.user.username}_{timezone.now().strftime('%Y%m%d')}.csv"
     response = HttpResponse(content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = 'attachment; filename="test_results.csv"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     # BOM qo'shish (Excel uchun)
     response.write('\ufeff')
     
     writer = csv.writer(response)
-    writer.writerow(['Test', 'Kategoriya', 'Ball', 'Foiz', 'To\'g\'ri javoblar', 'Noto\'g\'ri javoblar', 'Sana'])
+    writer.writerow(['Sana', 'Test', 'Kategoriya', 'Ball', 'Foiz', 'To\'g\'ri javoblar', 'Noto\'g\'ri javoblar', 'Holat'])
     
     for result in test_results:
+        status = "O'tdi" if result.is_passed() else "O'tmadi"
         writer.writerow([
+            result.completed_at.strftime('%d.%m.%Y %H:%M') if result.completed_at else '',
             result.test.title,
             result.test.category.name,
             f"{result.score}/{result.total_questions}",
-            f"{result.percentage}%",
+            f"{result.percentage:.1f}%",
             result.correct_answers,
             result.wrong_answers,
-            result.completed_at.strftime('%d.%m.%Y %H:%M') if result.completed_at else ''
+            status
         ])
     
     return response
@@ -1883,8 +1929,21 @@ def analytics(request):
     best_result = test_results.order_by('-percentage').first()
     worst_result = test_results.order_by('percentage').first()
     
-    # O'rtacha vaqt
-    avg_time = test_results.filter(time_taken__gt=0).aggregate(Avg('time_taken'))['time_taken__avg'] or 0
+    # O'rtacha vaqt (soniya) va o'qilishi oson format
+    avg_time_sec = test_results.filter(time_taken__gt=0).aggregate(Avg('time_taken'))['time_taken__avg'] or 0
+    avg_time = int(avg_time_sec)
+    if avg_time >= 3600:
+        avg_time_display = f"{avg_time // 3600} soat {(avg_time % 3600) // 60} d"
+    elif avg_time >= 60:
+        avg_time_display = f"{avg_time // 60} d"
+    else:
+        avg_time_display = f"{avg_time} s"
+    
+    # Video statistikasi (tanlangan davr uchun)
+    video_progress_query = UserVideoProgress.objects.filter(user=request.user, watched=True)
+    if start_date:
+        video_progress_query = video_progress_query.filter(completed_at__gte=start_date)
+    total_videos_watched = video_progress_query.count()
     
     # Grafiklar uchun ma'lumotlar
     daily_labels = []
@@ -1921,13 +1980,15 @@ def analytics(request):
         'avg_score': round(avg_score, 1),
         'passed_tests': passed_tests,
         'failed_tests': failed_tests,
+        'total_videos_watched': total_videos_watched,
         'category_performance': category_performance,
         'test_type_performance': test_type_performance,
         'difficulty_performance': difficulty_performance,
         'daily_progress': daily_progress,
         'best_result': best_result,
         'worst_result': worst_result,
-        'avg_time': int(avg_time) if avg_time else 0,
+        'avg_time': avg_time,
+        'avg_time_display': avg_time_display,
         'chart_data': json.dumps(chart_data),
     }
     return render(request, 'core/analytics.html', context)

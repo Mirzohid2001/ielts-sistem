@@ -30,7 +30,9 @@
             <div class="col-12 col-sm-6 col-md-4 mb-4">
                 <div class="video-card">
                     <div class="video-card-image-wrapper">
-                        {% if video.youtube_thumbnail %}
+                        {% if video.cover_image %}
+                        <img src="{{ video.cover_image.url }}" alt="{{ video.title }}" class="video-card-image">
+                        {% elif video.youtube_thumbnail %}
                         <img src="{{ video.youtube_thumbnail }}" alt="{{ video.title }}" class="video-card-image">
                         {% else %}
                         <div class="video-card-placeholder">
@@ -68,7 +70,9 @@
         <div class="col-12 col-sm-6 col-md-4 mb-4">
             <div class="video-card">
                 <div class="video-card-image-wrapper">
-                    {% if video.youtube_thumbnail %}
+                    {% if video.cover_image %}
+                    <img src="{{ video.cover_image.url }}" alt="{{ video.title }}" class="video-card-image">
+                    {% elif video.youtube_thumbnail %}
                     <img src="{{ video.youtube_thumbnail }}" alt="{{ video.title }}" class="video-card-image">
                     {% else %}
                     <div class="video-card-placeholder">

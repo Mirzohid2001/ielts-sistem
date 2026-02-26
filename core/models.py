@@ -32,12 +32,26 @@ class Category(models.Model):
 
 
 class VideoLesson(models.Model):
-    """Video dars modeli"""
+    """Video dars modeli. Video fayl yuklangan bo'lsa u ko'rsatiladi, aks holda YouTube URL ishlatiladi."""
     title = models.CharField(max_length=300, verbose_name="Sarlavha")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos', verbose_name="Kategoriya")
-    youtube_url = models.URLField(verbose_name="YouTube URL")
+    video_file = models.FileField(
+        upload_to='videos/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Video fayl",
+        help_text="Admin orqali yuklangan video. Bo'lsa, interfeysda shu video ko'rsatiladi."
+    )
+    youtube_url = models.URLField(blank=True, null=True, verbose_name="YouTube URL (ixtiyoriy)")
     youtube_id = models.CharField(max_length=50, blank=True, db_index=True, verbose_name="YouTube ID")
     youtube_thumbnail = models.URLField(blank=True, verbose_name="Thumbnail URL")
+    cover_image = models.ImageField(
+        upload_to='video_covers/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Obloshka (cover)",
+        help_text="Video kartochkasida ko'rinadigan rasm. Yuklanmasa, YouTube thumbnail yoki placeholder ishlatiladi."
+    )
     description = models.TextField(blank=True, verbose_name="Tavsif")
     duration = models.IntegerField(default=0, verbose_name="Davomiyligi (soniya)")
     order = models.IntegerField(default=0, verbose_name="Tartib")

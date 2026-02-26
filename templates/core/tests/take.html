@@ -158,12 +158,15 @@
     .part-section {
         border: 1px solid #d1d5db;
         background: #fff;
-        margin-bottom: .75rem;
+        margin-bottom: 1.25rem;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
     }
-    /* Har bir part alohida blok — Part 2 va Part 3 o'z savollari va javoblari bilan */
+    /* Har bir part alohida blok — bir-biriga qo'shilmasin */
     .part-section:not(:first-child) {
-        border-top: 2px solid #9ca3af;
-        padding-top: .5rem;
+        margin-top: 1rem;
+        border-top: 3px solid #94a3b8;
     }
     /* Reading: partdan partga o'tish — bir vaqtda faqat bitta part ko'rinadi */
     .reading-part-tabs { display: flex; flex-wrap: wrap; gap: .5rem; }
@@ -180,23 +183,50 @@
     .exam-part-pane-left.active { display: block; }
     .exam-part-pane-left[hidden] { display: none !important; }
     .part-section-header {
-        border-bottom: 1px solid #e5e7eb;
-        background: #f9fafb;
-        padding: .55rem .75rem;
+        border-bottom: 2px solid #e2e8f0;
+        background: #f1f5f9;
+        padding: .6rem .85rem;
         font-size: .95rem;
         font-weight: 700;
-        color: #111827;
+        color: #0f172a;
     }
     .exam-split-layout .part-section-header.writing-answer-header {
-        background: #4b5563;
+        background: #475569;
         color: #fff;
         border-bottom: none;
     }
-    .part-q-card {
-        border-bottom: 1px solid #f1f5f9;
-        padding: .8rem .75rem;
+    /* Har bir savol alohida kartacha — ranglar va chegaralar bilan ajratilgan */
+    .part-section .part-q-card {
+        margin-bottom: 1rem;
+        margin-left: .5rem;
+        margin-right: .5rem;
+        padding: 1rem .85rem;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        border-left: 4px solid #6366f1;
     }
-    .part-q-card:last-child { border-bottom: 0; }
+    .part-section .part-section-header + .part-q-card,
+    .part-section > .part-q-card:first-child { margin-top: .75rem; }
+    /* Savol kartalari navbat bilan ranglar (1: binafsha, 2: yashil, 3: sariq, 4: havo rang) */
+    .part-section .part-q-card:nth-child(2n) {
+        background: #fafbff;
+        border-left-color: #10b981;
+    }
+    .part-section .part-q-card:nth-child(3n) {
+        background: #fffbeb;
+        border-left-color: #f59e0b;
+    }
+    .part-section .part-q-card:nth-child(4n) {
+        background: #f0fdf9;
+        border-left-color: #06b6d4;
+    }
+    .part-section .part-q-card:nth-child(5n) {
+        background: #f5f3ff;
+        border-left-color: #8b5cf6;
+    }
+    .part-section .part-q-card:last-child { margin-bottom: .75rem; }
     .exam-bottom-dock {
         position: sticky;
         bottom: 0;
