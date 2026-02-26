@@ -11,12 +11,19 @@ import json
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources
 from .models import (
-    Category, VideoLesson, Test, ReadingPassage, Question,
+    Category, VideoLesson, Test, ReadingPassage, Question, QuestionTypeRule,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard
 )
 from django.contrib.auth.models import User
+
+
+def _question_type_rules_json():
+    """Savol turi bo'yicha shartlar — JS da tanlangan turda ko'rsatish uchun."""
+    rules = QuestionTypeRule.objects.all().order_by('order', 'question_type')
+    data = {r.question_type: (r.shart_text or '').strip() for r in rules}
+    return json.dumps(data)
 
 
 class TestResource(resources.ModelResource):
@@ -292,6 +299,20 @@ class CategoryAdmin(admin.ModelAdmin):
         )
 
 
+# Savol turi qoidalari — har bir savol TURI uchun bitta shart (klient tahrirlaydi)
+@admin.register(QuestionTypeRule)
+class QuestionTypeRuleAdmin(admin.ModelAdmin):
+    list_display = ['question_type', 'name_uz', 'shart_short', 'order']
+    list_editable = ['order']
+    search_fields = ['question_type', 'name_uz', 'shart_text']
+    ordering = ['order', 'question_type']
+
+    def shart_short(self, obj):
+        t = (obj.shart_text or '')[:80]
+        return f"{t}..." if len(obj.shart_text or '') > 80 else t
+    shart_short.short_description = "Shart (qisqa)"
+
+
 # VideoLesson Admin
 @admin.register(VideoLesson)
 class VideoLessonAdmin(admin.ModelAdmin):
@@ -445,6 +466,16 @@ class TestAdmin(ImportExportModelAdmin):
         }),
     )
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['question_type_rules_json'] = _question_type_rules_json()
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['question_type_rules_json'] = _question_type_rules_json()
+        return super().add_view(request, form_url, extra_context=extra_context)
+
     def content_summary_display(self, obj):
         """Ro'yxatda: 3 passage, 40 savol ko'rinishi."""
         p_count = obj.reading_passages.count() if hasattr(obj, 'reading_passages') else 0
@@ -573,6 +604,16 @@ class QuestionAdmin(ImportExportModelAdmin):
     class Media:
         js = ('core/js/question_admin.js',)
         css = {'all': ('core/css/question_admin.css',)}
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['question_type_rules_json'] = _question_type_rules_json()
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['question_type_rules_json'] = _question_type_rules_json()
+        return super().add_view(request, form_url, extra_context=extra_context)
 
     def question_text_short(self, obj):
         t = obj.question_text or ''

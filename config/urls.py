@@ -19,7 +19,10 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from core.views import admin_toliq_yoriqnoma
+
 urlpatterns = [
+    path('admin/yoriqnoma/', admin_toliq_yoriqnoma, name='admin_toliq_yoriqnoma'),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('', include('core.urls')),

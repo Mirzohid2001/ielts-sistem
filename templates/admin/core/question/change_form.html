@@ -1,0 +1,7 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block content %}
+<script>window.QUESTION_TYPE_RULES = {{ question_type_rules_json|default:"{}"|safe }};</script>
+{{ block.super }}
+{% endblock %}

@@ -1,0 +1,160 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}To'liq yo'riqnoma — Test qo'shish{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .guide-page { max-width: 920px; margin: 0 auto; padding: 20px 30px 60px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .guide-page h1 { color: #1a1a1a; font-size: 26px; margin-bottom: 6px; border-bottom: 3px solid #417690; padding-bottom: 10px; }
+    .guide-page .subtitle { color: #555; font-size: 15px; margin-bottom: 24px; line-height: 1.5; }
+    .guide-page h2 { color: #264b56; font-size: 19px; margin-top: 28px; margin-bottom: 10px; }
+    .guide-page h3 { color: #333; font-size: 16px; margin-top: 18px; margin-bottom: 6px; }
+    .guide-page p { line-height: 1.65; color: #333; margin-bottom: 10px; }
+    .guide-page ul, .guide-page ol { margin: 8px 0 14px 22px; line-height: 1.65; }
+    .guide-page li { margin-bottom: 4px; }
+    .guide-page .step { background: #e8f4fc; border-left: 4px solid #79aec8; padding: 12px 16px; margin: 12px 0; border-radius: 0 8px 8px 0; }
+    .guide-page .step strong { color: #264b56; }
+    .guide-page .big-steps { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0 28px; }
+    .guide-page .big-step { flex: 1; min-width: 200px; background: #f0f7fc; border: 2px solid #79aec8; border-radius: 10px; padding: 16px; text-align: center; }
+    .guide-page .big-step .num { display: inline-block; width: 36px; height: 36px; line-height: 34px; background: #417690; color: white; font-weight: 700; font-size: 18px; border-radius: 50%; margin-bottom: 8px; }
+    .guide-page .big-step .title { font-weight: 700; color: #264b56; font-size: 15px; }
+    .guide-page .big-step .text { font-size: 13px; color: #444; margin-top: 4px; }
+    .guide-page table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+    .guide-page th, .guide-page td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; }
+    .guide-page th { background: #417690; color: white; }
+    .guide-page tr:nth-child(even) { background: #f9f9f9; }
+    .guide-page .tip { background: #fff8e6; border-left: 4px solid #e6a800; padding: 10px 14px; margin: 12px 0; border-radius: 0 8px 8px 0; }
+    .guide-page .warn { background: #ffebee; border-left: 4px solid #c62828; padding: 10px 14px; margin: 12px 0; border-radius: 0 8px 8px 0; }
+    .guide-page .link-btn { display: inline-block; background: #417690; color: white !important; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 8px 8px 8px 0; font-size: 14px; }
+    .guide-page .link-btn:hover { background: #264b56; color: white; }
+    .guide-page hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+    .guide-page .quick-help { background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+    .guide-page .quick-help strong { color: #264b56; }
+    .guide-page code { background: #eee; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guide-page">
+    <h1>📖 Test qo'shish — oddiy yo'riqnoma</h1>
+    <p class="subtitle">Barcha qadamlar shu sahifada. Birinchi marta bo'lsangiz ham, quyidagi 3 ta qadamni ketma-ket bajaring.</p>
+
+    <!-- 3 ta asosiy qadam — vizual -->
+    <h2>🎯 Faqat 3 ta narsa qilishingiz kerak</h2>
+    <div class="big-steps">
+        <div class="big-step">
+            <div class="num">1</div>
+            <div class="title">Test yarating va Saqlang</div>
+            <div class="text">Sarlavha, kategoriya, test turi yozing → <strong>«Saqlash»</strong> tugmasini bosing. Boshqa hech narsa qilishingiz shart emas.</div>
+        </div>
+        <div class="big-step">
+            <div class="num">2</div>
+            <div class="title">Passage (faqat Reading uchun)</div>
+            <div class="text">Agar test turi <strong>Reading</strong> bo'lsa — pastda 3 ta matn (passage) qo'shing. Listening yoki Writing bo'lsa — bu qadamni o'tkazib yuboring.</div>
+        </div>
+        <div class="big-step">
+            <div class="num">3</div>
+            <div class="title">Savollarni qo'shing</div>
+            <div class="text">Pastda «Yana bir Savol qo'shish» tugmasi chiqadi. Har bir savol uchun: savol matni, javob, (ixtiyoriy) Part raqami.</div>
+        </div>
+    </div>
+
+    <div class="warn">
+        <strong>⚠️ Muhim:</strong> Agar «Passage qo'shish» yoki «Savol qo'shish» ko'rinmasa — birinchi <strong>«Saqlash»</strong> bosing. Faqat saqlaganingizdan keyin pastda bu bloklar paydo bo'ladi.
+    </div>
+
+    <p><a href="{% url 'admin:core_test_changelist' %}" class="link-btn">→ Testlar ro'yxatiga o'tish (shu yerni bosing)</a></p>
+
+    <hr>
+
+    <h2>1. Birinchi qadam: Test yaratish</h2>
+    <p>Chap menyuda <strong>CORE</strong> → <strong>Testlar</strong> bosing. Yuqori o'ngda <strong>«Test qo'shish»</strong> tugmasi bor — uni bosing.</p>
+    <div class="step">
+        <strong>Nimalarni to'ldiraman?</strong><br>
+        • <strong>Sarlavha</strong> — masalan: Cambridge 1 Reading Test 1<br>
+        • <strong>Kategoriya</strong> — ro'yxatdan birini tanlang<br>
+        • <strong>Test turi</strong> — Reading / Writing / Listening (bittasini tanlang)<br>
+        • <strong>Qiyinlik</strong> — Oson / O'rta / Qiyin<br>
+        • Pastda <strong>Davomiylik (daqiqa)</strong> — masalan 60; <strong>O'tish balli</strong> — odatda 60 qoldiring.
+    </div>
+    <div class="step">
+        <strong>Keyin nima?</strong> — Yuqorida yoki pastda <strong>«Saqlash»</strong> tugmasini bosing. Sahifa yangilanadi va pastda <strong>Passage'lar</strong> va <strong>Savollar</strong> bloklari paydo bo'ladi.
+    </div>
+
+    <hr>
+
+    <h2>2. Ikkinchi qadam: Passage (faqat Reading test uchun)</h2>
+    <p>Agar test turi <strong>Reading</strong> bo'lsa, odatda 3 ta o'qish matni (passage) bo'ladi. Test tahrir sahifasida pastda <strong>«📖 1-QADAM: Passage'lar»</strong> yozilgan blokni toping.</p>
+    <ul>
+        <li><strong>«Yana bir Passage qo'shish»</strong> tugmasini bosing.</li>
+        <li>Birinchi passage uchun: <strong>Order</strong> — 1, <strong>Sarlavha</strong> — ixtiyoriy (masalan «Passage 1»), <strong>Matn</strong> — to'liq matnni shu yerga yozing yoki nusxalang.</li>
+        <li>Yana 2 marta «Yana bir Passage qo'shish» bosing va Order 2, Order 3 uchun matnlarni kiriting.</li>
+    </ul>
+    <p class="tip"><strong>Maslahat:</strong> Matn juda uzun bo'lsa — PDF dan nusxalab yopishtiring. Maydon katta, hammasi sig'adi.</p>
+    <p><strong>Listening yoki Writing test qo'shayotgan bo'lsangiz</strong> — Passage blokini umuman to'ldirmang, keyingi qadamga o'ting.</p>
+
+    <hr>
+
+    <h2>3. Uchinchi qadam: Savol qo'shish</h2>
+    <p>Pastda <strong>«📝 2-QADAM: Savollar»</strong> blokida <strong>«Yana bir Savol qo'shish»</strong> tugmasini bosing.</p>
+
+    <h3>Har bir savolda nima to'ldirish kerak?</h3>
+    <ul>
+        <li><strong>Order</strong> — savol tartib raqami (1, 2, 3, … 40 gacha). Reading da: 1–13 = Part 1, 14–26 = Part 2, 27–40 = Part 3.</li>
+        <li><strong>Savol turi</strong> — ro'yxatdan tanlang (MCQ, True/False, Notes Completion, Essay va boshqalar).</li>
+        <li><strong>Savol matni</strong> — savol matnini yozing. Bo'sh joy to'ldirish (fill-in) bo'lsa, bo'sh joylar o'rniga <code>[1]</code>, <code>[2]</code>, <code>[3]</code> yozing.</li>
+        <li><strong>To'g'ri javob</strong> — MCQ/True-False uchun a, b, c yoki d. Fill-in (bo'sh joy) uchun — pastda <strong>«To'g'ri javoblar (vergul bilan)»</strong> maydoniga: <code>javob1,javob2,javob3</code>.</li>
+        <li><strong>Part raqami</strong> — Reading da 1, 2 yoki 3; Listening da 1, 2, 3 yoki 4; Writing da 1 yoki 2. Bu savol qaysi qismga tegishli ekanini ko'rsatadi.</li>
+    </ul>
+
+    <h3>Shart (instruction) — testda ko'rinadigan qoida matni</h3>
+    <p>Agar foydalanuvchi test ishlaganda savollardan <strong>oldin</strong> qisqa instruction (masalan: «Write TRUE, FALSE or NOT GIVEN») ko'rishi kerak bo'lsa:</p>
+    <ol>
+        <li>Chap menyuda <strong>CORE</strong> → <strong>Savol turi qoidalari</strong> bosing.</li>
+        <li>Ro'yxatda har bir savol turi uchun bitta qator bor (MCQ, True/False/Not Given, Notes Completion, …). Kerakli qatorni bosing.</li>
+        <li><strong>Shart (qoida / talab)</strong> maydoniga shu tur uchun instruction matnini yozing. Masalan: <em>«Do the following statements agree with the information? Write TRUE, FALSE or NOT GIVEN.»</em></li>
+        <li>Saqlang. Bu matn test ishlash sahifasida avtomatik ko'rsatiladi — har bir savol turi guruhidan oldin. Har bir savolga alohida yozish shart emas.</li>
+    </ol>
+    <p><a href="{% url 'admin:core_questiontyperule_changelist' %}" class="link-btn">→ Savol turi qoidalari (shartlarni bu yerdan tahrirlash)</a></p>
+
+    <h3>Savol turlari — qisqacha</h3>
+    <table>
+        <thead>
+            <tr><th>Tur</th><th>Nima to'ldirish</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Multiple Choice (MCQ)</td><td>Variant A, B, C, D + To'g'ri javob: a yoki b yoki c yoki d</td></tr>
+            <tr><td>True / False</td><td>A=True, B=False. To'g'ri javob: a yoki b</td></tr>
+            <tr><td>True / False / Not Given</td><td>A=True, B=False, C=Not Given. To'g'ri javob: a, b yoki c</td></tr>
+            <tr><td>Yes / No / Not Given</td><td>Shu formatda variantlar + To'g'ri javob</td></tr>
+            <tr><td>Bo'sh joy (Fill, Summary, Notes, Sentence)</td><td>Savol matnida [1], [2], [3]. To'g'ri javoblar: vergul bilan — <code>soz1,soz2,soz3</code></td></tr>
+            <tr><td>Short answer</td><td>To'g'ri javob yoki vergul bilan bir nechta</td></tr>
+            <tr><td>Matching (Headings, Features, Info)</td><td>Matching itemlar: har satr <code>1|Paragraph A</code>. Matching variantlar: <code>A|Matn</code>. To'g'ri javob: <code>1:A</code> (har satr)</td></tr>
+            <tr><td>Essay (Writing)</td><td>Savol matnida to'liq task va diagram tavsifi. Ball ixtiyoriy.</td></tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>4. Listening va Writing</h2>
+    <ul>
+        <li><strong>Listening:</strong> Test qo'shishda <strong>Audio fayl (MP3)</strong> yuklang. Passage kerak emas. Savollar Order 1–40, Part 1–4.</li>
+        <li><strong>Writing:</strong> Passage va audio kerak emas. Savollar 2 ta: Order 1 = Task 1, Order 2 = Task 2. Savol turi — Essay. Savol matnida to'liq task yozing.</li>
+    </ul>
+
+    <hr>
+
+    <h2>❓ Tez yordam (muammo bo'lsa)</h2>
+    <div class="quick-help">
+        <p><strong>«Passage qo'shish» yoki «Savol qo'shish» ko'rinmayapti.</strong><br>→ Avval asosiy ma'lumotlarni to'ldirib <strong>«Saqlash»</strong> bosing. Keyin pastda bloklar chiqadi.</p>
+        <p><strong>Part qanday belgilash kerak?</strong><br>→ Har bir savol formida <strong>Part raqami</strong> maydoniga 1, 2 yoki 3 (Reading), yoki 1–4 (Listening), yoki 1–2 (Writing) yozing.</p>
+        <p><strong>Bo'sh joy to'ldirishda to'g'ri javob qanday?</strong><br>→ «To'g'ri javoblar (vergul bilan)» maydonida: <code>birinchijavob,ikkinchijavob,uchinchijavob</code>. Savol matnida bo'sh joylar <code>[1]</code>, <code>[2]</code>, <code>[3]</code> bo'lishi kerak.</p>
+        <p><strong>Matching qanday to'ldiriladi?</strong><br>→ Matching itemlar: har satr <code>1|Paragraph A</code>. Matching variantlar: <code>A|Heading matni</code>. To'g'ri javob: <code>1:A</code> (har qator alohida).</p>
+        <p><strong>Testda instruction (shart) ko'rinishi kerak edi, ko'rinmayapti.</strong><br>→ CORE → <strong>Savol turi qoidalari</strong> → shu savol turi qatorini oching → <strong>Shart</strong> maydoniga matn yozing va Saqlang.</p>
+    </div>
+
+    <p><a href="{% url 'admin:core_test_changelist' %}" class="link-btn">← Testlar ro'yxatiga qaytish</a></p>
+</div>
+{% endblock %}

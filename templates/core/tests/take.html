@@ -182,51 +182,43 @@
     .exam-part-pane-left { display: none; }
     .exam-part-pane-left.active { display: block; }
     .exam-part-pane-left[hidden] { display: none !important; }
+    /* Jadval uslubi: sarlavha qatori — rangsiz, faqat chegaralar */
     .part-section-header {
-        border-bottom: 2px solid #e2e8f0;
-        background: #f1f5f9;
+        border: 1px solid #d1d5db;
+        border-bottom: 1px solid #94a3b8;
+        background: #fff;
         padding: .6rem .85rem;
         font-size: .95rem;
         font-weight: 700;
         color: #0f172a;
     }
     .exam-split-layout .part-section-header.writing-answer-header {
-        background: #475569;
-        color: #fff;
-        border-bottom: none;
-    }
-    /* Har bir savol alohida kartacha — ranglar va chegaralar bilan ajratilgan */
-    .part-section .part-q-card {
-        margin-bottom: 1rem;
-        margin-left: .5rem;
-        margin-right: .5rem;
-        padding: 1rem .85rem;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
         background: #fff;
-        box-shadow: 0 1px 3px rgba(0,0,0,.05);
-        border-left: 4px solid #6366f1;
+        color: #0f172a;
+        border: 1px solid #d1d5db;
+        border-bottom: 1px solid #94a3b8;
+    }
+    /* Savol bloklari — jadval qatoriga o‘xshash, rangsiz, faqat border */
+    .part-section .part-q-card {
+        margin: 0;
+        padding: 1rem .85rem;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        background: #fff;
+        box-shadow: none;
     }
     .part-section .part-section-header + .part-q-card,
-    .part-section > .part-q-card:first-child { margin-top: .75rem; }
-    /* Savol kartalari navbat bilan ranglar (1: binafsha, 2: yashil, 3: sariq, 4: havo rang) */
-    .part-section .part-q-card:nth-child(2n) {
-        background: #fafbff;
-        border-left-color: #10b981;
+    .part-section .part-q-card:first-of-type { border-top: 1px solid #e2e8f0; }
+    .part-section .part-q-card:last-child { margin-bottom: 0; }
+    /* Shart (instruction) bloki — jadval qatori, rangsiz */
+    .part-shart-block.part-table-row {
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        padding: .75rem .85rem;
+        margin: 0;
+        background: #fff;
     }
-    .part-section .part-q-card:nth-child(3n) {
-        background: #fffbeb;
-        border-left-color: #f59e0b;
-    }
-    .part-section .part-q-card:nth-child(4n) {
-        background: #f0fdf9;
-        border-left-color: #06b6d4;
-    }
-    .part-section .part-q-card:nth-child(5n) {
-        background: #f5f3ff;
-        border-left-color: #8b5cf6;
-    }
-    .part-section .part-q-card:last-child { margin-bottom: .75rem; }
+    .part-section .part-section-header + .part-shart-block.part-table-row { border-top: 1px solid #e2e8f0; }
     .exam-bottom-dock {
         position: sticky;
         bottom: 0;
@@ -692,12 +684,21 @@
                                             {% endif %}
                                         </div>
                                         {% endif %}
-                                        {% for item in pg.cards %}
+                                        {% for type_block in pg.type_blocks %}
+                                        {% if type_block.shart_text %}
+                                        <div class="part-shart-block part-table-row">
+                                            {% if type_block.start_order and type_block.end_order %}
+                                            <div class="small mb-2 fw-bold">Questions {{ type_block.start_order }}{% if type_block.end_order != type_block.start_order %}-{{ type_block.end_order }}{% endif %}</div>
+                                            {% endif %}
+                                            <div class="part-shart-text">{{ type_block.shart_text|linebreaks }}</div>
+                                        </div>
+                                        {% endif %}
+                                        {% for item in type_block.cards %}
                                         {% with q=item.question %}
                                         <div class="part-q-card" id="question-{{ q.order }}" data-question-id="{{ q.pk }}">
                                             {% if not item.inline_fill_parts and test.test_type != 'writing' %}
                                             <div class="d-flex align-items-center gap-2 mb-2">
-                                                <span class="badge bg-primary">Question {{ q.order }}</span>
+                                                <span class="badge bg-light text-dark border">Question {{ q.order }}</span>
                                             </div>
                                             {% endif %}
 
@@ -795,6 +796,7 @@
                                             {% endif %}
                                         </div>
                                         {% endwith %}
+                                        {% endfor %}
                                         {% endfor %}
                                     </section>
                                     </div>

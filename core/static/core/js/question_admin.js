@@ -49,6 +49,40 @@
         }
     }
 
+    function ensureShartDiv(container) {
+        var select = container.querySelector('select[name*="question_type"]');
+        if (!select || !window.QUESTION_TYPE_RULES) return null;
+        var shartDiv = container.querySelector('.question-type-shart-box');
+        if (!shartDiv) {
+            shartDiv = document.createElement('div');
+            shartDiv.className = 'question-type-shart-box';
+            shartDiv.style.marginTop = '8px';
+            shartDiv.style.marginBottom = '12px';
+            shartDiv.style.padding = '10px 12px';
+            shartDiv.style.background = '#f0f8ff';
+            shartDiv.style.borderLeft = '4px solid #79aec8';
+            shartDiv.style.borderRadius = '0 6px 6px 0';
+            shartDiv.style.fontSize = '13px';
+            shartDiv.style.color = '#264b56';
+            var row = select.closest('.form-row') || select.parentElement;
+            if (row && row.parentNode) row.parentNode.insertBefore(shartDiv, row.nextSibling);
+            else container.appendChild(shartDiv);
+        }
+        return shartDiv;
+    }
+
+    function updateShartForType(container, qType) {
+        var shartDiv = ensureShartDiv(container);
+        if (!shartDiv || !window.QUESTION_TYPE_RULES) return;
+        var text = window.QUESTION_TYPE_RULES[qType] || '';
+        if (text) {
+            shartDiv.textContent = '📋 Shart (bu savol turi uchun): ' + text;
+            shartDiv.style.display = 'block';
+        } else {
+            shartDiv.style.display = 'none';
+        }
+    }
+
     function toggleByQuestionType(container) {
         var select = container.querySelector('select[name*="question_type"]');
         if (!select) return;
@@ -57,6 +91,7 @@
         var showMcqFields = showMcq(qType);
         var showJsonFields = showJson(qType);
 
+        updateShartForType(container, qType);
         updateQuestionTextHelp(container, qType);
 
         // Asosiy form (fieldsets)

@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
-from django.db.models import Count, Avg, Q, Sum, Max, Min, Case, When, IntegerField
+from django.db.models import Count, Avg, Q, Sum, Max, Min, Case, When, IntegerField, F
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
@@ -14,7 +15,7 @@ from calendar import monthrange
 import json
 import re
 from .models import (
-    Category, VideoLesson, Test, Question,
+    Category, VideoLesson, Test, Question, QuestionTypeRule,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard
@@ -871,6 +872,7 @@ def test_take(request, pk):
         part_groups[-1]['cards'].append(card)
         part_groups[-1]['end_order'] = card['question'].order
 
+    type_shart_map = {r.question_type: (r.shart_text or '').strip() for r in QuestionTypeRule.objects.all()}
     for pg in part_groups:
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
@@ -919,6 +921,26 @@ def test_take(request, pk):
             pg['range_label'] = f"{min(nums)}-{max(nums)}" if len(nums) > 1 else str(nums[0])
         else:
             pg['range_label'] = f"{pg['start_order']}-{pg['end_order']}" if pg['start_order'] != pg['end_order'] else str(pg['start_order'])
+
+        # Savol turi bo'yicha guruhlash: har bir turdan oldin shart (QuestionTypeRule) ko'rsatiladi
+        type_blocks = []
+        for card in pg['cards']:
+            q_type = card['question'].question_type
+            if type_blocks and type_blocks[-1]['question_type'] == q_type:
+                type_blocks[-1]['cards'].append(card)
+            else:
+                type_blocks.append({
+                    'question_type': q_type,
+                    'shart_text': type_shart_map.get(q_type, ''),
+                    'cards': [card],
+                    'start_order': card['question'].order,
+                    'end_order': card['question'].order,
+                })
+            if type_blocks:
+                type_blocks[-1]['end_order'] = card['question'].order
+        if not type_blocks and pg['cards']:
+            type_blocks = [{'question_type': '', 'shart_text': '', 'cards': pg['cards'], 'start_order': pg['cards'][0]['question'].order, 'end_order': pg['cards'][-1]['question'].order}]
+        pg['type_blocks'] = type_blocks
 
     current_question = questions[0] if questions else None
     # "Questions 1-10" yoki "Questions 1-7" ko'rsatish uchun
@@ -1283,12 +1305,13 @@ def profile(request):
     
     completed_results = test_results
     
-    # Statistika
+    # Statistika (o'tgan testlar — har testning o'z passing_score bo'yicha)
+    completed_list = list(completed_results.select_related('test'))
     stats = {
-        'total_tests': completed_results.count(),
+        'total_tests': len(completed_list),
         'total_videos': video_progress.count(),
         'average_score': completed_results.aggregate(Avg('percentage'))['percentage__avg'] or 0,
-        'passed_tests': completed_results.filter(percentage__gte=60).count(),
+        'passed_tests': sum(1 for r in completed_list if r.is_passed()),
         'current_streak': current_streak,
         'total_bookmarks': Bookmark.objects.filter(user=request.user).count(),
     }
@@ -1890,18 +1913,19 @@ def analytics(request):
     
     test_results = test_results_query.select_related('test', 'test__category')
     
-    # Asosiy statistika
-    total_tests = test_results.count()
+    # Asosiy statistika (o'tdi — har testning passing_score bo'yicha)
+    test_results_list = list(test_results.select_related('test'))
+    total_tests = len(test_results_list)
     avg_score = test_results.aggregate(Avg('percentage'))['percentage__avg'] or 0
-    passed_tests = test_results.filter(percentage__gte=60).count()
+    passed_tests = sum(1 for r in test_results_list if r.is_passed())
     failed_tests = total_tests - passed_tests
     
-    # Kategoriya bo'yicha natijalar
+    # Kategoriya bo'yicha natijalar (o'tdi — har testning passing_score bo'yicha)
     category_performance = test_results.values('test__category__name').annotate(
         count=Count('id'),
         avg_score=Avg('percentage'),
-        passed=Count('id', filter=Q(percentage__gte=60)),
-        failed=Count('id', filter=Q(percentage__lt=60))
+        passed=Count('id', filter=Q(percentage__gte=F('test__passing_score'))),
+        failed=Count('id', filter=Q(percentage__lt=F('test__passing_score')))
     ).order_by('-avg_score')
     
     # Test turlari bo'yicha natijalar
@@ -2158,3 +2182,9 @@ def monthly_report(request):
         'study_days': study_days,
     }
     return render(request, 'core/monthly_report.html', context)
+
+
+@staff_member_required
+def admin_toliq_yoriqnoma(request):
+    """Admin uchun bitta sahifada to'liq yo'riqnoma — Test, Part, Savol qo'shish."""
+    return render(request, 'admin/core/toliq_yoriqnoma.html')

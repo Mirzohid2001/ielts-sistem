@@ -427,6 +427,34 @@ class Question(models.Model):
         return all(norm(ua) == norm(ca) for ua, ca in zip(user_answers, correct_list))
 
 
+class QuestionTypeRule(models.Model):
+    """
+    Har bir savol TURI uchun bitta shart (qoida/talab).
+    Savol qo'shishda tanlangan tur uchun shu shart ko'rsatiladi — har bir savolga emas, faqat tur bo'yicha.
+    """
+    question_type = models.CharField(
+        max_length=30,
+        unique=True,
+        verbose_name="Savol turi",
+        help_text="Question.QUESTION_TYPES dagi qiymat (mcq, true_false, fill_blank, ...)"
+    )
+    name_uz = models.CharField(max_length=200, verbose_name="Nomi (o'zbekcha)")
+    shart_text = models.TextField(
+        blank=True,
+        verbose_name="Shart (qoida / talab)",
+        help_text="Bu savol turi uchun talab matni. Admin da savol qo'shishda tanlangan turda shu matn ko'rsatiladi."
+    )
+    order = models.IntegerField(default=0, verbose_name="Tartib")
+
+    class Meta:
+        verbose_name = "Savol turi qoidasi"
+        verbose_name_plural = "Savol turi qoidalari"
+        ordering = ['order', 'question_type']
+
+    def __str__(self):
+        return f"{self.name_uz} ({self.question_type})"
+
+
 class UserTestResult(models.Model):
     """Foydalanuvchi test natijasi"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='test_results', verbose_name="Foydalanuvchi")
@@ -557,57 +585,10 @@ class UserTestAnswer(models.Model):
         return f"{self.test_result.user.username} - {self.question} - {self.user_answer}"
 
     def check_answer(self):
-        """Javobni tekshirish"""
-        self.is_correct = self._is_answer_correct(self.user_answer)
-        self.save()
+        """Javobni tekshirish — savol turiga qarab Question.check_user_answer ishlatiladi."""
+        self.is_correct = self.question.check_user_answer(self.user_answer)
+        self.save(update_fields=['is_correct'])
         return self.is_correct
-    
-    def _is_answer_correct(self, user_answer):
-        """Javob to'g'rimi tekshirish"""
-        q = self.question
-        if q.question_type in ('mcq', 'true_false'):
-            return str(user_answer).strip().lower() == str(q.correct_answer).strip().lower()
-        # fill_blank, summary_completion, notes_completion, short_answer
-        correct_list = q.get_correct_answers_list()
-        if not correct_list:
-            return False
-        # Bitta bo'sh joy - bitta javob
-        if len(correct_list) == 1:
-            return self._normalize_answer(user_answer) == self._normalize_answer(correct_list[0])
-        # Bir nechta bo'sh joy - JSON yoki vergul bilan ajratilgan
-        user_answers = self._parse_user_answers(user_answer, len(correct_list))
-        if len(user_answers) != len(correct_list):
-            return False
-        for ua, ca in zip(user_answers, correct_list):
-            if self._normalize_answer(ua) != self._normalize_answer(ca):
-                return False
-        return True
-    
-    @staticmethod
-    def _normalize_answer(text):
-        """Javobni solishtirish uchun normalizatsiya"""
-        if text is None:
-            return ''
-        s = str(text).strip().lower()
-        return ' '.join(s.split())
-    
-    @staticmethod
-    def _parse_user_answers(user_answer, expected_count):
-        """Foydalanuvchi javobini ro'yxatga ajratish"""
-        import json
-        if not user_answer:
-            return []
-        text = str(user_answer).strip()
-        if text.startswith('[') or text.startswith('{'):
-            try:
-                data = json.loads(text)
-                if isinstance(data, list):
-                    return [str(x) for x in data]
-                if isinstance(data, dict):
-                    return [str(data.get(str(i+1), data.get(i, ''))) for i in range(expected_count)]
-            except json.JSONDecodeError:
-                pass
-        return [text]
 
 
 class UserVideoProgress(models.Model):

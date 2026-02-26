@@ -2,13 +2,15 @@
 {% load i18n %}
 
 {% block content %}
-<div class="module" style="margin-bottom: 20px; padding: 15px 20px; background: #e8f4fc; border: 1px solid #79aec8; border-radius: 8px;">
-    <strong style="color: #264b56;">📌 Yo'riqnoma:</strong>
-    <ol style="margin: 8px 0 0 20px; color: #333;">
-        <li><strong>Asosiy ma'lumotlar</strong>ni to'ldiring (sarlavha, kategoriya, test turi) va <strong>«Saqlash»</strong> bosing.</li>
-        <li><strong>📖 1-QADAM: Passage'lar</strong> — Reading uchun «Yana bir Passage qo'shish» orqali 3 ta passage (Part 1, 2, 3) qo'shing. Har birida Order va matnni kiriting.</li>
-        <li><strong>📝 2-QADAM: Savollar</strong> — «Yana bir Savol qo'shish» orqali savollarni qo'shing. Reading: order 1–13 Part 1, 14–26 Part 2, 27–40 Part 3.</li>
+<div class="module" style="margin-bottom: 20px; padding: 14px 18px; background: #e8f4fc; border: 1px solid #79aec8; border-radius: 8px;">
+    <strong style="color: #264b56;">📌 Qisqacha:</strong>
+    <ol style="margin: 8px 0 0 20px; color: #333; line-height: 1.6;">
+        <li>Yuqoridagi maydonlarni to'ldiring va <strong>«Saqlash»</strong> bosing — keyin pastda Passage va Savollar bloklari chiqadi.</li>
+        <li><strong>Reading</strong> bo'lsa — pastda «Yana bir Passage qo'shish» orqali 3 ta matn qo'shing (Order 1, 2, 3).</li>
+        <li>Pastda «Yana bir Savol qo'shish» orqali savollarni qo'shing. Instruction (shart) matnini CORE → Savol turi qoidalari dan yozishingiz mumkin.</li>
     </ol>
+    <p style="margin: 10px 0 0 0; font-size: 13px;"><a href="/admin/yoriqnoma/" style="color: #417690; font-weight: 600;">To'liq yo'riqnoma →</a></p>
 </div>
+<script>window.QUESTION_TYPE_RULES = {{ question_type_rules_json|default:"{}"|safe }};</script>
 {{ block.super }}
 {% endblock %}
