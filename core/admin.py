@@ -254,21 +254,42 @@ class QuestionAdminForm(forms.ModelForm):
         return cleaned
 
 
-# Category Admin
+# Category Admin — testlar va videolar uchun kategoriya
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'icon', 'color_display', 'order', 'is_active', 'created_at']
+    list_display = ['name', 'slug', 'tests_count_display', 'videos_count_display', 'icon', 'color_display', 'order', 'is_active', 'created_at']
     list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'slug', 'description']
     prepopulated_fields = {'slug': ('name',)}
     ordering = ['order', 'name']
-    
+    list_editable = ['order', 'is_active']
+
+    def tests_count_display(self, obj):
+        c = getattr(obj, '_tests', None)
+        if c is not None:
+            return c
+        return obj.tests.filter(is_active=True).count() if hasattr(obj, 'tests') else 0
+    tests_count_display.short_description = "Testlar"
+
+    def videos_count_display(self, obj):
+        c = getattr(obj, '_videos', None)
+        if c is not None:
+            return c
+        return obj.videos.filter(is_active=True).count() if hasattr(obj, 'videos') else 0
+    videos_count_display.short_description = "Videolar"
+
     def color_display(self, obj):
         return format_html(
             '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
             obj.color, obj.color
         )
     color_display.short_description = "Rang"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _tests=Count('tests', filter=Q(tests__is_active=True)),
+            _videos=Count('videos', filter=Q(videos__is_active=True)),
+        )
 
 
 # VideoLesson Admin
@@ -331,10 +352,12 @@ class VideoLessonAdmin(admin.ModelAdmin):
 
 
 # Question Inline - StackedInline - savol qo'shish qulayroq
+# extra=0: yangi test qo'shanda bo'sh savol qatori bo'lmaydi — avval testni saqlang, keyin savollar qo'shing
 class QuestionInline(admin.StackedInline):
     model = Question
     form = QuestionAdminForm
-    extra = 1
+    extra = 0
+    min_num = 0
     fields = [
         'order', 'question_type', 'question_text', 'question_image',
         ('option_a', 'option_b', 'option_c', 'option_d'),
@@ -343,26 +366,46 @@ class QuestionInline(admin.StackedInline):
         'list_options_simple', 'list_correct_simple',
         'points', 'explanation', 'audio_timestamp',
     ]
-    classes = ['collapse']
+    classes = []  # ochiq — savollar yopiq bo'lmasin
     verbose_name = "Savol"
-    verbose_name_plural = "Savollar (oddiy maydonlarni to'ldiring — JSON yozish shart emas)"
+    verbose_name_plural = (
+        "📝 2-QADAM: Savollar — «Yana bir Savol qo'shish» dan qo'shing. "
+        "Reading: order 1–13 Part 1, 14–26 Part 2, 27–40 Part 3. Listening: 1–10, 11–20, 21–30, 31–40. Writing: 1=Task1, 2=Task2."
+    )
     show_change_link = True
+
+
+class ReadingPassageForm(forms.ModelForm):
+    """Passage matni uchun katta textarea."""
+    class Meta:
+        model = ReadingPassage
+        fields = '__all__'
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': "Masalan: Passage 1 yoki Part 1"}),
+            'text': forms.Textarea(attrs={'rows': 22, 'placeholder': "Bu yerga passage to'liq matnini yozing yoki PDF dan nusxalang..."}),
+        }
 
 
 class ReadingPassageInline(admin.StackedInline):
     model = ReadingPassage
+    form = ReadingPassageForm
     extra = 0
     min_num = 0
     ordering = ['order']
-    verbose_name = "Passage"
-    verbose_name_plural = "Passage'lar (Reading: Part 1 = order 1, Part 2 = order 2, Part 3 = order 3)"
+    verbose_name = "Passage (o'qish matni)"
+    verbose_name_plural = "📖 1-QADAM: Passage'lar (Reading testda 3 ta — Order 1 = Part 1, 2 = Part 2, 3 = Part 3)"
     fields = ['order', 'title', 'text']
+    classes = []  # ochiq turishi uchun collapse yo'q
 
 
-# Test Admin - yaxshilangan (yangi format: Reading 3 passage, Listening 4 part, Writing 2 task)
+# Test Admin - ideal: partlar, savollar, testlar qo'shish oson
 @admin.register(Test)
 class TestAdmin(ImportExportModelAdmin):
-    list_display = ['title', 'category', 'test_type', 'difficulty', 'total_questions_display', 'passages_display', 'duration_minutes', 'passing_score', 'is_active', 'created_at']
+    list_display = [
+        'title', 'category', 'test_type', 'difficulty',
+        'content_summary_display',
+        'duration_minutes', 'passing_score', 'is_active', 'created_at'
+    ]
     list_filter = ['category', 'test_type', 'difficulty', 'allow_retake', 'is_active', 'created_at']
     search_fields = ['title', 'description']
     ordering = ['-created_at']
@@ -384,22 +427,32 @@ class TestAdmin(ImportExportModelAdmin):
 
     fieldsets = (
         ('Asosiy ma\'lumotlar', {
-            'fields': ('title', 'category', 'test_type', 'difficulty', 'description', 'is_active')
+            'fields': ('title', 'category', 'test_type', 'difficulty', 'description', 'is_active'),
+            'description': (
+                "✅ Yangi test: Sarlavha, kategoriya va test turini tanlang → «Saqlash» bosing. "
+                "Keyin pastda avval 📖 Passage'lar (Reading uchun 3 ta), so'ng 📝 Savollar blokida «Yana bir … qo'shish» orqali qo'shing."
+            )
         }),
         ('Parametrlar', {
             'fields': ('duration_minutes', 'passing_score', 'allow_retake', 'max_attempts'),
-            'description': 'duration_minutes - daqiqada. passing_score - foizda (masalan 60).'
+            'description': 'Davomiylik (daqiqa), o\'tish balli (%), qayta ishlash ruxsati.'
         }),
-        ('Test kontenti', {
+        ('Audio / Eski matn (ixtiyoriy)', {
             'fields': ('audio_file', 'reading_text'),
             'description': (
-                "Reading: quyidagi Passage'lar blokida 3 ta passage qo'shing (order 1 = Part 1, 2 = Part 2, 3 = Part 3). "
-                "Agar passage'lar bo'sh bo'lsa, reading_text ishlatiladi. "
-                "Listening: audio fayl yuklang (MP3); savollar order bo'yicha 1-10 Part 1, 11-20 Part 2, 21-30 Part 3, 31-40 Part 4. "
-                "Writing: 2 ta savol (order 1 = Task 1, order 2 = Task 2); audio va reading bo'sh qoladi."
+                "Listening: audio fayl (MP3) yuklang. Reading: agar passage'lar blokida qo'shmagan bo'lsangiz, shu yerga bitta matn yozish mumkin."
             )
         }),
     )
+
+    def content_summary_display(self, obj):
+        """Ro'yxatda: 3 passage, 40 savol ko'rinishi."""
+        p_count = obj.reading_passages.count() if hasattr(obj, 'reading_passages') else 0
+        q_count = obj.questions.count() if hasattr(obj, 'questions') else 0
+        if obj.test_type == 'reading' and p_count > 0:
+            return format_html('<span title="Passage / Savol">{} p / {} s</span>', p_count, q_count)
+        return format_html('<strong>{}</strong> savol', q_count)
+    content_summary_display.short_description = "Passage / Savol"
 
     def total_questions_display(self, obj):
         count = obj.total_questions
@@ -414,7 +467,7 @@ class TestAdmin(ImportExportModelAdmin):
     passages_display.short_description = "Passage"
 
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related('reading_passages')
+        return super().get_queryset(request).prefetch_related('reading_passages', 'questions')
 
     @admin.action(description="Testni nusxalash")
     def duplicate_tests(self, request, queryset):

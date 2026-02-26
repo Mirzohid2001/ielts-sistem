@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block result_list %}
+<div class="module" style="margin-bottom: 16px; padding: 12px 16px; background: #e8f4fc; border: 1px solid #79aec8; border-radius: 8px;">
+    <strong style="color: #264b56;">📌 Yo'riqnoma:</strong>
+    Yangi test qo'shish uchun <strong>«Test qo'shish»</strong> tugmasini bosing (yuqori o'ngda). Ochilgan sahifada to'liq yo'riqnoma va qadamlar ko'rsatiladi: 1) Asosiy ma'lumotlar + Saqlash → 2) Passage'lar qo'shish → 3) Savollar qo'shish. Mavjud testni tahrirlash uchun sarlavhasini bosing.
+</div>
+{{ block.super }}
+{% endblock %}
