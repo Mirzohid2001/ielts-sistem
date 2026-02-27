@@ -607,6 +607,11 @@
                             </div>
                         </div>
                     </div>
+                    {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Bu Reading test uchun passage (matn) admin orqali hali qo'shilmagan. Savollarni o'qish matnisiz javob bering yoki admin bilan bog'laning.
+                    </div>
                     {% endif %}
                     {% endwith %}
                     {% elif test.test_type == 'writing' %}

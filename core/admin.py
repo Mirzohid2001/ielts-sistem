@@ -391,7 +391,7 @@ class QuestionInline(admin.StackedInline):
     verbose_name = "Savol"
     verbose_name_plural = (
         "📝 2-QADAM: Savollar — «Yana bir Savol qo'shish» dan qo'shing. "
-        "Reading: order 1–13 Part 1, 14–26 Part 2, 27–40 Part 3. Listening: 1–10, 11–20, 21–30, 31–40. Writing: 1=Task1, 2=Task2."
+        "Reading: order 1–13 (Part 1), 14–26 (Part 2), 27–40 (Part 3). Listening: order 1–10, 11–20, 21–30, 31–40 (Part 1–4). Writing: order 1 = Task 1, 2 = Task 2. Har bir savolda Part raqami maydonini to'ldiring."
     )
     show_change_link = True
 
@@ -414,7 +414,7 @@ class ReadingPassageInline(admin.StackedInline):
     min_num = 0
     ordering = ['order']
     verbose_name = "Passage (o'qish matni)"
-    verbose_name_plural = "📖 1-QADAM: Passage'lar (Reading testda 3 ta — Order 1 = Part 1, 2 = Part 2, 3 = Part 3)"
+    verbose_name_plural = "📖 1-QADAM: Passage'lar — faqat Reading test uchun. 3 ta qo'shing (Order 1 = Part 1, 2 = Part 2, 3 = Part 3). Listening/Writing da bo'sh qoldiring."
     fields = ['order', 'title', 'text']
     classes = []  # ochiq turishi uchun collapse yo'q
 
@@ -450,8 +450,9 @@ class TestAdmin(ImportExportModelAdmin):
         ('Asosiy ma\'lumotlar', {
             'fields': ('title', 'category', 'test_type', 'difficulty', 'description', 'is_active'),
             'description': (
-                "✅ Yangi test: Sarlavha, kategoriya va test turini tanlang → «Saqlash» bosing. "
-                "Keyin pastda avval 📖 Passage'lar (Reading uchun 3 ta), so'ng 📝 Savollar blokida «Yana bir … qo'shish» orqali qo'shing."
+                "✅ Sarlavha, kategoriya, <strong>test turi</strong> (Reading / Listening / Writing) tanlang → «Saqlash» bosing. "
+                "Keyin pastda: <strong>Reading</strong> — avval 📖 Passage'lar (3 ta), keyin 📝 Savollar. "
+                "<strong>Listening</strong> — faqat Audio (pastda) + Savollar. <strong>Writing</strong> — faqat Savollar (2 ta: Task 1, Task 2)."
             )
         }),
         ('Parametrlar', {
@@ -461,7 +462,8 @@ class TestAdmin(ImportExportModelAdmin):
         ('Audio / Eski matn (ixtiyoriy)', {
             'fields': ('audio_file', 'reading_text'),
             'description': (
-                "Listening: audio fayl (MP3) yuklang. Reading: agar passage'lar blokida qo'shmagan bo'lsangiz, shu yerga bitta matn yozish mumkin."
+                "<strong>Listening:</strong> shu yerdan audio fayl (MP3) yuklang. "
+                "<strong>Reading:</strong> agar pastdagi Passage'lar blokida 3 ta matn qo'shmagan bo'lsangiz, shu yerga bitta matn yozish mumkin. Writing uchun bu maydonlar kerak emas."
             )
         }),
     )
