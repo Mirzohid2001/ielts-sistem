@@ -584,6 +584,7 @@
                                 {% for passage in reading_passages %}
                                 {% if part_groups|length > 1 %}
                                 <div class="reading-passage-pane-left {% if forloop.counter == 1 %}active{% endif %}" id="left-passage-{{ forloop.counter }}" data-part-number="{{ forloop.counter }}" {% if forloop.counter != 1 %}hidden{% endif %}>
+                                    <p class="small text-muted mb-2">Read the text and answer questions {% if forloop.counter0 == 0 and part_groups.0 %}{{ part_groups.0.range_label }}{% elif forloop.counter0 == 1 and part_groups.1 %}{{ part_groups.1.range_label }}{% elif forloop.counter0 == 2 and part_groups.2 %}{{ part_groups.2.range_label }}{% else %}1-{{ total_questions }}{% endif %}.</p>
                                     <div class="reading-passage-block mb-4 pb-4">
                                         <h6 class="mb-2 fw-bold text-dark">{{ passage.title }}</h6>
                                         <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
@@ -690,12 +691,14 @@
                                         </div>
                                         {% endif %}
                                         {% for type_block in pg.type_blocks %}
-                                        {% if type_block.shart_text %}
+                                        {% if test.test_type == 'reading' or type_block.shart_text %}
                                         <div class="part-shart-block part-table-row">
                                             {% if type_block.start_order and type_block.end_order %}
                                             <div class="small mb-2 fw-bold">Questions {{ type_block.start_order }}{% if type_block.end_order != type_block.start_order %}-{{ type_block.end_order }}{% endif %}</div>
                                             {% endif %}
+                                            {% if type_block.shart_text %}
                                             <div class="part-shart-text">{{ type_block.shart_text|linebreaks }}</div>
+                                            {% endif %}
                                         </div>
                                         {% endif %}
                                         {% for item in type_block.cards %}
@@ -851,7 +854,7 @@
                 <span class="reading-dock-part-row me-2">{% if test.test_type == 'writing' %}Taskga o'tish:{% else %}Partga o'tish:{% endif %}</span>
                 <div class="d-flex flex-wrap gap-2 align-items-center" role="tablist">
                     {% for pg in part_groups %}
-                    <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{{ pg.title }} ({{ pg.range_label }})</button>
+                    <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{% if test.test_type == 'reading' %}{{ pg.title }}: {{ pg.question_count }} questions{% else %}{{ pg.title }} ({{ pg.range_label }}){% endif %}</button>
                     {% endfor %}
                 </div>
             </div>
