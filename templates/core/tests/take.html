@@ -102,6 +102,8 @@
     }
     .btn-submit-exam { background: #16a34a; border: none; color: #fff; font-weight: 700; padding: .45rem .9rem; border-radius: 4px; box-shadow: none; }
     .btn-submit-exam:hover { background: #15803d; color: #fff; transform: none; }
+    @keyframes timer-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.02); } }
+    .timer-critical { animation: timer-pulse 1s ease-in-out infinite !important; }
     .test-header-card { border-radius: 0 !important; border: 1px solid #d1d5db !important; }
     .test-header-card .card-body { padding: .55rem .9rem !important; }
     .exam-topbar-card { background: #fff !important; color: #111827 !important; box-shadow: none !important; }
@@ -223,11 +225,22 @@
         position: sticky;
         bottom: 0;
         z-index: 20;
-        background: #f8fafc;
-        border: 1px solid #d1d5db;
-        padding: .5rem .6rem;
-        margin-top: .65rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-top: 2px solid #e2e8f0;
+        border-radius: 12px 12px 0 0;
+        padding: .65rem .85rem;
+        margin-top: .75rem;
         flex-shrink: 0;
+        box-shadow: 0 -2px 8px rgba(0,0,0,.04);
+    }
+    .exam-questions-card-only { height: auto !important; }
+    .exam-dock-below-content {
+        position: relative;
+        margin-top: 1rem;
+        border-radius: 12px;
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
     }
     .exam-right-pane .card-body {
         display: flex;
@@ -248,65 +261,95 @@
         min-height: 0;
         overflow-y: auto;
     }
-    .reading-dock-part-row {
-        font-size: .75rem;
-        font-weight: 700;
-        color: #64748b;
-    }
     .reading-part-tabs-fullwidth {
         background: #f8fafc;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
         padding: .5rem .75rem;
+        margin-top: .5rem;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: .5rem;
     }
+    .reading-part-tabs-fullwidth .reading-dock-part-row {
+        font-size: .85rem; font-weight: 600; color: #475569;
+        margin-right: .75rem; white-space: nowrap;
+    }
+    .reading-part-tabs-fullwidth .reading-part-tab {
+        border-radius: 8px; font-weight: 600; font-size: .85rem;
+        padding: .4rem .7rem; border: 1px solid #e2e8f0;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+    .reading-part-tabs-fullwidth .reading-part-tab:hover { border-color: #94a3b8; background: #f1f5f9; }
+    .reading-part-tabs-fullwidth .reading-part-tab.active,
+    .reading-part-tabs-fullwidth .reading-part-tab.btn-dark {
+        background: #111827 !important; border-color: #111827 !important; color: #fff !important;
+    }
+    .reading-dock-part-row {
+        font-size: .75rem;
+        font-weight: 700;
+        color: #64748b;
+    }
     .exam-bottom-dock .part-q-buttons.dock-part-hidden { display: none !important; }
     .exam-bottom-dock .dock-part {
         border: 1px solid #d1d5db;
         background: #fff;
-        padding: .3rem .45rem;
+        padding: .35rem .6rem;
         font-size: .84rem;
+        font-weight: 600;
         cursor: pointer;
+        border-radius: 8px;
+        transition: background .15s, border-color .15s;
     }
+    .exam-bottom-dock .dock-part:hover { background: #f8fafc; border-color: #94a3b8; }
     .exam-bottom-dock .dock-part.active {
         background: #111827;
         color: #fff;
         border-color: #111827;
     }
-    .exam-nav-arrows { display: flex; gap: 2px; }
+    .exam-nav-arrows { display: flex; gap: 4px; }
     .exam-nav-arrows .nav-arrow {
-        width: 36px; height: 36px;
-        border: 1px solid #9ca3af;
-        background: #f3f4f6;
-        color: #374151;
+        width: 38px; height: 38px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        border-radius: 8px;
         display: inline-flex; align-items: center; justify-content: center;
         cursor: pointer; font-size: 1rem;
+        transition: background .15s, border-color .15s;
     }
-    .exam-nav-arrows .nav-arrow:hover { background: #e5e7eb; }
-    .exam-nav-arrows .nav-arrow.active { background: #374151; color: #fff; border-color: #374151; }
-    .part-q-buttons { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-    .part-q-buttons .part-label { font-size: .85rem; font-weight: 600; color: #374151; margin-right: 6px; }
+    .exam-nav-arrows .nav-arrow:hover { background: #e2e8f0; border-color: #94a3b8; }
+    .exam-nav-arrows .nav-arrow.active { background: #334155; color: #fff; border-color: #334155; }
+    .dock-parts-row { gap: .75rem !important; align-items: stretch !important; }
+    .part-q-buttons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .part-q-buttons .part-label {
+        font-size: .8rem; font-weight: 700; color: #334155;
+        margin-right: 8px; padding: .2rem .5rem;
+        background: #e2e8f0; border-radius: 6px;
+        letter-spacing: .02em;
+    }
     .part-q-buttons .q-num-btn {
         width: 28px; height: 28px;
         border: 1px solid #d1d5db;
         background: #fff;
-        color: #374151;
+        color: #111827;
         font-size: .8rem; font-weight: 600;
+        border-radius: 4px;
         cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
+        transition: background .12s, border-color .12s, color .12s;
     }
-    .part-q-buttons .q-num-btn:hover { background: #f3f4f6; }
-    .part-q-buttons .q-num-btn.active { background: #fff; border-color: #111827; color: #111827; box-shadow: 0 0 0 2px #111827; }
+    .part-q-buttons .q-num-btn:hover { background: #f9fafb; border-color: #9ca3af; color: #111827; }
+    .part-q-buttons .q-num-btn.active { background: #111827; color: #fff; border-color: #111827; }
     .part-summary-block {
-        border: 1px solid #d1d5db;
-        background: #f9fafb;
-        padding: .25rem .5rem;
-        font-size: .8rem;
-        color: #4b5563;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: .35rem .6rem;
+        font-size: .82rem;
+        font-weight: 600;
+        color: #475569;
+        border-radius: 8px;
     }
     .inline-blank-wrap { display: inline; }
     .inline-blank-num {
@@ -336,20 +379,183 @@
     }
     .inline-blank-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
     .engnovate-notes-format { line-height: 2; }
+    /* ========== Reading: Engnovate uslubi (birga bir) ========== */
+    .reading-style .part-section {
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+        margin-bottom: 0;
+        background: transparent;
+    }
+    .reading-style .part-section:not(:first-child) { margin-top: 0; border-top: none; }
+    .reading-style .part-section-header {
+        border: none;
+        border-bottom: 1px solid #e5e7eb;
+        background: transparent;
+        padding: .5rem 0 .6rem 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+    }
+    .reading-style .part-shart-block.part-table-row {
+        border: none;
+        border-bottom: 1px solid #f3f4f6;
+        padding: .6rem 0 .75rem 0;
+        margin: 0;
+        background: transparent;
+    }
+    .reading-style .part-shart-block .part-shart-text {
+        font-size: .95rem;
+        color: #374151;
+        line-height: 1.6;
+        font-weight: 400;
+    }
+    .reading-style .part-section .part-q-card {
+        border: none;
+        border-bottom: 1px solid #f3f4f6;
+        padding: .85rem 0 1rem 0;
+        margin: 0;
+        background: transparent;
+    }
+    .reading-style .part-section .part-section-header + .part-q-card,
+    .reading-style .part-section .part-q-card:first-of-type { border-top: none; }
+    .reading-style .part-q-card .question-num-box { margin-right: 10px; }
+    /* True/False/Not Given: compact A TRUE B FALSE C NOT GIVEN (Engnovate) */
+    .reading-style .part-q-card .mcq-options-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+        align-items: center;
+        margin-top: .5rem;
+    }
+    .reading-style .part-q-card .mcq-options-row label {
+        margin-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        cursor: pointer;
+        font-size: .95rem;
+    }
+    .reading-style.exam-right-pane { background: #fff !important; }
+    .reading-style .card { background: #fff !important; border-color: #e5e7eb; }
+    .reading-style .exam-bottom-dock { background: #fff; border-color: #e5e7eb; }
+    .reading-style .part-q-buttons { flex-direction: row; align-items: center; flex-wrap: wrap; }
+    .reading-style .part-q-buttons .q-num-btn { width: 28px; height: 28px; font-size: .82rem; }
+    .reading-style .part-q-buttons .part-label { font-size: .85rem; }
+    .reading-style .dock-questions-count {
+        display: block; width: 100%; margin-top: 6px; margin-left: 0;
+        font-size: .75rem; color: #64748b; font-style: italic;
+    }
+    /* Dock: rasmdagidek — faol part och pushti + savol raqamlari, qolganlari oq "Part N: X questions" */
+    .dock-part-wrap {
+        padding: .5rem .7rem; border-radius: 8px;
+        border: 1px solid #e5e7eb; background: #fff;
+        min-width: 0;
+    }
+    .dock-part-wrap.dock-active {
+        background: #fdf2f8; border-color: #fbcfe8;
+    }
+    .dock-part-wrap .dock-part-summary {
+        display: none;
+        border: 1px solid #e5e7eb; background: #fff;
+        padding: .4rem .6rem; font-size: .85rem; font-weight: 700;
+        color: #111827; border-radius: 6px; cursor: pointer;
+        transition: background .15s, border-color .15s;
+    }
+    .dock-part-wrap .dock-part-summary:hover { background: #f9fafb; border-color: #d1d5db; }
+    .dock-part-wrap .dock-part-expanded {
+        display: none;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 8px;
+    }
+    .dock-part-wrap .dock-part-expanded .part-label {
+        flex: 0 0 auto;
+        font-size: .9rem; font-weight: 700; color: #111827;
+        padding: 0; background: transparent; margin-right: 4px;
+    }
+    .dock-part-wrap.dock-active .dock-part-summary { display: none; }
+    .dock-part-wrap.dock-active .dock-part-expanded { display: flex; }
+    .dock-part-wrap:not(.dock-active) .dock-part-summary { display: inline-block; }
+    .dock-part-wrap:not(.dock-active) .dock-part-expanded { display: none; }
+    /* Chap panel Reading — Engnovate uslubi */
+    .reading-left-engnovate .reading-part-title-left { font-size: 1.1rem; font-weight: 700; color: #111827; }
+    .reading-left-engnovate .reading-passage-title-left { font-size: 1.05rem; font-weight: 700; color: #111827; margin-top: 1rem; }
+    .reading-left-engnovate .reading-passage-body { background: #fff; padding: 1rem 0; line-height: 1.8; color: #374151; border: none; }
+    .reading-left-engnovate .reading-zoom-inline .font-size-btn { width: 28px; height: 28px; padding: 0; font-size: 1rem; border: 1px solid #d1d5db; background: #fff; border-radius: 4px; cursor: pointer; }
+    .reading-left-engnovate .reading-zoom-inline .font-size-btn:hover { background: #f3f4f6; }
+    /* Engnovate: chapda barcha Part'lar ustma-ust (scroll), Part 1, Part 2, Part 3 ketma-ket */
+    .engnovate-all-parts-stacked .reading-passage-pane-left { display: block !important; }
+    .engnovate-all-parts-stacked .reading-part-block-left { margin-bottom: 2rem; }
+    .engnovate-all-parts-stacked .reading-part-block-sep { padding-top: 2rem; border-top: 1px solid #e5e7eb; margin-top: 0.5rem; }
+    /* Reading: savol raqami rasmdagidek qora ramkada (True/False/Not Given) */
+    .part-q-card .question-num-box {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 28px;
+        padding: 0 8px;
+        background: #111827;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.9rem;
+        border-radius: 2px;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    .listening-section-title { margin-bottom: .75rem !important; }
+    .exam-listening-wrap .listening-part-bar {
+        background: #111827;
+        color: #fff;
+        font-weight: 600;
+        font-size: .95rem;
+        padding: .65rem 1rem;
+        border-radius: 8px;
+        margin: 0 0 .75rem 0;
+    }
     .listening-part-bar {
         background: #111827;
         color: #fff;
         font-weight: 700;
         font-size: 1rem;
         padding: .65rem 1rem;
-        margin: 0 -0.35rem .5rem -0.35rem;
+        border-radius: 8px;
+        margin: 0 0 .5rem 0;
     }
+    /* Listening: partlar va dock — Reading dagidek tartibli dizayn */
+    .listening-style.exam-right-pane { background: #fff !important; }
+    .listening-style .card { background: #fff !important; border-color: #e5e7eb; }
+    .listening-style .exam-bottom-dock { background: #fff; border-color: #e5e7eb; }
+    .listening-style .part-q-buttons { flex-direction: row; align-items: center; flex-wrap: wrap; }
+    .listening-style .part-q-buttons .q-num-btn { width: 28px; height: 28px; font-size: .82rem; border-radius: 4px; }
+    .listening-style .part-q-buttons .part-label { font-size: .85rem; }
+    .listening-style .dock-questions-count {
+        display: block; width: 100%; margin-top: 6px; margin-left: 0;
+        font-size: .75rem; color: #64748b; font-style: italic;
+    }
+    .listening-style .part-section-header { font-weight: 700; color: #111827; border-bottom: 1px solid #e5e7eb; padding: .5rem 0 .6rem 0; }
+    .listening-style .part-section .part-q-card { border-bottom: 1px solid #f3f4f6; padding: .85rem 0 1rem 0; }
+    .listening-style .reading-part-tabs-fullwidth { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid #e5e7eb; }
+    .listening-style .reading-part-tabs-fullwidth .reading-dock-part-row { color: #374151; font-weight: 600; }
+    .listening-style .reading-part-tab { background: #fff; border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; }
+    .listening-style .reading-part-tab:hover { border-color: #d1d5db; background: #f9fafb; }
+    .listening-style .reading-part-tab.active,
+    .listening-style .reading-part-tab.btn-dark { background: #374151; border-color: #374151; color: #fff; }
+    .listening-style .listening-part-section-header { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+    .listening-style .listening-part-heading-text { font-weight: 700; color: #111827; }
+    .listening-style .listening-listen-from-here { font-size: .8rem; text-decoration: none; white-space: nowrap; }
     .exam-split-layout.listening-layout { flex-direction: column !important; }
     .exam-split-layout.listening-layout .exam-listening-wrap { max-width: 900px; margin: 0 auto; }
     .exam-split-layout.listening-layout .exam-split-divider { display: none; }
     .exam-split-layout.listening-layout .exam-left-pane,
     .exam-split-layout.listening-layout .exam-right-pane { flex: none; width: 100%; }
     .exam-split-layout.listening-layout .exam-right-pane { position: static; max-height: none; }
+    .exam-listening-wrap .listening-audio-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
     .listening-audio-card {
         background: #fff;
         border: 1px solid #d1d5db;
@@ -471,6 +677,7 @@
 
 {% block content %}
 <div class="container mt-4 fade-in exam-container">
+    <div id="reading-part-announce" aria-live="polite" aria-atomic="true" class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;"></div>
     <div class="exam-offer-strip">24 Hours Only: Get 39% OFF on Our Premium Plan - Check Out Now!</div>
     <div class="row">
         <div class="col-12 mx-auto">
@@ -523,17 +730,21 @@
                 <div class="exam-left-pane">
                     {% if test.test_type == 'listening' %}
                     <div class="exam-listening-wrap">
+                        <div class="listening-section-title d-flex align-items-center gap-2 mb-2">
+                            <i class="fas fa-headphones" style="color: #111827;"></i>
+                            <span style="font-weight: 700; font-size: 1rem; color: #111827;">Listening</span>
+                        </div>
                         {% if part_groups|length > 1 %}
                         {% for pg in part_groups %}
                         <div class="exam-part-pane-left {% if forloop.first %}active{% endif %}" id="left-listening-{{ pg.part_number }}" data-part-number="{{ pg.part_number }}" {% if not forloop.first %}hidden{% endif %}>
                             <div class="listening-part-bar">
-                                <i class="fas fa-headphones me-2"></i>{{ pg.title }}: Questions {{ pg.range_label }}
+                                <strong>{{ pg.title }}:</strong> Listen and answer questions {{ pg.range_label }}
                             </div>
                         </div>
                         {% endfor %}
                         {% else %}
                         <div class="listening-part-bar">
-                            <i class="fas fa-headphones me-2"></i>Part 1: Listen and answer questions {{ questions_range_display|default:total_questions }}
+                            <strong>Part 1:</strong> Listen and answer questions {{ questions_range_display|default:total_questions }}
                         </div>
                         {% endif %}
                         <div class="listening-audio-card card mb-3">
@@ -560,19 +771,16 @@
                     {% elif test.test_type == 'reading' %}
                     {% with reading_passages=test.get_reading_passages %}
                     {% if reading_passages %}
-                    <div class="card border-0 shadow-lg">
-                        <div class="card-body p-4">
-                            <div class="part-read-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h5 class="mb-0" style="font-weight: 700; color: var(--primary);">
-                                    <i class="fas fa-book me-2"></i>Reading Passages <span id="font-scale-label">(1x)</span>
-                                </h5>
+                    <div class="card border-0 shadow-lg position-relative">
+                        <div class="card-body p-4 position-relative">
+                            <div class="part-read-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                <span class="text-muted small" style="font-weight: 600;">Reading</span>
                                 <div class="d-flex align-items-center gap-1">
                                     <button type="button" class="font-size-btn" id="font-size-minus" title="Kichiklashtirish">−</button>
                                     <button type="button" class="font-size-btn" id="font-size-plus" title="Kattalashtirish">+</button>
                                 </div>
                             </div>
-                            <p class="small text-muted mb-2">Read the passages and answer questions 1-{{ total_questions }}</p>
-                            <div class="reading-tools">
+                            <div class="reading-tools mb-3">
                                 <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-reading">
                                     <i class="fas fa-highlighter me-1"></i>Highlight
                                 </button>
@@ -580,32 +788,36 @@
                                     <i class="fas fa-note-sticky me-1"></i>Add Note
                                 </button>
                             </div>
-                            <div class="reading-passages-container" style="overflow-y: auto;">
-                                {% for passage in reading_passages %}
-                                {% if part_groups|length > 1 %}
-                                <div class="reading-passage-pane-left {% if forloop.counter == 1 %}active{% endif %}" id="left-passage-{{ forloop.counter }}" data-part-number="{{ forloop.counter }}" {% if forloop.counter != 1 %}hidden{% endif %}>
-                                    <p class="small text-muted mb-2">Read the text and answer questions {% if forloop.counter0 == 0 and part_groups.0 %}{{ part_groups.0.range_label }}{% elif forloop.counter0 == 1 and part_groups.1 %}{{ part_groups.1.range_label }}{% elif forloop.counter0 == 2 and part_groups.2 %}{{ part_groups.2.range_label }}{% else %}1-{{ total_questions }}{% endif %}.</p>
-                                    <div class="reading-passage-block mb-4 pb-4">
-                                        <h6 class="mb-2 fw-bold text-dark">{{ passage.title }}</h6>
-                                        <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
-                                            {{ passage.text|linebreaks }}
+                            <div class="reading-passages-container reading-left-engnovate" style="overflow-y: auto;">
+                                {% for pg in part_groups %}
+                                <div class="reading-passage-pane-left {% if part_groups|length > 1 %}{% if forloop.first %}active{% endif %}{% else %}active{% endif %}" id="left-passage-{{ pg.part_number }}" data-part-number="{{ pg.part_number }}" {% if part_groups|length > 1 and not forloop.first %}hidden{% endif %}>
+                                    <div class="reading-part-block-left">
+                                        <h6 class="reading-part-title-left mb-1">Part {{ pg.part_number }}</h6>
+                                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                            <span class="text-muted small">Practice Skimming (1x)</span>
+                                            <span class="reading-zoom-inline">
+                                                <button type="button" class="font-size-btn font-size-minus btn-sm" aria-label="Kichiklashtirish">−</button>
+                                                <button type="button" class="font-size-btn font-size-plus btn-sm" aria-label="Kattalashtirish">+</button>
+                                            </span>
                                         </div>
+                                        <p class="small text-muted mb-3">Read the text and answer questions {{ pg.range_label }}.</p>
+                                        {% if pg.passage and pg.passage.text %}
+                                        <h5 class="reading-passage-title-left mb-2">{{ pg.passage.title|default:"Passage" }}</h5>
+                                        <div class="reading-text reading-passage-body">
+                                            {{ pg.passage.text|linebreaks }}
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-warning small mb-0 py-2">Bu part uchun passage admin orqali qo'shilmagan. Test → Passage'lar bo'limida Part {{ pg.part_number }} uchun matn kiriting.</div>
+                                        {% endif %}
                                     </div>
                                 </div>
-                                {% else %}
-                                <div class="reading-passage-block mb-4 pb-4 {% if not forloop.last %}border-bottom border-secondary{% endif %}">
-                                    <h6 class="mb-2 fw-bold text-dark">{{ passage.title }}</h6>
-                                    <div class="reading-text" style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
-                                        {{ passage.text|linebreaks }}
-                                    </div>
-                                </div>
-                                {% endif %}
                                 {% endfor %}
                             </div>
                             <div class="mt-3">
                                 <h6 class="mb-2" style="font-weight: 700;">My Reading Notes</h6>
                                 <div id="reading-notes-panel"></div>
                             </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary reading-back-to-top" id="reading-back-to-top" title="Passage boshiga" aria-label="Tepaga" style="position: absolute; bottom: 1rem; right: 1rem; display: none; z-index: 5; border-radius: 8px;"><i class="fas fa-arrow-up"></i> Tepaga</button>
                         </div>
                     </div>
                     {% else %}
@@ -658,11 +870,11 @@
                     {% endif %}
                 </div>
                 <div class="exam-split-divider d-none d-lg-block" aria-hidden="true"></div>
-                <div class="exam-right-pane">
+                <div class="exam-right-pane {% if test.test_type == 'reading' %}reading-style{% endif %}{% if test.test_type == 'listening' %} listening-style{% endif %}">
                     <div id="question-container">
                         <form method="post" action="{% url 'core:test_take' test.pk %}" data-all-questions="1">
                             {% csrf_token %}
-                            <div class="card border-0 shadow-sm h-100 d-flex flex-column">
+                            <div class="card border-0 shadow-sm exam-questions-card-only d-flex flex-column">
                                 <div class="card-body p-2 d-flex flex-column min-h-0">
                                     {% if part_groups|length > 1 %}
                                     <div class="reading-questions-scroll flex-grow-1">
@@ -670,10 +882,7 @@
                                     {% if test.test_type != 'writing' %}
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 {% if test.test_type == 'listening' %}listening-questions-header{% endif %}">
                                         <div class="d-flex align-items-center gap-2">
-                                            <h5 class="mb-0 fw-bold">Questions {{ questions_range_display|default:total_questions }}</h5>
-                                            {% if test.test_type == 'listening' and test.audio_file %}
-                                            <button type="button" class="btn btn-sm btn-primary" id="listen-from-here-btn" onclick="var a=document.getElementById('test-audio'); if(a){a.currentTime=0;a.play();}"><i class="fas fa-headphones me-1"></i>Listen From Here</button>
-                                            {% endif %}
+                                            <h5 class="mb-0 fw-bold">{% if test.test_type == 'listening' %}Listening{% else %}Questions {{ questions_range_display|default:total_questions }}{% endif %}</h5>
                                         </div>
                                         <span class="badge bg-light text-dark border" id="answered-badge" data-total-blanks="{{ total_blanks|default:0 }}" data-answered-blanks="{{ answered_blanks|default:0 }}" data-total-questions="{{ total_questions }}" data-answered-questions="{{ answered_questions|length }}">{% if total_blanks %}{{ answered_blanks|default:0 }}/{{ total_blanks }} answered{% else %}{{ answered_questions|length }}/{{ total_questions }} answered{% endif %}</span>
                                     </div>
@@ -682,12 +891,12 @@
                                     {% for pg in part_groups %}
                                     <div class="reading-part-pane {% if part_groups|length > 1 %}{% if forloop.first %}active{% endif %}{% else %}active{% endif %}" id="reading-part-pane-{{ pg.part_number }}" data-part-number="{{ pg.part_number }}" role="tabpanel" aria-labelledby="tab-part-{{ pg.part_number }}" {% if part_groups|length > 1 and not forloop.first %}hidden{% endif %}>
                                     <section class="part-section" id="{{ pg.slug }}" data-part-section="{{ pg.part_number }}" aria-label="{{ pg.title }}: savollar {{ pg.range_label }}">
-                                        {% if test.test_type != 'listening' or part_groups|length > 1 %}
-                                        <div class="part-section-header{% if test.test_type == 'writing' %} writing-answer-header{% endif %}">
-                                            {% if test.test_type == 'writing' %}{{ pg.title }} Answer{% else %}{{ pg.title }}: Questions {{ pg.range_label }}{% endif %}
-                                            {% if test.test_type == 'reading' and part_groups|length > 1 %}
-                                            <span class="ms-2 small text-muted">(bu partning o'z savollari va javoblari)</span>
-                                            {% endif %}
+                                        {% if test.test_type == 'writing' or test.test_type == 'listening' or part_groups|length > 1 %}
+                                        <div class="part-section-header{% if test.test_type == 'writing' %} writing-answer-header{% endif %}{% if test.test_type == 'listening' %} listening-part-section-header{% endif %}">
+                                            {% if test.test_type == 'writing' %}{{ pg.title }} Answer{% elif test.test_type == 'listening' %}
+                                            <span class="listening-part-heading-text">Questions {{ pg.range_label }}</span>
+                                            {% if test.audio_file %}<a href="#" class="btn btn-sm btn-outline-primary listening-listen-from-here ms-2" data-part="{{ pg.part_number }}" onclick="var a=document.getElementById('test-audio'); if(a){ a.currentTime=0; a.play(); } return false;"><i class="fas fa-headphones me-1"></i>Listen From Here</a>{% endif %}
+                                            {% else %}{{ pg.title }}: Questions {{ pg.range_label }}{% endif %}
                                         </div>
                                         {% endif %}
                                         {% for type_block in pg.type_blocks %}
@@ -706,7 +915,15 @@
                                         <div class="part-q-card" id="question-{{ q.order }}" data-question-id="{{ q.pk }}">
                                             {% if not item.inline_fill_parts and test.test_type != 'writing' %}
                                             <div class="d-flex align-items-center gap-2 mb-2">
+                                                {% if test.test_type == 'reading' %}
+                                                <span class="question-num-box">{{ q.order }}</span>
+                                                {% else %}
+                                                {% if q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' or q.question_type == 'mcq' or q.question_type == 'true_false' %}
+                                                <span class="question-num-box">{{ q.order }}</span>
+                                                {% else %}
                                                 <span class="badge bg-light text-dark border">Question {{ q.order }}</span>
+                                                {% endif %}
+                                                {% endif %}
                                             </div>
                                             {% endif %}
 
@@ -720,15 +937,17 @@
                                             {% endif %}
 
                                             {% if q.question_type == 'mcq' or q.question_type == 'true_false' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' %}
+                                                <div class="{% if test.test_type == 'reading' %}mcq-options-row{% else %}d-block{% endif %}">
                                                 {% for option in item.mcq_options %}
-                                                <label class="d-flex align-items-start gap-2 mb-2">
+                                                <label class="{% if test.test_type != 'reading' %}d-flex align-items-start gap-2 mb-2{% endif %}">
                                                     <input type="radio"
                                                            name="answer_{{ q.pk }}"
                                                            value="{{ option.letter }}"
                                                            {% if item.current_answer == option.letter %}checked{% endif %}>
-                                                    <span><strong>{{ option.letter }}.</strong> {{ option.text }}</span>
+                                                    <span><strong>{{ option.letter }}</strong> {{ option.text }}</span>
                                                 </label>
                                                 {% endfor %}
+                                                </div>
 
                                             {% elif q.question_type == 'fill_blank' or q.question_type == 'summary_completion' or q.question_type == 'notes_completion' or q.question_type == 'sentence_completion' or q.question_type == 'table_completion' or q.question_type == 'short_answer' %}
                                                 {% if item.inline_fill_parts %}
@@ -813,42 +1032,58 @@
                                     {% if part_groups|length > 1 %}
                                     </div>
                                     {% endif %}
-
-                                    <div class="exam-bottom-dock mt-auto">
-                                        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
-                                            <div class="d-flex flex-wrap gap-3 align-items-center">
-                                                <div class="exam-nav-arrows">
-                                                    <button type="button" class="nav-arrow" id="nav-prev" title="Oldingi"><i class="fas fa-arrow-left"></i></button>
-                                                    <button type="button" class="nav-arrow" id="nav-next" title="Keyingi"><i class="fas fa-arrow-right"></i></button>
-                                                </div>
-                                                {% for pg in part_groups %}
-                                                <div class="part-q-buttons {% if part_groups|length > 1 and not forloop.first %}dock-part-hidden{% endif %}" data-part-number="{{ pg.part_number }}">
-                                                    <span class="part-label">{{ pg.title }}:</span>
-                                                    {% if pg.blank_buttons %}
-                                                    {% for bb in pg.blank_buttons %}
-                                                    <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
-                                                    {% endfor %}
-                                                    {% else %}
-                                                    <button type="button" class="part-summary-block dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" style="cursor:pointer;border:1px solid #d1d5db;background:#f9fafb;padding:.25rem .5rem;font-size:.8rem;color:#4b5563;">{{ pg.title }}: {{ pg.question_count }} questions</button>
-                                                    {% endif %}
-                                                </div>
-                                                {% endfor %}
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-success btn-submit-exam" name="finish_test" value="1"><i class="fas fa-paper-plane me-1"></i>Submit</button>
-                                            </div>
+                                </div>
+                            </div>
+                            <div class="exam-bottom-dock exam-dock-below-content">
+                                <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                                    <div class="d-flex flex-wrap gap-3 align-items-center dock-parts-row">
+                                        <div class="exam-nav-arrows">
+                                            <button type="button" class="nav-arrow" id="nav-prev" title="Oldingi"><i class="fas fa-arrow-left"></i></button>
+                                            <button type="button" class="nav-arrow" id="nav-next" title="Keyingi"><i class="fas fa-arrow-right"></i></button>
                                         </div>
+                                        {% for pg in part_groups %}
+                                        <div class="part-q-buttons dock-part-wrap {% if part_groups|length > 1 %}{% if forloop.first %}dock-active{% endif %}{% endif %}" data-part-number="{{ pg.part_number }}">
+                                            {% if part_groups|length > 1 %}
+                                            <button type="button" class="dock-part-summary dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" title="Part {{ pg.part_number }} ga o'tish">{{ pg.title }}: {{ pg.question_count }} questions</button>
+                                            <div class="dock-part-expanded d-flex flex-wrap align-items-center gap-2">
+                                                <span class="part-label">{{ pg.title }}:</span>
+                                                {% if pg.blank_buttons %}
+                                                {% for bb in pg.blank_buttons %}
+                                                <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
+                                                {% endfor %}
+                                                {% endif %}
+                                                {% if test.test_type == 'reading' and pg.blank_buttons %}
+                                                <span class="dock-questions-count">_{{ pg.question_count }} questions_</span>
+                                                {% endif %}
+                                            </div>
+                                            {% else %}
+                                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                                <span class="part-label">{{ pg.title }}:</span>
+                                                {% if pg.blank_buttons %}
+                                                {% for bb in pg.blank_buttons %}
+                                                <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
+                                                {% endfor %}
+                                                {% else %}
+                                                <button type="button" class="part-summary-block dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" style="cursor:pointer;border:1px solid #d1d5db;background:#f9fafb;padding:.25rem .5rem;font-size:.8rem;color:#4b5563;">{{ pg.title }}: {{ pg.question_count }} questions</button>
+                                                {% endif %}
+                                            </div>
+                                            {% if test.test_type == 'reading' and pg.blank_buttons %}
+                                            <div class="dock-questions-count w-100">_{{ pg.question_count }} questions_</div>
+                                            {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
                                     </div>
-
-                                    <div class="d-flex gap-2 justify-content-end exam-question-footer">
-                                        <small class="text-muted">Auto-save: active</small>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-success btn-submit-exam" name="finish_test" value="1"><i class="fas fa-paper-plane me-1"></i>Submit</button>
                                     </div>
                                 </div>
                             </div>
+                            <div class="d-flex gap-2 justify-content-end exam-question-footer">
+                                <small class="text-muted">Auto-save: active</small>
+                            </div>
                         </form>
                     </div>
-                </div>
-            </div>
             {% if part_groups|length > 1 %}
             <div class="reading-part-tabs-fullwidth mt-2">
                 <span class="reading-dock-part-row me-2">{% if test.test_type == 'writing' %}Taskga o'tish:{% else %}Partga o'tish:{% endif %}</span>
@@ -859,9 +1094,9 @@
                 </div>
             </div>
             {% endif %}
-            </div>
             <div class="tip-bar mt-2">
                 Tip: Press F11 (Windows) or Ctrl+Cmd+F (Mac) to cycle between normal, focus, and fullscreen modes.
+            </div>
             </div>
         </div>
     </div>
@@ -969,14 +1204,20 @@
             const parts = [hours, minutes, seconds].map(function(v) { return v.toString().padStart(2, '0'); });
             timerElement.textContent = parts.join(':');
             
-            // Vaqt kamayganda rang o'zgartiradi
+            // Vaqt kamayganda rang o'zgartiradi (1 min — kritik tebranish)
             if (timerContainer) {
-                if (timeLeft <= 300) { // 5 daqiqa
-                    timerContainer.style.background = 'rgba(239, 68, 68, 0.4)';
+                timerContainer.classList.remove('timer-critical');
+                if (timeLeft <= 60) {
+                    timerContainer.style.background = '#dc2626';
+                    timerElement.style.color = '#fff';
+                    timerElement.style.fontWeight = '700';
+                    timerContainer.classList.add('timer-critical');
+                } else if (timeLeft <= 300) {
+                    timerContainer.style.background = 'rgba(239, 68, 68, 0.5)';
                     timerElement.style.color = '#dc2626';
                     timerElement.style.fontWeight = '700';
-                } else if (timeLeft <= 600) { // 10 daqiqa
-                    timerContainer.style.background = 'rgba(245, 158, 11, 0.15)';
+                } else if (timeLeft <= 600) {
+                    timerContainer.style.background = 'rgba(245, 158, 11, 0.2)';
                     timerElement.style.color = '#b45309';
                     timerElement.style.fontWeight = '700';
                 } else {
@@ -1648,6 +1889,13 @@
             });
         }
 
+        function getPartNumberForQuestionOrder(order) {
+            var card = document.getElementById('question-' + order);
+            if (!card) return null;
+            var pane = card.closest('.reading-part-pane');
+            return pane ? pane.getAttribute('data-part-number') : null;
+        }
+
         function switchReadingPart(partNumber) {
             const p = String(partNumber);
             /* O'ng: savol bloklari */
@@ -1662,19 +1910,23 @@
                 tab.classList.toggle('btn-outline-dark', tab.getAttribute('data-part-number') !== p);
                 tab.setAttribute('aria-selected', tab.getAttribute('data-part-number') === p ? 'true' : 'false');
             });
-            /* Chap: passage (reading) yoki part bar/task (listening, writing) */
+            /* Chap: faqat tanlangan partning passage'i ko'rinsin (Part 1 → Passage 1, Part 2 → Passage 2) */
             document.querySelectorAll('.reading-passage-pane-left, .exam-part-pane-left').forEach(function(pane) {
                 const isActive = pane.getAttribute('data-part-number') === p;
                 pane.classList.toggle('active', isActive);
                 pane.hidden = !isActive;
             });
-            /* Dock: faqat joriy part savol tugmalari ko'rinsin */
-            document.querySelectorAll('.exam-bottom-dock .part-q-buttons[data-part-number]').forEach(function(row) {
+            var leftContainer = document.querySelector('.reading-passages-container');
+            if (leftContainer) leftContainer.scrollTop = 0;
+            /* Dock: faol partda savol tugmalari, qolganlarida "Part N: X questions" (dock-active) */
+            document.querySelectorAll('.exam-bottom-dock .dock-part-wrap[data-part-number]').forEach(function(wrap) {
+                wrap.classList.toggle('dock-active', wrap.getAttribute('data-part-number') === p);
+            });
+            document.querySelectorAll('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-wrap)').forEach(function(row) {
                 row.classList.toggle('dock-part-hidden', row.getAttribute('data-part-number') !== p);
             });
-            /* Chap va o'ng panellarni tepaga scroll */
-            const leftScroll = document.querySelector('.reading-passages-container') || document.querySelector('.exam-left-pane');
-            if (leftScroll) leftScroll.scrollTop = 0;
+            var liveRegion = document.getElementById('reading-part-announce');
+            if (liveRegion) { liveRegion.textContent = 'Part ' + p; setTimeout(function() { liveRegion.textContent = ''; }, 1000); }
             const rightScroll = document.querySelector('.reading-questions-scroll') || document.querySelector('.exam-right-pane');
             if (rightScroll) rightScroll.scrollTop = 0;
         }
@@ -1717,19 +1969,25 @@
                 btn.addEventListener('click', function() {
                     const blankId = this.getAttribute('data-blank-id');
                     const questionId = this.getAttribute('data-question-id');
+                    const order = this.getAttribute('data-order');
                     var partButtons = btn.closest('.part-q-buttons');
-                    if (partButtons && partButtons.getAttribute('data-part-number')) {
-                        switchReadingPart(partButtons.getAttribute('data-part-number'));
-                    }
+                    var partNum = partButtons && partButtons.getAttribute('data-part-number');
+                    if (!partNum && order && typeof getPartNumberForQuestionOrder === 'function')
+                        partNum = getPartNumberForQuestionOrder(parseInt(order, 10));
+                    if (partNum && typeof switchReadingPart === 'function') switchReadingPart(partNum);
                     if (blankId) {
                         const input = document.querySelector('input[data-blank-id="' + blankId + '"]');
                         if (input) {
-                            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            input.focus();
+                            setTimeout(function() {
+                                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                input.focus();
+                            }, 80);
                         }
                     } else if (questionId) {
-                        const el = document.getElementById(questionId);
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        setTimeout(function() {
+                            const el = document.getElementById(questionId);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 80);
                     }
                 });
             });
@@ -1740,9 +1998,27 @@
             const totalBlanks = answeredBadge ? parseInt(answeredBadge.getAttribute('data-total-blanks') || '0', 10) : 0;
 
             function updateAnsweredBadge() {
-                if (!answeredBadge || totalBlanks <= 0) return;
-                const filled = blankInputs.filter(function(inp) { return (inp.value || '').trim().length > 0; }).length;
-                answeredBadge.textContent = filled + '/' + totalBlanks + ' answered';
+                if (!answeredBadge) return;
+                const total = parseInt(answeredBadge.getAttribute('data-total-questions') || answeredBadge.getAttribute('data-total-blanks') || '0', 10);
+                if (total <= 0) return;
+                const answeredIds = new Set();
+                const form = document.querySelector('#question-container form');
+                if (form) {
+                    form.querySelectorAll('input[type="radio"]:checked').forEach(function(inp) {
+                        const m = inp.name.match(/answer_(\d+)/);
+                        if (m) answeredIds.add(m[1]);
+                    });
+                    form.querySelectorAll('input[type="text"][name^="answer_"], input[name^="answer_"][type="text"], textarea[name^="answer_"]').forEach(function(inp) {
+                        if ((inp.value || '').trim() === '') return;
+                        const m = inp.name.match(/answer_(\d+)/);
+                        if (m) answeredIds.add(m[1]);
+                    });
+                    form.querySelectorAll('select[name^="match_"]').forEach(function(sel) {
+                        if ((sel.value || '').trim()) { const m = sel.name.match(/match_(\d+)/); if (m) answeredIds.add(m[1]); }
+                    });
+                }
+                const answered = answeredIds.size;
+                answeredBadge.textContent = answered + '/' + total + ' answered';
             }
 
             blankInputs.forEach(function(input) {
@@ -1754,6 +2030,12 @@
                 });
                 input.addEventListener('input', updateAnsweredBadge);
             });
+            var mainForm = document.querySelector('#question-container form');
+            if (mainForm) {
+                mainForm.addEventListener('change', updateAnsweredBadge);
+                mainForm.addEventListener('input', updateAnsweredBadge);
+            }
+            window.__updateAnsweredBadge = updateAnsweredBadge;
 
             function getVisibleQuestionOrder() {
                 const activePane = document.querySelector('.reading-part-pane.active');
@@ -1771,7 +2053,7 @@
             }
 
             function updateQNumActive() {
-                const visibleRow = document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
+                const visibleRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
                 const visibleBtns = visibleRow ? visibleRow.querySelectorAll('.q-num-btn') : qNumBtns;
                 const activeBtns = visibleRow ? Array.from(visibleBtns) : qNumBtns;
                 const focusedBlank = document.querySelector('input[data-blank-id]:focus');
@@ -1804,7 +2086,7 @@
 
             if (navPrev) navPrev.addEventListener('click', function() {
                 const focusedBlank = document.querySelector('input[data-blank-id]:focus');
-                const activePartRow = document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
+                const activePartRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
                 const part1Btns = activePartRow ? Array.from(activePartRow.querySelectorAll('.q-num-btn[data-blank-id]')) : Array.from(document.querySelectorAll('.part-q-buttons .q-num-btn[data-blank-id]'));
                 if (focusedBlank && part1Btns.length) {
                     const bid = focusedBlank.getAttribute('data-blank-id');
@@ -1817,16 +2099,23 @@
                     }
                 } else {
                     const current = getVisibleQuestionOrder();
-                    const activePane = document.querySelector('.reading-part-pane.active');
-                    const prevCard = activePane
-                        ? activePane.querySelector('.part-q-card[id="question-' + (current - 1) + '"]')
-                        : document.querySelector('.part-q-card[id="question-' + (current - 1) + '"]');
-                    if (prevCard) prevCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const prevOrder = current - 1;
+                    const prevCard = document.querySelector('.part-q-card[id="question-' + prevOrder + '"]');
+                    if (prevCard) {
+                        var part = typeof getPartNumberForQuestionOrder === 'function' ? getPartNumberForQuestionOrder(prevOrder) : null;
+                        var activePart = document.querySelector('.reading-part-pane.active');
+                        var curPart = activePart ? activePart.getAttribute('data-part-number') : null;
+                        if (part && curPart !== part && typeof switchReadingPart === 'function') switchReadingPart(part);
+                        setTimeout(function() {
+                            var el = document.getElementById('question-' + prevOrder);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, part && curPart !== part ? 120 : 0);
+                    }
                 }
             });
             if (navNext) navNext.addEventListener('click', function() {
                 const focusedBlank = document.querySelector('input[data-blank-id]:focus');
-                const activePartRow = document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
+                const activePartRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
                 const part1Btns = activePartRow ? Array.from(activePartRow.querySelectorAll('.q-num-btn[data-blank-id]')) : Array.from(document.querySelectorAll('.part-q-buttons .q-num-btn[data-blank-id]'));
                 if (focusedBlank && part1Btns.length) {
                     const bid = focusedBlank.getAttribute('data-blank-id');
@@ -1839,11 +2128,18 @@
                     }
                 } else {
                     const current = getVisibleQuestionOrder();
-                    const activePane = document.querySelector('.reading-part-pane.active');
-                    const nextCard = activePane
-                        ? activePane.querySelector('.part-q-card[id="question-' + (current + 1) + '"]')
-                        : document.querySelector('.part-q-card[id="question-' + (current + 1) + '"]');
-                    if (nextCard) nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const nextOrder = current + 1;
+                    const nextCard = document.querySelector('.part-q-card[id="question-' + nextOrder + '"]');
+                    if (nextCard) {
+                        var part = typeof getPartNumberForQuestionOrder === 'function' ? getPartNumberForQuestionOrder(nextOrder) : null;
+                        var activePart = document.querySelector('.reading-part-pane.active');
+                        var curPart = activePart ? activePart.getAttribute('data-part-number') : null;
+                        if (part && curPart !== part && typeof switchReadingPart === 'function') switchReadingPart(part);
+                        setTimeout(function() {
+                            var el = document.getElementById('question-' + nextOrder);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, part && curPart !== part ? 120 : 0);
+                    }
                 }
             });
 
@@ -1855,6 +2151,8 @@
 
             dockButtons.forEach((btn) => {
                 btn.addEventListener('click', function() {
+                    const partNum = this.getAttribute('data-part-number');
+                    if (partNum && typeof switchReadingPart === 'function') switchReadingPart(partNum);
                     const targetId = this.getAttribute('data-part-target');
                     const target = targetId ? document.getElementById(targetId) : null;
                     if (!target) return;
@@ -1886,6 +2184,7 @@
                 window.addEventListener('scroll', updateActive, { passive: true });
             }
             updateActive();
+            if (typeof updateAnsweredBadge === 'function') updateAnsweredBadge();
             window.__partDockInitDone = true;
         }
 
@@ -1924,19 +2223,36 @@
 
         function initFontSizeButtons() {
             const readingTexts = document.querySelectorAll('.reading-passages-container .reading-text, .reading-text');
-            const plusBtn = document.getElementById('font-size-plus');
-            const minusBtn = document.getElementById('font-size-minus');
             const scaleLabel = document.getElementById('font-scale-label');
-            if (!readingTexts.length || (!plusBtn && !minusBtn)) return;
+            if (!readingTexts.length) return;
             let scale = 1;
             const updateScale = () => {
                 readingTexts.forEach(function(el) { el.style.fontSize = (scale * 100) + '%'; });
                 if (scaleLabel) scaleLabel.textContent = '(' + scale + 'x)';
             };
-            if (plusBtn) plusBtn.addEventListener('click', function() { scale = Math.min(1.5, scale + 0.1); updateScale(); });
-            if (minusBtn) minusBtn.addEventListener('click', function() { scale = Math.max(0.8, scale - 0.1); updateScale(); });
+            document.body.addEventListener('click', function(e) {
+                const btn = e.target.closest('.font-size-btn');
+                if (!btn) return;
+                const isPlus = btn.classList.contains('font-size-plus') || btn.id === 'font-size-plus';
+                const isMinus = btn.classList.contains('font-size-minus') || btn.id === 'font-size-minus';
+                if (isPlus) { scale = Math.min(1.5, scale + 0.1); updateScale(); }
+                if (isMinus) { scale = Math.max(0.8, scale - 0.1); updateScale(); }
+            });
         }
         initFontSizeButtons();
+
+        function initReadingBackToTop() {
+            const container = document.querySelector('.reading-passages-container');
+            const btn = document.getElementById('reading-back-to-top');
+            if (!container || !btn) return;
+            container.addEventListener('scroll', function() {
+                btn.style.display = container.scrollTop > 200 ? 'inline-flex' : 'none';
+            }, { passive: true });
+            btn.addEventListener('click', function() {
+                container.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+        initReadingBackToTop();
 
         function initWordCount() {
             document.querySelectorAll('.writing-answer-ta[data-word-count-target]').forEach(function(ta) {
@@ -1996,6 +2312,44 @@
             }
         });
 
+        function countUnansweredQuestions() {
+            const form = document.querySelector('#question-container form');
+            if (!form) return 0;
+            const totalEl = document.getElementById('answered-badge');
+            const total = totalEl ? parseInt(totalEl.getAttribute('data-total-questions') || totalEl.getAttribute('data-total-blanks') || '0', 10) : 0;
+            if (total <= 0) return 0;
+            const answeredIds = new Set();
+            form.querySelectorAll('input[type="radio"]:checked').forEach(function(inp) {
+                const m = inp.name.match(/answer_(\d+)/);
+                if (m) answeredIds.add(m[1]);
+            });
+            form.querySelectorAll('input[type="text"][name^="answer_"], input[name^="answer_"][type="text"], textarea[name^="answer_"]').forEach(function(inp) {
+                if ((inp.value || '').trim() === '') return;
+                const m = inp.name.match(/answer_(\d+)/);
+                if (m) answeredIds.add(m[1]);
+            });
+            form.querySelectorAll('select[name^="match_"]').forEach(function(sel) {
+                if ((sel.value || '').trim()) {
+                    const m = sel.name.match(/match_(\d+)/);
+                    if (m) answeredIds.add(m[1]);
+                }
+            });
+            return Math.max(0, total - answeredIds.size);
+        }
+
+        function initSubmitConfirm() {
+            const form = document.querySelector('#question-container form');
+            if (!form) return;
+            form.addEventListener('submit', function(e) {
+                if (!e.submitter || e.submitter.getAttribute('name') !== 'finish_test') return;
+                const un = countUnansweredQuestions();
+                if (un > 0 && !confirm('Sizda ' + un + ' ta javobsiz savol bor. Baribir testni yuborishni xohlaysizmi?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+        initSubmitConfirm();
+
         // Exam keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             const form = document.querySelector('#question-container form');
@@ -2003,6 +2357,33 @@
             if (e.altKey && e.key === 'ArrowRight') {
                 e.preventDefault();
                 form.requestSubmit();
+            }
+            if (e.key === 'Home' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                const first = document.querySelector('.part-q-card[id^="question-"]');
+                if (first && (e.target.tagName === 'BODY' || e.target.closest('.exam-container'))) {
+                    e.preventDefault();
+                    first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    var order = first.getAttribute('id').replace('question-', '');
+                    if (order && typeof getPartNumberForQuestionOrder === 'function' && typeof switchReadingPart === 'function') {
+                        var part = getPartNumberForQuestionOrder(parseInt(order, 10));
+                        if (part) switchReadingPart(part);
+                    }
+                }
+            }
+            if (e.key === 'End' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                const cards = document.querySelectorAll('.part-q-card[id^="question-"]');
+                const last = cards.length ? cards[cards.length - 1] : null;
+                if (last && (e.target.tagName === 'BODY' || e.target.closest('.exam-container'))) {
+                    e.preventDefault();
+                    last.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    var order = last.getAttribute('id').replace('question-', '');
+                    if (order && typeof getPartNumberForQuestionOrder === 'function' && typeof switchReadingPart === 'function') {
+                        var part = getPartNumberForQuestionOrder(parseInt(order, 10));
+                        if (part) switchReadingPart(part);
+                    }
+                }
             }
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();

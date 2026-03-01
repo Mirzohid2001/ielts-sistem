@@ -151,6 +151,12 @@ class QuestionAdminForm(forms.ModelForm):
             if isinstance(corr, list):
                 self.fields['list_correct_simple'].initial = ",".join(str(x) for x in corr)
 
+        # To'g'ri javob maydoni — har doim qisqa yo'riqnoma
+        self.fields['correct_answer'].help_text = (
+            "MCQ: a, b, c yoki d. True/False: a yoki b. True/False/Not Given va Yes/No/Not Given: a, b yoki c. "
+            "Faqat kichik harf kiriting."
+        )
+
     def clean(self):
         cleaned = super().clean()
         q_type = cleaned.get('question_type')
@@ -234,29 +240,38 @@ class QuestionAdminForm(forms.ModelForm):
 
         if q_type in single_choice:
             allowed_map = {
-                'mcq': {'a', 'b', 'c', 'd'},
-                'true_false': {'a', 'b'},
-                'true_false_not_given': {'a', 'b', 'c'},
-                'yes_no_not_given': {'a', 'b', 'c'},
+                'mcq': ('a', 'b', 'c', 'd'),
+                'true_false': ('a', 'b'),
+                'true_false_not_given': ('a', 'b', 'c'),
+                'yes_no_not_given': ('a', 'b', 'c'),
             }
+            allowed = allowed_map.get(q_type, ())
             if not correct_answer:
-                raise forms.ValidationError("Bu savol turida 'To'g'ri javob' maydoni majburiy.")
-            if correct_answer not in allowed_map.get(q_type, set()):
-                raise forms.ValidationError("To'g'ri javob qiymati savol turiga mos emas.")
+                raise forms.ValidationError(
+                    "Bu savol turida «To'g'ri javob» majburiy. Kiriting: " + " yoki ".join(allowed) + "."
+                )
+            if correct_answer not in set(allowed):
+                raise forms.ValidationError(
+                    "«To'g'ri javob» faqat quyidagilardan biri bo'lishi kerak: " + ", ".join(allowed) + "."
+                )
 
         if q_type in fill_types:
             if not correct_json and not correct_answer:
-                raise forms.ValidationError("Fill-in turlarida correct_answer_json yoki correct_answer kiriting.")
+                raise forms.ValidationError(
+                    "Bo'sh joy to'ldirish turlarida «To'g'ri javoblar (vergul bilan)» maydonini to'ldiring. Masalan: javob1,javob2,javob3"
+                )
             if correct_json and not isinstance(correct_json, list):
-                raise forms.ValidationError("Fill-in turlarida correct_answer_json ro'yxat (list) bo'lishi kerak.")
+                raise forms.ValidationError("To'g'ri javoblar ro'yxat ko'rinishida bo'lishi kerak (vergul bilan ajratilgan).")
 
         if q_type in matching_types:
             if not isinstance(correct_json, dict) or not correct_json:
-                raise forms.ValidationError("Matching/Classification turlarida correct_answer_json obyekt (dict) bo'lishi kerak.")
+                raise forms.ValidationError(
+                    "Matching turlarida «Matching to'g'ri javob» maydonini to'ldiring. Har satrda: 1:A, 2:B formatida."
+                )
 
         if q_type == 'list_selection':
             if not isinstance(correct_json, list) or not correct_json:
-                raise forms.ValidationError("List selection uchun correct_answer_json ro'yxat (list) bo'lishi kerak.")
+                raise forms.ValidationError("List selection da «List to'g'ri javob» maydonini to'ldiring. Masalan: A,C")
 
         return cleaned
 
@@ -451,8 +466,9 @@ class TestAdmin(ImportExportModelAdmin):
             'fields': ('title', 'category', 'test_type', 'difficulty', 'description', 'is_active'),
             'description': (
                 "✅ Sarlavha, kategoriya, <strong>test turi</strong> (Reading / Listening / Writing) tanlang → «Saqlash» bosing. "
-                "Keyin pastda: <strong>Reading</strong> — avval 📖 Passage'lar (3 ta), keyin 📝 Savollar. "
-                "<strong>Listening</strong> — faqat Audio (pastda) + Savollar. <strong>Writing</strong> — faqat Savollar (2 ta: Task 1, Task 2)."
+                "Keyin pastda: <strong>Reading</strong> — avval 📖 Passage'lar (3 ta, Order 1–3), keyin 📝 Savollar (Order 1–40; Part 1 = 1–13, Part 2 = 14–26, Part 3 = 27–40). "
+                "<strong>Listening</strong> — faqat Audio (pastda) + Savollar (40 ta, Part 1–4). <strong>Writing</strong> — faqat Savollar (2 ta: Task 1, Task 2). "
+                "Reading ni Engnovate uslubida qo'shish: saqlagach yuqoridagi «To'liq yo'riqnoma» yoki «Reading — Engnovate formatida» havolasini oching."
             )
         }),
         ('Parametrlar', {
@@ -570,7 +586,11 @@ class QuestionAdmin(ImportExportModelAdmin):
         ('MCQ / True-False / Yes-No-Not Given', {
             'fields': ('option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'),
             'classes': ('question-mcq-fields',),
-            'description': 'MCQ: A/B/C/D. True/False: A=True, B=False. Yes/No/Not Given: A=Yes, B=No, C=Not Given.'
+            'description': (
+                "«To'g'ri javob» maydoniga faqat harf kiriting: MCQ — a, b, c yoki d. "
+                "True/False — a yoki b. True/False/Not Given va Yes/No/Not Given — a, b yoki c. "
+                "Variant matnini (TRUE, FALSE va h.k.) qo'lda yozmasangiz ham bo'ladi — test sahifasida avtomatik ko'rsatiladi."
+            )
         }),
         ('Fill-in / Matching / List Selection — oddiy maydonlar (JSON emas)', {
             'fields': (

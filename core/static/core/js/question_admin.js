@@ -5,11 +5,15 @@
     'use strict';
 
     var MCQ_TYPES = ['mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given'];
+    var ONLY_AB = ['true_false'];           // faqat A va B (True/False)
+    var ONLY_ABC = ['true_false_not_given', 'yes_no_not_given'];  // A, B, C — D kerak emas
     var FILL_TYPES = ['fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'];
     var MATCHING_TYPES = ['matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification', 'list_selection'];
 
     function showMcq(qType) { return MCQ_TYPES.indexOf(qType) >= 0; }
     function showJson(qType) { return FILL_TYPES.indexOf(qType) >= 0 || MATCHING_TYPES.indexOf(qType) >= 0; }
+    function showOptionC(qType) { return qType === 'mcq' || ONLY_ABC.indexOf(qType) >= 0; }  // True/False da C ham yashirin
+    function showOptionD(qType) { return qType === 'mcq'; }  // D faqat MCQ da
 
     function toggleFieldset(fieldset, show) {
         if (!fieldset) return;
@@ -21,6 +25,19 @@
         if (!input) return;
         var row = input.closest('.form-row') || input.closest('div');
         if (row) row.style.display = show ? '' : 'none';
+    }
+
+    /** True/False/Not Given da C yoki D ustunini yashirish: bitta qatorda 4 ustun bo'lsa faqat ustunni, aks holda butun qatorni. */
+    function toggleOptionColumn(input, show) {
+        if (!input) return;
+        var row = input.closest('.form-row');
+        var wrap = input.closest('div');
+        var optionCount = row ? row.querySelectorAll('[name*="option_a"], [name*="option_b"], [name*="option_c"], [name*="option_d"]').length : 0;
+        if (row && optionCount > 1 && wrap && wrap.parentNode === row) {
+            wrap.style.display = show ? '' : 'none';
+        } else {
+            toggleFormRow(input, show);
+        }
     }
 
     var FILL_NOTE_TYPES = ['notes_completion', 'summary_completion', 'sentence_completion', 'table_completion', 'fill_blank', 'short_answer'];
@@ -100,15 +117,23 @@
         toggleFieldset(mcqFieldset, showMcqFields);
         toggleFieldset(fillFieldset, showJsonFields);
 
-        // Inline - field bo'yicha
-        var mcqFields = ['option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'];
+        // Inline - field bo'yicha (True/False da faqat A,B; Yes/No/Not Given da A,B,C; MCQ da A,B,C,D)
+        var showC = showMcqFields && showOptionC(qType);
+        var showD = showMcqFields && showOptionD(qType);
+        container.querySelectorAll('[name*="option_a"], [name*="option_b"]').forEach(function(inp) {
+            toggleFormRow(inp, showMcqFields);
+        });
+        container.querySelectorAll('[name*="option_c"]').forEach(function(inp) {
+            toggleOptionColumn(inp, showC);
+        });
+        container.querySelectorAll('[name*="option_d"]').forEach(function(inp) {
+            toggleOptionColumn(inp, showD);
+        });
+        container.querySelectorAll('[name*="correct_answer"]').forEach(function(inp) {
+            toggleFormRow(inp, showMcqFields);
+        });
         var jsonFields = ['correct_answer_json', 'options_json'];
         var fillMatchingFields = ['part_number', 'instruction_text', 'fill_answers', 'matching_items', 'matching_options', 'matching_correct', 'list_options_simple', 'list_correct_simple'];
-        mcqFields.forEach(function(name) {
-            container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) {
-                toggleFormRow(inp, showMcqFields);
-            });
-        });
         jsonFields.forEach(function(name) {
             container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) {
                 toggleFormRow(inp, showJsonFields);

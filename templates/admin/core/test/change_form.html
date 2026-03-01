@@ -6,10 +6,13 @@
     <strong style="color: #264b56;">📌 Qisqacha:</strong>
     <ol style="margin: 8px 0 0 20px; color: #333; line-height: 1.6;">
         <li>Yuqoridagi maydonlarni to'ldiring va <strong>«Saqlash»</strong> bosing — keyin pastda Passage va Savollar bloklari chiqadi.</li>
-        <li><strong>Reading</strong> bo'lsa — pastda «Yana bir Passage qo'shish» orqali 3 ta matn qo'shing (Order 1, 2, 3).</li>
-        <li>Pastda «Yana bir Savol qo'shish» orqali savollarni qo'shing. Instruction (shart) matnini CORE → Savol turi qoidalari dan yozishingiz mumkin.</li>
+        <li><strong>Reading</strong> bo'lsa — pastda «Yana bir Passage qo'shish» orqali <strong>3 ta</strong> matn qo'shing (Order 1, 2, 3). Savollar: Order 1–13 = Part 1, 14–26 = Part 2, 27–40 = Part 3. Har bir savolda <strong>Part raqami</strong> (1, 2 yoki 3) ni to'ldiring.</li>
+        <li>Pastda «Yana bir Savol qo'shish» orqali savollarni qo'shing. Shart (instruction) matni <strong>CORE → Savol turi qoidalari</strong> da — har savol turi uchun bir marta.</li>
     </ol>
-    <p style="margin: 10px 0 0 0; font-size: 13px;"><a href="/admin/yoriqnoma/" style="color: #417690; font-weight: 600;">To'liq yo'riqnoma →</a></p>
+    {% if original and original.test_type == 'reading' %}
+    <p style="margin: 10px 0 0 0; font-size: 13px;"><a href="/admin/yoriqnoma/#reading-engnovate" style="color: #0d6efd; font-weight: 600;">📖 Reading — Engnovate formatida qanday qo'shiladi?</a></p>
+    {% endif %}
+    <p style="margin: 6px 0 0 0; font-size: 13px;"><a href="/admin/yoriqnoma/" style="color: #417690; font-weight: 600;">To'liq yo'riqnoma →</a></p>
 </div>
 <script>window.QUESTION_TYPE_RULES = {{ question_type_rules_json|default:"{}"|safe }};</script>
 {{ block.super }}

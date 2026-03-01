@@ -788,13 +788,21 @@ def test_take(request, pk):
         ans_fields, match_flds, list_opts = _get_question_context_extra(q, current_answer_val)
         mcq_opts = []
         if q.question_type in single_choice:
-            opts_json = q.options_json or {}
-            mcq_opts = opts_json.get('options') or []
-            if not mcq_opts and any([q.option_a, q.option_b, q.option_c, q.option_d]):
-                mcq_opts = []
-                for letter, txt in [('a', q.option_a), ('b', q.option_b), ('c', q.option_c), ('d', q.option_d)]:
-                    if txt:
-                        mcq_opts.append({'letter': letter, 'text': txt})
+            # True/False va Yes/No/Not Given da har doim standart variantlar (admin qanday yozganidan qat'iy nazar)
+            if q.question_type == 'true_false':
+                mcq_opts = [{'letter': 'a', 'text': 'TRUE'}, {'letter': 'b', 'text': 'FALSE'}]
+            elif q.question_type == 'true_false_not_given':
+                mcq_opts = [{'letter': 'a', 'text': 'TRUE'}, {'letter': 'b', 'text': 'FALSE'}, {'letter': 'c', 'text': 'NOT GIVEN'}]
+            elif q.question_type == 'yes_no_not_given':
+                mcq_opts = [{'letter': 'a', 'text': 'YES'}, {'letter': 'b', 'text': 'NO'}, {'letter': 'c', 'text': 'NOT GIVEN'}]
+            else:
+                opts_json = q.options_json or {}
+                mcq_opts = opts_json.get('options') or []
+                if not mcq_opts and any([q.option_a, q.option_b, q.option_c, q.option_d]):
+                    mcq_opts = []
+                    for letter, txt in [('a', q.option_a), ('b', q.option_b), ('c', q.option_c), ('d', q.option_d)]:
+                        if txt:
+                            mcq_opts.append({'letter': letter, 'text': txt})
         inline_parts = None
         if q.question_type in FILL_TYPES and ans_fields and re.search(r'\[\d+\]', q.question_text or ''):
             inline_parts = _build_inline_fill_parts(q, ans_fields)
@@ -831,24 +839,44 @@ def test_take(request, pk):
         min_part = min(explicit_parts) if explicit_parts else 1
         part_indexes = [max(1, p - min_part + 1) for p in explicit_parts]
     else:
+        # Part raqami belgilanmagan: Reading da passage + savollar soniga qarab (13 ta = 1 part)
         default_parts = 1
         if test.test_type == 'reading':
-            default_parts = 3
+            passages_list_for_count = test.get_reading_passages()
+            passage_count = len(passages_list_for_count) if passages_list_for_count else 0
+            # Savollar soni bo'yicha: 1–13 → 1 part, 14–26 → 2 part, 27+ → 3 part (IELTS uslubi)
+            if total_questions <= 13:
+                parts_by_questions = 1
+            elif total_questions <= 26:
+                parts_by_questions = 2
+            else:
+                parts_by_questions = 3
+            default_parts = max(1, min(passage_count, parts_by_questions))
         elif test.test_type == 'listening':
             default_parts = 4
         elif test.test_type == 'writing':
             default_parts = 2
         default_parts = max(1, min(default_parts, total_questions or 1))
 
-        base_size = total_questions // default_parts if default_parts else total_questions
-        extra = total_questions % default_parts if default_parts else 0
-        ranges = []
-        start = 0
-        for p in range(default_parts):
-            size = base_size + (1 if p < extra else 0)
-            end = start + size
-            ranges.append((start, end))
-            start = end
+        if test.test_type == 'reading' and default_parts <= 3:
+            # IELTS: Part 1 = 13 ta, Part 2 = 13 ta, Part 3 = qolgani (14 yoki kam)
+            ranges = []
+            if default_parts >= 1:
+                ranges.append((0, min(13, total_questions)))
+            if default_parts >= 2:
+                ranges.append((13, min(26, total_questions)))
+            if default_parts >= 3:
+                ranges.append((26, total_questions))
+        else:
+            base_size = total_questions // default_parts if default_parts else total_questions
+            extra = total_questions % default_parts if default_parts else 0
+            ranges = []
+            start = 0
+            for p in range(default_parts):
+                size = base_size + (1 if p < extra else 0)
+                end = start + size
+                ranges.append((start, end))
+                start = end
 
         for idx in range(total_questions):
             assigned = 1
@@ -857,6 +885,12 @@ def test_take(request, pk):
                     assigned = p_idx
                     break
             part_indexes.append(assigned)
+
+    # Reading: faqat 0 yoki 1 ta passage bo'lsa — barcha savollar bitta partda; 2+ passage bo'lsa — har passage alohida part
+    if test.test_type == 'reading' and part_indexes:
+        passage_count = len(test.get_reading_passages()) if hasattr(test, 'get_reading_passages') else 0
+        if passage_count <= 1:
+            part_indexes = [1] * len(part_indexes)
 
     part_groups = []
     for idx, card in enumerate(question_cards):
@@ -941,6 +975,12 @@ def test_take(request, pk):
         if not type_blocks and pg['cards']:
             type_blocks = [{'question_type': '', 'shart_text': '', 'cards': pg['cards'], 'start_order': pg['cards'][0]['question'].order, 'end_order': pg['cards'][-1]['question'].order}]
         pg['type_blocks'] = type_blocks
+
+    # Reading: har bir partga mos passage (chap panelda Part 1 / Part 2 / Part 3 ko'rsatish uchun)
+    if test.test_type == 'reading':
+        passages_list = test.get_reading_passages()
+        for idx, pg in enumerate(part_groups):
+            pg['passage'] = passages_list[idx] if idx < len(passages_list) else None
 
     current_question = questions[0] if questions else None
     # "Questions 1-10" yoki "Questions 1-7" ko'rsatish uchun
