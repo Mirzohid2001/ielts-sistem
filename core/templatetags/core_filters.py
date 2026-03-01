@@ -1,5 +1,8 @@
 from django import template
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 import json
+import re
 
 register = template.Library()
 
@@ -30,6 +33,29 @@ def get_option(question, option_key):
         return options.get(opt, '')
     # Fill-in, summary, notes - to'g'ridan-to'g'ri qiymatni qaytarish
     return str(option_key)
+
+
+@register.filter
+def format_instruction(text):
+    """
+    IELTS instruction matnida kalit so'z va oraliklarni qalin (bold) qiladi.
+    Skrinshotlar bilan 1:1: TRUE/FALSE/NOT GIVEN, A-F, A E, ONE WORD ONLY.
+    """
+    if not text:
+        return ''
+    text = str(text).strip()
+    escaped = escape(text)
+    # Kalit so'zlar: TRUE, FALSE, NOT GIVEN, YES, NO
+    for word in ('TRUE', 'FALSE', 'NOT GIVEN', 'YES', 'NO'):
+        escaped = re.sub(r'\b' + re.escape(word) + r'\b', f'<strong>{word}</strong>', escaped, flags=re.IGNORECASE)
+    # Instruction: ONE WORD ONLY, ONE WORD AND/OR A NUMBER
+    for phrase in ('ONE WORD ONLY', 'ONE WORD AND/OR A NUMBER'):
+        escaped = re.sub(r'\b' + re.escape(phrase) + r'\b', f'<strong>{phrase}</strong>', escaped, flags=re.IGNORECASE)
+    # Matching: harf oraliklari A-F, A–F (en dash), A-E, A-G va "A E" (ikki harf orasida bo'shliq)
+    escaped = re.sub(r'\b([A-Z])\s*[-–]\s*([A-Z])\b', r'<strong>\1–\2</strong>', escaped)
+    escaped = re.sub(r'\b([A-Z])\s+([A-Z])\b', r'<strong>\1 \2</strong>', escaped)
+    escaped = escaped.replace('\n', '<br>')
+    return mark_safe(escaped)
 
 
 @register.filter
