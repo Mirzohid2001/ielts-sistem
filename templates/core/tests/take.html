@@ -1002,7 +1002,7 @@
                                                 <div class="row g-2">
                                                     {% for f in item.answer_fields %}
                                                     <div class="col-12 col-md-6">
-                                                        <label class="form-label mb-1 small">Blank {{ f.num }}</label>
+                                                        <label class="form-label mb-1 small">Javob [{{ f.num }}]</label>
                                                         <input type="text" class="form-control"
                                                                name="answer_{{ q.pk }}_{{ f.num }}"
                                                                value="{{ f.value }}"
@@ -1010,9 +1010,12 @@
                                                     </div>
                                                     {% empty %}
                                                     <div class="col-12">
+                                                        <label class="form-label fw-semibold text-dark mb-1">Javoblarni shu yerga yozing (vergul bilan: <code>[1]</code>, <code>[2]</code>, <code>[3]</code> uchun)</label>
                                                         <input type="text" class="form-control"
                                                                name="answer_{{ q.pk }}_1"
-                                                               value="{{ item.current_answer }}">
+                                                               value="{{ item.current_answer }}"
+                                                               placeholder="masalan: javob1,javob2,javob3"
+                                                               title="Har bir bo'sh joy uchun javobni vergul bilan yozing">
                                                     </div>
                                                     {% endfor %}
                                                 </div>

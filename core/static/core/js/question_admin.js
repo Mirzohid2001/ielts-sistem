@@ -7,24 +7,64 @@
     var MCQ_TYPES = ['mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given'];
     var ONLY_AB = ['true_false'];           // faqat A va B (True/False)
     var ONLY_ABC = ['true_false_not_given', 'yes_no_not_given'];  // A, B, C — D kerak emas
+    /* Barcha MCQ bo'lmagan turlar: Summary Completion (Reading), Notes, Matching, Essay va b. — to'ldirish bloki */
     var FILL_TYPES = ['fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'];
     var MATCHING_TYPES = ['matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification', 'list_selection'];
+    var OTHER_FILL_BLOCK_TYPES = ['essay'];  // Essay: Part (Task 1/2), Instruction
 
-    function showMcq(qType) { return MCQ_TYPES.indexOf(qType) >= 0; }
-    function showJson(qType) { return FILL_TYPES.indexOf(qType) >= 0 || MATCHING_TYPES.indexOf(qType) >= 0; }
+    function showMcq(qType) { return qType && MCQ_TYPES.indexOf(qType) >= 0; }
+    function showJson(qType) {
+        if (!qType) return false;
+        return FILL_TYPES.indexOf(qType) >= 0 || MATCHING_TYPES.indexOf(qType) >= 0 || OTHER_FILL_BLOCK_TYPES.indexOf(qType) >= 0 || !showMcq(qType);
+    }
     function showOptionC(qType) { return qType === 'mcq' || ONLY_ABC.indexOf(qType) >= 0; }  // True/False da C ham yashirin
     function showOptionD(qType) { return qType === 'mcq'; }  // D faqat MCQ da
 
     function toggleFieldset(fieldset, show) {
         if (!fieldset) return;
         var el = typeof fieldset === 'string' ? document.querySelector(fieldset) : fieldset;
-        if (el) el.style.display = show ? 'block' : 'none';
+        if (el) {
+            el.style.display = show ? 'block' : 'none';
+            el.classList.toggle('question-type-mcq-hidden', !show);
+        }
+    }
+
+    /** Input atrofidagi "qator" — Django admin: .form-row yoki .fieldBox ichidagi eng yaqin blok */
+    function findRowForInput(input) {
+        if (!input) return null;
+        var el = input.parentElement;
+        for (var i = 0; i < 12 && el; i++) {
+            if (el === document.body) break;
+            var c = el.getAttribute && el.getAttribute('class');
+            if (c && (c.indexOf('form-row') !== -1 || c.indexOf('fieldBox') !== -1 || c.indexOf('form-group') !== -1 || c === 'module')) return el;
+            if (el.tagName === 'TR') return el;
+            if (el.tagName === 'DIV' && c && /field-|form|row/.test(c)) return el;
+            el = el.parentElement;
+        }
+        return input.parentElement && input.parentElement.parentElement ? input.parentElement.parentElement : input.parentElement;
+    }
+
+    /** Barcha option inputlari bo'lgan eng kichik ajdod (Variant A-D bloki) */
+    function findOptionsBlock(container) {
+        var sel = 'input[name*="option_a"], input[name*="option_b"], input[name*="option_c"], input[name*="option_d"]';
+        var opts = container.querySelectorAll(sel);
+        if (opts.length === 0) return null;
+        var first = opts[0];
+        var p = first.parentElement;
+        while (p && p !== document.body && p !== container) {
+            if (p.querySelectorAll(sel).length === opts.length) return p;
+            p = p.parentElement;
+        }
+        return findRowForInput(first);
     }
 
     function toggleFormRow(input, show) {
         if (!input) return;
-        var row = input.closest('.form-row') || input.closest('div');
-        if (row) row.style.display = show ? '' : 'none';
+        var row = findRowForInput(input);
+        if (row) {
+            row.style.display = show ? '' : 'none';
+            row.classList.toggle('question-type-row-hidden', !show);
+        }
     }
 
     /** True/False/Not Given da C yoki D ustunini yashirish: bitta qatorda 4 ustun bo'lsa faqat ustunni, aks holda butun qatorni. */
@@ -111,38 +151,60 @@
         updateShartForType(container, qType);
         updateQuestionTextHelp(container, qType);
 
-        // Asosiy form (fieldsets)
+        // Asosiy form (fieldsets) — class yoki maydon orqali topish
         var mcqFieldset = container.querySelector('.question-mcq-fields');
         var fillFieldset = container.querySelector('.question-fill-fields');
-        toggleFieldset(mcqFieldset, showMcqFields);
-        toggleFieldset(fillFieldset, showJsonFields);
+        if (!mcqFieldset) {
+            var optA = container.querySelector('input[name*="option_a"]');
+            if (optA) mcqFieldset = optA.closest('fieldset');
+        }
+        if (!fillFieldset) {
+            var partInp = container.querySelector('input[name*="part_number"], [name*="instruction_text"]');
+            if (partInp) fillFieldset = partInp.closest('fieldset');
+        }
+        if (mcqFieldset === fillFieldset) mcqFieldset = fillFieldset = null;
+        if (mcqFieldset) toggleFieldset(mcqFieldset, showMcqFields);
+        if (fillFieldset) toggleFieldset(fillFieldset, showJsonFields);
+        if (fillFieldset) fillFieldset.classList.toggle('question-type-fill-visible', showJsonFields);
 
-        // Inline - field bo'yicha (True/False da faqat A,B; Yes/No/Not Given da A,B,C; MCQ da A,B,C,D)
-        var showC = showMcqFields && showOptionC(qType);
-        var showD = showMcqFields && showOptionD(qType);
-        container.querySelectorAll('[name*="option_a"], [name*="option_b"]').forEach(function(inp) {
-            toggleFormRow(inp, showMcqFields);
+        // 1) data-role orqali (forma maydonlarida qt-mcq / qt-fill qo'yilgan)
+        container.querySelectorAll('[data-role="qt-mcq"]').forEach(function(inp) {
+            var row = findRowForInput(inp);
+            if (row) {
+                row.style.display = showMcqFields ? '' : 'none';
+                row.classList.toggle('question-type-row-hidden', !showMcqFields);
+            }
         });
-        container.querySelectorAll('[name*="option_c"]').forEach(function(inp) {
-            toggleOptionColumn(inp, showC);
+        container.querySelectorAll('[data-role="qt-fill"]').forEach(function(inp) {
+            var row = findRowForInput(inp);
+            if (row) {
+                row.style.display = showJsonFields ? '' : 'none';
+                row.classList.toggle('question-type-row-hidden', !showJsonFields);
+            }
         });
-        container.querySelectorAll('[name*="option_d"]').forEach(function(inp) {
-            toggleOptionColumn(inp, showD);
-        });
-        container.querySelectorAll('[name*="correct_answer"]').forEach(function(inp) {
-            toggleFormRow(inp, showMcqFields);
-        });
-        var jsonFields = ['correct_answer_json', 'options_json'];
-        var fillMatchingFields = ['part_number', 'instruction_text', 'fill_answers', 'matching_items', 'matching_options', 'matching_correct', 'list_options_simple', 'list_correct_simple'];
-        jsonFields.forEach(function(name) {
-            container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) {
-                toggleFormRow(inp, showJsonFields);
+
+        // 2) data-role bo'lmasa (eski sahifa) — name orqali zaxira
+        if (container.querySelectorAll('[data-role="qt-mcq"]').length === 0) {
+            var optionsBlock = findOptionsBlock(container);
+            if (optionsBlock) {
+                optionsBlock.style.display = showMcqFields ? '' : 'none';
+                optionsBlock.classList.toggle('question-type-row-hidden', !showMcqFields);
+            }
+            container.querySelectorAll('input[name*="correct_answer"]').forEach(function(inp) {
+                if ((inp.name || '').indexOf('correct_answer_json') === -1) toggleFormRow(inp, showMcqFields);
             });
-        });
-        fillMatchingFields.forEach(function(name) {
-            container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) {
-                toggleFormRow(inp, showJsonFields);
+        }
+        if (container.querySelectorAll('[data-role="qt-fill"]').length === 0) {
+            var fillNames = ['part_number', 'instruction_text', 'fill_answers', 'matching_items', 'matching_options', 'matching_correct', 'list_options_simple', 'list_correct_simple'];
+            fillNames.forEach(function(name) {
+                container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) { toggleFormRow(inp, showJsonFields); });
             });
+        }
+
+        // 3) JSON (collapse blok)
+        container.querySelectorAll('[name*="correct_answer_json"], [name*="options_json"]').forEach(function(inp) {
+            var row = findRowForInput(inp);
+            if (row) row.style.display = showJsonFields ? '' : 'none';
         });
     }
 
@@ -158,19 +220,65 @@
     }
 
     function init() {
-        initQuestionForm(document.getElementById('question_form') || document.querySelector('form'));
-        document.querySelectorAll('.inline-related').forEach(initQuestionForm);
+        var mainForm = document.getElementById('question_form') || document.querySelector('#content-main form');
+        if (mainForm) initQuestionForm(mainForm);
+        var inlines = document.querySelectorAll('.inline-related');
+        inlines.forEach(function(el) {
+            if (el.querySelector('select[name*="question_type"]')) initQuestionForm(el);
+        });
+    }
+
+    function runInit() {
+        init();
+        setTimeout(init, 100);
+        setTimeout(init, 400);
+        setTimeout(init, 800);
+    }
+
+    function getContainerForSelect(select) {
+        if (!select) return null;
+        return select.closest('.inline-related') || select.closest('form') || null;
+    }
+
+    function attachDelegation() {
+        var body = document.body;
+        if (!body) return;
+        body.addEventListener('change', function(e) {
+            if (e.target && e.target.matches && e.target.matches('select[name*="question_type"]')) {
+                var container = getContainerForSelect(e.target);
+                if (container) toggleByQuestionType(container);
+            }
+        }, true);
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', function() {
+            attachDelegation();
+            runInit();
+        });
+        window.addEventListener('load', runInit);
     } else {
-        init();
+        attachDelegation();
+        runInit();
     }
 
     if (typeof django !== 'undefined' && django.jQuery) {
         django.jQuery(document).on('formset:added', function(e, $row, name) {
-            if (String(name).indexOf('question') >= 0) initQuestionForm($row[0]);
+            if (String(name).indexOf('question') >= 0 && $row && $row[0]) {
+                initQuestionForm($row[0]);
+            }
         });
+    }
+    if (window.MutationObserver) {
+        var initTimer;
+        var obs = new MutationObserver(function() {
+            if (initTimer) clearTimeout(initTimer);
+            initTimer = setTimeout(function() { init(); initTimer = null; }, 200);
+        });
+        function observeWhenReady() {
+            var target = document.querySelector('[id*="question"][id$="-group"]') || document.querySelector('#content-main') || document.body;
+            if (target) obs.observe(target, { childList: true, subtree: true });
+        }
+        if (document.body) observeWhenReady(); else document.addEventListener('DOMContentLoaded', observeWhenReady);
     }
 })();

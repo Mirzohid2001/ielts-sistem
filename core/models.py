@@ -378,9 +378,9 @@ class Question(models.Model):
         if self.question_type in single_choice:
             return str(user_answer).strip().lower() == str(self.correct_answer).strip().lower()
         
-        fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 
-                      'table_completion', 'short_answer', 'matching_sentences', 'classification', 'list_selection')
-        matching_types = ('matching_headings', 'matching_features', 'matching_info')
+        fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
+                      'table_completion', 'short_answer')
+        matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
         
         import json
         norm = lambda x: (str(x).strip().lower() if x else '')

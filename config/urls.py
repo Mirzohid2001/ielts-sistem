@@ -18,10 +18,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 
 from core.views import admin_toliq_yoriqnoma
 
+
+def favicon_view(request):
+    """Brauzer /favicon.ico so'rovini 404 bermaslik uchun (admin va asosiy sahifa)."""
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎓</text></svg>'
+    return HttpResponse(svg, content_type='image/svg+xml; charset=utf-8')
+
+
 urlpatterns = [
+    path('favicon.ico', favicon_view),
     path('admin/yoriqnoma/', admin_toliq_yoriqnoma, name='admin_toliq_yoriqnoma'),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),

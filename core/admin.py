@@ -99,6 +99,17 @@ class QuestionAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Savol turiga qarab JS maydonlarni yashirish uchun data-role (admin)
+        for fname in ('option_a', 'option_b', 'option_c', 'option_d'):
+            if fname in self.fields:
+                self.fields[fname].widget.attrs.setdefault('data-role', 'qt-mcq')
+        if 'correct_answer' in self.fields:
+            self.fields['correct_answer'].widget.attrs.setdefault('data-role', 'qt-mcq')
+        for fname in ('part_number', 'instruction_text', 'fill_answers', 'matching_items', 'matching_options',
+                      'matching_correct', 'list_options_simple', 'list_correct_simple'):
+            if fname in self.fields:
+                self.fields[fname].widget.attrs.setdefault('data-role', 'qt-fill')
+
         # Notes/Summary completion uchun format yo'riqnomasi
         fill_note_types = ('notes_completion', 'summary_completion', 'sentence_completion', 'table_completion')
         if self.instance and self.instance.question_type in fill_note_types:
@@ -394,14 +405,6 @@ class QuestionInline(admin.StackedInline):
     form = QuestionAdminForm
     extra = 0
     min_num = 0
-    fields = [
-        'order', 'question_type', 'question_text', 'question_image',
-        ('option_a', 'option_b', 'option_c', 'option_d'),
-        'correct_answer', 'part_number', 'instruction_text', 'fill_answers',
-        'matching_items', 'matching_options', 'matching_correct',
-        'list_options_simple', 'list_correct_simple',
-        'points', 'explanation', 'audio_timestamp',
-    ]
     classes = []  # ochiq — savollar yopiq bo'lmasin
     verbose_name = "Savol"
     verbose_name_plural = (
@@ -409,6 +412,29 @@ class QuestionInline(admin.StackedInline):
         "Reading: order 1–13 (Part 1), 14–26 (Part 2), 27–40 (Part 3). Listening: order 1–10, 11–20, 21–30, 31–40 (Part 1–4). Writing: order 1 = Task 1, 2 = Task 2. Har bir savolda Part raqami maydonini to'ldiring."
     )
     show_change_link = True
+
+    def get_fieldsets(self, request, obj=None):
+        """MCQ va To'ldirish/Matching maydonlarini alohida fieldsetga — JS ularni savol turi bo'yicha yashiradi."""
+        return [
+            (None, {
+                'fields': ['order', 'question_type', 'question_text', 'question_image'],
+            }),
+            ('Variantlar (faqat MCQ, True/False, T/F NG, Y/N NG)', {
+                'fields': [('option_a', 'option_b', 'option_c', 'option_d'), 'correct_answer'],
+                'classes': ['question-mcq-fields'],
+            }),
+            ("To'ldirish / Matching (Summary, Qisqa javob, Matching va b.)", {
+                'fields': [
+                    'part_number', 'instruction_text', 'fill_answers',
+                    'matching_items', 'matching_options', 'matching_correct',
+                    'list_options_simple', 'list_correct_simple',
+                ],
+                'classes': ['question-fill-fields'],
+            }),
+            (None, {
+                'fields': ['points', 'explanation', 'audio_timestamp'],
+            }),
+        ]
 
 
 class ReadingPassageForm(forms.ModelForm):

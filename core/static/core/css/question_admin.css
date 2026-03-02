@@ -11,6 +11,21 @@
     font-size: 12px;
 }
 
+/* Boshlang'ich: To'ldirish bloki yashirin; JS savol turiga qarab ko'rsatadi/yashiradi */
+.inline-related .question-fill-fields {
+    display: none;
+}
+
+/* Savol turi o'zgarganda: MCQ/Variant A-D yashiriladi, Summary/Fill ko'rinadi */
+.question-type-mcq-hidden,
+.question-type-row-hidden {
+    display: none !important;
+}
+
+.question-type-fill-visible {
+    display: block !important;
+}
+
 /* Inline savollar - yig'ish mumkin */
 .inline-related h3 {
     font-size: 13px;

@@ -28,6 +28,18 @@ MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info',
 QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
 
 
+def _get_fill_blank_count(question):
+    """Fill-turi savol uchun bo'sh joylar soni: to'g'ri javoblar ro'yxati yoki matndagi [1],[2],... dan."""
+    cl = question.get_correct_answers_list()
+    if cl:
+        return len(cl)
+    text = question.question_text or ''
+    blank_nums = re.findall(r'\[(\d+)\]', text)
+    if blank_nums:
+        return max(int(n) for n in blank_nums)
+    return 1
+
+
 def _build_inline_fill_parts(question, ans_fields):
     """question_text ichidagi [1],[2]... ni inline input qilish uchun bo'laklarga ajratadi."""
     if not ans_fields:
@@ -57,7 +69,10 @@ def _get_question_context_extra(question, current_answer):
     correct = question.correct_answer_json or {}
     
     if question.question_type in FILL_TYPES:
+        n_blanks = _get_fill_blank_count(question)
         cl = question.get_correct_answers_list()
+        if len(cl) < n_blanks:
+            cl = list(cl) + [''] * (n_blanks - len(cl))
         ca_blanks = []
         if current_answer:
             if len(cl) > 1:
@@ -65,7 +80,7 @@ def _get_question_context_extra(question, current_answer):
                     d = json.loads(current_answer)
                     ca_blanks = d if isinstance(d, list) else [str(d.get(str(i+1), '')) for i in range(len(cl))]
                 except (json.JSONDecodeError, TypeError):
-                    ca_blanks = [current_answer]
+                    ca_blanks = [x.strip() for x in str(current_answer).split(',')]
             else:
                 ca_blanks = [current_answer]
         while len(ca_blanks) < len(cl):
@@ -680,10 +695,12 @@ def test_take(request, pk):
             if q.question_type in single_choice:
                 val = (request.POST.get(f'answer_{q.pk}') or '').strip()
             elif q.question_type in fill_types:
-                expected = max(len(q.get_correct_answers_list()), 1)
+                expected = _get_fill_blank_count(q)
                 vals = []
                 for i in range(1, expected + 1):
                     vals.append((request.POST.get(f'answer_{q.pk}_{i}') or '').strip())
+                if vals and not any(vals[1:]) and vals[0] and ',' in vals[0]:
+                    vals = [v.strip() for v in vals[0].split(',')]
                 if any(v for v in vals):
                     val = json.dumps(vals)
             elif q.question_type in MATCHING_TYPES:
