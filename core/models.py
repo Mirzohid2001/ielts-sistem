@@ -372,6 +372,7 @@ class Question(models.Model):
     def check_user_answer(self, user_answer):
         """Foydalanuvchi javobi to'g'rimi tekshirish"""
         if self.question_type == 'essay':
+            #mmm
             # Essay avtomatik baholanmaydi – faqat bo'sh emasligi tekshiriladi
             return False
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')

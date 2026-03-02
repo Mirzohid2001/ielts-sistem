@@ -699,6 +699,7 @@ def test_take(request, pk):
                 vals = []
                 for i in range(1, expected + 1):
                     vals.append((request.POST.get(f'answer_{q.pk}_{i}') or '').strip())
+                    #models to play
                 if vals and not any(vals[1:]) and vals[0] and ',' in vals[0]:
                     vals = [v.strip() for v in vals[0].split(',')]
                 if any(v for v in vals):
@@ -874,6 +875,7 @@ def test_take(request, pk):
         elif test.test_type == 'writing':
             default_parts = 2
         default_parts = max(1, min(default_parts, total_questions or 1))
+        #mmm
 
         if test.test_type == 'reading' and default_parts <= 3:
             # IELTS: Part 1 = 13 ta, Part 2 = 13 ta, Part 3 = qolgani (14 yoki kam)
