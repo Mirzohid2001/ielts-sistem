@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # Local apps
     'accounts.apps.AccountsConfig',
     'core',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -146,9 +147,19 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
+# s3 
+DEFAULT_FILE_STORAGE = 'core.storage_backends.ContaboPublicStorage'
+
+AWS_STORAGE_BUCKET_NAME = 'ielts'
+AWS_S3_ENDPOINT_URL = 'https://eu2.contabostorage.com'
+AWS_S3_REGION_NAME = 'EU'
+AWS_S3_ADDRESSING_STYLE = 'path'
+
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
+
+MEDIA_URL = 'https://eu2.contabostorage.com/02d832178b204df09a76be02aefe96ec:ielts/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
