@@ -58,21 +58,21 @@ class QuestionAdminForm(forms.ModelForm):
     )
     matching_items = forms.CharField(
         required=False,
-        label="Matching itemlar",
-        widget=forms.Textarea(attrs={'rows': 4}),
-        help_text="Har satr: 1|Paragraph A",
+        label="Matching itemlar (savol bandlari)",
+        widget=forms.Textarea(attrs={'rows': 5, 'placeholder': "1|A description of flooding problems in a specific city.\n2|The role of farmers and crop research."}),
+        help_text="Har satr: raqam|Matn. Matching Information uchun: 1|Birinchisi..., 2|Ikkinchisi..., 3|Uchinchisi..., 4|To'rtinchisi...",
     )
     matching_options = forms.CharField(
         required=False,
-        label="Matching variantlar",
-        widget=forms.Textarea(attrs={'rows': 4}),
-        help_text="Har satr: A|Heading text",
+        label="Matching variantlar (dropdown ro'yxati)",
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': "A|\nB|\nC|\nD|\nE|\nF|"}),
+        help_text="Har satr: harf|Tavsif (ixtiyoriy). Matching Information: A|, B|, C|, D|, E|, F| — paragraflar.",
     )
     matching_correct = forms.CharField(
         required=False,
-        label="Matching to'g'ri javob",
-        widget=forms.Textarea(attrs={'rows': 4}),
-        help_text="Har satr: 1:A",
+        label="To'g'ri javob (qaysi band qaysi harf)",
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': "1:A\n2:C\n3:E\n4:B"}),
+        help_text="Har satr: band_raqam:harf. Masalan: 1:A, 2:C, 3:E, 4:B (1-band → A paragraf, 2-band → C, ...).",
     )
     list_options_simple = forms.CharField(
         required=False,
@@ -430,6 +430,11 @@ class QuestionInline(admin.StackedInline):
                     'list_options_simple', 'list_correct_simple',
                 ],
                 'classes': ['question-fill-fields'],
+                'description': (
+                    "Matching Information (paragraflarga): «Savol matni» da ko'rsatma (A–F paragraflar, qaysi paragrafda quyidagi ma'lumot). "
+                    "«Matching itemlar» da har satr: 1|Birinchisi..., 2|Ikkinchisi..., 3|..., 4|.... "
+                    "«Matching variantlar» da: A|, B|, C|, D|, E|, F|. «To'g'ri javob» da: 1:A, 2:C, 3:E, 4:B (har band uchun paragraf harfi)."
+                ),
             }),
             (None, {
                 'fields': ['points', 'explanation', 'audio_timestamp'],
