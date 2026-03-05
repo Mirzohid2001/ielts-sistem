@@ -59,20 +59,29 @@ class QuestionAdminForm(forms.ModelForm):
     matching_items = forms.CharField(
         required=False,
         label="Matching itemlar (savol bandlari)",
-        widget=forms.Textarea(attrs={'rows': 5, 'placeholder': "1|A description of flooding problems in a specific city.\n2|The role of farmers and crop research."}),
-        help_text="Har satr: raqam|Matn. Matching Information uchun: 1|Birinchisi..., 2|Ikkinchisi..., 3|Uchinchisi..., 4|To'rtinchisi...",
+        widget=forms.Textarea(attrs={
+            'rows': 6,
+            'placeholder': "1|Birinchisi matn...\n2|Ikkinchisi matn...\n3|Uchinchisi matn...\n4|To'rtinchisi matn...\n5|Beshinchisi matn...",
+        }),
+        help_text="Har satr: raqam|Matn (vergul | majburiy). Yoki raqam bo'shliq Matn — tizim tuzatadi.",
     )
     matching_options = forms.CharField(
         required=False,
-        label="Matching variantlar (dropdown ro'yxati)",
-        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': "A|\nB|\nC|\nD|\nE|\nF|"}),
-        help_text="Har satr: harf|Tavsif (ixtiyoriy). Matching Information: A|, B|, C|, D|, E|, F| — paragraflar.",
+        label="Matching variantlar (dropdown: A–G)",
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'placeholder': "A|\nB|\nC|\nD|\nE|\nF|\nG|",
+        }),
+        help_text="To'g'ri javobda ishlatilgan BARCHA harflar bo'lishi kerak. Har satr: harf| yoki harf (ixtiyoriy tavsif).",
     )
     matching_correct = forms.CharField(
         required=False,
-        label="To'g'ri javob (qaysi band qaysi harf)",
-        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': "1:A\n2:C\n3:E\n4:B"}),
-        help_text="Har satr: band_raqam:harf. Masalan: 1:A, 2:C, 3:E, 4:B (1-band → A paragraf, 2-band → C, ...).",
+        label="To'g'ri javob (har band uchun bitta harf)",
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'placeholder': "1:A\n2:C\n3:E\n4:B\n5:D",
+        }),
+        help_text="Har satr: band_raqam:harf. Barcha bandlar uchun javob bo'lishi kerak (1 dan 5 gacha bo'lsa — 1:?, 2:?, ..., 5:?).",
     )
     list_options_simple = forms.CharField(
         required=False,
@@ -200,28 +209,47 @@ class QuestionAdminForm(forms.ModelForm):
                 correct_json = parsed
 
         if q_type in matching_types and (matching_items or matching_options or matching_correct):
+            import re
             items = []
             for idx, line in enumerate([ln.strip() for ln in matching_items.splitlines() if ln.strip()]):
                 if '|' in line:
                     left, right = line.split('|', 1)
-                    left = left.strip()
-                    right = right.strip()
+                    left, right = left.strip(), right.strip()
                     num = int(left) if left.isdigit() else (idx + 1)
                     items.append({'num': num, 'label': right})
                 else:
-                    items.append({'num': idx + 1, 'label': line})
+                    # Vergulsiz: "4 The fact..." yoki "41 The fact" (41 = 4| xato) -> raqam + matn
+                    m = re.match(r'^(\d+)\s+(.+)$', line)
+                    if m:
+                        num = int(m.group(1))
+                        if num >= 20:  # 41 -> 4, 51 -> 5 (vergul unutilganda)
+                            num = int(str(num)[0])
+                        label = m.group(2).strip()
+                        items.append({'num': num, 'label': label})
+                    else:
+                        items.append({'num': idx + 1, 'label': line})
 
             headings = []
             for line in [ln.strip() for ln in matching_options.splitlines() if ln.strip()]:
                 if '|' in line:
                     letter, text = line.split('|', 1)
                     headings.append({'letter': letter.strip(), 'text': text.strip()})
+                else:
+                    # Faqat harf yozilgan: "A" yoki "A " -> A|
+                    letter = (line.split()[0] if line.split() else line)[:1].upper()
+                    if letter and letter.isalpha():
+                        headings.append({'letter': letter, 'text': ''})
 
             corr_map = {}
             for line in [ln.strip() for ln in matching_correct.splitlines() if ln.strip()]:
                 if ':' in line:
                     k, v = line.split(':', 1)
                     corr_map[k.strip()] = v.strip()
+                else:
+                    # Bo'shliq bilan: "1 A" yoki "2 A"
+                    m = re.match(r'^(\d+)\s+([A-Za-z])$', line)
+                    if m:
+                        corr_map[m.group(1)] = m.group(2).upper()
 
             if items:
                 options_json['items'] = items
@@ -230,6 +258,12 @@ class QuestionAdminForm(forms.ModelForm):
             if corr_map:
                 cleaned['correct_answer_json'] = corr_map
                 correct_json = corr_map
+
+            if q_type in matching_types and (not items or not corr_map):
+                raise forms.ValidationError(
+                    "Matching savol uchun «Matching itemlar» (1|Birinchisi..., 2|Ikkinchisi...) va «To'g'ri javob» (1:A, 2:C, ...) majburiy. "
+                    "Bular bo‘lmasa testda bandlar va dropdown ko‘rinmaydi."
+                )
 
         if q_type == 'list_selection' and (list_options_simple or list_correct_simple):
             options = []
@@ -285,6 +319,17 @@ class QuestionAdminForm(forms.ModelForm):
                 raise forms.ValidationError("List selection da «List to'g'ri javob» maydonini to'ldiring. Masalan: A,C")
 
         return cleaned
+
+    def save(self, commit=True):
+        """options_json va correct_answer_json inline da render bo'lmasa ham aniq saqlansin."""
+        instance = super().save(commit=False)
+        if 'options_json' in self.cleaned_data:
+            instance.options_json = self.cleaned_data['options_json']
+        if 'correct_answer_json' in self.cleaned_data:
+            instance.correct_answer_json = self.cleaned_data['correct_answer_json']
+        if commit:
+            instance.save()
+        return instance
 
 
 # Category Admin — testlar va videolar uchun kategoriya

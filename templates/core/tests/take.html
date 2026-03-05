@@ -968,7 +968,11 @@
                                             <div class="small text-muted mb-2">{{ q.question_instruction }}</div>
                                             {% endif %}
                                             {% if not item.inline_fill_parts %}
+                                            {% if q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
+                                            <div class="mb-3 matching-instruction-text">{{ q.question_text|linebreaks }}</div>
+                                            {% else %}
                                             <div class="mb-3">{{ q.question_text|linebreaks }}</div>
+                                            {% endif %}
                                             {% endif %}
                                             {% endif %}
 
@@ -1002,7 +1006,7 @@
                                                 <div class="row g-2">
                                                     {% for f in item.answer_fields %}
                                                     <div class="col-12 col-md-6">
-                                                        <label class="form-label mb-1 small">Javob [{{ f.num }}]</label>!!!!
+                                                        <label class="form-label mb-1 small">Javob [{{ f.num }}]</label>
                                                         <input type="text" class="form-control"
                                                                name="answer_{{ q.pk }}_{{ f.num }}"
                                                                value="{{ f.value }}"
@@ -1034,6 +1038,10 @@
                                                         </option>
                                                         {% endfor %}
                                                     </select>
+                                                </div>
+                                                {% empty %}
+                                                <div class="alert alert-warning mb-0">
+                                                    Bu savol Admin da to‘liq kiritilmagan. «Matching itemlar» (har satr: 1|Birinchisi..., 2|Ikkinchisi...) va «To'g'ri javob» (1:A, 2:C, ...) maydonlarini to‘ldiring va saqlang.
                                                 </div>
                                                 {% endfor %}
 
