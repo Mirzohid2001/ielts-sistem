@@ -101,8 +101,22 @@
         border-color: #334155;
         color: #fff;
     }
-    .btn-submit-exam { background: #16a34a; border: none; color: #fff; font-weight: 700; padding: .45rem .9rem; border-radius: 4px; box-shadow: none; }
-    .btn-submit-exam:hover { background: #15803d; color: #fff; transform: none; }
+    .btn-submit-exam {
+        background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+        border: none; color: #fff; font-weight: 700;
+        padding: .55rem 1.15rem; border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(22, 163, 74, .35), 0 1px 3px rgba(0,0,0,.1);
+        transition: background .2s, box-shadow .2s, transform .15s;
+    }
+    .btn-submit-exam:hover {
+        background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+        color: #fff;
+        box-shadow: 0 4px 16px rgba(22, 163, 74, .4);
+        transform: translateY(-1px);
+    }
+    .btn-submit-exam:active { transform: translateY(0); }
+    .btn-submit-exam:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #22c55e; }
+    .exam-footer-fullwidth .btn-submit-exam { flex-shrink: 0; }
     @keyframes timer-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.02); } }
     .timer-critical { animation: timer-pulse 1s ease-in-out infinite !important; }
     .test-header-card { border-radius: 0 !important; border: 1px solid #d1d5db !important; }
@@ -286,31 +300,159 @@
         min-height: 0;
         overflow-y: auto;
     }
-    .reading-part-tabs-fullwidth {
-        background: #f8fafc;
+    /* ========== Footer: partlar — maksimal yaxshilanish ========== */
+    .exam-footer-fullwidth {
+        width: 100%;
+        flex: 0 0 auto;
+        margin-top: 1rem;
+        padding: 1.15rem 1.35rem 1.2rem;
+        background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+    }
+    .exam-footer-fullwidth .exam-bottom-dock {
+        margin-top: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+    }
+    .exam-footer-fullwidth .exam-dock-below-content {
+        margin-top: 0;
+        border-top: none;
+        box-shadow: none;
+    }
+    .exam-footer-fullwidth .exam-bottom-dock > div {
+        align-items: center;
+        gap: 1rem;
+    }
+    .exam-footer-fullwidth .dock-parts-row {
+        gap: 0.85rem !important;
+        flex: 1 1 auto;
+        min-width: 0;
+        flex-wrap: nowrap !important;
+        display: flex !important;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px 4px 6px 0;
+        margin: -4px -4px -6px 0;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+    .exam-footer-fullwidth .dock-parts-row::-webkit-scrollbar { height: 6px; }
+    .exam-footer-fullwidth .dock-parts-row::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+    .exam-footer-fullwidth .dock-parts-row::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .exam-footer-fullwidth .dock-parts-row::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .exam-footer-fullwidth .part-q-buttons.dock-part-wrap {
+        flex: 0 0 auto !important;
+        background: #fff;
         border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: .55rem .85rem;
+        transition: border-color .2s, box-shadow .2s, background .2s;
+        min-width: 0;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .exam-footer-fullwidth .part-q-buttons.dock-part-wrap:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .exam-footer-fullwidth .part-q-buttons.dock-part-wrap.dock-active {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-color: #64748b;
+        box-shadow: 0 0 0 2px rgba(100, 116, 139, .2), 0 2px 8px rgba(0,0,0,.06);
+    }
+    .exam-footer-fullwidth .dock-part-summary.dock-part {
         border-radius: 10px;
-        padding: .5rem .75rem;
-        margin-top: .5rem;
+        padding: .45rem .7rem;
+        font-size: .83rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+    .exam-footer-fullwidth .exam-question-footer {
+        border-top: 1px solid #e5e7eb;
+        margin-top: .85rem;
+        padding-top: .65rem;
+        font-size: .8rem;
+    }
+    .exam-footer-fullwidth .exam-question-footer .text-muted {
+        color: #64748b !important;
+        font-weight: 500;
+    }
+    /* Partga o'tish — professional segmentli ko'rinish */
+    .reading-part-tabs-fullwidth {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: .75rem 1.15rem;
+        margin-top: .85rem;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: .5rem;
+        gap: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
     }
     .reading-part-tabs-fullwidth .reading-dock-part-row {
-        font-size: .85rem; font-weight: 600; color: #475569;
-        margin-right: .75rem; white-space: nowrap;
+        font-size: .9rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-right: 0;
+        white-space: nowrap;
+        letter-spacing: .02em;
+        padding-right: 1rem;
+        margin-right: .25rem;
+        border-right: 1px solid #e2e8f0;
+        line-height: 1.4;
+    }
+    @media (max-width: 400px) {
+        .reading-part-tabs-fullwidth .reading-dock-part-row { border-right: none; padding-right: 0; margin-bottom: .25rem; }
+        .reading-part-tabs-fullwidth { flex-direction: column; align-items: flex-start; }
+    }
+    .reading-part-tabs-fullwidth .d-flex[role="tablist"] {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: .5rem;
+        align-items: center;
     }
     .reading-part-tabs-fullwidth .reading-part-tab {
-        border-radius: 8px; font-weight: 600; font-size: .85rem;
-        padding: .4rem .7rem; border: 1px solid #e2e8f0;
-        transition: background .15s, border-color .15s, color .15s;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: .875rem;
+        padding: .55rem 1rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        transition: background .2s, border-color .2s, color .2s, box-shadow .2s;
+        letter-spacing: .01em;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
-    .reading-part-tabs-fullwidth .reading-part-tab:hover { border-color: #94a3b8; background: #f1f5f9; }
+    .reading-part-tabs-fullwidth .reading-part-tab:hover {
+        border-color: #cbd5e1;
+        background: #f1f5f9;
+        color: #334155;
+        box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    }
     .reading-part-tabs-fullwidth .reading-part-tab.active,
     .reading-part-tabs-fullwidth .reading-part-tab.btn-dark {
-        background: #111827 !important; border-color: #111827 !important; color: #fff !important;
+        background: #0f172a !important;
+        border-color: #0f172a !important;
+        color: #fff !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .3);
     }
+    .reading-part-tabs-fullwidth .reading-part-tab.active:hover,
+    .reading-part-tabs-fullwidth .reading-part-tab.btn-dark:hover {
+        background: #1e293b !important;
+        border-color: #1e293b !important;
+        color: #fff !important;
+    }
+    .reading-part-tabs-fullwidth .reading-part-tab:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6; }
     .reading-dock-part-row {
         font-size: .75rem;
         font-weight: 700;
@@ -325,57 +467,95 @@
         font-weight: 600;
         cursor: pointer;
         border-radius: 8px;
-        transition: background .15s, border-color .15s;
+        transition: background .15s, border-color .15s, box-shadow .15s;
     }
     .exam-bottom-dock .dock-part:hover { background: #f8fafc; border-color: #94a3b8; }
+    .exam-bottom-dock .dock-part:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6; }
     .exam-bottom-dock .dock-part.active {
         background: #111827;
         color: #fff;
         border-color: #111827;
     }
-    .exam-nav-arrows { display: flex; gap: 4px; }
+    .exam-nav-arrows { display: flex; gap: 8px; flex-shrink: 0; }
     .exam-nav-arrows .nav-arrow {
-        width: 38px; height: 38px;
-        border: 1px solid #cbd5e1;
-        background: #f8fafc;
+        width: 42px; height: 42px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
         color: #475569;
-        border-radius: 8px;
+        border-radius: 12px;
         display: inline-flex; align-items: center; justify-content: center;
         cursor: pointer; font-size: 1rem;
-        transition: background .15s, border-color .15s;
+        transition: background .2s, border-color .2s, color .2s, transform .15s;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04);
     }
-    .exam-nav-arrows .nav-arrow:hover { background: #e2e8f0; border-color: #94a3b8; }
+    .exam-nav-arrows .nav-arrow:hover {
+        background: #f8fafc; border-color: #94a3b8; color: #111827;
+        transform: scale(1.05);
+    }
+    .exam-nav-arrows .nav-arrow:active { transform: scale(0.98); }
+    .exam-nav-arrows .nav-arrow:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6; }
     .exam-nav-arrows .nav-arrow.active { background: #334155; color: #fff; border-color: #334155; }
+    .exam-nav-arrows .nav-arrow:disabled,
+    .exam-nav-arrows .nav-arrow[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
     .dock-parts-row { gap: .75rem !important; align-items: stretch !important; }
-    .part-q-buttons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .part-q-buttons { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
     .part-q-buttons .part-label {
         font-size: .8rem; font-weight: 700; color: #334155;
-        margin-right: 8px; padding: .2rem .5rem;
-        background: #e2e8f0; border-radius: 6px;
+        margin-right: 8px; padding: .3rem .6rem;
+        background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+        border-radius: 8px;
         letter-spacing: .02em;
+        border: 1px solid rgba(0,0,0,.06);
+    }
+    .exam-footer-fullwidth .part-q-buttons.dock-part-wrap.dock-active .part-label {
+        background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+        color: #fff;
+        border-color: rgba(0,0,0,.1);
     }
     .part-q-buttons .q-num-btn {
-        width: 28px; height: 28px;
-        border: 1px solid #d1d5db;
+        width: 34px; height: 34px;
+        border: 1px solid #e2e8f0;
         background: #fff;
         color: #111827;
-        font-size: .8rem; font-weight: 600;
-        border-radius: 4px;
+        font-size: .83rem; font-weight: 600;
+        border-radius: 10px;
         cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
-        transition: background .12s, border-color .12s, color .12s;
+        transition: background .15s, border-color .15s, color .15s, transform .1s;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04);
     }
-    .part-q-buttons .q-num-btn:hover { background: #f9fafb; border-color: #9ca3af; color: #111827; }
-    .part-q-buttons .q-num-btn.active { background: #111827; color: #fff; border-color: #111827; }
+    .part-q-buttons .q-num-btn:hover {
+        background: #f8fafc; border-color: #94a3b8; color: #111827;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    }
+    .part-q-buttons .q-num-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6; }
+    .part-q-buttons .q-num-btn.active {
+        background: #111827; color: #fff; border-color: #111827;
+        box-shadow: 0 2px 8px rgba(17, 24, 39, .3);
+    }
+    .part-q-buttons .q-num-btn.nav-blank-btn {
+        border-style: dashed;
+        background: #fffbeb;
+        border-color: #fcd34d;
+        color: #92400e;
+    }
+    .part-q-buttons .q-num-btn.nav-blank-btn:hover { background: #fef3c7; border-color: #f59e0b; }
+    .part-q-buttons .q-num-btn.nav-blank-btn.active { background: #d97706; color: #fff; border-color: #d97706; }
+    .part-q-buttons .dock-questions-count {
+        font-size: .78rem; color: #64748b; font-style: italic; margin-left: 4px;
+    }
     .part-summary-block {
         border: 1px solid #e2e8f0;
         background: #f8fafc;
-        padding: .35rem .6rem;
-        font-size: .82rem;
+        padding: .38rem .65rem;
+        font-size: .83rem;
         font-weight: 600;
         color: #475569;
-        border-radius: 8px;
+        border-radius: 10px;
+        transition: background .15s, border-color .15s;
     }
+    .part-summary-block:hover { background: #f1f5f9; border-color: #cbd5e1; }
     .inline-blank-wrap { display: inline; }
     .inline-blank-num {
         display: inline-block;
@@ -671,10 +851,20 @@
         .part-q-buttons .part-label { font-size: 0.75rem; margin-right: 0.35rem; }
         .part-q-buttons .q-num-btn { width: 24px; height: 24px; font-size: 0.7rem; }
         .part-summary-block { font-size: 0.7rem; padding: 0.2rem 0.4rem; }
-        .exam-bottom-dock { flex-direction: column; align-items: stretch; padding: 0.5rem; gap: 0.5rem; }
+        .exam-footer-fullwidth { padding: 0.85rem 0.9rem; margin-top: 0.75rem; border-radius: 12px; }
+        .exam-footer-fullwidth .part-q-buttons.dock-part-wrap { padding: 0.45rem 0.6rem; border-radius: 10px; }
+        .exam-footer-fullwidth .dock-parts-row { gap: 0.6rem !important; padding-bottom: 8px; }
+        .exam-bottom-dock { flex-direction: column; align-items: stretch; padding: 0; gap: 0.75rem; }
         .exam-bottom-dock > div:first-child { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.25rem; }
-        .exam-nav-arrows .nav-arrow { width: 32px; height: 32px; font-size: 0.9rem; }
-        .btn-submit-exam { width: 100%; padding: 0.6rem 1rem; font-size: 1rem; }
+        .exam-nav-arrows .nav-arrow { width: 40px; height: 40px; font-size: 0.95rem; border-radius: 10px; min-width: 40px; min-height: 40px; }
+        .btn-submit-exam { width: 100%; padding: 0.65rem 1rem; font-size: 1rem; border-radius: 12px; }
+        .exam-footer-fullwidth .d-flex.gap-2 { flex-wrap: wrap; justify-content: flex-end; }
+        .exam-footer-fullwidth .btn-submit-exam { width: auto; min-width: 130px; }
+        .reading-part-tabs-fullwidth { padding: 0.6rem 0.8rem; margin-top: 0.6rem; border-radius: 12px; gap: 0.75rem; }
+        .reading-part-tabs-fullwidth .reading-dock-part-row { font-size: .85rem; padding-right: .75rem; }
+        .reading-part-tabs-fullwidth .reading-part-tab { padding: 0.45rem 0.75rem; font-size: .8rem; min-height: 38px; }
+        .part-q-buttons .q-num-btn { width: 30px; height: 30px; font-size: .78rem; min-width: 30px; min-height: 30px; }
+        .part-q-buttons .part-label { padding: .25rem .45rem; font-size: .75rem; }
         .inline-blank-input { width: 70px; min-width: 50px; max-width: 100px; font-size: 0.9rem; }
         .inline-blank-num { min-width: 20px; padding: 2px 4px; font-size: 0.8rem; }
         .engnovate-notes-format { line-height: 1.8; font-size: 0.9rem; word-wrap: break-word; overflow-wrap: break-word; }
@@ -908,7 +1098,7 @@
                 <div class="exam-split-divider d-none d-lg-block" aria-hidden="true"></div>
                 <div class="exam-right-pane {% if test.test_type == 'reading' %}reading-style{% endif %}{% if test.test_type == 'listening' %} listening-style{% endif %}">
                     <div id="question-container">
-                        <form method="post" action="{% url 'core:test_take' test.pk %}" data-all-questions="1">
+                        <form id="exam-take-form" method="post" action="{% url 'core:test_take' test.pk %}" data-all-questions="1">
                             {% csrf_token %}
                             <div class="card border-0 shadow-sm exam-questions-card-only d-flex flex-column">
                                 <div class="card-body p-2 d-flex flex-column min-h-0">
@@ -931,7 +1121,7 @@
                                         <div class="part-section-header{% if test.test_type == 'writing' %} writing-answer-header{% endif %}{% if test.test_type == 'listening' %} listening-part-section-header{% endif %}">
                                             {% if test.test_type == 'writing' %}{{ pg.title }} Answer{% elif test.test_type == 'listening' %}
                                             <span class="listening-part-heading-text">Questions {{ pg.range_label }}</span>
-                                            {% if test.audio_file %}<a href="#" class="btn btn-sm btn-outline-primary listening-listen-from-here ms-2" data-part="{{ pg.part_number }}" onclick="var a=document.getElementById('test-audio'); if(a){ a.currentTime=0; a.play(); } return false;"><i class="fas fa-headphones me-1"></i>Listen From Here</a>{% endif %}
+                                            {% if test.audio_file %}<a href="#" class="btn btn-sm btn-outline-primary listening-listen-from-here ms-2" data-part="{{ pg.part_number }}" data-audio-start="{{ pg.audio_start_time|default:0 }}"><i class="fas fa-headphones me-1"></i>Listen From Here</a>{% endif %}
                                             {% else %}{{ pg.title }}: Questions {{ pg.range_label }}{% endif %}
                                         </div>
                                         {% endif %}
@@ -1081,66 +1271,70 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="exam-bottom-dock exam-dock-below-content">
-                                <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
-                                    <div class="d-flex flex-wrap gap-3 align-items-center dock-parts-row">
-                                        <div class="exam-nav-arrows">
-                                            <button type="button" class="nav-arrow" id="nav-prev" title="Oldingi"><i class="fas fa-arrow-left"></i></button>
-                                            <button type="button" class="nav-arrow" id="nav-next" title="Keyingi"><i class="fas fa-arrow-right"></i></button>
-                                        </div>
-                                        {% for pg in part_groups %}
-                                        <div class="part-q-buttons dock-part-wrap {% if part_groups|length > 1 %}{% if forloop.first %}dock-active{% endif %}{% endif %}" data-part-number="{{ pg.part_number }}">
-                                            {% if part_groups|length > 1 %}
-                                            <button type="button" class="dock-part-summary dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" title="Part {{ pg.part_number }} ga o'tish">{{ pg.title }}: {{ pg.question_count }} questions</button>
-                                            <div class="dock-part-expanded d-flex flex-wrap align-items-center gap-2">
-                                                <span class="part-label">{{ pg.title }}:</span>
-                                                {% if pg.blank_buttons %}
-                                                {% for bb in pg.blank_buttons %}
-                                                <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
-                                                {% endfor %}
-                                                {% endif %}
-                                                {% if test.test_type == 'reading' and pg.blank_buttons %}
-                                                <span class="dock-questions-count">_{{ pg.question_count }} questions_</span>
-                                                {% endif %}
-                                            </div>
-                                            {% else %}
-                                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                                <span class="part-label">{{ pg.title }}:</span>
-                                                {% if pg.blank_buttons %}
-                                                {% for bb in pg.blank_buttons %}
-                                                <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
-                                                {% endfor %}
-                                                {% else %}
-                                                <button type="button" class="part-summary-block dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" style="cursor:pointer;border:1px solid #d1d5db;background:#f9fafb;padding:.25rem .5rem;font-size:.8rem;color:#4b5563;">{{ pg.title }}: {{ pg.question_count }} questions</button>
-                                                {% endif %}
-                                            </div>
-                                            {% if test.test_type == 'reading' and pg.blank_buttons %}
-                                            <div class="dock-questions-count w-100">_{{ pg.question_count }} questions_</div>
-                                            {% endif %}
-                                            {% endif %}
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-success btn-submit-exam" name="finish_test" value="1"><i class="fas fa-paper-plane me-1"></i>Submit</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2 justify-content-end exam-question-footer">
-                                <small class="text-muted">Auto-save: active</small>
-                            </div>
                         </form>
                     </div>
-            {% if part_groups|length > 1 %}
-            <div class="reading-part-tabs-fullwidth mt-2">
-                <span class="reading-dock-part-row me-2">{% if test.test_type == 'writing' %}Taskga o'tish:{% else %}Partga o'tish:{% endif %}</span>
-                <div class="d-flex flex-wrap gap-2 align-items-center" role="tablist">
-                    {% for pg in part_groups %}
-                    <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{% if test.test_type == 'reading' %}{{ pg.title }}: {{ pg.question_count }} questions{% else %}{{ pg.title }} ({{ pg.range_label }}){% endif %}</button>
-                    {% endfor %}
                 </div>
             </div>
-            {% endif %}
+            <div class="exam-footer-fullwidth mt-3 w-100" role="region" aria-label="{% if test.test_type == 'writing' %}Vazifa va yuborish{% else %}Partlar va yuborish{% endif %}">
+                <div class="exam-bottom-dock exam-dock-below-content">
+                    <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                        <div class="d-flex flex-wrap gap-3 align-items-center dock-parts-row" role="navigation" aria-label="Savol va part navigatsiyasi">
+                            <div class="exam-nav-arrows" aria-label="Oldingi va keyingi savol">
+                                <button type="button" class="nav-arrow" id="nav-prev" title="Oldingi savol" aria-label="Oldingi savol"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
+                                <button type="button" class="nav-arrow" id="nav-next" title="Keyingi savol" aria-label="Keyingi savol"><i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+                            </div>
+                            {% for pg in part_groups %}
+                            <div class="part-q-buttons dock-part-wrap {% if part_groups|length > 1 %}{% if forloop.first %}dock-active{% endif %}{% endif %}" data-part-number="{{ pg.part_number }}">
+                                {% if part_groups|length > 1 %}
+                                <button type="button" class="dock-part-summary dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" title="Part {{ pg.part_number }} ga o'tish">{{ pg.title }}: {{ pg.question_count }} questions</button>
+                                <div class="dock-part-expanded d-flex flex-wrap align-items-center gap-2">
+                                    <span class="part-label">{{ pg.title }}:</span>
+                                    {% if pg.blank_buttons %}
+                                    {% for bb in pg.blank_buttons %}
+                                    <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
+                                    {% endfor %}
+                                    {% endif %}
+                                    {% if test.test_type == 'reading' and pg.blank_buttons %}
+                                    <span class="dock-questions-count">_{{ pg.question_count }} questions_</span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <span class="part-label">{{ pg.title }}:</span>
+                                    {% if pg.blank_buttons %}
+                                    {% for bb in pg.blank_buttons %}
+                                    <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
+                                    {% endfor %}
+                                    {% else %}
+                                    <button type="button" class="part-summary-block dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" style="cursor:pointer;border:1px solid #d1d5db;background:#f9fafb;padding:.25rem .5rem;font-size:.8rem;color:#4b5563;">{{ pg.title }}: {{ pg.question_count }} questions</button>
+                                    {% endif %}
+                                </div>
+                                {% if test.test_type == 'reading' and pg.blank_buttons %}
+                                <div class="dock-questions-count w-100">_{{ pg.question_count }} questions_</div>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" form="exam-take-form" class="btn btn-success btn-submit-exam" name="finish_test" value="1"><i class="fas fa-paper-plane me-1"></i>Submit</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 justify-content-end exam-question-footer mt-2">
+                    <small class="text-muted">Auto-save: active</small>
+                </div>
+                                {% if part_groups|length > 1 %}
+                                <div class="reading-part-tabs-fullwidth mt-2" role="region" aria-label="{% if test.test_type == 'writing' %}Taskga o'tish{% else %}Partga o'tish{% endif %}">
+                                    <span class="reading-dock-part-row me-2" aria-hidden="true">{% if test.test_type == 'writing' %}Taskga o'tish:{% else %}Partga o'tish:{% endif %}</span>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center" role="tablist" aria-label="{% if test.test_type == 'writing' %}Tanlang: Task{% else %}Tanlang: Part{% endif %}">
+                        {% for pg in part_groups %}
+                        <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{% if test.test_type == 'reading' %}{{ pg.title }}: {{ pg.question_count }} questions{% else %}{{ pg.title }} ({{ pg.range_label }}){% endif %}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
             <div class="tip-bar mt-2">
                 Tip: Press F11 (Windows) or Ctrl+Cmd+F (Mac) to cycle between normal, focus, and fullscreen modes.
             </div>
@@ -1465,6 +1659,17 @@
             }
         });
     }
+    // "Listen From Here" — Part 2/3/4 da audio_timestamp dan boshlash
+    document.addEventListener('click', function(e) {
+        const btn = e.target && e.target.closest('.listening-listen-from-here');
+        if (!btn) return;
+        e.preventDefault();
+        const a = document.getElementById('test-audio');
+        if (!a) return;
+        const start = parseFloat(btn.getAttribute('data-audio-start')) || 0;
+        a.currentTime = start;
+        a.play().catch(function(err) { console.error('Play error:', err); });
+    });
     {% endif %}
     
     // Question navigation HTMX bilan
@@ -1980,12 +2185,21 @@
 
         function initReadingPartTabs() {
             const tabs = document.querySelectorAll('.reading-part-tab');
-            tabs.forEach(function(tab) {
-                tab.addEventListener('click', function() {
-                    const partNumber = this.getAttribute('data-part-number');
-                    if (partNumber) switchReadingPart(partNumber);
+            /* Partga o'tish tugmalari: bosilganda yuqoridagi qism (strelkalar + Part 1/2/3 + savol raqamlari, passage, savollar) tanlangan partga almashadi */
+            const footer = document.querySelector('.exam-footer-fullwidth');
+            if (footer && !footer._partTabDelegation) {
+                footer._partTabDelegation = true;
+                footer.addEventListener('click', function(e) {
+                    const tab = e.target && e.target.closest('.reading-part-tab');
+                    if (tab) {
+                        e.preventDefault();
+                        const partNumber = tab.getAttribute('data-part-number');
+                        if (partNumber && typeof switchReadingPart === 'function') {
+                            switchReadingPart(partNumber);
+                        }
+                    }
                 });
-            });
+            }
             /* Klaviatura: 1/2/3 reading part almashish (input/textarea da emas) */
             if (tabs.length <= 1) return;
             document.addEventListener('keydown', function(e) {

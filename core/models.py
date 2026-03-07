@@ -14,6 +14,11 @@ class Category(models.Model):
     color = models.CharField(max_length=7, default="#007bff", verbose_name="Rang (hex)")
     order = models.IntegerField(default=0, verbose_name="Tartib")
     is_active = models.BooleanField(default=True, verbose_name="Faol")
+    show_on_site = models.BooleanField(
+        default=True,
+        verbose_name="Interfeysda ko'rsatish",
+        help_text="O'chirilsa — faqat admin panelda ko'rinadi, foydalanuvchi sahifasida emas."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

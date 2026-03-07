@@ -134,11 +134,11 @@ def _get_question_context_extra(question, current_answer):
 @login_required
 def dashboard(request):
     """Asosiy sahifa"""
-    categories = Category.objects.filter(is_active=True).order_by('order', 'name')
+    categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
     
-    # Statistika
-    total_videos = VideoLesson.objects.filter(is_active=True).count()
-    total_tests = Test.objects.filter(is_active=True).count()
+    # Statistika (faqat interfeysda ko'rinadigan kategoriyalardagi testlar)
+    total_videos = VideoLesson.objects.filter(is_active=True, category__show_on_site=True).count()
+    total_tests = Test.objects.filter(is_active=True, category__show_on_site=True).count()
     
     # Foydalanuvchi statistikasi
     user_test_results = UserTestResult.objects.filter(user=request.user)
@@ -169,7 +169,7 @@ def video_list(request):
     search_query = request.GET.get('search', '')
     sort_by = request.GET.get('sort', 'order')
     
-    videos = VideoLesson.objects.filter(is_active=True)
+    videos = VideoLesson.objects.filter(is_active=True, category__show_on_site=True)
     
     if category_slug:
         videos = videos.filter(category__slug=category_slug)
@@ -217,7 +217,7 @@ def video_list(request):
     page_obj = None
     if not category_slug and not search_query:
         # Agar kategoriya tanlanmagan va qidiruv bo'lmasa, kategoriyalarga bo'lib ko'rsatish
-        categories = Category.objects.filter(is_active=True).order_by('order', 'name')
+        categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
         for category in categories:
             category_videos = videos.filter(category=category)
             if category_videos.exists():
@@ -229,7 +229,7 @@ def video_list(request):
         page_obj = paginator.get_page(page_number)
         videos_by_category = None
     
-    categories = Category.objects.filter(is_active=True).order_by('order', 'name')
+    categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
     
     context = {
         'videos': page_obj if (category_slug or search_query) else None,
@@ -344,7 +344,7 @@ def test_list(request):
     search_query = request.GET.get('search', '')
     sort_by = request.GET.get('sort', 'newest')
     
-    tests = Test.objects.filter(is_active=True)
+    tests = Test.objects.filter(is_active=True, category__show_on_site=True)
     
     if category_slug:
         tests = tests.filter(category__slug=category_slug)
@@ -393,7 +393,7 @@ def test_list(request):
         bookmarks = Bookmark.objects.filter(user=request.user, test__in=tests)
         bookmarked_tests = {b.test_id for b in bookmarks}
     
-    categories = Category.objects.filter(is_active=True).order_by('order', 'name')
+    categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
     test_types = Test.TEST_TYPES
     difficulty_levels = Test.DIFFICULTY_LEVELS
     
@@ -441,7 +441,7 @@ def test_list(request):
             recommended_difficulty = 'hard'
         
         # Tavsiya qilingan testlar - zaif tomonlar bo'yicha
-        recommended_query = Test.objects.filter(is_active=True)
+        recommended_query = Test.objects.filter(is_active=True, category__show_on_site=True)
         
         # Agar zaif tomonlar bo'lsa, ularni ustuvor qilish
         if weak_areas:
@@ -508,7 +508,7 @@ def test_collection_by_type(request, test_type):
     module_filter = request.GET.get('module', '').strip()  # academic | general
 
     tests = (
-        Test.objects.filter(is_active=True, test_type=test_type)
+        Test.objects.filter(is_active=True, test_type=test_type, category__show_on_site=True)
         .select_related('category')
         .prefetch_related('questions')
         .annotate(questions_count=Count('questions', distinct=True))
@@ -1000,6 +1000,16 @@ def test_take(request, pk):
         passages_list = test.get_reading_passages()
         for idx, pg in enumerate(part_groups):
             pg['passage'] = passages_list[idx] if idx < len(passages_list) else None
+
+    # Listening: har bir part uchun "Listen From Here" da boshlash vaqti (birinchi savolning audio_timestamp)
+    if test.test_type == 'listening':
+        for pg in part_groups:
+            first_ts = None
+            if pg.get('cards'):
+                q = pg['cards'][0].get('question')
+                if q and getattr(q, 'audio_timestamp', None) is not None:
+                    first_ts = float(q.audio_timestamp)
+            pg['audio_start_time'] = first_ts if first_ts is not None else 0
 
     current_question = questions[0] if questions else None
     # "Questions 1-10" yoki "Questions 1-7" ko'rsatish uchun

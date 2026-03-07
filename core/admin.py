@@ -335,12 +335,12 @@ class QuestionAdminForm(forms.ModelForm):
 # Category Admin — testlar va videolar uchun kategoriya
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'tests_count_display', 'videos_count_display', 'icon', 'color_display', 'order', 'is_active', 'created_at']
-    list_filter = ['is_active', 'created_at']
+    list_display = ['name', 'slug', 'tests_count_display', 'videos_count_display', 'icon', 'color_display', 'order', 'is_active', 'show_on_site', 'created_at']
+    list_filter = ['is_active', 'show_on_site', 'created_at']
     search_fields = ['name', 'slug', 'description']
     prepopulated_fields = {'slug': ('name',)}
     ordering = ['order', 'name']
-    list_editable = ['order', 'is_active']
+    list_editable = ['order', 'is_active', 'show_on_site']
 
     def tests_count_display(self, obj):
         c = getattr(obj, '_tests', None)
@@ -476,9 +476,10 @@ class QuestionInline(admin.StackedInline):
                 ],
                 'classes': ['question-fill-fields'],
                 'description': (
-                    "Matching Information (paragraflarga): «Savol matni» da ko'rsatma (A–F paragraflar, qaysi paragrafda quyidagi ma'lumot). "
-                    "«Matching itemlar» da har satr: 1|Birinchisi..., 2|Ikkinchisi..., 3|..., 4|.... "
-                    "«Matching variantlar» da: A|, B|, C|, D|, E|, F|. «To'g'ri javob» da: 1:A, 2:C, 3:E, 4:B (har band uchun paragraf harfi)."
+                    "Part raqami: Reading 1–3, Listening 1–4, <strong>Writing 1 yoki 2 (Task 1 / Task 2) — Writing testda har bir savol uchun aniq tanlang</strong>. "
+                    "Matching Information (paragraflarga): «Savol matni» da ko'rsatma (A–F paragraflar). "
+                    "«Matching itemlar» da har satr: 1|..., 2|..., 3|..., 4|.... "
+                    "«Matching variantlar» da: A|, B|, C|, D|, E|, F|. «To'g'ri javob» da: 1:A, 2:C, 3:E, 4:B."
                 ),
             }),
             (None, {
@@ -543,8 +544,9 @@ class TestAdmin(ImportExportModelAdmin):
             'description': (
                 "✅ Sarlavha, kategoriya, <strong>test turi</strong> (Reading / Listening / Writing) tanlang → «Saqlash» bosing. "
                 "Keyin pastda: <strong>Reading</strong> — avval 📖 Passage'lar (3 ta, Order 1–3), keyin 📝 Savollar (Order 1–40; Part 1 = 1–13, Part 2 = 14–26, Part 3 = 27–40). "
-                "<strong>Listening</strong> — faqat Audio (pastda) + Savollar (40 ta, Part 1–4). <strong>Writing</strong> — faqat Savollar (2 ta: Task 1, Task 2). "
-                "Reading ni Engnovate uslubida qo'shish: saqlagach yuqoridagi «To'liq yo'riqnoma» yoki «Reading — Engnovate formatida» havolasini oching."
+                "<strong>Listening</strong> — faqat Audio (pastda) + Savollar (40 ta, Part 1–4). "
+                "<strong>Writing</strong> — faqat Savollar (2 ta: Task 1, Task 2). <strong>Writing da har bir savolga Part raqami (Task 1 yoki Task 2) aniq belgilang</strong> — «To'ldirish / Matching» blokidagi Part raqami maydonida 1 yoki 2 tanlang."
+                " Reading ni Engnovate uslubida qo'shish: saqlagach yuqoridagi «To'liq yo'riqnoma» yoki «Reading — Engnovate formatida» havolasini oching."
             )
         }),
         ('Parametrlar', {
