@@ -151,12 +151,16 @@
         updateShartForType(container, qType);
         updateQuestionTextHelp(container, qType);
 
-        // Asosiy form (fieldsets) — class yoki maydon orqali topish
+        // Asosiy form (fieldsets) — faqat MCQ/T-F/T-F NG/Y-N NG da «Variantlar» bloki, qolgan turlarda yopiq
         var mcqFieldset = container.querySelector('.question-mcq-fields');
         var fillFieldset = container.querySelector('.question-fill-fields');
         if (!mcqFieldset) {
             var optA = container.querySelector('input[name*="option_a"]');
             if (optA) mcqFieldset = optA.closest('fieldset');
+        }
+        if (!mcqFieldset) {
+            var maxChoices = container.querySelector('select[name*="max_choices"], [data-role="qt-mcq"]');
+            if (maxChoices) mcqFieldset = maxChoices.closest('fieldset');
         }
         if (!fillFieldset) {
             var partInp = container.querySelector('input[name*="part_number"], [name*="instruction_text"]');

@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Count, Avg, Q, Sum, Max, Min, Case, When, IntegerField, F
+from django.db.models.functions import Coalesce
+from django.db.models import Value
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
@@ -588,7 +590,9 @@ def test_collection_by_type(request, test_type):
 @login_required
 def test_detail(request, pk):
     """Test detallari va boshlash"""
-    test = get_object_or_404(Test, pk=pk, is_active=True)
+    test = get_object_or_404(Test.objects.select_related('category'), pk=pk, is_active=True)
+    if not getattr(test.category, 'show_on_site', True):
+        return redirect('core:test_list')
     
     # Savollar ro'yxati
     questions = test.questions.all().order_by('order')
@@ -632,7 +636,9 @@ def test_detail(request, pk):
 @login_required
 def test_take(request, pk):
     """Test ishlash"""
-    test = get_object_or_404(Test, pk=pk, is_active=True)
+    test = get_object_or_404(Test.objects.select_related('category'), pk=pk, is_active=True)
+    if not getattr(test.category, 'show_on_site', True):
+        return redirect('core:test_list')
     
     # Test natijasi yaratish
     test_result, created = UserTestResult.objects.get_or_create(
@@ -676,8 +682,11 @@ def test_take(request, pk):
     if test_result.answers_json:
         answers = test_result.answers_json
     
-    # Hamma savollarni bitta sahifada ko'rsatamiz
-    questions = list(test.questions.all().order_by('order'))
+    # Hamma savollarni bitta sahifada ko'rsatamiz (2 variantli: avval Variant 1, keyin Variant 2)
+    if getattr(test, 'variants_to_select', 1) == 2:
+        questions = list(test.questions.all().order_by(Coalesce(F('variant'), Value(1)), 'order'))
+    else:
+        questions = list(test.questions.all().order_by('order'))
     total_questions = len(questions)
 
     if total_questions == 0:
@@ -693,7 +702,15 @@ def test_take(request, pk):
         for q in questions:
             val = ''
             if q.question_type in single_choice:
-                val = (request.POST.get(f'answer_{q.pk}') or '').strip()
+                if getattr(q, 'max_choices', 1) == 2:
+                    selected = []
+                    for letter in ('a', 'b', 'c', 'd'):
+                        if request.POST.get(f'answer_{q.pk}_{letter}'):
+                            selected.append(letter)
+                    if selected:
+                        val = json.dumps(sorted(selected))
+                else:
+                    val = (request.POST.get(f'answer_{q.pk}') or '').strip()
             elif q.question_type in fill_types:
                 expected = _get_fill_blank_count(q)
                 vals = []
@@ -827,9 +844,22 @@ def test_take(request, pk):
         task_images = []
         if test.test_type == 'writing' and hasattr(q, 'get_task_images'):
             task_images = q.get_task_images(request)
+        mcq_choose_two = (q.question_type in single_choice and getattr(q, 'max_choices', 1) == 2)
+        current_answer_list = []
+        if mcq_choose_two and current_answer_val:
+            try:
+                raw = current_answer_val.strip()
+                if raw.startswith('['):
+                    current_answer_list = [str(x).strip().lower() for x in json.loads(raw) if x]
+                else:
+                    current_answer_list = [raw.lower()] if raw else []
+            except (TypeError, json.JSONDecodeError):
+                current_answer_list = [current_answer_val.lower()] if current_answer_val else []
         question_cards.append({
             'question': q,
             'current_answer': current_answer_val,
+            'current_answer_list': current_answer_list,
+            'mcq_choose_two': mcq_choose_two,
             'answer_fields': ans_fields,
             'matching_fields': match_flds,
             'list_options': list_opts,
@@ -838,25 +868,28 @@ def test_take(request, pk):
             'question_images': task_images,
         })
 
-    # Part bloklari: explicit part bo'lsa shuni olamiz, bo'lmasa test turiga qarab bo'lamiz
-    explicit_parts = []
-    for idx, q in enumerate(questions):
-        opts = q.options_json or {}
-        raw_part = opts.get('part', opts.get('section'))
-        if raw_part is None:
-            explicit_parts = []
-            break
-        try:
-            explicit_parts.append(int(raw_part))
-        except (TypeError, ValueError):
-            explicit_parts = []
-            break
-
+    # Part bloklari: 2 variantli testda part = variant (1 yoki 2); boshqalarida explicit part yoki default
     part_indexes = []
-    if explicit_parts and len(explicit_parts) == len(questions):
+    explicit_parts = []
+    if getattr(test, 'variants_to_select', 1) == 2:
+        part_indexes = [getattr(q, 'variant', None) or 1 for q in questions]
+    else:
+        for idx, q in enumerate(questions):
+            opts = q.options_json or {}
+            raw_part = opts.get('part', opts.get('section'))
+            if raw_part is None:
+                explicit_parts = []
+                break
+            try:
+                explicit_parts.append(int(raw_part))
+            except (TypeError, ValueError):
+                explicit_parts = []
+                break
+
+    if not part_indexes and explicit_parts and len(explicit_parts) == len(questions):
         min_part = min(explicit_parts) if explicit_parts else 1
         part_indexes = [max(1, p - min_part + 1) for p in explicit_parts]
-    else:
+    elif not part_indexes:
         # Part raqami belgilanmagan: Reading da passage + savollar soniga qarab (13 ta = 1 part)
         default_parts = 1
         if test.test_type == 'reading':
@@ -905,8 +938,8 @@ def test_take(request, pk):
                     break
             part_indexes.append(assigned)
 
-    # Reading: faqat 0 yoki 1 ta passage bo'lsa — barcha savollar bitta partda; 2+ passage bo'lsa — har passage alohida part
-    if test.test_type == 'reading' and part_indexes:
+    # Reading: faqat 0 yoki 1 ta passage bo'lsa — barcha savollar bitta partda; 2 variantli testda part_indexes allaqachon variant bo'yicha
+    if test.test_type == 'reading' and part_indexes and getattr(test, 'variants_to_select', 1) != 2:
         passage_count = len(test.get_reading_passages()) if hasattr(test, 'get_reading_passages') else 0
         if passage_count <= 1:
             part_indexes = [1] * len(part_indexes)
@@ -929,7 +962,9 @@ def test_take(request, pk):
     for pg in part_groups:
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
-        if test.test_type == 'writing':
+        if getattr(test, 'variants_to_select', 1) == 2:
+            pg['title'] = f"Variant {pg['part_number']}"
+        elif test.test_type == 'writing':
             pg['title'] = f"Task {pg['part_number']}"
         blank_buttons = []
         # Reading testda barcha partlar uchun savol raqami tugmalari (har partda o‘z oralig‘i: 1-N, N+1-M, ...)
@@ -995,11 +1030,18 @@ def test_take(request, pk):
             type_blocks = [{'question_type': '', 'shart_text': '', 'cards': pg['cards'], 'start_order': pg['cards'][0]['question'].order, 'end_order': pg['cards'][-1]['question'].order}]
         pg['type_blocks'] = type_blocks
 
-    # Reading: har bir partga mos passage (chap panelda Part 1 / Part 2 / Part 3 ko'rsatish uchun)
+    # Reading: har bir partga mos passage (2 variantli da [v1_list, v2_list] — har partga o'sha variantning birinchi passage'i)
     if test.test_type == 'reading':
         passages_list = test.get_reading_passages()
         for idx, pg in enumerate(part_groups):
-            pg['passage'] = passages_list[idx] if idx < len(passages_list) else None
+            if idx < len(passages_list):
+                p = passages_list[idx]
+                if isinstance(p, list):
+                    pg['passage'] = p[0] if p else None
+                else:
+                    pg['passage'] = p
+            else:
+                pg['passage'] = None
 
     # Listening: har bir part uchun "Listen From Here" da boshlash vaqti (birinchi savolning audio_timestamp)
     if test.test_type == 'listening':
@@ -1068,7 +1110,9 @@ def test_take(request, pk):
 @require_POST
 def add_test_flashcard(request, pk):
     """Test sahifasidan flashcard qo'shish."""
-    test = get_object_or_404(Test, pk=pk, is_active=True)
+    test = get_object_or_404(Test.objects.select_related('category'), pk=pk, is_active=True)
+    if not getattr(test.category, 'show_on_site', True):
+        return JsonResponse({'success': False, 'error': 'Test mavjud emas.'}, status=404)
 
     term = (request.POST.get('term') or '').strip()
     definition = (request.POST.get('definition') or '').strip()
@@ -1113,7 +1157,9 @@ def add_test_flashcard(request, pk):
 @login_required
 def test_retake(request, pk):
     """Testni qayta ishlash"""
-    test = get_object_or_404(Test, pk=pk, is_active=True)
+    test = get_object_or_404(Test.objects.select_related('category'), pk=pk, is_active=True)
+    if not getattr(test.category, 'show_on_site', True):
+        return redirect('core:test_list')
     
     # Qayta ishlashga ruxsat bormi?
     if not test.allow_retake:
@@ -1449,7 +1495,9 @@ def toggle_bookmark(request):
             return JsonResponse({'bookmarked': True})
         
         elif test_id:
-            test = get_object_or_404(Test, pk=test_id)
+            test = get_object_or_404(Test.objects.select_related('category'), pk=test_id)
+            if not getattr(test.category, 'show_on_site', True):
+                return JsonResponse({'error': 'Test mavjud emas.'}, status=404)
             bookmark, created = Bookmark.objects.get_or_create(
                 user=request.user,
                 test=test

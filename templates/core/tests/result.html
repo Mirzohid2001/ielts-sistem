@@ -227,8 +227,7 @@
                                             {% if answer %}
                                             <p class="mb-0" style="color: {% if answer.is_correct %}var(--success){% elif question.question_type == 'essay' %}#d97706{% else %}var(--danger){% endif %}; font-weight: 700; font-size: 1.05rem;">
                                                 {% if question.question_type == 'mcq' or question.question_type == 'true_false' or question.question_type == 'true_false_not_given' or question.question_type == 'yes_no_not_given' %}
-                                                <strong style="font-size: 1.25rem;">{{ answer.user_answer|upper }})</strong> 
-                                                {{ question|get_option:answer.user_answer }}
+                                                {{ question|display_user_answer:answer.user_answer }}
                                                 {% else %}
                                                 {{ answer.user_answer|format_user_answer }}
                                                 {% endif %}
@@ -253,8 +252,7 @@
                                                 {% if question.question_type == 'essay' %}
                                                 O'qituvchi baholashi kerak
                                                 {% elif question.question_type == 'mcq' or question.question_type == 'true_false' or question.question_type == 'true_false_not_given' or question.question_type == 'yes_no_not_given' %}
-                                                <strong style="font-size: 1.25rem;">{{ question.correct_answer|upper }})</strong> 
-                                                {{ question|get_option:question.correct_answer }}
+                                                {{ question.get_correct_answer_display_for_review }}
                                                 {% else %}
                                                 {% if question.correct_answer_json %}
                                                 {{ question.correct_answer_json|format_user_answer }}

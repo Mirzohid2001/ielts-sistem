@@ -108,12 +108,10 @@ class QuestionAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Savol turiga qarab JS maydonlarni yashirish uchun data-role (admin)
-        for fname in ('option_a', 'option_b', 'option_c', 'option_d'):
+        # Savol turiga qarab JS maydonlarni yashirish uchun data-role (admin) — faqat MCQ/T-F/T-F NG/Y-N NG da ko'rinadi
+        for fname in ('max_choices', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'):
             if fname in self.fields:
                 self.fields[fname].widget.attrs.setdefault('data-role', 'qt-mcq')
-        if 'correct_answer' in self.fields:
-            self.fields['correct_answer'].widget.attrs.setdefault('data-role', 'qt-mcq')
         for fname in ('part_number', 'instruction_text', 'fill_answers', 'matching_items', 'matching_options',
                       'matching_correct', 'list_options_simple', 'list_correct_simple'):
             if fname in self.fields:
@@ -195,6 +193,19 @@ class QuestionAdminForm(forms.ModelForm):
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
         fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer')
         matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+
+        # MCQ/True-False da 2 ta javob: correct_answer "a,c" -> correct_answer_json ["a","c"]
+        max_choices = cleaned.get('max_choices') or 1
+        if q_type in single_choice and max_choices == 2 and correct_answer:
+            parts = [x.strip().lower() for x in correct_answer.replace(',', ' ').split() if x.strip() and x.strip().lower() in ('a', 'b', 'c', 'd')]
+            if len(parts) >= 2:
+                cleaned['correct_answer_json'] = sorted(set(parts))[:2]
+                cleaned['correct_answer'] = cleaned['correct_answer_json'][0]
+                correct_answer = cleaned['correct_answer']
+            elif len(parts) == 1:
+                raise forms.ValidationError(
+                    "«Tanlash soni» 2 ta javob qilib tanlangan. «To'g'ri javob» da ikkita harf kiriting (masalan: a,c)."
+                )
 
         if instruction_text:
             options_json['instruction'] = instruction_text
@@ -462,11 +473,12 @@ class QuestionInline(admin.StackedInline):
         """MCQ va To'ldirish/Matching maydonlarini alohida fieldsetga — JS ularni savol turi bo'yicha yashiradi."""
         return [
             (None, {
-                'fields': ['order', 'question_type', 'question_text', 'question_image'],
+                'fields': ['order', 'variant', 'question_type', 'question_text', 'question_image'],
             }),
-            ('Variantlar (faqat MCQ, True/False, T/F NG, Y/N NG)', {
-                'fields': [('option_a', 'option_b', 'option_c', 'option_d'), 'correct_answer'],
+            ('Variantlar — faqat savol turi MCQ / True–False / T-F NG / Y-N NG bo\'lganda ko\'rinadi', {
+                'fields': ['max_choices', ('option_a', 'option_b', 'option_c', 'option_d'), 'correct_answer'],
                 'classes': ['question-mcq-fields'],
+                'description': 'Summary, Matching, Essay va boshqa turlarni tanlasangiz bu blok avtomatik yopiladi. MCQ/T-F da: «Tanlash soni» = 2 bo\'lsa — «To\'g\'ri javob» da ikkalasini vergul bilan (a,c).',
             }),
             ("To'ldirish / Matching (Summary, Qisqa javob, Matching va b.)", {
                 'fields': [
@@ -506,8 +518,8 @@ class ReadingPassageInline(admin.StackedInline):
     min_num = 0
     ordering = ['order']
     verbose_name = "Passage (o'qish matni)"
-    verbose_name_plural = "📖 1-QADAM: Passage'lar — faqat Reading test uchun. 3 ta qo'shing (Order 1 = Part 1, 2 = Part 2, 3 = Part 3). Listening/Writing da bo'sh qoldiring."
-    fields = ['order', 'title', 'text']
+    verbose_name_plural = "📖 1-QADAM: Passage'lar — faqat Reading test uchun. 3 ta qo'shing (Order 1 = Part 1, 2 = Part 2, 3 = Part 3). 2 variantli testda har bir passage uchun Variant 1 yoki 2 tanlang. Listening/Writing da bo'sh qoldiring."
+    fields = ['order', 'variant', 'title', 'text']
     classes = []  # ochiq turishi uchun collapse yo'q
 
 
@@ -515,7 +527,7 @@ class ReadingPassageInline(admin.StackedInline):
 @admin.register(Test)
 class TestAdmin(ImportExportModelAdmin):
     list_display = [
-        'title', 'category', 'test_type', 'difficulty',
+        'title', 'category', 'test_type', 'variants_to_select', 'difficulty',
         'content_summary_display',
         'duration_minutes', 'passing_score', 'is_active', 'created_at'
     ]
@@ -540,9 +552,9 @@ class TestAdmin(ImportExportModelAdmin):
 
     fieldsets = (
         ('Asosiy ma\'lumotlar', {
-            'fields': ('title', 'category', 'test_type', 'difficulty', 'description', 'is_active'),
+            'fields': ('title', 'category', 'test_type', 'difficulty', 'variants_to_select', 'description', 'is_active'),
             'description': (
-                "✅ Sarlavha, kategoriya, <strong>test turi</strong> (Reading / Listening / Writing) tanlang → «Saqlash» bosing. "
+                "✅ Sarlavha, kategoriya, <strong>test turi</strong> (Reading / Listening / Writing), <strong>Variantlar soni</strong> (1 yoki 2). <strong>2 variant</strong> tanlasangiz — pastda har bir Savol va Passage da «Variant 1» yoki «Variant 2» ni tanlash majburiy, aks holda barcha savollar Variant 1 da chiqadi. → «Saqlash» bosing. "
                 "Keyin pastda: <strong>Reading</strong> — avval 📖 Passage'lar (3 ta, Order 1–3), keyin 📝 Savollar (Order 1–40; Part 1 = 1–13, Part 2 = 14–26, Part 3 = 27–40). "
                 "<strong>Listening</strong> — faqat Audio (pastda) + Savollar (40 ta, Part 1–4). "
                 "<strong>Writing</strong> — faqat Savollar (2 ta: Task 1, Task 2). <strong>Writing da har bir savolga Part raqami (Task 1 yoki Task 2) aniq belgilang</strong> — «To'ldirish / Matching» blokidagi Part raqami maydonida 1 yoki 2 tanlang."
@@ -662,9 +674,10 @@ class QuestionAdmin(ImportExportModelAdmin):
             )
         }),
         ('MCQ / True-False / Yes-No-Not Given', {
-            'fields': ('option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'),
+            'fields': ('max_choices', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'),
             'classes': ('question-mcq-fields',),
             'description': (
+                "«Tanlash soni» = 2 bo'lsa — to'g'ri javobda 2 ta harf vergul bilan (a,c). "
                 "«To'g'ri javob» maydoniga faqat harf kiriting: MCQ — a, b, c yoki d. "
                 "True/False — a yoki b. True/False/Not Given va Yes/No/Not Given — a, b yoki c. "
                 "Variant matnini (TRUE, FALSE va h.k.) qo'lda yozmasangiz ham bo'ladi — test sahifasida avtomatik ko'rsatiladi."

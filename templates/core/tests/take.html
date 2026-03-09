@@ -1168,6 +1168,21 @@
 
                                             {% if q.question_type == 'mcq' or q.question_type == 'true_false' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' %}
                                                 <div class="{% if test.test_type == 'reading' %}mcq-options-row{% else %}d-block{% endif %}">
+                                                {% if item.mcq_choose_two %}
+                                                <p class="small text-muted mb-2">2 ta variant tanlang.</p>
+                                                {% for option in item.mcq_options %}
+                                                <label class="{% if test.test_type != 'reading' %}d-flex align-items-start gap-2 mb-2{% endif %} mcq-checkbox-label">
+                                                    <input type="checkbox"
+                                                           name="answer_{{ q.pk }}_{{ option.letter }}"
+                                                           value="{{ option.letter }}"
+                                                           class="mcq-multi-checkbox"
+                                                           data-question-pk="{{ q.pk }}"
+                                                           data-max="2"
+                                                           {% if option.letter in item.current_answer_list %}checked{% endif %}>
+                                                    <span><strong>{{ option.letter }}</strong> {{ option.text }}</span>
+                                                </label>
+                                                {% endfor %}
+                                                {% else %}
                                                 {% for option in item.mcq_options %}
                                                 <label class="{% if test.test_type != 'reading' %}d-flex align-items-start gap-2 mb-2{% endif %}">
                                                     <input type="radio"
@@ -1177,6 +1192,7 @@
                                                     <span><strong>{{ option.letter }}</strong> {{ option.text }}</span>
                                                 </label>
                                                 {% endfor %}
+                                                {% endif %}
                                                 </div>
 
                                             {% elif q.question_type == 'fill_blank' or q.question_type == 'summary_completion' or q.question_type == 'notes_completion' or q.question_type == 'sentence_completion' or q.question_type == 'table_completion' or q.question_type == 'short_answer' %}
@@ -1672,8 +1688,20 @@
     });
     {% endif %}
     
-    // Question navigation HTMX bilan
+    // 2 ta javob tanlash: checkboxlarda maksimum 2 ta belgilash
     document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.mcq-multi-checkbox').forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                var pk = this.getAttribute('data-question-pk');
+                var max = parseInt(this.getAttribute('data-max'), 10) || 2;
+                var group = document.querySelectorAll('.mcq-multi-checkbox[data-question-pk="' + pk + '"]');
+                var checked = Array.prototype.filter.call(group, function(c) { return c.checked; });
+                if (checked.length > max) {
+                    checked[0].checked = false;
+                }
+            });
+        });
+
         const examModeToggle = document.getElementById('exam-mode-toggle');
         const autosaveStatus = document.getElementById('autosave-status');
         const applyExamMode = (enabled) => {

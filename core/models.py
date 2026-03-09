@@ -219,6 +219,13 @@ class Test(models.Model):
     reading_text = models.TextField(blank=True, verbose_name="O'qish matni (Reading)")
     # Reading: 3 ta passage [{"title": "...", "text": "..."}, ...]. Bo'sh bo'lsa reading_text ishlatiladi
     reading_passages_json = models.JSONField(default=list, blank=True, verbose_name="Passage'lar (3 ta)")
+    # 1 yoki 2 variantli test: 2 bo'lsa har bir savol/passage da variant (1 yoki 2) belgilash kerak
+    variants_to_select = models.PositiveSmallIntegerField(
+        default=1,
+        choices=[(1, "1 variant"), (2, "2 variant")],
+        verbose_name="Variantlar soni",
+        help_text="2 qilsangiz — foydalanuvchi ikkala variantni ham bajaradi; har bir savol va passage da «Variant 1» yoki «Variant 2» tanlang.",
+    )
     is_active = models.BooleanField(default=True, verbose_name="Faol")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -243,14 +250,20 @@ class Test(models.Model):
         return reverse('core:test_detail', kwargs={'pk': self.pk})
 
     def get_reading_passages(self):
-        """Reading: passage'lar ro'yxati. ReadingPassage inline > reading_passages_json > reading_text."""
+        """Reading: passage'lar ro'yxati. 2 variantli testda [v1_list, v2_list], aks holda bitta ro'yxat."""
         # 1) Inline model (eng qulay)
-        objs = list(self.reading_passages.all().order_by('order'))
+        objs = list(self.reading_passages.all().order_by('variant', 'order'))
         if objs:
+            if self.variants_to_select == 2:
+                v1 = [{'title': p.title or f'Passage {i+1}', 'text': p.text or ''} for i, p in enumerate([x for x in objs if (x.variant or 1) == 1])]
+                v2 = [{'title': p.title or f'Passage {i+1}', 'text': p.text or ''} for i, p in enumerate([x for x in objs if x.variant == 2])]
+                return [v1, v2]
             return [{'title': p.title or f'Passage {i+1}', 'text': p.text or ''} for i, p in enumerate(objs)]
         # 2) JSON (eski format)
         passages = self.reading_passages_json or []
         if passages and isinstance(passages, list) and len(passages) > 0:
+            if self.variants_to_select == 2:
+                return [passages[: len(passages) // 2], passages[len(passages) // 2 :]] if len(passages) >= 2 else [passages, []]
             return [{'title': p.get('title', f'Passage {i+1}'), 'text': p.get('text', '')} for i, p in enumerate(passages) if isinstance(p, dict)]
         # 3) Bitta matn
         if self.reading_text:
@@ -264,6 +277,13 @@ class ReadingPassage(models.Model):
     order = models.PositiveIntegerField(default=1, verbose_name="Tartib")
     title = models.CharField(max_length=255, blank=True, verbose_name="Sarlavha (masalan: Passage 1)")
     text = models.TextField(blank=True, verbose_name="Matn")
+    variant = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        choices=[(1, "Variant 1"), (2, "Variant 2")],
+        verbose_name="Variant (2 variantli testda)",
+        help_text="Faqat test «2 variant» bo'lsa to'ldiring.",
+    )
 
     class Meta:
         ordering = ['test', 'order']
@@ -301,6 +321,13 @@ class Question(models.Model):
     ]
     
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='questions', verbose_name="Test")
+    variant = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        choices=[(1, "Variant 1"), (2, "Variant 2")],
+        verbose_name="Variant (2 variantli testda)",
+        help_text="Faqat test «2 variant» bo'lsa tanlang.",
+    )
     question_type = models.CharField(max_length=30, choices=QUESTION_TYPES, default='mcq', verbose_name="Savol turi")
     question_text = models.TextField(verbose_name="Savol matni")
     question_image = models.ImageField(upload_to='questions/', blank=True, null=True, verbose_name="Rasm")
@@ -312,6 +339,13 @@ class Question(models.Model):
     option_c = models.CharField(max_length=500, blank=True, verbose_name="Variant C")
     option_d = models.CharField(max_length=500, blank=True, verbose_name="Variant D")
     correct_answer = models.CharField(max_length=10, blank=True, verbose_name="To'g'ri javob (MCQ: a/b/c/d)")
+    # MCQ/True-False da: 1 = bitta variant tanlash (radio), 2 = ikkita variant tanlash (checkbox)
+    max_choices = models.PositiveSmallIntegerField(
+        default=1,
+        choices=[(1, "1 ta javob"), (2, "2 ta javob")],
+        verbose_name="Tanlash soni (MCQ/T-F)",
+        help_text="«2 ta javob» qilsangiz — foydalanuvchi ikkita variantni belgilaydi; to'g'ri javobda ikkalasini kiriting (masalan a,c).",
+    )
     # G'arbiy savol turlari uchun - JSON formatda
     # options_json: {"instruction": "ONE WORD ONLY", "blanks_count": 4}
     options_json = models.JSONField(default=dict, blank=True, verbose_name="Qo'shimcha parametrlar (JSON)")
@@ -363,9 +397,33 @@ class Question(models.Model):
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
         if self.question_type in single_choice:
             opts = {'a': self.option_a, 'b': self.option_b, 'c': self.option_c, 'd': self.option_d}
+            if getattr(self, 'max_choices', 1) == 2 and user_answer:
+                try:
+                    import json
+                    raw = user_answer if isinstance(user_answer, str) else str(user_answer)
+                    if raw.strip().startswith('['):
+                        letters = json.loads(raw)
+                        letters = letters if isinstance(letters, list) else [letters]
+                        parts = [f"{str(l).upper()}) {opts.get(str(l).lower(), '')}" for l in letters if str(l).lower() in opts]
+                        return '; '.join(parts) if parts else raw
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    pass
             return opts.get(str(user_answer).lower(), user_answer)
         return str(user_answer) if user_answer else ''
-    
+
+    def get_correct_answer_display_for_review(self):
+        """Natija sahifasida to'g'ri javob matni: bitta yoki 2 ta variant (A) Matn; C) Matn)."""
+        single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+        if self.question_type not in single_choice:
+            return ''
+        opts = {'a': self.option_a, 'b': self.option_b, 'c': self.option_c, 'd': self.option_d}
+        if getattr(self, 'max_choices', 1) == 2 and self.correct_answer_json and isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= 2:
+            parts = [f"{str(l).upper()}) {opts.get(str(l).lower(), '')}" for l in self.correct_answer_json[:2]]
+            return '; '.join(parts)
+        letter = str(self.correct_answer).strip().lower() if self.correct_answer else ''
+        text = opts.get(letter, '')
+        return f"{letter.upper()}) {text}" if letter else text
+
     def get_correct_answers_list(self):
         """To'g'ri javoblarni ro'yxat sifatida olish"""
         if self.correct_answer_json:
@@ -376,13 +434,25 @@ class Question(models.Model):
     
     def check_user_answer(self, user_answer):
         """Foydalanuvchi javobi to'g'rimi tekshirish"""
+        import json
         if self.question_type == 'essay':
             #mmm
             # Essay avtomatik baholanmaydi – faqat bo'sh emasligi tekshiriladi
             return False
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
         if self.question_type in single_choice:
-            return str(user_answer).strip().lower() == str(self.correct_answer).strip().lower()
+            norm = lambda x: str(x).strip().lower() if x else ''
+            # 2 ta javob tanlash: user_answer JSON ro'yxat ["a","c"], to'g'ri javob correct_answer_json yoki correct_answer
+            if getattr(self, 'max_choices', 1) == 2:
+                try:
+                    ua = user_answer if isinstance(user_answer, list) else (json.loads(user_answer) if isinstance(user_answer, str) and user_answer.strip().startswith('[') else [user_answer])
+                    u_set = set(norm(x) for x in (ua if isinstance(ua, list) else [ua]))
+                    correct_list = self.correct_answer_json if isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= 2 else [self.correct_answer]
+                    c_set = set(norm(x) for x in correct_list)
+                    return u_set == c_set
+                except (TypeError, json.JSONDecodeError):
+                    return False
+            return norm(user_answer) == norm(self.correct_answer)
         
         fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
                       'table_completion', 'short_answer')

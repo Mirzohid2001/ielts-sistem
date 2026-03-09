@@ -36,6 +36,14 @@ def get_option(question, option_key):
 
 
 @register.filter
+def display_user_answer(question, user_answer):
+    """Foydalanuvchi javobini savol turiga qarab to'g'ri ko'rsatish (1 yoki 2 ta variant, matn bilan)."""
+    if not question:
+        return format_user_answer(user_answer)
+    return question.get_user_answer_display(user_answer) or ''
+
+
+@register.filter
 def format_instruction(text):
     """
     IELTS instruction matnida kalit so'z va oraliklarni qalin (bold) qiladi.
