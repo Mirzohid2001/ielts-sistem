@@ -1202,7 +1202,7 @@
                                                     {% if p.type == 'text' %}{{ p.content|linebreaksbr }}{% endif %}
                                                     {% if p.type == 'input' %}
                                                     <span class="inline-blank-wrap">
-                                                        <span class="inline-blank-num">[{{ p.num }}]</span>
+                                                        <span class="inline-blank-num">[{{ p.label|default:p.num }}]</span>
                                                         <input type="text" class="inline-blank-input" name="answer_{{ q.pk }}_{{ p.num }}" value="{{ p.value }}" maxlength="80" placeholder="" title="Answer {{ p.num }}" data-blank-id="blank-{{ q.pk }}-{{ p.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ p.num }}">
                                                     </span>
                                                     {% endif %}

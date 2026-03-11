@@ -489,7 +489,7 @@ class Question(models.Model):
             user_set = set(norm(x) for x in (user_data if isinstance(user_data, list) else [user_data]))
             return correct == user_set
         
-        # Fill-in types (list format)
+        # Fill-in types (list format). Bitta yacheykada 2 ta so'z: to'g'ri javob "word1 word2" bo'lsa, foydalanuvchi ikkalasini ham yozishi kerak (tartibi muhim emas)
         correct_list = self.get_correct_answers_list()
         if not correct_list:
             return False
@@ -500,7 +500,17 @@ class Question(models.Model):
             user_answers = [user_answers]
         if len(user_answers) != len(correct_list):
             return False
-        return all(norm(ua) == norm(ca) for ua, ca in zip(user_answers, correct_list))
+        def blank_match(ua, ca):
+            ua_n = norm(ua)
+            ca_n = norm(ca)
+            if not ca_n:
+                return not ua_n
+            if ' ' in ca_n or ' ' in ua_n:
+                ca_words = set(w for w in ca_n.split() if w)
+                ua_words = set(w for w in ua_n.split() if w)
+                return ca_words == ua_words
+            return ua_n == ca_n
+        return all(blank_match(ua, ca) for ua, ca in zip(user_answers, correct_list))
 
 
 class QuestionTypeRule(models.Model):

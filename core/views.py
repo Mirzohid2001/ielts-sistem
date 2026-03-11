@@ -43,24 +43,32 @@ def _get_fill_blank_count(question):
 
 
 def _build_inline_fill_parts(question, ans_fields):
-    """question_text ichidagi [1],[2]... ni inline input qilish uchun bo'laklarga ajratadi."""
+    """question_text ichidagi [1], [2], [3 4]... ni inline input. [3 4] — bitta yacheyka, label [3 4] ko'rsatiladi."""
     if not ans_fields:
         return None
     text = question.question_text or ''
     parts = []
     last = 0
-    for m in re.finditer(r'\[(\d+)\]', text):
-        num = int(m.group(1))
-        if num < 1 or num > len(ans_fields):
-            continue
+    placed_nums = set()
+    # Qavs ichidagi ixtiyoriy matn: [1], [2], [3 4] (2 ta so'z uchun bitta yacheyka)
+    for idx, m in enumerate(re.finditer(r'\[([^\]]+)\]', text)):
+        num = idx + 1
+        if num > len(ans_fields):
+            break
+        label_raw = m.group(1).strip()
         if m.start() > last:
             parts.append({'type': 'text', 'content': text[last:m.start()]})
         field = next((f for f in ans_fields if f['num'] == num), None)
         if field:
-            parts.append({'type': 'input', 'num': num, 'value': field.get('value', '')})
+            parts.append({'type': 'input', 'num': num, 'value': field.get('value', ''), 'label': label_raw})
+            placed_nums.add(num)
         last = m.end()
     if last < len(text):
         parts.append({'type': 'text', 'content': text[last:]})
+    for f in ans_fields:
+        num = f.get('num')
+        if num and num not in placed_nums:
+            parts.append({'type': 'input', 'num': num, 'value': f.get('value', ''), 'label': str(num)})
     return parts if parts else None
 
 

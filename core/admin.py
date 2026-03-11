@@ -54,7 +54,7 @@ class QuestionAdminForm(forms.ModelForm):
     fill_answers = forms.CharField(
         required=False,
         label="To'g'ri javoblar (vergul bilan)",
-        help_text="Har bir bo'sh joy uchun to'g'ri javob. Masalan: teacher,charcoal,skyscrapers,flowers,rocks,landscape,sky",
+        help_text="Har bir bo'sh joy uchun to'g'ri javob; bo'sh joylar vergul bilan. Bitta yacheykada 2 ta so'z talab qilsangiz, ikkalasini bo'shliq bilan yozing — foydalanuvchi ikkalasini ham kiritishi kerak. Masalan: teacher,durability strength,skyscrapers",
     )
     matching_items = forms.CharField(
         required=False,
