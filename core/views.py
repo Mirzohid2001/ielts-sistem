@@ -876,6 +876,10 @@ def test_take(request, pk):
             'question_images': task_images,
         })
 
+    # Savollar tartib raqami 1, 2, 3, ... (Listening/Reading da barcha tugmalar to'g'ri raqamda ko'rinsin)
+    for i, card in enumerate(question_cards):
+        card['display_order'] = i + 1
+
     # Part bloklari: 2 variantli testda part = variant (1 yoki 2); boshqalarida explicit part yoki default
     part_indexes = []
     explicit_parts = []
@@ -912,10 +916,12 @@ def test_take(request, pk):
                 parts_by_questions = 3
             default_parts = max(1, min(passage_count, parts_by_questions))
         elif test.test_type == 'listening':
-            default_parts = 4
+            # Har partda 10 ta savol: Part 1 = 1–10, Part 2 = 11–20, Part 3 = 21–30, Part 4 = 31–40
+            default_parts = min(4, max(1, ((total_questions or 0) + 9) // 10))
         elif test.test_type == 'writing':
             default_parts = 2
-        default_parts = max(1, min(default_parts, total_questions or 1))
+        if test.test_type != 'listening':
+            default_parts = max(1, min(default_parts, total_questions or 1))
         #mmm
 
         if test.test_type == 'reading' and default_parts <= 3:
@@ -927,6 +933,18 @@ def test_take(request, pk):
                 ranges.append((13, min(26, total_questions)))
             if default_parts >= 3:
                 ranges.append((26, total_questions))
+        elif test.test_type == 'listening':
+            # Listening: har partda 10 ta savol (1–10, 11–20, 21–30, 31–40)
+            t = total_questions or 0
+            ranges = []
+            if t > 0:
+                ranges.append((0, min(10, t)))
+            if t > 10:
+                ranges.append((10, min(20, t)))
+            if t > 20:
+                ranges.append((20, min(30, t)))
+            if t > 30:
+                ranges.append((30, t))
         else:
             base_size = total_questions // default_parts if default_parts else total_questions
             extra = total_questions % default_parts if default_parts else 0
@@ -996,18 +1014,20 @@ def test_take(request, pk):
                             'is_blank': True,
                         })
             else:
+                do = card.get('display_order', q.order)
                 blank_buttons.append({
-                    'num': q.order,
-                    'question_id': f"question-{q.order}",
+                    'num': do,
+                    'question_id': f"question-{do}",
                     'is_blank': False,
                 })
         # Reading: partda savollar bor lekin tugmalar bo'sh qolsa (eski ma'lumot), har savol uchun tugma yaratamiz
         if test.test_type == 'reading' and not blank_buttons and pg['cards']:
             for card in pg['cards']:
                 q = card['question']
+                do = card.get('display_order', q.order)
                 blank_buttons.append({
-                    'num': q.order,
-                    'question_id': f"question-{q.order}",
+                    'num': do,
+                    'question_id': f"question-{do}",
                     'is_blank': False,
                 })
         pg['blank_buttons'] = blank_buttons

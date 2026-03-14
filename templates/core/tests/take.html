@@ -1138,16 +1138,16 @@
                                         {% endif %}
                                         {% for item in type_block.cards %}
                                         {% with q=item.question %}
-                                        <div class="part-q-card" id="question-{{ q.order }}" data-question-id="{{ q.pk }}">
+                                        <div class="part-q-card" id="question-{{ item.display_order|default:q.order }}" data-question-id="{{ q.pk }}">
                                             {% if not item.inline_fill_parts and test.test_type != 'writing' %}
                                             <div class="d-flex align-items-center gap-2 mb-2">
                                                 {% if test.test_type == 'reading' %}
-                                                <span class="question-num-box">{{ q.order }}</span>
+                                                <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
                                                 {% else %}
                                                 {% if q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' or q.question_type == 'mcq' or q.question_type == 'true_false' %}
-                                                <span class="question-num-box">{{ q.order }}</span>
+                                                <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
                                                 {% else %}
-                                                <span class="badge bg-light text-dark border">Question {{ q.order }}</span>
+                                                <span class="badge bg-light text-dark border">Question {{ item.display_order|default:q.order }}</span>
                                                 {% endif %}
                                                 {% endif %}
                                             </div>
