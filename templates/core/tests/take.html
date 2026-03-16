@@ -1120,7 +1120,7 @@
                                         {% if test.test_type == 'writing' or test.test_type == 'listening' or part_groups|length > 1 %}
                                         <div class="part-section-header{% if test.test_type == 'writing' %} writing-answer-header{% endif %}{% if test.test_type == 'listening' %} listening-part-section-header{% endif %}">
                                             {% if test.test_type == 'writing' %}{{ pg.title }} Answer{% elif test.test_type == 'listening' %}
-                                            <span class="listening-part-heading-text">Questions {{ pg.range_label }}</span>
+                                            <span class="listening-part-heading-text">Part {{ pg.part_number }} – Questions {{ pg.range_label }}</span>
                                             {% if test.audio_file %}<a href="#" class="btn btn-sm btn-outline-primary listening-listen-from-here ms-2" data-part="{{ pg.part_number }}" data-audio-start="{{ pg.audio_start_time|default:0 }}"><i class="fas fa-headphones me-1"></i>Listen From Here</a>{% endif %}
                                             {% else %}{{ pg.title }}: Questions {{ pg.range_label }}{% endif %}
                                         </div>
@@ -1128,7 +1128,7 @@
                                         {% for type_block in pg.type_blocks %}
                                         {% if test.test_type == 'reading' or type_block.shart_text %}
                                         <div class="part-shart-block part-table-row instruction-block shart-{{ type_block.question_type|default:'default' }}">
-                                            {% if type_block.start_order and type_block.end_order %}
+                                            {% if test.test_type != 'listening' and type_block.start_order and type_block.end_order %}
                                             <div class="instruction-range-title">Questions {{ type_block.start_order }}{% if type_block.end_order != type_block.start_order %}-{{ type_block.end_order }}{% endif %}</div>
                                             {% endif %}
                                             {% if type_block.shart_text %}

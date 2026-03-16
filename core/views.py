@@ -993,8 +993,9 @@ def test_take(request, pk):
         elif test.test_type == 'writing':
             pg['title'] = f"Task {pg['part_number']}"
         blank_buttons = []
-        # Reading testda barcha partlar uchun savol raqami tugmalari (har partda o‘z oralig‘i: 1-N, N+1-M, ...)
-        use_question_buttons_only = (test.test_type == 'reading')
+        # Reading va Listening testlarda dockda faqat savol raqamlari (blanklar bo'yicha emas)
+        # Inline blanklar bo'yicha alohida navigatsiya faqat boshqa test turlarida kerak bo'lishi mumkin
+        use_question_buttons_only = (test.test_type in ('reading', 'listening'))
         for card in pg['cards']:
             q = card['question']
             if not use_question_buttons_only and pg['part_number'] == 1 and (card.get('inline_fill_parts') or (card.get('answer_fields') and len(card['answer_fields']) > 1)):
