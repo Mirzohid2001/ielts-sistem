@@ -346,12 +346,24 @@ class QuestionAdminForm(forms.ModelForm):
 # Category Admin — testlar va videolar uchun kategoriya
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'tests_count_display', 'videos_count_display', 'icon', 'color_display', 'order', 'is_active', 'show_on_site', 'created_at']
-    list_filter = ['is_active', 'show_on_site', 'created_at']
+    list_display = ['name', 'slug', 'parent', 'tests_count_display', 'videos_count_display', 'icon', 'color_display', 'order', 'is_active', 'show_on_site', 'created_at']
+    list_filter = ['parent', 'is_active', 'show_on_site', 'created_at']
     search_fields = ['name', 'slug', 'description']
     prepopulated_fields = {'slug': ('name',)}
     ordering = ['order', 'name']
     list_editable = ['order', 'is_active', 'show_on_site']
+
+    fields = (
+        'name',
+        'slug',
+        'parent',
+        'description',
+        'icon',
+        'color',
+        'order',
+        'is_active',
+        'show_on_site',
+    )
 
     def tests_count_display(self, obj):
         c = getattr(obj, '_tests', None)

@@ -9,6 +9,14 @@ class Category(models.Model):
     """Kategoriya modeli"""
     name = models.CharField(max_length=200, verbose_name="Nomi")
     slug = models.SlugField(max_length=200, unique=True, db_index=True)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        verbose_name="Ota kategoriya",
+    )
     description = models.TextField(blank=True, verbose_name="Tavsif")
     icon = models.CharField(max_length=50, blank=True, verbose_name="Icon (Font Awesome)")
     color = models.CharField(max_length=7, default="#007bff", verbose_name="Rang (hex)")
@@ -27,6 +35,7 @@ class Category(models.Model):
         ordering = ['order', 'name']
         indexes = [
             models.Index(fields=['slug', 'is_active']),
+            models.Index(fields=['parent', 'is_active']),
         ]
 
     def __str__(self):

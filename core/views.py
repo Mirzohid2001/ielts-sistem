@@ -176,13 +176,32 @@ def dashboard(request):
 def video_list(request):
     """Video darslar ro'yxati"""
     category_slug = request.GET.get('category')
+    subcategory_slug = request.GET.get('sub')
     search_query = request.GET.get('search', '')
     sort_by = request.GET.get('sort', 'order')
     
     videos = VideoLesson.objects.filter(is_active=True, category__show_on_site=True)
     
+    selected_category = None
+    selected_subcategory = None
     if category_slug:
-        videos = videos.filter(category__slug=category_slug)
+        selected_category = Category.objects.filter(slug=category_slug, is_active=True).first()
+        if subcategory_slug and selected_category:
+            # Faqat shu otaning bolalaridan birini tanlash
+            selected_subcategory = Category.objects.filter(
+                slug=subcategory_slug, is_active=True, parent=selected_category
+            ).first()
+            if selected_subcategory:
+                videos = videos.filter(category=selected_subcategory)
+        elif selected_category:
+            # Ota kategoriya bo'yicha: barcha bolalaridagi videolar
+            child_ids = list(
+                Category.objects.filter(parent=selected_category, is_active=True).values_list('id', flat=True)
+            )
+            if child_ids:
+                videos = videos.filter(category_id__in=child_ids)
+            else:
+                videos = videos.filter(category__slug=category_slug)
     
     if search_query:
         videos = videos.filter(
@@ -225,13 +244,22 @@ def video_list(request):
     # Kategoriyalarga bo'lib ko'rsatish
     videos_by_category = {}
     page_obj = None
+    # Yuqori darajadagi kategoriyalar (masalan: Grammar, Reading, Listening, Writing)
+    top_categories = Category.objects.filter(
+        is_active=True,
+        show_on_site=True,
+        parent__isnull=True,
+    ).order_by('order', 'name')
+
     if not category_slug and not search_query:
-        # Agar kategoriya tanlanmagan va qidiruv bo'lmasa, kategoriyalarga bo'lib ko'rsatish
-        categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
-        for category in categories:
-            category_videos = videos.filter(category=category)
-            if category_videos.exists():
-                videos_by_category[category] = category_videos
+        # Agar ota kategoriya tanlanmagan va qidiruv bo'lmasa, har bir top-level kategoriya uchun blok
+        for category in top_categories:
+            child_ids = list(
+                Category.objects.filter(parent=category, is_active=True).values_list('id', flat=True)
+            )
+            qs = videos.filter(category_id__in=child_ids or [category.id])
+            if qs.exists():
+                videos_by_category[category] = qs
     else:
         # Agar kategoriya tanlangan yoki qidiruv bo'lsa, oddiy ro'yxat
         paginator = Paginator(videos, 12)
@@ -239,13 +267,12 @@ def video_list(request):
         page_obj = paginator.get_page(page_number)
         videos_by_category = None
     
-    categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
-    
     context = {
         'videos': page_obj if (category_slug or search_query) else None,
         'videos_by_category': videos_by_category,
-        'categories': categories,
+        'categories': top_categories,
         'selected_category': category_slug,
+        'selected_subcategory': subcategory_slug,
         'search_query': search_query,
         'sort_by': sort_by,
         'user_progress': user_progress,

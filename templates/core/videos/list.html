@@ -141,6 +141,22 @@
                             {% if category.icon %}<i class="{{ category.icon }} me-2"></i>{% endif %}
                             {{ category.name }}
                         </a>
+                        {% if selected_category == category.slug %}
+                            {% with subcats=category.children.all %}
+                            {% if subcats %}
+                            <ul class="filter-sublist">
+                                {% for sub in subcats %}
+                                <li>
+                                    <a href="{% url 'core:video_list' %}?category={{ category.slug }}&sub={{ sub.slug }}"
+                                       class="filter-item filter-item-sub {% if selected_subcategory == sub.slug %}active{% endif %}">
+                                        {{ sub.name }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                            {% endwith %}
+                        {% endif %}
                     </li>
                     {% endfor %}
                 </ul>
