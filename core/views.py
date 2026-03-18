@@ -144,7 +144,8 @@ def _get_question_context_extra(question, current_answer):
 @login_required
 def dashboard(request):
     """Asosiy sahifa"""
-    categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
+    # Testlar uchun faqat yuqori darajadagi kategoriyalar (videodagi subkategoriyalar aralashmasin)
+    categories = Category.objects.filter(is_active=True, show_on_site=True, parent__isnull=True).order_by('order', 'name')
     
     # Statistika (faqat interfeysda ko'rinadigan kategoriyalardagi testlar)
     total_videos = VideoLesson.objects.filter(is_active=True, category__show_on_site=True).count()
@@ -429,7 +430,8 @@ def test_list(request):
         bookmarks = Bookmark.objects.filter(user=request.user, test__in=tests)
         bookmarked_tests = {b.test_id for b in bookmarks}
     
-    categories = Category.objects.filter(is_active=True, show_on_site=True).order_by('order', 'name')
+    # Testlar uchun faqat top-level kategoriyalar (videodagi subkategoriyalar aralashmasin)
+    categories = Category.objects.filter(is_active=True, show_on_site=True, parent__isnull=True).order_by('order', 'name')
     test_types = Test.TEST_TYPES
     difficulty_levels = Test.DIFFICULTY_LEVELS
     
