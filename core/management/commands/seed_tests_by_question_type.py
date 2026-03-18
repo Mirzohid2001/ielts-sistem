@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from core.models import Category, Test, Question, ReadingPassage
+from core.management.commands.seed_new_format import ensure_categories
 
 
 # Har bir savol: order, question_type, question_text, option_*, correct_answer, options_json, correct_answer_json
@@ -123,7 +124,21 @@ TABLE_QUESTIONS = [
 ]
 
 SHORT_ANSWER_QUESTIONS = [
-    _q(1, "short_answer", question_text="Answer in NO MORE THAN THREE WORDS.\n\nWhat is linked to lower stress and higher wellbeing? [1]", options_json={"part": 1, "instruction": "NO MORE THAN THREE WORDS"}, correct_answer_json=["Access to nature"]),
+    _q(
+        1,
+        "short_answer",
+        question_text="Questions 11–13\n\nAnswer the questions below.",
+        options_json={
+            "part": 1,
+            "instruction": "NO MORE THAN TWO WORDS",
+            "short_answer_items": [
+                {"prompt": "What type of mineral were the Dolaucothi mines in Wales built to extract?", "max_words": 2},
+                {"prompt": "In addition to the patron, whose name might be carved onto a tunnel?", "max_words": 2},
+                {"prompt": "What part of Seleuceia Pieria was the Çevlik tunnel built to protect?", "max_words": 2},
+            ],
+        },
+        correct_answer_json=["gold", "the emperor", "the harbour"],
+    ),
     _q(2, "short_answer", question_text="Answer in NO MORE THAN TWO WORDS.\n\nWhat risk do critics associate with new parks? [1]", options_json={"part": 1, "instruction": "NO MORE THAN TWO WORDS"}, correct_answer_json=["Gentrification"]),
     _q(3, "short_answer", question_text="Answer in ONE WORD ONLY.\n\nWhat do ecologists say is key for wildlife in cities? [1]", options_json={"part": 1, "instruction": "ONE WORD ONLY"}, correct_answer_json=["connectivity"]),
     _q(4, "short_answer", question_text="Answer in NO MORE THAN THREE WORDS.\n\nWhich bird is mentioned as returning to European cities? [1]", options_json={"part": 1, "instruction": "NO MORE THAN THREE WORDS"}, correct_answer_json=["peregrine falcon"]),
@@ -141,9 +156,30 @@ ESSAY_QUESTIONS = [
 
 # ——— Matching: 8 ta (har biri 3–5 item) ———
 def _matching_headings_q(order):
-    items = [{"num": i, "label": f"Paragraph {chr(64+i)}"} for i in range(1, 6)]
-    headings = [{"letter": chr(105+i), "text": h} for i, h in enumerate(["Introduction", "Benefits and concerns", "Biodiversity", "Funding and practice", "Conclusion"])]
-    return _q(order, "matching_headings", options_json={"part": 1, "items": items, "headings": headings}, question_text="Choose the correct heading (i–v) for each paragraph (A–E).\n\ni Introduction\nii Benefits and concerns\niii Biodiversity\niv Funding and practice\nv Conclusion\n\nA–E: Paragraphs A to E.", correct_answer_json={"1": "i", "2": "ii", "3": "iii", "4": "iv", "5": "v"})
+    rom = ["i", "ii", "iii", "iv", "v", "vi", "vii"]
+    texts = [
+        "Tried and tested solutions",
+        "Cooperation beneath the waves",
+        "Working to lessen the problems",
+        "Disagreement about the accuracy of a certain phrase",
+        "Two clear educational goals",
+        "Promoting hope",
+        "A warning of further trouble ahead",
+    ]
+    headings = [{"letter": rom[i], "text": texts[i]} for i in range(7)]
+    items = [{"num": 14 + i, "label": f"Paragraph {chr(65 + i)}"} for i in range(6)]
+    return _q(
+        order,
+        "matching_headings",
+        options_json={
+            "part": 1,
+            "instruction": "Choose the correct heading for each section from the list of headings below.",
+            "items": items,
+            "headings": headings,
+        },
+        question_text="Questions 14–19. Read the passage and choose the correct heading for each paragraph.",
+        correct_answer_json={"14": "i", "15": "iii", "16": "ii", "17": "v", "18": "iv", "19": "vi"},
+    )
 MATCHING_HEADINGS_QUESTIONS = [_matching_headings_q(i) for i in range(1, 9)]
 
 def _matching_sentences_q(order):
@@ -219,23 +255,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         no_delete = options.get("no_delete", False)
 
-        # 1) Kategoriya (faqat admin da ko'rinadi, interfeysda emas)
-        category, created = Category.objects.get_or_create(
-            slug="namuna",
-            defaults={
-                "name": "Namuna (savol turlari)",
-                "description": "Har bir savol turi bo'yicha bittadan namuna test. Keyinchalik bularga qarab yangi test yarating.",
-                "icon": "fas fa-layer-group",
-                "color": "#6366f1",
-                "order": 0,
-                "is_active": True,
-                "show_on_site": False,
-            },
-        )
-        if not created and getattr(category, "show_on_site", True):
-            category.show_on_site = False
-            category.save(update_fields=["show_on_site"])
-        self.stdout.write(f"Kategoriya: {category.name} (faqat admin)")
+        # 1) Kategoriyalar (reading/listening/writing) mavjudligini ta'minlaymiz
+        categories = ensure_categories()
 
         # 2) Barcha testlarni o'chirish
         if not no_delete:
@@ -249,12 +270,19 @@ class Command(BaseCommand):
         skipped = 0
 
         for qt_key, qt_label, test_type, questions_data in QUESTION_TYPE_CONFIG:
-            title = f"Namuna: {qt_label}"
-            if no_delete and Test.objects.filter(category=category, title=title).exists():
+            cat = categories.get(test_type)
+            if not cat:
+                # configdagi test_type noto'g'ri bo'lsa — skip
                 skipped += 1
                 continue
+
+            title = f"Namuna: {qt_label}"
+            if no_delete and Test.objects.filter(category=cat, title=title).exists():
+                skipped += 1
+                continue
+
             test = Test.objects.create(
-                category=category,
+                category=cat,
                 title=title,
                 test_type=test_type,
                 difficulty="medium",
@@ -264,6 +292,7 @@ class Command(BaseCommand):
                 allow_retake=True,
                 is_active=True,
             )
+            created += 1
 
             if test_type == "reading":
                 ReadingPassage.objects.create(test=test, order=1, title="Part 1", text=SAMPLE_PASSAGE)
@@ -285,7 +314,6 @@ class Command(BaseCommand):
                     points=1,
                 )
 
-            created += 1
             self.stdout.write(f"  + {title} ({test_type})")
 
         self.stdout.write(self.style.SUCCESS(f"Yakunlandi: {created} ta yangi test."))

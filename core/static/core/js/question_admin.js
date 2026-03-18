@@ -186,6 +186,48 @@
                 row.classList.toggle('question-type-row-hidden', !showJsonFields);
             }
         });
+        container.querySelectorAll('[data-role="qt-sa-rows"]').forEach(function(inp) {
+            var row = findRowForInput(inp);
+            if (row) {
+                var showSa = showJsonFields && qType === 'short_answer';
+                row.style.display = showSa ? '' : 'none';
+                row.classList.toggle('question-type-row-hidden', !showSa);
+            }
+        });
+
+        // 1.5) Granular show/hide (admin komfort uchun)
+        function toggleByField(fieldKey, show) {
+            container.querySelectorAll('[data-qt-field="' + fieldKey + '"]').forEach(function(inp) {
+                var row = findRowForInput(inp);
+                if (row) {
+                    row.style.display = show ? '' : 'none';
+                    row.classList.toggle('question-type-row-hidden', !show);
+                }
+            });
+        }
+        var isShort = qType === 'short_answer';
+        var isEssay = qType === 'essay';
+        var isFill = ['fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion'].indexOf(qType) >= 0;
+        var isMatching = ['matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'].indexOf(qType) >= 0;
+        var isListSel = qType === 'list_selection';
+
+        // Part raqami barcha JSON-ish bloklar uchun ko'rsatildi (baribir writing da task uchun kerak)
+        var showPart = (isFill || isShort || isMatching || isListSel || isEssay);
+        toggleByField('part_number', showPart);
+
+        // Fill-in turlari: instruction + fill_answers
+        toggleByField('instruction_text', isFill);
+        toggleByField('fill_answers', isFill);
+        toggleByField('writing_task_images', isEssay);
+
+        // Matching turlari
+        toggleByField('matching_items', isMatching);
+        toggleByField('matching_options', isMatching);
+        toggleByField('matching_correct', isMatching);
+
+        // List selection
+        toggleByField('list_options_simple', isListSel);
+        toggleByField('list_correct_simple', isListSel);
 
         // 2) data-role bo'lmasa (eski sahifa) — name orqali zaxira
         if (container.querySelectorAll('[data-role="qt-mcq"]').length === 0) {
@@ -199,7 +241,7 @@
             });
         }
         if (container.querySelectorAll('[data-role="qt-fill"]').length === 0) {
-            var fillNames = ['part_number', 'instruction_text', 'fill_answers', 'matching_items', 'matching_options', 'matching_correct', 'list_options_simple', 'list_correct_simple'];
+            var fillNames = ['part_number', 'instruction_text', 'fill_answers', 'writing_task_images', 'matching_items', 'matching_options', 'matching_correct', 'list_options_simple', 'list_correct_simple'];
             fillNames.forEach(function(name) {
                 container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) { toggleFormRow(inp, showJsonFields); });
             });
@@ -223,12 +265,94 @@
         }
     }
 
+    function ensureStylePreview(container) {
+        if (!container) return null;
+        var existing = container.querySelector('.qt-style-preview');
+        if (existing) return existing;
+
+        var preview = document.createElement('div');
+        preview.className = 'qt-style-preview';
+        preview.innerHTML = (
+            '<div class="qt-style-preview-title">UI Preview</div>' +
+            '<div data-role="inst-preview" style="display:none;"></div>' +
+            '<div data-role="prompt-preview"></div>'
+        );
+
+        var promptSelect = container.querySelector('select[name*="prompt_text_style"]');
+        if (promptSelect) {
+            var row = promptSelect.closest('.form-row') || promptSelect.parentElement;
+            if (row && row.parentNode) row.parentNode.insertBefore(preview, row.nextSibling);
+            else container.appendChild(preview);
+        } else {
+            container.appendChild(preview);
+        }
+        return preview;
+    }
+
+    function updateStylePreview(container) {
+        if (!container) return;
+        var preview = ensureStylePreview(container);
+        if (!preview) return;
+
+        var instSelect = container.querySelector('select[name*="instruction_box_style"]');
+        var promptSelect = container.querySelector('select[name*="prompt_text_style"]');
+        var instTextArea = container.querySelector('textarea[name*="instruction_text"]');
+        var qTextArea = container.querySelector('textarea[name*="question_text"]');
+
+        var instStyle = instSelect && instSelect.value ? instSelect.value : 'plain';
+        var promptStyle = promptSelect && promptSelect.value ? promptSelect.value : 'default';
+        var instText = instTextArea && instTextArea.value ? instTextArea.value.trim() : '';
+        var qText = qTextArea && qTextArea.value ? qTextArea.value.trim() : '';
+
+        var instEl = preview.querySelector('[data-role="inst-preview"]');
+        var promptEl = preview.querySelector('[data-role="prompt-preview"]');
+        if (!instEl || !promptEl) return;
+
+        instEl.textContent = instText;
+        instEl.className = 'admin-instruction-box admin-instruction-box--' + instStyle;
+        instEl.style.display = instText ? '' : 'none';
+
+        promptEl.textContent = qText || '(Savol matni kiritilmagan)';
+        promptEl.className = 'admin-prompt-text';
+        if (promptStyle && promptStyle !== 'default') {
+            promptEl.classList.add('admin-prompt-text--' + promptStyle);
+        }
+    }
+
+    function initStylePreview(container) {
+        if (!container) return;
+        if (container.dataset && container.dataset.qtStylePreviewInited === '1') {
+            updateStylePreview(container);
+            return;
+        }
+        if (container.dataset) container.dataset.qtStylePreviewInited = '1';
+        var instSelect = container.querySelector('select[name*="instruction_box_style"]');
+        var promptSelect = container.querySelector('select[name*="prompt_text_style"]');
+        var instTextArea = container.querySelector('textarea[name*="instruction_text"]');
+        var qTextArea = container.querySelector('textarea[name*="question_text"]');
+
+        var update = function() { updateStylePreview(container); };
+        if (instSelect) instSelect.addEventListener('change', update);
+        if (promptSelect) promptSelect.addEventListener('change', update);
+        if (instTextArea) {
+            instTextArea.addEventListener('input', update);
+            instTextArea.addEventListener('change', update);
+        }
+        if (qTextArea) {
+            qTextArea.addEventListener('input', update);
+            qTextArea.addEventListener('change', update);
+        }
+        updateStylePreview(container);
+    }
+
     function init() {
         var mainForm = document.getElementById('question_form') || document.querySelector('#content-main form');
         if (mainForm) initQuestionForm(mainForm);
+        if (mainForm) initStylePreview(mainForm);
         var inlines = document.querySelectorAll('.inline-related');
         inlines.forEach(function(el) {
             if (el.querySelector('select[name*="question_type"]')) initQuestionForm(el);
+            initStylePreview(el);
         });
     }
 

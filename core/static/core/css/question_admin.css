@@ -35,3 +35,67 @@
 .inline-related .question-mcq-fields {
     margin-top: 8px;
 }
+
+/* Admin: UI preset preview (instruction/banner + question prompt) */
+.qt-style-preview {
+    border: 1px solid #e5e7eb;
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 10px;
+}
+.qt-style-preview-title {
+    font-weight: 700;
+    font-size: 12px;
+    color: #334155;
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+}
+.admin-instruction-box {
+    font-size: .95rem;
+    line-height: 1.6;
+    margin-bottom: .65rem;
+    white-space: pre-wrap;
+}
+.admin-instruction-box--engnovate-red {
+    background: #fee2e2 !important;
+    border: 1px solid #f87171 !important;
+    color: #991b1b !important;
+    padding: .5rem .75rem !important;
+    border-radius: 4px !important;
+    font-size: .875rem !important;
+    margin-bottom: .75rem !important;
+}
+.admin-instruction-box--plain {
+    background: transparent !important;
+    border: none !important;
+    color: #374151 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    margin-bottom: .65rem !important;
+}
+.admin-instruction-box--gray {
+    background: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    padding: .5rem .75rem !important;
+    border-radius: 4px !important;
+    margin-bottom: .75rem !important;
+}
+
+.admin-prompt-text {
+    color: #111827;
+    line-height: 1.65;
+    margin-bottom: .65rem;
+    white-space: pre-wrap;
+}
+.admin-prompt-text--headline {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #111827;
+}
+.admin-prompt-text--plain {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #374151;
+}

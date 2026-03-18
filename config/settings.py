@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'import_export',
     # Local apps
     'accounts.apps.AccountsConfig',
-    'core',
+    'core.apps.CoreConfig',
     'storages',
 ]
 

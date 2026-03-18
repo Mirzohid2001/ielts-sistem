@@ -9,7 +9,8 @@ IELTS markazi uchun professional tizim - bir martalik parol bilan kirish, katego
 - Bootstrap 5
 - HTMX
 - Alpine.js
-- SQLite (development)
+- PostgreSQL (asosiy DB)
+- Contabo S3 (`django-storages` + boto3) — media fayllar
 
 ## O'rnatish
 
@@ -19,7 +20,7 @@ python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
-2. Paketlarni o'rnatish:
+2. Paketlarni o'rnatish (`django-storages` — `storages` app uchun majburiy):
 ```bash
 pip install -r requirements.txt
 ```

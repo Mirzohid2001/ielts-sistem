@@ -31,15 +31,8 @@ QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
 
 
 def _get_fill_blank_count(question):
-    """Fill-turi savol uchun bo'sh joylar soni: to'g'ri javoblar ro'yxati yoki matndagi [1],[2],... dan."""
-    cl = question.get_correct_answers_list()
-    if cl:
-        return len(cl)
-    text = question.question_text or ''
-    blank_nums = re.findall(r'\[(\d+)\]', text)
-    if blank_nums:
-        return max(int(n) for n in blank_nums)
-    return 1
+    """Bo'sh joylar soni — model bilan bir xil (qisqa javob jadvalsiz qatorlar ham)."""
+    return question.fill_blanks_count()
 
 
 def _build_inline_fill_parts(question, ans_fields):
@@ -72,6 +65,20 @@ def _build_inline_fill_parts(question, ans_fields):
     return parts if parts else None
 
 
+FILL_MULTI_DISPLAY_TYPES = (
+    'sentence_completion', 'table_completion', 'summary_completion',
+    'notes_completion', 'fill_blank', 'short_answer',
+)
+
+
+def _card_fill_input_count(card):
+    """Bitta savol kartochkasida nechta matn bo'sh joyi."""
+    if card.get('inline_fill_parts'):
+        return sum(1 for p in card['inline_fill_parts'] if p.get('type') == 'input')
+    af = card.get('answer_fields') or []
+    return len(af) if af else 1
+
+
 def _get_question_context_extra(question, current_answer):
     """Savol turiga qarab answer_fields, matching_fields, list_options qaytarish"""
     ans_fields, matching_fields, list_options = [], [], []
@@ -79,29 +86,70 @@ def _get_question_context_extra(question, current_answer):
     correct = question.correct_answer_json or {}
     
     if question.question_type in FILL_TYPES:
-        n_blanks = _get_fill_blank_count(question)
-        cl = question.get_correct_answers_list()
-        if len(cl) < n_blanks:
-            cl = list(cl) + [''] * (n_blanks - len(cl))
-        ca_blanks = []
-        if current_answer:
-            if len(cl) > 1:
+        opts_fill = question.options_json or {}
+        sa_rows = (
+            opts_fill.get('short_answer_items') or []
+            if question.question_type == 'short_answer'
+            else []
+        )
+        if question.question_type == 'short_answer' and isinstance(sa_rows, list) and sa_rows:
+            n_blanks = len(sa_rows)
+            cl = question.get_correct_answers_list()
+            if len(cl) < n_blanks:
+                cl = list(cl) + [''] * (n_blanks - len(cl))
+            ca_blanks = []
+            if current_answer:
                 try:
                     d = json.loads(current_answer)
-                    ca_blanks = d if isinstance(d, list) else [str(d.get(str(i+1), '')) for i in range(len(cl))]
+                    ca_blanks = d if isinstance(d, list) else [str(d.get(str(i + 1), '')) for i in range(len(cl))]
                 except (json.JSONDecodeError, TypeError):
                     ca_blanks = [x.strip() for x in str(current_answer).split(',')]
-            else:
-                ca_blanks = [current_answer]
-        while len(ca_blanks) < len(cl):
-            ca_blanks.append('')
-        ans_fields = [{'num': i + 1, 'value': ca_blanks[i] if i < len(ca_blanks) else ''} for i in range(len(cl))]
+            while len(ca_blanks) < n_blanks:
+                ca_blanks.append('')
+            ans_fields = []
+            for i, row in enumerate(sa_rows):
+                if not isinstance(row, dict):
+                    row = {}
+                pr = (row.get('prompt') or row.get('text') or '').strip()
+                try:
+                    smw = int(row['max_words']) if row.get('max_words') not in (None, '') else None
+                except (TypeError, ValueError):
+                    smw = None
+                if smw not in (1, 2, 3):
+                    smw = question.get_max_words_per_blank()
+                ans_fields.append({
+                    'num': i + 1,
+                    'value': ca_blanks[i] if i < len(ca_blanks) else '',
+                    'prompt': pr,
+                    'slot_max_words': smw,
+                })
+        else:
+            n_blanks = _get_fill_blank_count(question)
+            cl = question.get_correct_answers_list()
+            if len(cl) < n_blanks:
+                cl = list(cl) + [''] * (n_blanks - len(cl))
+            ca_blanks = []
+            if current_answer:
+                if len(cl) > 1:
+                    try:
+                        d = json.loads(current_answer)
+                        ca_blanks = d if isinstance(d, list) else [str(d.get(str(i+1), '')) for i in range(len(cl))]
+                    except (json.JSONDecodeError, TypeError):
+                        ca_blanks = [x.strip() for x in str(current_answer).split(',')]
+                else:
+                    ca_blanks = [current_answer]
+            while len(ca_blanks) < len(cl):
+                ca_blanks.append('')
+            ans_fields = [{'num': i + 1, 'value': ca_blanks[i] if i < len(ca_blanks) else ''} for i in range(len(cl))]
     
     elif question.question_type in MATCHING_TYPES:
         items = opts.get('items', opts.get('paragraphs', []))
         if not items and isinstance(correct, dict):
             items = [{'num': k, 'label': f'Element {k}'} for k in sorted(correct.keys(), key=lambda x: int(x) if str(x).isdigit() else 0)]
-        options = opts.get('options', opts.get('headings', []))
+        if question.question_type == 'matching_headings':
+            options = opts.get('headings', []) or opts.get('options', [])
+        else:
+            options = opts.get('options', []) or opts.get('headings', [])
         if not options and isinstance(correct, dict):
             all_letters = sorted(set(str(v) for v in correct.values()))
             options = [{'letter': l, 'text': l} for l in all_letters]
@@ -740,8 +788,18 @@ def test_take(request, pk):
             if q.question_type in single_choice:
                 if getattr(q, 'max_choices', 1) == 2:
                     selected = []
-                    for letter in ('a', 'b', 'c', 'd'):
-                        if request.POST.get(f'answer_{q.pk}_{letter}'):
+                    opts_json = q.options_json or {}
+                    mcq_opts = opts_json.get('options') or []
+                    if mcq_opts:
+                        letters = [
+                            str(o.get('letter', '')).strip().lower()
+                            for o in mcq_opts
+                            if o.get('letter')
+                        ]
+                    else:
+                        letters = ['a', 'b', 'c', 'd']
+                    for letter in letters:
+                        if letter and request.POST.get(f'answer_{q.pk}_{letter}'):
                             selected.append(letter)
                     if selected:
                         val = json.dumps(sorted(selected))
@@ -792,26 +850,45 @@ def test_take(request, pk):
 
         if request.POST.get('finish_test') == '1':
             with transaction.atomic():
+                total_slots_target = sum(
+                    q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
+                )
                 correct_count = 0
-                gradable_count = 0  # Essay dan tashqari baholash mumkin bo'lgan savollar
                 for q in questions:
-                    user_answer = answers.get(str(q.pk), '')
-                    if not user_answer:
+                    user_answer = (answers.get(str(q.pk), '') or '').strip()
+                    if q.question_type == 'essay':
+                        if user_answer:
+                            UserTestAnswer.objects.update_or_create(
+                                test_result=test_result,
+                                question=q,
+                                defaults={'user_answer': user_answer, 'is_correct': False},
+                            )
                         continue
-                    is_correct = q.check_user_answer(user_answer)
-                    UserTestAnswer.objects.update_or_create(
-                        test_result=test_result,
-                        question=q,
-                        defaults={'user_answer': user_answer, 'is_correct': is_correct}
-                    )
-                    if q.question_type != 'essay':
-                        gradable_count += 1
+                    if q.mcq_dual_question_slots_enabled():
+                        pts, _ = q.score_mcq_choose_two_dual(user_answer)
+                        correct_count += pts
+                        UserTestAnswer.objects.update_or_create(
+                            test_result=test_result,
+                            question=q,
+                            defaults={
+                                'user_answer': user_answer,
+                                'is_correct': pts >= 2,
+                            },
+                        )
+                        continue
+                    if user_answer:
+                        is_correct = q.check_user_answer(user_answer)
                         if is_correct:
                             correct_count += 1
+                        UserTestAnswer.objects.update_or_create(
+                            test_result=test_result,
+                            question=q,
+                            defaults={'user_answer': user_answer, 'is_correct': is_correct},
+                        )
 
-                test_result.total_questions = total_questions
+                test_result.total_questions = total_slots_target or total_questions
                 test_result.correct_answers = correct_count
-                test_result.wrong_answers = max(0, gradable_count - correct_count)
+                test_result.wrong_answers = max(0, test_result.total_questions - correct_count)
                 test_result.completed_at = timezone.now()
                 test_result.attempt_number = test_result.attempt_number or 1
                 test_result.time_taken = test_result.get_elapsed_time()
@@ -833,7 +910,65 @@ def test_take(request, pk):
             return redirect(request.path)
 
     answered_questions = [int(q_id) for q_id in answers.keys() if str(q_id).isdigit()]
-    
+
+    total_answer_slots = sum(
+        q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
+    )
+    answered_answer_slots = 0
+    for q in questions:
+        if q.question_type == 'essay':
+            continue
+        raw = answers.get(str(q.pk), '')
+        if not raw or not str(raw).strip():
+            continue
+        if q.mcq_dual_question_slots_enabled():
+            try:
+                arr = json.loads(raw) if str(raw).strip().startswith('[') else []
+                arr = arr if isinstance(arr, list) else []
+                answered_answer_slots += min(len([x for x in arr if str(x).strip()]), 2)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        elif q.question_type in FILL_TYPES:
+            try:
+                vals = json.loads(raw) if str(raw).strip().startswith('[') else [raw]
+                if isinstance(vals, list):
+                    slots = q.gradable_answer_slots()
+                    filled = sum(1 for v in vals if str(v).strip())
+                    if slots > 1:
+                        answered_answer_slots += min(filled, slots)
+                    else:
+                        answered_answer_slots += 1 if filled else 0
+                elif str(raw).strip():
+                    answered_answer_slots += 1
+            except (json.JSONDecodeError, TypeError):
+                answered_answer_slots += 1
+        elif q.question_type in MATCHING_TYPES:
+            try:
+                d = json.loads(raw) if str(raw).strip().startswith('{') else {}
+                if isinstance(d, dict):
+                    slots = q.gradable_answer_slots()
+                    filled = sum(1 for v in d.values() if str(v).strip())
+                    if slots > 1:
+                        answered_answer_slots += min(filled, slots)
+                    else:
+                        answered_answer_slots += 1 if filled else 0
+                elif str(raw).strip():
+                    answered_answer_slots += 1
+            except (json.JSONDecodeError, TypeError):
+                answered_answer_slots += 1 if str(raw).strip() else 0
+        elif q.question_type == 'list_selection':
+            try:
+                arr = json.loads(raw) if str(raw).strip().startswith('[') else []
+                if isinstance(arr, list) and len(arr) > 0:
+                    slots = q.gradable_answer_slots()
+                    answered_answer_slots += min(len([x for x in arr if str(x).strip()]), slots if slots else 1)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        else:
+            answered_answer_slots += 1
+
+    mcq_dual_question_pks = [q.pk for q in questions if q.mcq_dual_question_slots_enabled()]
+
     # Timer va vaqt ma'lumotlari
     timer_seconds_left = None
     timer_minutes = None
@@ -850,7 +985,11 @@ def test_take(request, pk):
     
     elapsed_time = test_result.get_elapsed_time()
     answered_count = len(answered_questions)
-    progress_percentage = int((answered_count / max(total_questions, 1)) * 100) if total_questions > 0 else 0
+    progress_percentage = (
+        int((answered_answer_slots / max(total_answer_slots, 1)) * 100)
+        if total_answer_slots > 0
+        else 0
+    )
 
     question_cards = []
     single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
@@ -858,6 +997,9 @@ def test_take(request, pk):
         current_answer_val = answers.get(str(q.pk), '')
         ans_fields, match_flds, list_opts = _get_question_context_extra(q, current_answer_val)
         mcq_opts = []
+        mcq_single_banner = ''
+        mcq_choose_two_banner = ''
+        fill_banner_text = ''
         if q.question_type in single_choice:
             # True/False va Yes/No/Not Given da har doim standart variantlar (admin qanday yozganidan qat'iy nazar)
             if q.question_type == 'true_false':
@@ -881,6 +1023,64 @@ def test_take(request, pk):
         if test.test_type == 'writing' and hasattr(q, 'get_task_images'):
             task_images = q.get_task_images(request)
         mcq_choose_two = (q.question_type in single_choice and getattr(q, 'max_choices', 1) == 2)
+        if mcq_choose_two and q.question_type == 'mcq':
+            # max_choices=2 bo'lsa (Choose TWO...) banner matnini chiqaramiz.
+            letters = [
+                str(o.get('letter', '')).strip().upper()
+                for o in (mcq_opts or [])
+                if isinstance(o, dict) and o.get('letter')
+            ]
+            # fallback: option_a/b/c/d bor bo'lsa
+            if not letters and any([q.option_a, q.option_b, q.option_c, q.option_d]):
+                letters = [x for x in ['A', 'B', 'C', 'D'] if (x == 'A' and q.option_a) or (x == 'B' and q.option_b) or (x == 'C' and q.option_c) or (x == 'D' and q.option_d)]
+
+            letters = [x for x in letters if x]
+            uniq = []
+            for l in letters:
+                if l not in uniq:
+                    uniq.append(l)
+            letters = uniq
+            # A-E kabi ketma-ket bo'lsa diapazon, aks holda ro'yxat.
+            if len(letters) >= 2:
+                # sort by alphabet order
+                letters_sorted = sorted(letters, key=lambda x: ord(x[0]) if x else 0)
+                first = letters_sorted[0][0]
+                last = letters_sorted[-1][0]
+                is_consecutive = all(
+                    (ord(letters_sorted[i][0]) - ord(first)) == i + (ord(letters_sorted[i][0]) - ord(first) - i)
+                    for i in range(len(letters_sorted))
+                )
+                if first.isalpha() and last.isalpha():
+                    # oddiy consecutive check: A..E
+                    ords = [ord(x[0]) for x in letters_sorted if x and x[0].isalpha()]
+                    is_consecutive = bool(ords) and ords == list(range(min(ords), max(ords) + 1))
+                    if is_consecutive:
+                        letters_label = f"{first}–{last}"
+                    else:
+                        letters_label = ', '.join(letters_sorted)
+                else:
+                    letters_label = ', '.join(letters_sorted)
+
+                mcq_choose_two_banner = f"Choose TWO letters, {letters_label}. Write the correct letters in boxes on your answer sheet."
+        if q.question_type == 'mcq' and not mcq_choose_two and mcq_opts:
+            lets = [
+                str(o.get('letter', '')).strip().upper()
+                for o in mcq_opts
+                if isinstance(o, dict) and o.get('letter')
+            ]
+            lets = [x for x in lets if x]
+            if len(lets) >= 2:
+                mcq_single_banner = (
+                    'Choose the correct letter, '
+                    + ', '.join(lets[:-1])
+                    + ' or '
+                    + lets[-1]
+                    + '. Write the correct letter in boxes on your answer sheet.'
+                )
+            elif len(lets) == 1:
+                mcq_single_banner = (
+                    f'Choose the correct letter, {lets[0]}. Write the answer in the box on your answer sheet.'
+                )
         current_answer_list = []
         if mcq_choose_two and current_answer_val:
             try:
@@ -891,6 +1091,43 @@ def test_take(request, pk):
                     current_answer_list = [raw.lower()] if raw else []
             except (TypeError, json.JSONDecodeError):
                 current_answer_list = [current_answer_val.lower()] if current_answer_val else []
+        max_w = q.get_max_words_per_blank()
+        # IELTS uslubidagi banner matni (Engnovate’ga yaqin)
+        if q.question_type in FILL_TYPES:
+            inst = ''
+            try:
+                inst = (q.options_json or {}).get('instruction') or ''
+            except Exception:
+                inst = ''
+            qt = q.question_text or ''
+            u = (inst + "\n" + qt).upper()
+            if 'ONE WORD AND/OR A NUMBER' in u or 'ONE WORD AND/OR A NUMBER' in inst.upper():
+                fill_banner_text = 'Write ONE WORD AND/OR A NUMBER for each answer.'
+            elif 'ONE WORD ONLY' in u or 'ONE WORD ONLY' in inst.upper():
+                fill_banner_text = 'Write ONE WORD ONLY for each answer.'
+            elif 'NO MORE THAN TWO WORDS' in u or 'TWO WORDS' in u:
+                fill_banner_text = 'Choose NO MORE THAN TWO WORDS from the passage for each answer.'
+            elif 'NO MORE THAN THREE WORDS' in u or 'THREE WORDS' in u:
+                fill_banner_text = 'Choose NO MORE THAN THREE WORDS from the passage for each answer.'
+            else:
+                # fallback (max_w bo‘yicha)
+                if max_w == 1:
+                    fill_banner_text = 'Choose ONE WORD from the passage for each answer.'
+                elif max_w == 2:
+                    fill_banner_text = 'Choose NO MORE THAN TWO WORDS from the passage for each answer.'
+                elif max_w == 3:
+                    fill_banner_text = 'Choose NO MORE THAN THREE WORDS from the passage for each answer.'
+        matching_ref_opts = []
+        if match_flds and match_flds[0].get('options'):
+            matching_ref_opts = list(match_flds[0]['options'])
+        sa_list = (q.options_json or {}).get('short_answer_items') or []
+        sa_standalone = (
+            q.question_type == 'short_answer'
+            and isinstance(sa_list, list)
+            and len(sa_list) > 0
+        )
+        slot_mws = [f.get('slot_max_words') for f in ans_fields if isinstance(f, dict) and f.get('slot_max_words')]
+        fill_slots_same = sa_standalone and slot_mws and len(set(slot_mws)) == 1
         question_cards.append({
             'question': q,
             'current_answer': current_answer_val,
@@ -898,15 +1135,81 @@ def test_take(request, pk):
             'mcq_choose_two': mcq_choose_two,
             'answer_fields': ans_fields,
             'matching_fields': match_flds,
+            'matching_ref_options': matching_ref_opts,
             'list_options': list_opts,
             'mcq_options': mcq_opts,
             'inline_fill_parts': inline_parts,
             'question_images': task_images,
+            'fill_max_words': max_w if not fill_slots_same else slot_mws[0],
+            'sa_standalone_rows': sa_standalone,
+            'fill_mixed_word_limits': sa_standalone and slot_mws and len(set(slot_mws)) > 1,
+            'mcq_single_banner': mcq_single_banner,
+            'fill_banner_text': fill_banner_text,
+            'short_answer_banner_text': fill_banner_text,
+            'mcq_choose_two_banner': mcq_choose_two_banner,
         })
 
-    # Savollar tartib raqami 1, 2, 3, ... (Listening/Reading da barcha tugmalar to'g'ri raqamda ko'rinsin)
-    for i, card in enumerate(question_cards):
-        card['display_order'] = i + 1
+    # Savol raqamlari: MCQ 2 tanlov → 21,22; bir nechta bo'sh joy → 23–26; boshqa → bittadan
+    running_display = 1
+    for card in question_cards:
+        q = card['question']
+        card['fill_multi_slots'] = False
+        card['matching_multi_slots'] = False
+        if q.mcq_dual_question_slots_enabled():
+            card['display_order'] = running_display
+            card['display_order_2'] = running_display + 1
+            card['mcq_dual_slots'] = True
+            running_display += 2
+        elif q.question_type in FILL_MULTI_DISPLAY_TYPES and _card_fill_input_count(card) > 1:
+            k = _card_fill_input_count(card)
+            nums = list(range(running_display, running_display + k))
+            running_display += k
+            card['display_order'] = nums[0]
+            card['display_order_2'] = None
+            card['display_order_end'] = nums[-1]
+            card['mcq_dual_slots'] = False
+            card['fill_multi_slots'] = True
+            card['fill_global_nums'] = nums
+            gi = 0
+            if card.get('inline_fill_parts'):
+                for p in card['inline_fill_parts']:
+                    if p.get('type') == 'input':
+                        p['global_num'] = nums[gi] if gi < len(nums) else nums[-1]
+                        gi += 1
+            for i, f in enumerate(card.get('answer_fields') or []):
+                f['global_num'] = nums[i] if i < len(nums) else nums[-1]
+        elif q.question_type in MATCHING_TYPES and len(card.get('matching_fields') or []) > 1:
+            mfs = card['matching_fields']
+            k = len(mfs)
+            nums = list(range(running_display, running_display + k))
+            running_display += k
+            card['display_order'] = nums[0]
+            card['display_order_2'] = None
+            card['display_order_end'] = nums[-1]
+            card['mcq_dual_slots'] = False
+            card['matching_multi_slots'] = True
+            card['matching_global_nums'] = nums
+            for i, mf in enumerate(mfs):
+                mf['global_num'] = nums[i]
+        elif q.question_type in MATCHING_TYPES and len(card.get('matching_fields') or []) == 1:
+            d = running_display
+            running_display += 1
+            card['display_order'] = d
+            card['display_order_2'] = None
+            card['mcq_dual_slots'] = False
+            card['matching_fields'][0]['global_num'] = d
+        else:
+            d = running_display
+            running_display += 1
+            card['display_order'] = d
+            card['display_order_2'] = None
+            card['mcq_dual_slots'] = False
+            if card.get('inline_fill_parts'):
+                for p in card['inline_fill_parts']:
+                    if p.get('type') == 'input':
+                        p['global_num'] = d
+            for f in card.get('answer_fields') or []:
+                f['global_num'] = d
 
     # Part bloklari: 2 variantli testda part = variant (1 yoki 2); boshqalarida explicit part yoki default
     part_indexes = []
@@ -1033,6 +1336,7 @@ def test_take(request, pk):
                             blank_buttons.append({
                                 'num': p['num'],
                                 'blank_id': f"blank-{q.pk}-{p['num']}",
+                                'card_anchor': str(p['num']),
                                 'is_blank': True,
                             })
                 else:
@@ -1040,51 +1344,106 @@ def test_take(request, pk):
                         blank_buttons.append({
                             'num': f['num'],
                             'blank_id': f"blank-{q.pk}-{f['num']}",
+                            'card_anchor': str(f['num']),
                             'is_blank': True,
                         })
             else:
                 do = card.get('display_order', q.order)
-                blank_buttons.append({
-                    'num': do,
-                    'question_id': f"question-{do}",
-                    'is_blank': False,
-                })
+                if card.get('fill_multi_slots') and card.get('fill_global_nums'):
+                    first = card['fill_global_nums'][0]
+                    for gn in card['fill_global_nums']:
+                        blank_buttons.append({
+                            'num': gn,
+                            'question_id': f'question-{first}',
+                            'card_anchor': str(first),
+                            'is_blank': False,
+                        })
+                elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
+                    first = card['matching_global_nums'][0]
+                    for gn in card['matching_global_nums']:
+                        blank_buttons.append({
+                            'num': gn,
+                            'question_id': f'question-{first}',
+                            'card_anchor': str(first),
+                            'is_blank': False,
+                        })
+                elif card.get('mcq_dual_slots'):
+                    do2 = card.get('display_order_2') or (do + 1)
+                    blank_buttons.append({
+                        'num': do,
+                        'question_id': f'question-{do}',
+                        'card_anchor': str(do),
+                        'is_blank': False,
+                    })
+                    blank_buttons.append({
+                        'num': do2,
+                        'question_id': f'question-{do}',
+                        'card_anchor': str(do),
+                        'is_blank': False,
+                    })
+                else:
+                    blank_buttons.append({
+                        'num': do,
+                        'question_id': f'question-{do}',
+                        'card_anchor': str(do),
+                        'is_blank': False,
+                    })
         # Reading: partda savollar bor lekin tugmalar bo'sh qolsa (eski ma'lumot), har savol uchun tugma yaratamiz
         if test.test_type == 'reading' and not blank_buttons and pg['cards']:
             for card in pg['cards']:
                 q = card['question']
                 do = card.get('display_order', q.order)
-                blank_buttons.append({
-                    'num': do,
-                    'question_id': f"question-{do}",
-                    'is_blank': False,
-                })
+                if card.get('fill_multi_slots') and card.get('fill_global_nums'):
+                    first = card['fill_global_nums'][0]
+                    for gn in card['fill_global_nums']:
+                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
+                elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
+                    first = card['matching_global_nums'][0]
+                    for gn in card['matching_global_nums']:
+                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
+                elif card.get('mcq_dual_slots'):
+                    do2 = card.get('display_order_2') or (do + 1)
+                    blank_buttons.append({'num': do, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
+                    blank_buttons.append({'num': do2, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
+                else:
+                    blank_buttons.append({'num': do, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
         pg['blank_buttons'] = blank_buttons
         # range_label: har bir part o'z oralig'ini ko'rsatadi (Part 1: 1-13, Part 2: 14-26, Part 3: 27-40)
         if blank_buttons and all(b.get('is_blank') for b in blank_buttons):
             nums = [b['num'] for b in blank_buttons]
             pg['range_label'] = f"{min(nums)}-{max(nums)}" if len(nums) > 1 else str(nums[0])
         else:
-            pg['range_label'] = f"{pg['start_order']}-{pg['end_order']}" if pg['start_order'] != pg['end_order'] else str(pg['start_order'])
+            dock_nums = [b['num'] for b in blank_buttons if b.get('question_id')]
+            if dock_nums:
+                lo, hi = min(dock_nums), max(dock_nums)
+                pg['range_label'] = f'{lo}-{hi}' if lo != hi else str(lo)
+            else:
+                pg['range_label'] = f"{pg['start_order']}-{pg['end_order']}" if pg['start_order'] != pg['end_order'] else str(pg['start_order'])
 
         # Savol turi bo'yicha guruhlash: har bir turdan oldin shart (QuestionTypeRule) ko'rsatiladi
         type_blocks = []
         for card in pg['cards']:
             q_type = card['question'].question_type
+            d0 = card['display_order']
+            d1 = card.get('display_order_end', d0)
             if type_blocks and type_blocks[-1]['question_type'] == q_type:
                 type_blocks[-1]['cards'].append(card)
+                type_blocks[-1]['end_order'] = max(type_blocks[-1]['end_order'], d1)
             else:
                 type_blocks.append({
                     'question_type': q_type,
                     'shart_text': type_shart_map.get(q_type, ''),
                     'cards': [card],
-                    'start_order': card['question'].order,
-                    'end_order': card['question'].order,
+                    'start_order': d0,
+                    'end_order': d1,
                 })
-            if type_blocks:
-                type_blocks[-1]['end_order'] = card['question'].order
         if not type_blocks and pg['cards']:
-            type_blocks = [{'question_type': '', 'shart_text': '', 'cards': pg['cards'], 'start_order': pg['cards'][0]['question'].order, 'end_order': pg['cards'][-1]['question'].order}]
+            c0, c1 = pg['cards'][0], pg['cards'][-1]
+            type_blocks = [{
+                'question_type': '', 'shart_text': '', 'cards': pg['cards'],
+                'start_order': c0['display_order'],
+                'end_order': c1.get('display_order_end', c1['display_order']),
+            }]
         pg['type_blocks'] = type_blocks
 
     # Reading: har bir partga mos passage (2 variantli da [v1_list, v2_list] — har partga o'sha variantning birinchi passage'i)
@@ -1148,6 +1507,10 @@ def test_take(request, pk):
         'current_answer': answers.get(str(current_question.pk), '') if current_question else '',
         'question_number': answered_count,
         'total_questions': total_questions,
+        'total_answer_slots': total_answer_slots,
+        'answered_answer_slots': answered_answer_slots,
+        'mcq_dual_question_pks': mcq_dual_question_pks,
+        'mcq_dual_question_pks_json': json.dumps(mcq_dual_question_pks),
         'progress_percentage': progress_percentage,
         'answered_questions': answered_questions,
         'question_cards': question_cards,
@@ -1280,33 +1643,51 @@ def test_result(request, pk):
                 # Javoblarni tekshirish va natijani hisoblash
                 answers = test_result.answers_json
                 correct = 0
-                gradable_count = 0
-                
+
                 # Barcha savollarni bir martada olish
                 questions = list(test_result.test.questions.all().order_by('order'))
                 
-                # Javoblarni to'plab, keyin bulk update qilish
+                total_slots_target = sum(
+                    q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
+                )
                 for question in questions:
-                    user_answer = answers.get(str(question.pk), '')
+                    user_answer = (answers.get(str(question.pk), '') or '').strip()
+                    if question.question_type == 'essay':
+                        if user_answer:
+                            UserTestAnswer.objects.update_or_create(
+                                test_result=test_result,
+                                question=question,
+                                defaults={'user_answer': user_answer, 'is_correct': False},
+                            )
+                        continue
+                    if question.mcq_dual_question_slots_enabled():
+                        pts, _ = question.score_mcq_choose_two_dual(user_answer)
+                        correct += pts
+                        UserTestAnswer.objects.update_or_create(
+                            test_result=test_result,
+                            question=question,
+                            defaults={
+                                'user_answer': user_answer,
+                                'is_correct': pts >= 2,
+                            },
+                        )
+                        continue
                     if user_answer:
                         is_correct = question.check_user_answer(user_answer)
-                        if question.question_type != 'essay':
-                            gradable_count += 1
-                            if is_correct:
-                                correct += 1
-                        
-                        # UserTestAnswer yaratish yoki yangilash
+                        if is_correct:
+                            correct += 1
                         UserTestAnswer.objects.update_or_create(
                             test_result=test_result,
                             question=question,
                             defaults={
                                 'user_answer': user_answer,
                                 'is_correct': is_correct,
-                            }
+                            },
                         )
-                
+
+                test_result.total_questions = total_slots_target or len(questions)
                 test_result.correct_answers = correct
-                test_result.wrong_answers = max(0, gradable_count - correct)
+                test_result.wrong_answers = max(0, test_result.total_questions - correct)
                 test_result.completed_at = timezone.now()
                 test_result.attempt_number = test_result.attempt_number or 1
                 # Time tracking - sarflangan vaqtni hisoblash
@@ -1435,9 +1816,21 @@ def test_result(request, pk):
     }
     improvement_tips = [tip_map.get(w['question_type'], "Ushbu savol turida ko'proq amaliy test ishlang.") for w in weak_areas]
 
+    test = test_result.test
+    if getattr(test, 'variants_to_select', 1) == 2:
+        ordered_questions = list(
+            test.questions.order_by(Coalesce(F('variant'), Value(1)), 'order')
+        )
+    else:
+        ordered_questions = list(test.questions.order_by('order'))
+    question_display_num = {q.pk: i + 1 for i, q in enumerate(ordered_questions)}
+
     context = {
         'test_result': test_result,
         'user_answers': user_answers,
+        'ordered_questions': ordered_questions,
+        'question_display_num': question_display_num,
+        'is_writing_test': test.test_type == 'writing',
         'can_retake': can_retake,
         'previous_results': previous_results,
         'comparison_data': comparison_data,

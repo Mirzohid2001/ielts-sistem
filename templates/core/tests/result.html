@@ -4,6 +4,13 @@
 {% block title %}Test Natijasi - IELTS Center{% endblock %}
 
 {% block content %}
+<style>
+.review-answer-box { word-break: break-word; overflow-wrap: anywhere; font-size: 0.98rem; line-height: 1.5; }
+@media (max-width: 767.98px) {
+    .review-answer-box { max-height: 140px; overflow-y: auto; -webkit-overflow-scrolling: touch; font-size: 0.92rem; }
+    .review-question-snippet { max-height: 120px; overflow-y: auto; }
+}
+</style>
 <div class="container mt-4">
     <div class="row">
         <div class="col-12 col-md-10 mx-auto">
@@ -99,6 +106,13 @@
                 </div>
             </div>
 
+            {% if is_writing_test %}
+            <div class="alert alert-info border-0 mb-4" style="border-radius: 12px;">
+                <i class="fas fa-pen me-2"></i>
+                <strong>Writing (essay):</strong> javoblar avtomatik baholanmaydi. Ko‘rsatilgan ball faqat boshqa (agar bo‘lsa) savollar asosida. O‘qituvchi alohida baholashi mumkin.
+            </div>
+            {% endif %}
+
             <!-- Performance Insights -->
             <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px;">
                 <div class="card-header" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%); border-bottom: 2px solid var(--primary); border-radius: 20px 20px 0 0;">
@@ -174,7 +188,7 @@
                     </div>
                 </div>
                 <div class="card-body p-4">
-                    {% for question in test_result.test.questions.all %}
+                    {% for question in ordered_questions %}
                     {% with answer=user_answers|get_item:question.id %}
                     <div class="card mb-4 border-0 shadow-sm" 
                          style="border-left: 4px solid {% if answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %} !important; 
@@ -184,10 +198,10 @@
                             <!-- Header -->
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div style="width: 48px; height: 48px; background: {% if answer and answer.is_correct %}linear-gradient(135deg, var(--success) 0%, #059669 100%){% elif answer and question.question_type == 'essay' %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% elif answer %}linear-gradient(135deg, var(--danger) 0%, #dc2626 100%){% else %}linear-gradient(135deg, var(--gray-400) 0%, var(--gray-500) 100%){% endif %}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; margin-right: 1rem; box-shadow: 0 4px 12px {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.3){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.3){% elif answer %}rgba(239, 68, 68, 0.3){% else %}rgba(107, 114, 128, 0.3){% endif %}; font-size: 1.1rem;">
-                                    {{ question.order }}
+                                    {{ forloop.counter }}
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h6 class="mb-2" style="font-weight: 700; font-size: 1.1rem; color: var(--gray-900);">Question {{ question.order }}</h6>
+                                    <h6 class="mb-2" style="font-weight: 700; font-size: 1.1rem; color: var(--gray-900);">Savol {{ forloop.counter }}</h6>
                                 </div>
                                 {% if answer %}
                                     {% if answer.is_correct %}
@@ -211,56 +225,45 @@
                             </div>
                             
                             <!-- Question text -->
-                            <p class="mb-4" style="font-size: 1.05rem; line-height: 1.8; color: var(--gray-800); font-weight: 500;">{{ question.question_text|linebreaks }}</p>
+                            <p class="mb-4 review-question-snippet" style="font-size: 1.05rem; line-height: 1.8; color: var(--gray-800); font-weight: 500;">{{ question.question_text|linebreaks }}</p>
                             
                             <!-- Answers - Bir xil dizayn -->
                             <div class="row g-3">
-                                <!-- Sizning javobingiz -->
                                 <div class="col-12 col-md-6">
                                     <div class="card" style="background: {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.1){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.1){% elif answer %}rgba(239, 68, 68, 0.1){% else %}rgba(107, 114, 128, 0.1){% endif %}; 
                                                               border: 2px solid {% if answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %}; 
-                                                              border-radius: 12px; min-height: 100px;">
+                                                              border-radius: 12px; min-height: 80px;">
                                         <div class="card-body p-3">
-                                            <p class="mb-2" style="font-weight: 700; font-size: 0.875rem; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px;">
-                                                <i class="fas fa-user me-1"></i>Sizning javobingiz:
+                                            <p class="mb-2" style="font-weight: 700; font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase;">
+                                                <i class="fas fa-user me-1"></i>Sizning javobingiz
                                             </p>
                                             {% if answer %}
-                                            <p class="mb-0" style="color: {% if answer.is_correct %}var(--success){% elif question.question_type == 'essay' %}#d97706{% else %}var(--danger){% endif %}; font-weight: 700; font-size: 1.05rem;">
+                                            <div class="review-answer-box" style="color: {% if answer.is_correct %}var(--success){% elif question.question_type == 'essay' %}#b45309{% else %}var(--danger){% endif %}; font-weight: 600;">
                                                 {% if question.question_type == 'mcq' or question.question_type == 'true_false' or question.question_type == 'true_false_not_given' or question.question_type == 'yes_no_not_given' %}
                                                 {{ question|display_user_answer:answer.user_answer }}
                                                 {% else %}
                                                 {{ answer.user_answer|format_user_answer }}
                                                 {% endif %}
-                                            </p>
+                                            </div>
                                             {% else %}
-                                            <p class="mb-0" style="color: var(--gray-500); font-weight: 600; font-size: 1.05rem; font-style: italic;">
-                                                Javob berilmagan
-                                            </p>
+                                            <p class="mb-0 text-muted fst-italic">Javob berilmagan</p>
                                             {% endif %}
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <!-- To'g'ri javob -->
-                                <div class="col-md-6">
-                                    <div class="card" style="background: {% if question.question_type == 'essay' %}rgba(245, 158, 11, 0.1){% else %}rgba(16, 185, 129, 0.1){% endif %}; border: 2px solid {% if question.question_type == 'essay' %}#f59e0b{% else %}var(--success){% endif %}; border-radius: 12px; min-height: 100px;">
+                                <div class="col-12 col-md-6">
+                                    <div class="card" style="background: {% if question.question_type == 'essay' %}rgba(245, 158, 11, 0.08){% else %}rgba(16, 185, 129, 0.08){% endif %}; border: 2px solid {% if question.question_type == 'essay' %}#f59e0b{% else %}var(--success){% endif %}; border-radius: 12px; min-height: 80px;">
                                         <div class="card-body p-3">
-                                            <p class="mb-2" style="font-weight: 700; font-size: 0.875rem; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px;">
-                                                <i class="fas fa-check-circle me-1"></i>{% if question.question_type == 'essay' %}Baholash{% else %}To'g'ri javob{% endif %}:
+                                            <p class="mb-2" style="font-weight: 700; font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase;">
+                                                <i class="fas fa-check-circle me-1"></i>{% if question.question_type == 'essay' %}Baholash{% else %}To'g'ri javob{% endif %}
                                             </p>
-                                            <p class="mb-0" style="color: {% if question.question_type == 'essay' %}#d97706{% else %}var(--success){% endif %}; font-weight: 700; font-size: 1.05rem;">
+                                            <div class="review-answer-box" style="color: {% if question.question_type == 'essay' %}#b45309{% else %}var(--success){% endif %}; font-weight: 600;">
                                                 {% if question.question_type == 'essay' %}
-                                                O'qituvchi baholashi kerak
-                                                {% elif question.question_type == 'mcq' or question.question_type == 'true_false' or question.question_type == 'true_false_not_given' or question.question_type == 'yes_no_not_given' %}
-                                                {{ question.get_correct_answer_display_for_review }}
+                                                Avtomatik baholanmaydi — o‘qituvchi tekshiradi.
                                                 {% else %}
-                                                {% if question.correct_answer_json %}
-                                                {{ question.correct_answer_json|format_user_answer }}
-                                                {% else %}
-                                                {{ question.get_correct_answers_list|format_user_answer }}
+                                                {{ question.get_correct_answer_review_text }}
                                                 {% endif %}
-                                                {% endif %}
-                                            </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

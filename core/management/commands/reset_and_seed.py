@@ -10,6 +10,7 @@ Ishlatish:
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.core.management import call_command
 
 from core.models import (
     Category,
@@ -93,3 +94,9 @@ class Command(BaseCommand):
 
         total = n_reading + n_listening + n_writing
         self.stdout.write(self.style.SUCCESS(f"Jami: {total} ta ideal test bazaga qo'shildi."))
+
+        # 6) Qo'shimcha "coverage" testlar (bitta savol turi bo'yicha namuna)
+        #    — list_selection, matching_headings, sentence_completion va b. tiplar bo'sh qolmasin.
+        self.stdout.write("Qo'shimcha: seed_tests_by_question_type (no-delete) ishlayapti...")
+        call_command("seed_tests_by_question_type", "--no-delete", verbosity=0)
+        self.stdout.write(self.style.SUCCESS("Qo'shimcha coverage testlar qo'shildi (seed_tests_by_question_type)."))

@@ -72,7 +72,7 @@
         text-align: center;
     }
     .exam-part-tab.active {
-        background: #f8fafc;
+        background: #fff;
         border-color: #9ca3af;
     }
     .part-label { font-size: .8rem; font-weight: 600; color: #64748b; margin-right: .5rem; }
@@ -131,6 +131,44 @@
     .answer-option:hover {
         border-color: #93c5fd !important;
         background: rgba(37, 99, 235, .04) !important;
+    }
+    /* Engnovate uslubi: MCQ da A/B/C… harflarni doira ichida ko'rsatish */
+    .reading-style .mcq-checkbox-label span strong,
+    .reading-style .mcq-checkbox-label span > strong,
+    .listening-style .mcq-checkbox-label span strong,
+    .listening-style .mcq-checkbox-label span > strong,
+    .reading-style label > input[type="radio"] + span > strong,
+    .listening-style label > input[type="radio"] + span > strong,
+    .reading-style label > input[type="checkbox"] + span > strong,
+    .listening-style label > input[type="checkbox"] + span > strong {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #111827;
+        font-weight: 800;
+        font-size: .85rem;
+        line-height: 1;
+        flex-shrink: 0;
+        margin-right: .35rem;
+        padding-top: 1px;
+    }
+    /* checkbox/radio yonidagi o‘qish uchun qulay bo‘lsin */
+    .reading-style .mcq-checkbox-label,
+    .listening-style .mcq-checkbox-label,
+    .reading-style .mcq-checkbox-label input,
+    .listening-style .mcq-checkbox-label input {
+        cursor: pointer;
+    }
+    .reading-style input[type="checkbox"].mcq-multi-checkbox,
+    .listening-style input[type="checkbox"].mcq-multi-checkbox,
+    .reading-style input[type="radio"],
+    .listening-style input[type="radio"] {
+        accent-color: #2563eb;
     }
     .test-header-card .btn.btn-sm {
         box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
@@ -559,11 +597,11 @@
     .inline-blank-wrap { display: inline; }
     .inline-blank-num {
         display: inline-block;
-        min-width: 24px;
-        padding: 2px 6px;
+        min-width: 26px;
+        padding: 2px 7px;
         margin-right: 4px;
         border: 1px solid #9ca3af;
-        border-radius: 2px;
+        border-radius: 4px;
         font-size: .85rem;
         font-weight: 600;
         color: #374151;
@@ -572,18 +610,39 @@
     }
     .inline-blank-input {
         display: inline-block;
-        width: 90px;
-        min-width: 60px;
+        width: 110px;
+        min-width: 70px;
         max-width: 140px;
         border: 1px solid #9ca3af;
-        border-radius: 2px;
-        padding: 2px 6px;
+        border-radius: 4px;
+        padding: 2px 8px;
         font-size: 0.95rem;
         vertical-align: baseline;
         margin: 0 2px;
     }
     .inline-blank-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
-    .engnovate-notes-format { line-height: 2; }
+    /* Engnovate'ga yaqin: fill/short_answer blank inputlari (jadvalsiz) */
+    #exam-take-form input[data-blank-id] {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: .35rem .6rem;
+        height: 42px;
+        box-shadow: none;
+        background: #fff;
+    }
+    #exam-take-form input[data-blank-id]:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, .35);
+    }
+    .engnovate-notes-format { line-height: 2; font-size: .95rem; }
+    .engnovate-notes-format strong,
+    .engnovate-notes-format b {
+        font-weight: 800;
+    }
+    .engnovate-notes-format i,
+    .engnovate-notes-format em {
+        font-style: italic;
+    }
     /* ========== Reading: Engnovate uslubi (birga bir) ========== */
     .reading-style .part-section {
         border-radius: 0;
@@ -705,7 +764,113 @@
     .engnovate-all-parts-stacked .reading-part-block-left { margin-bottom: 2rem; }
     .engnovate-all-parts-stacked .reading-part-block-sep { padding-top: 2rem; border-top: 1px solid #e5e7eb; margin-top: 0.5rem; }
     /* Reading: savol raqami rasmdagidek qora ramkada (True/False/Not Given) */
-    .part-q-card .question-num-box {
+        .ielts-mcq-single-banner {
+            background: #fee2e2;
+            border: 1px solid #f87171;
+            color: #991b1b;
+            padding: .5rem .75rem;
+            border-radius: 4px;
+            font-size: .875rem;
+            margin-bottom: .75rem;
+        }
+        .ielts-word-limit-banner {
+            background: #fee2e2;
+            border: 1px solid #f87171;
+            color: #991b1b;
+            padding: .5rem .75rem;
+            border-radius: 4px;
+            font-size: .875rem;
+            margin-bottom: .75rem;
+        }
+        /* Admin: instruction/banner qutisi presetlari */
+        .admin-instruction-box {
+            font-size: .95rem;
+            line-height: 1.6;
+        }
+        .admin-instruction-box--engnovate-red {
+            background: #fee2e2 !important;
+            border: 1px solid #f87171 !important;
+            color: #991b1b !important;
+            padding: .5rem .75rem !important;
+            border-radius: 4px !important;
+            font-size: .875rem !important;
+            margin-bottom: .75rem !important;
+        }
+        .admin-instruction-box--plain {
+            background: transparent !important;
+            border: none !important;
+            color: #374151 !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            margin-bottom: .65rem !important;
+        }
+        .admin-instruction-box--gray {
+            background: #f3f4f6 !important;
+            border: 1px solid #d1d5db !important;
+            color: #374151 !important;
+            padding: .5rem .75rem !important;
+            border-radius: 4px !important;
+            margin-bottom: .75rem !important;
+        }
+        /* Admin: question headline/prompt presetlari */
+        .admin-prompt-text--headline {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1.65;
+        }
+        .admin-prompt-text--plain {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #374151;
+            line-height: 1.65;
+        }
+        /* Engnovate'ga yaqin: Listening/Reading’da word limitni qizil banner emas, oddiy matn ko'rinishida */
+        .listening-style .ielts-word-limit-banner,
+        .reading-style .ielts-word-limit-banner {
+            background: transparent;
+            border: none;
+            color: #374151;
+            padding: 0;
+            border-radius: 0;
+            font-size: .95rem;
+            margin-bottom: .65rem;
+        }
+        .matching-reference-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            background: #fafafa;
+        }
+        .matching-reference-box .matching-ref-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 0.65rem;
+            color: #374151;
+        }
+        .matching-reference-box .matching-ref-row {
+            padding: 0.25rem 0;
+            line-height: 1.45;
+        }
+        .matching-statement-row {
+            align-items: flex-start;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .matching-statement-row:last-child { border-bottom: none; }
+        .matching-statement-row select.form-select {
+            max-width: 5.5rem;
+            min-width: 5rem;
+            font-weight: 600;
+        }
+        .sentence-completion-block .inline-blank-num,
+        .table-completion-block .inline-blank-num {
+            min-width: 2rem;
+            text-align: center;
+            font-weight: 700;
+        }
+        .part-q-card .question-num-box {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -716,7 +881,7 @@
         color: #fff;
         font-weight: 700;
         font-size: 0.9rem;
-        border-radius: 2px;
+        border-radius: 4px;
         margin-right: 8px;
         vertical-align: middle;
     }
@@ -739,6 +904,15 @@
         border-radius: 8px;
         margin: 0 0 .5rem 0;
     }
+    /* Engnovate'ga yaqin: Listening part sarlavhalari pill emas, oddiy matn */
+    .exam-split-layout.listening-layout .listening-part-bar {
+        background: transparent;
+        color: #111827;
+        padding: 0;
+        border-radius: 0;
+        margin: 0 0 .65rem 0;
+        border: 0;
+    }
     /* Listening: partlar va dock — Reading dagidek tartibli dizayn */
     .listening-style.exam-right-pane { background: #fff !important; }
     .listening-style .card { background: #fff !important; border-color: #e5e7eb; }
@@ -751,6 +925,13 @@
         font-size: .75rem; color: #64748b; font-style: italic;
     }
     .listening-style .part-section-header { font-weight: 700; color: #111827; border-bottom: 1px solid #e5e7eb; padding: .5rem 0 .6rem 0; }
+    /* Engnovate'ga yaqin: Listening part headerlari juda sodda ko'rinsin */
+    .listening-style .part-section-header {
+        background: transparent;
+        border-bottom: none;
+        padding: 0;
+        margin: 0 0 .75rem 0;
+    }
     .listening-style .part-section .part-q-card { border-bottom: 1px solid #f3f4f6; padding: .85rem 0 1rem 0; }
     .listening-style .reading-part-tabs-fullwidth { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid #e5e7eb; }
     .listening-style .reading-part-tabs-fullwidth .reading-dock-part-row { color: #374151; font-weight: 600; }
@@ -761,12 +942,38 @@
     .listening-style .listening-part-section-header { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
     .listening-style .listening-part-heading-text { font-weight: 700; color: #111827; }
     .listening-style .listening-listen-from-here { font-size: .8rem; text-decoration: none; white-space: nowrap; }
+    /* "Listen From Here" Engnovate'dagi kabi linkga o'xshasin */
+    .listening-style .listening-listen-from-here,
+    .exam-split-layout.listening-layout .listening-listen-from-here {
+        background: transparent !important;
+        border: 0 !important;
+        padding: 0 !important;
+        color: #2563eb !important;
+        box-shadow: none !important;
+        font-weight: 700;
+    }
+    .listening-style .listening-listen-from-here:hover,
+    .exam-split-layout.listening-layout .listening-listen-from-here:hover {
+        text-decoration: underline;
+    }
     .exam-split-layout.listening-layout { flex-direction: column !important; }
     .exam-split-layout.listening-layout .exam-listening-wrap { max-width: 900px; margin: 0 auto; }
     .exam-split-layout.listening-layout .exam-split-divider { display: none; }
     .exam-split-layout.listening-layout .exam-left-pane,
     .exam-split-layout.listening-layout .exam-right-pane { flex: none; width: 100%; }
     .exam-split-layout.listening-layout .exam-right-pane { position: static; max-height: none; }
+    /* Writing: Engnovate'ga yaqin (chap prompt panelini berkitib), o'ngda ko'rsatish */
+    .exam-split-layout.writing-layout { flex-direction: column !important; }
+    .exam-split-layout.writing-layout .exam-left-pane { display: none !important; }
+    .exam-split-layout.writing-layout .exam-split-divider { display: none !important; }
+    .exam-split-layout.writing-layout .exam-right-pane {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        background: #fff;
+        border: 0;
+        padding: .25rem .1rem;
+    }
     .exam-listening-wrap .listening-audio-card {
         border: 1px solid #e5e7eb;
         border-radius: 10px;
@@ -778,15 +985,52 @@
         border-radius: 0;
         margin-bottom: .75rem;
     }
+    /* Engnovate'ga yaqin: audio blok card ko'rinishida emas, sodda */
+    .exam-split-layout.listening-layout .listening-audio-card {
+        border: 0;
+        box-shadow: none;
+        background: transparent;
+    }
+    .exam-split-layout.listening-layout .listening-audio-card .card-body {
+        padding: 0 !important;
+    }
     .writing-part-bar {
         background: #111827;
         color: #fff;
         font-weight: 700;
         font-size: 1rem;
         padding: .65rem 1rem;
+        border-radius: 12px 12px 8px 8px;
     }
-    .writing-task-card { border: 1px solid #d1d5db; border-radius: 0; }
+    .writing-task-card { border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; }
     .writing-task-content { font-size: 0.95rem; line-height: 1.7; }
+    /* Writing answer box - Engnovate'ga yaqin */
+    .writing-answer-ta {
+        width: 100%;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: .85rem .9rem;
+        background: #fff;
+        box-shadow: none;
+        resize: vertical;
+    }
+    .writing-answer-ta:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, .25) !important;
+        outline: none;
+    }
+    .writing-task-prompt {
+        font-size: 1rem;
+        line-height: 1.75;
+        color: #111827;
+        white-space: normal;
+        margin-bottom: .6rem;
+    }
+    .word-count-label {
+        font-weight: 700;
+        color: #6b7280;
+        letter-spacing: -0.01em;
+    }
     .writing-image-carousel { position: relative; display: flex; align-items: center; gap: .5rem; }
     .writing-image-carousel .writing-img-slides { flex: 1; position: relative; min-height: 120px; }
     .writing-image-carousel .writing-img-slide { display: none; }
@@ -855,6 +1099,15 @@
         .exam-footer-fullwidth .part-q-buttons.dock-part-wrap { padding: 0.45rem 0.6rem; border-radius: 10px; }
         .exam-footer-fullwidth .dock-parts-row { gap: 0.6rem !important; padding-bottom: 8px; }
         .exam-bottom-dock { flex-direction: column; align-items: stretch; padding: 0; gap: 0.75rem; }
+        .exam-footer-fullwidth .exam-bottom-dock {
+            position: sticky; bottom: 0; z-index: 1030; background: #fff;
+            padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+            box-shadow: 0 -8px 24px rgba(0,0,0,.1); border-radius: 14px 14px 0 0; margin-top: 0.5rem;
+        }
+        .dock-part-wrap.dock-active .dock-part-expanded {
+            flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch;
+            max-width: 100%; padding-bottom: 4px; gap: 4px !important;
+        }
         .exam-bottom-dock > div:first-child { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.25rem; }
         .exam-nav-arrows .nav-arrow { width: 40px; height: 40px; font-size: 0.95rem; border-radius: 10px; min-width: 40px; min-height: 40px; }
         .btn-submit-exam { width: 100%; padding: 0.65rem 1rem; font-size: 1rem; border-radius: 12px; }
@@ -952,7 +1205,7 @@
                 </div>
             </div>
 
-            <div class="exam-split-layout{% if test.test_type == 'listening' %} listening-layout{% endif %}">
+            <div class="exam-split-layout{% if test.test_type == 'listening' %} listening-layout{% endif %}{% if test.test_type == 'writing' %} writing-layout{% endif %}">
                 <div class="exam-left-pane">
                     {% if test.test_type == 'listening' %}
                     <div class="exam-listening-wrap">
@@ -1100,6 +1353,7 @@
                     <div id="question-container">
                         <form id="exam-take-form" method="post" action="{% url 'core:test_take' test.pk %}" data-all-questions="1">
                             {% csrf_token %}
+                            <script>window.__MCQ_DUAL_PKS = {{ mcq_dual_question_pks_json|default:"[]"|safe }};</script>
                             <div class="card border-0 shadow-sm exam-questions-card-only d-flex flex-column">
                                 <div class="card-body p-2 d-flex flex-column min-h-0">
                                     {% if part_groups|length > 1 %}
@@ -1110,7 +1364,7 @@
                                         <div class="d-flex align-items-center gap-2">
                                             <h5 class="mb-0 fw-bold">{% if test.test_type == 'listening' %}Listening{% else %}Questions {{ questions_range_display|default:total_questions }}{% endif %}</h5>
                                         </div>
-                                        <span class="badge bg-light text-dark border" id="answered-badge" data-total-blanks="{{ total_blanks|default:0 }}" data-answered-blanks="{{ answered_blanks|default:0 }}" data-total-questions="{{ total_questions }}" data-answered-questions="{{ answered_questions|length }}">{% if total_blanks %}{{ answered_blanks|default:0 }}/{{ total_blanks }} answered{% else %}{{ answered_questions|length }}/{{ total_questions }} answered{% endif %}</span>
+                                        <span class="badge bg-light text-dark border" id="answered-badge" data-total-blanks="{{ total_blanks|default:0 }}" data-answered-blanks="{{ answered_blanks|default:0 }}" data-total-questions="{{ total_answer_slots }}" data-answered-questions="{{ answered_answer_slots }}">{% if total_blanks %}{{ answered_blanks|default:0 }}/{{ total_blanks }} answered{% else %}{{ answered_answer_slots }}/{{ total_answer_slots }} answered{% endif %}</span>
                                     </div>
                                     {% endif %}
 
@@ -1119,8 +1373,8 @@
                                     <section class="part-section" id="{{ pg.slug }}" data-part-section="{{ pg.part_number }}" aria-label="{{ pg.title }}: savollar {{ pg.range_label }}">
                                         {% if test.test_type == 'writing' or test.test_type == 'listening' or part_groups|length > 1 %}
                                         <div class="part-section-header{% if test.test_type == 'writing' %} writing-answer-header{% endif %}{% if test.test_type == 'listening' %} listening-part-section-header{% endif %}">
-                                            {% if test.test_type == 'writing' %}{{ pg.title }} Answer{% elif test.test_type == 'listening' %}
-                                            <span class="listening-part-heading-text">Part {{ pg.part_number }} – Questions {{ pg.range_label }}</span>
+                                            {% if test.test_type == 'writing' %}{{ pg.title }}{% elif test.test_type == 'listening' %}
+                                            <span class="listening-part-heading-text">{{ pg.title }}: Listen and answer questions {{ pg.range_label }}</span>
                                             {% if test.audio_file %}<a href="#" class="btn btn-sm btn-outline-primary listening-listen-from-here ms-2" data-part="{{ pg.part_number }}" data-audio-start="{{ pg.audio_start_time|default:0 }}"><i class="fas fa-headphones me-1"></i>Listen From Here</a>{% endif %}
                                             {% else %}{{ pg.title }}: Questions {{ pg.range_label }}{% endif %}
                                         </div>
@@ -1138,38 +1392,65 @@
                                         {% endif %}
                                         {% for item in type_block.cards %}
                                         {% with q=item.question %}
-                                        <div class="part-q-card" id="question-{{ item.display_order|default:q.order }}" data-question-id="{{ q.pk }}">
+                                        <div class="part-q-card" id="question-{{ item.display_order|default:q.order }}" data-question-id="{{ q.pk }}" data-first-order="{{ item.display_order|default:q.order }}" data-last-order="{% if item.display_order_2 %}{{ item.display_order_2 }}{% else %}{{ item.display_order|default:q.order }}{% endif %}">
                                             {% if not item.inline_fill_parts and test.test_type != 'writing' %}
-                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                {% if test.test_type == 'reading' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' or q.question_type == 'mcq' or q.question_type == 'true_false' %}
+                                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                                                 {% if test.test_type == 'reading' %}
-                                                <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
+                                                    {% if item.mcq_dual_slots %}
+                                                    <span class="question-num-box">{{ item.display_order }}</span>
+                                                    <span class="question-num-box">{{ item.display_order_2 }}</span>
+                                                    {% else %}
+                                                    <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
+                                                    {% endif %}
                                                 {% else %}
                                                 {% if q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' or q.question_type == 'mcq' or q.question_type == 'true_false' %}
-                                                <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
-                                                {% else %}
-                                                <span class="badge bg-light text-dark border">Question {{ item.display_order|default:q.order }}</span>
+                                                    {% if item.mcq_dual_slots %}
+                                                    <span class="question-num-box">{{ item.display_order }}</span>
+                                                    <span class="question-num-box">{{ item.display_order_2 }}</span>
+                                                    {% else %}
+                                                    <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
+                                                    {% endif %}
                                                 {% endif %}
                                                 {% endif %}
                                             </div>
+                                                {% endif %}
                                             {% endif %}
 
                                             {% if test.test_type != 'writing' %}
                                             {% if q.question_instruction %}
-                                            <div class="small text-muted mb-2">{{ q.question_instruction }}</div>
+                                            <div class="admin-instruction-box mb-2 admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}">
+                                                {{ q.question_instruction }}
+                                            </div>
                                             {% endif %}
                                             {% if not item.inline_fill_parts %}
                                             {% if q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
-                                            <div class="mb-3 matching-instruction-text">{{ q.question_text|linebreaks }}</div>
+                                            <div class="mb-3 matching-instruction-text admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
+                                                {{ q.question_text|format_instruction }}
+                                            </div>
                                             {% else %}
-                                            <div class="mb-3">{{ q.question_text|linebreaks }}</div>
+                                            <div class="mb-3 admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
+                                                {{ q.question_text|format_instruction }}
+                                            </div>
                                             {% endif %}
                                             {% endif %}
                                             {% endif %}
 
                                             {% if q.question_type == 'mcq' or q.question_type == 'true_false' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' %}
                                                 <div class="{% if test.test_type == 'reading' %}mcq-options-row{% else %}d-block{% endif %}">
+                                                {% if item.mcq_single_banner and not item.mcq_choose_two and q.question_type == 'mcq' %}
+                                                <div class="ielts-mcq-single-banner admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'engnovate-red' }}" role="note">
+                                                    {{ item.mcq_single_banner }}
+                                                </div>
+                                                {% endif %}
                                                 {% if item.mcq_choose_two %}
-                                                <p class="small text-muted mb-2">2 ta variant tanlang.</p>
+                                                <p class="admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }} small mb-2">
+                                                    {% if item.mcq_dual_slots %}
+                                                    Choose <strong>TWO</strong> letters, <strong>A–E</strong>. Write the correct letters in boxes on your answer sheet.
+                                                    {% else %}
+                                                    {{ item.mcq_choose_two_banner|default:"Choose TWO letters." }}
+                                                    {% endif %}
+                                                </p>
                                                 {% for option in item.mcq_options %}
                                                 <label class="{% if test.test_type != 'reading' %}d-flex align-items-start gap-2 mb-2{% endif %} mcq-checkbox-label">
                                                     <input type="checkbox"
@@ -1195,28 +1476,67 @@
                                                 {% endif %}
                                                 </div>
 
+                                            {% elif q.question_type == 'short_answer' and item.sa_standalone_rows %}
+                                                {% if item.fill_mixed_word_limits %}
+                                                    <div class="ielts-word-limit-banner admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}" role="note">
+                                                        <strong>Follow the word limit</strong> shown for each question (NO MORE THAN ONE / TWO / THREE WORDS).
+                                                    </div>
+                                                {% elif item.short_answer_banner_text %}
+                                                    <div class="ielts-word-limit-banner admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}" role="note">
+                                                        <strong>{{ item.short_answer_banner_text }}</strong>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="mb-3 short-answer-intro">{{ q.question_text|linebreaksbr }}</div>
+                                                {% for f in item.answer_fields %}
+                                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3 short-answer-standalone-row">
+                                                    <span class="question-num-box flex-shrink-0">{{ f.global_num|default:f.num }}</span>
+                                                    <span class="flex-grow-1" style="min-width:12rem;">{{ f.prompt }}</span>
+                                                    <input type="text" class="form-control flex-shrink-0" style="max-width:16rem;min-width:10rem;"
+                                                           name="answer_{{ q.pk }}_{{ f.num }}"
+                                                           value="{{ f.value }}"
+                                                           autocomplete="off"
+                                                           {% if f.slot_max_words %}data-max-words="{{ f.slot_max_words }}" title="Max {{ f.slot_max_words }} word(s)"{% endif %}
+                                                           data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}">
+                                                    {% if item.fill_mixed_word_limits and f.slot_max_words %}
+                                                    <span class="small text-muted flex-shrink-0">≤{{ f.slot_max_words }} {% if f.slot_max_words == 1 %}word{% else %}words{% endif %}</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
+
                                             {% elif q.question_type == 'fill_blank' or q.question_type == 'summary_completion' or q.question_type == 'notes_completion' or q.question_type == 'sentence_completion' or q.question_type == 'table_completion' or q.question_type == 'short_answer' %}
+                                                {% if item.fill_banner_text %}
+                                                <div class="ielts-word-limit-banner admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}" role="note">
+                                                    <strong>{{ item.fill_banner_text }}</strong>
+                                                </div>
+                                                {% endif %}
                                                 {% if item.inline_fill_parts %}
-                                                <div class="engnovate-notes-format">
+                                                <div class="engnovate-notes-format {% if q.question_type == 'sentence_completion' %}sentence-completion-block{% elif q.question_type == 'table_completion' %}table-completion-block{% endif %}">
                                                     {% for p in item.inline_fill_parts %}
-                                                    {% if p.type == 'text' %}{{ p.content|linebreaksbr }}{% endif %}
+                                                    {% if p.type == 'text' %}
+                                                        <span class="admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
+                                                            {{ p.content|linebreaksbr }}
+                                                        </span>
+                                                    {% endif %}
                                                     {% if p.type == 'input' %}
                                                     <span class="inline-blank-wrap">
-                                                        <span class="inline-blank-num">[{{ p.label|default:p.num }}]</span>
-                                                        <input type="text" class="inline-blank-input" name="answer_{{ q.pk }}_{{ p.num }}" value="{{ p.value }}" maxlength="80" placeholder="" title="Answer {{ p.num }}" data-blank-id="blank-{{ q.pk }}-{{ p.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ p.num }}">
+                                                        <span class="inline-blank-num">{{ p.global_num|default:p.num }}</span>
+                                                        <input type="text" class="inline-blank-input" name="answer_{{ q.pk }}_{{ p.num }}" value="{{ p.value }}" maxlength="120" placeholder="" title="Max {{ item.fill_max_words|default:'—' }} word(s)" data-blank-id="blank-{{ q.pk }}-{{ p.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ p.num }}" {% if item.fill_max_words %}data-max-words="{{ item.fill_max_words }}"{% endif %}>
                                                     </span>
                                                     {% endif %}
                                                     {% endfor %}
                                                 </div>
                                                 {% else %}
-                                                <div class="row g-2">
+                                                <div class="row g-2 {% if q.question_type == 'sentence_completion' %}sentence-completion-block{% elif q.question_type == 'table_completion' %}table-completion-block{% endif %}">
                                                     {% for f in item.answer_fields %}
-                                                    <div class="col-12 col-md-6">
-                                                        <label class="form-label mb-1 small">Javob [{{ f.num }}]</label>
+                                                    <div class="col-12 col-md-6 d-flex align-items-center gap-2 flex-wrap">
+                                                        <span class="question-num-box flex-shrink-0">{{ f.global_num|default:f.num }}</span>
+                                                        <div class="flex-grow-1" style="min-width:12rem;">
+                                                        <label class="form-label mb-1 small visually-hidden">Javob {{ f.global_num|default:f.num }}</label>
                                                         <input type="text" class="form-control"
                                                                name="answer_{{ q.pk }}_{{ f.num }}"
                                                                value="{{ f.value }}"
-                                                               data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}">
+                                                               data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}" {% if item.fill_max_words %}data-max-words="{{ item.fill_max_words }}"{% endif %}>
+                                                        </div>
                                                     </div>
                                                     {% empty %}
                                                     <div class="col-12">
@@ -1232,22 +1552,46 @@
                                                 {% endif %}
 
                                             {% elif q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
+                                                {% if item.matching_ref_options %}
+                                                <div class="matching-reference-box" aria-label="Tanlash uchun ro'yxat">
+                                                    {% if q.question_type == 'matching_headings' %}
+                                                    <div class="matching-ref-title">List of Headings</div>
+                                                    {% for op in item.matching_ref_options %}
+                                                    <div class="matching-ref-row"><span class="text-muted">{{ op.letter }}.</span> {% if op.text %}{{ op.text }}{% endif %}</div>
+                                                    {% endfor %}
+                                                    {% else %}
+                                                    <div class="matching-ref-title">{% if q.question_type == 'matching_features' or q.question_type == 'matching_info' %}List of {% if q.question_type == 'matching_features' %}people{% else %}paragraphs{% endif %}{% else %}Variantlar{% endif %}</div>
+                                                    {% for op in item.matching_ref_options %}
+                                                    <div class="matching-ref-row"><strong>{{ op.letter|upper }}.</strong> {% if op.text %}{{ op.text }}{% endif %}</div>
+                                                    {% endfor %}
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
+                                                {% if q.question_type == 'matching_headings' %}
+                                                <p class="small text-muted mb-2">{{ q.options_json.instruction|default:"Choose the correct heading for each section from the list of headings below." }}</p>
+                                                {% endif %}
                                                 {% for mf in item.matching_fields %}
-                                                <div class="d-flex align-items-center gap-2 mb-2">
-                                                    <span class="small text-muted" style="min-width: 28px;">{{ mf.num }}.</span>
-                                                    <span class="flex-grow-1">{{ mf.label }}</span>
-                                                    <select class="form-select" style="max-width: 220px;" name="match_{{ q.pk }}_{{ mf.num }}">
-                                                        <option value="">--</option>
+                                                <div class="d-flex gap-2 mb-0 matching-statement-row flex-wrap">
+                                                    <span class="question-num-box flex-shrink-0">{{ mf.global_num|default:mf.num }}</span>
+                                                    <span class="flex-grow-1" style="min-width: 200px;">{{ mf.label }}</span>
+                                                    <select class="form-select flex-shrink-0" name="match_{{ q.pk }}_{{ mf.num }}" aria-label="Javob {{ mf.global_num|default:mf.num }}" data-matching-select>
+                                                        <option value="">—</option>
                                                         {% for op in mf.options %}
-                                                        <option value="{{ op.letter }}" {% if mf.value == op.letter %}selected{% endif %}>
-                                                            {{ op.letter }}{% if op.text %}. {{ op.text }}{% endif %}
-                                                        </option>
+                                                        {% if q.question_type == 'matching_headings' %}
+                                                        <option value="{{ op.letter|lower }}" {% if mf.value|lower == op.letter|lower %}selected{% endif %}>{{ op.letter }}</option>
+                                                        {% else %}
+                                                        <option value="{{ op.letter|lower }}" {% if mf.value|lower == op.letter|lower %}selected{% endif %}>{{ op.letter|upper }}</option>
+                                                        {% endif %}
                                                         {% endfor %}
                                                     </select>
                                                 </div>
                                                 {% empty %}
                                                 <div class="alert alert-warning mb-0">
-                                                    Bu savol Admin da to‘liq kiritilmagan. «Matching itemlar» (har satr: 1|Birinchisi..., 2|Ikkinchisi...) va «To'g'ri javob» (1:A, 2:C, ...) maydonlarini to‘ldiring va saqlang.
+                                                    {% if q.question_type == 'matching_headings' %}
+                                                    Admin: «Matching variantlar» — i|Sarlavha, ii|Boshqa… «Matching itemlar» — 14|Paragraph A. «To'g'ri javob» — 14:ii, 15:v…
+                                                    {% else %}
+                                                    Bu savol Admin da to‘liq kiritilmagan. «Matching itemlar» va «To'g'ri javob» (masalan 1:A, 2:C) maydonlarini to‘ldiring.
+                                                    {% endif %}
                                                 </div>
                                                 {% endfor %}
 
@@ -1263,13 +1607,46 @@
 
                                             {% else %}
                                                 {% if test.test_type == 'writing' %}
+                                                {% if q.question_instruction %}
+                                                <div class="admin-instruction-box mb-2 admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}">
+                                                    {{ q.question_instruction }}
+                                                </div>
+                                                {% endif %}
+                                                <div class="writing-task-prompt mb-3 admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
+                                                    {{ q.question_text|linebreaks }}
+                                                </div>
+                                                {% if item.question_images or q.question_image %}
+                                                    <div class="writing-task-image-wrap mt-3">
+                                                        {% if item.question_images %}
+                                                            {% if item.question_images|length > 1 %}
+                                                                <div class="writing-image-carousel" data-question-id="{{ q.pk }}">
+                                                                    <button type="button" class="writing-img-nav writing-img-prev" aria-label="Oldingi rasm"><i class="fas fa-chevron-left"></i></button>
+                                                                    <div class="writing-img-slides">
+                                                                        {% for img_url in item.question_images %}
+                                                                        <div class="writing-img-slide {% if forloop.first %}active{% endif %}">
+                                                                            <img src="{{ img_url }}" class="img-fluid rounded" alt="Task image {{ forloop.counter }}">
+                                                                        </div>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <button type="button" class="writing-img-nav writing-img-next" aria-label="Keyingi rasm"><i class="fas fa-chevron-right"></i></button>
+                                                                </div>
+                                                            {% else %}
+                                                                <img src="{{ item.question_images.0 }}" class="img-fluid rounded" alt="Task image">
+                                                            {% endif %}
+                                                        {% elif q.question_image %}
+                                                            <img src="{{ q.question_image.url }}" class="img-fluid rounded" alt="Task image">
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
                                                 <div class="d-flex justify-content-end mb-1">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-image-to-text" data-image-url="{% if q.question_image %}{% if request.is_secure %}https{% else %}http{% endif %}://{{ request.get_host }}{{ q.question_image.url }}{% endif %}" data-target-textarea="answer_{{ q.pk }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-image-to-text"
+                                                            data-image-url="{% if q.question_image %}{% if request.is_secure %}https{% else %}http{% endif %}://{{ request.get_host }}{{ q.question_image.url }}{% elif item.question_images %}{{ item.question_images.0 }}{% endif %}"
+                                                            data-target-textarea="answer_{{ q.pk }}">
                                                         <i class="fas fa-image me-1"></i>Image to Text
                                                     </button>
                                                 </div>
                                                 <textarea class="form-control writing-answer-ta" rows="8" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target>{{ item.current_answer }}</textarea>
-                                                <div class="mt-1 small text-muted"><span class="word-count-label">Word Count: <strong id="wc-{{ q.pk }}">0</strong></span></div>
+                                                <div class="mt-1 small text-muted"><span class="word-count-label">Words: <strong id="wc-{{ q.pk }}">0</strong></span></div>
                                                 {% else %}
                                                 <textarea class="form-control" rows="4" name="answer_{{ q.pk }}">{{ item.current_answer }}</textarea>
                                                 {% endif %}
@@ -1307,7 +1684,7 @@
                                     <span class="part-label">{{ pg.title }}:</span>
                                     {% if pg.blank_buttons %}
                                     {% for bb in pg.blank_buttons %}
-                                    <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
+                                    <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-card-anchor="{{ bb.card_anchor|default:bb.num }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
                                     {% endfor %}
                                     {% endif %}
                                     {% if test.test_type == 'reading' and pg.blank_buttons %}
@@ -1319,7 +1696,7 @@
                                     <span class="part-label">{{ pg.title }}:</span>
                                     {% if pg.blank_buttons %}
                                     {% for bb in pg.blank_buttons %}
-                                    <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
+                                    <button type="button" class="q-num-btn{% if bb.is_blank %} nav-blank-btn{% endif %}" data-blank-id="{{ bb.blank_id|default:'' }}" data-question-id="{{ bb.question_id|default:'' }}" data-card-anchor="{{ bb.card_anchor|default:bb.num }}" data-order="{{ bb.num }}">{{ bb.num }}</button>
                                     {% endfor %}
                                     {% else %}
                                     <button type="button" class="part-summary-block dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" style="cursor:pointer;border:1px solid #d1d5db;background:#f9fafb;padding:.25rem .5rem;font-size:.8rem;color:#4b5563;">{{ pg.title }}: {{ pg.question_count }} questions</button>
@@ -2290,23 +2667,36 @@
                 if (!answeredBadge) return;
                 const total = parseInt(answeredBadge.getAttribute('data-total-questions') || answeredBadge.getAttribute('data-total-blanks') || '0', 10);
                 if (total <= 0) return;
-                const answeredIds = new Set();
                 const form = document.querySelector('#question-container form');
+                const dualPks = new Set(window.__MCQ_DUAL_PKS || []);
+                let answered = 0;
                 if (form) {
+                    dualPks.forEach(function(pk) {
+                        const n = form.querySelectorAll('.mcq-multi-checkbox[data-question-pk="' + pk + '"]:checked').length;
+                        answered += Math.min(n, 2);
+                    });
+                    const other = new Set();
                     form.querySelectorAll('input[type="radio"]:checked').forEach(function(inp) {
-                        const m = inp.name.match(/answer_(\d+)/);
-                        if (m) answeredIds.add(m[1]);
+                        const m = inp.name.match(/^answer_(\d+)$/);
+                        if (m && !dualPks.has(parseInt(m[1], 10))) other.add(m[1]);
                     });
                     form.querySelectorAll('input[type="text"][name^="answer_"], input[name^="answer_"][type="text"], textarea[name^="answer_"]').forEach(function(inp) {
                         if ((inp.value || '').trim() === '') return;
                         const m = inp.name.match(/answer_(\d+)/);
-                        if (m) answeredIds.add(m[1]);
+                        if (m && !dualPks.has(parseInt(m[1], 10))) other.add(m[1]);
                     });
                     form.querySelectorAll('select[name^="match_"]').forEach(function(sel) {
-                        if ((sel.value || '').trim()) { const m = sel.name.match(/match_(\d+)/); if (m) answeredIds.add(m[1]); }
+                        if ((sel.value || '').trim()) {
+                            const m = sel.name.match(/match_(\d+)/);
+                            if (m && !dualPks.has(parseInt(m[1], 10))) other.add(m[1]);
+                        }
                     });
+                    form.querySelectorAll('input[type="checkbox"][name^="list_"]:checked').forEach(function(inp) {
+                        const m = inp.name.match(/^list_(\d+)_/);
+                        if (m && !dualPks.has(parseInt(m[1], 10))) other.add(m[1]);
+                    });
+                    answered += other.size;
                 }
-                const answered = answeredIds.size;
                 answeredBadge.textContent = answered + '/' + total + ' answered';
             }
 
@@ -2338,7 +2728,7 @@
                     const dist = Math.abs(r.top - anchor);
                     if (dist < bestDist) { bestDist = dist; best = c; }
                 });
-                return best ? parseInt(best.getAttribute('id', '').replace('question-', ''), 10) : (activePane ? 1 : 1);
+                return best ? parseInt(best.getAttribute('data-first-order') || (best.id || '').replace(/^question-/, ''), 10) || 1 : (activePane ? 1 : 1);
             }
 
             function updateQNumActive() {
@@ -2358,17 +2748,23 @@
                     if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < part1BlankBtns.length - 1);
                 } else {
                     const current = getVisibleQuestionOrder();
+                    const curAnchor = String(current);
                     qNumBtns.forEach(function(btn) {
                         var inVisible = !visibleRow || visibleRow.contains(btn);
                         const qId = btn.getAttribute('data-question-id');
-                        const o = parseInt(btn.getAttribute('data-order'), 10);
-                        btn.classList.toggle('active', inVisible && qId && o === current);
+                        const anchor = btn.getAttribute('data-card-anchor') || String(parseInt(btn.getAttribute('data-order'), 10));
+                        btn.classList.toggle('active', inVisible && qId && anchor === curAnchor);
                     });
                     const questionBtns = activeBtns.filter(function(b) { return b.getAttribute('data-question-id'); });
-                    const orders = questionBtns.map(function(b) { return parseInt(b.getAttribute('data-order'), 10); }).filter(Boolean);
-                    const idx = orders.indexOf(current);
+                    const anchors = [];
+                    questionBtns.forEach(function(b) {
+                        var a = b.getAttribute('data-card-anchor');
+                        if (a && anchors.indexOf(a) < 0) anchors.push(a);
+                    });
+                    anchors.sort(function(x, y) { return parseInt(x, 10) - parseInt(y, 10); });
+                    const idx = anchors.indexOf(curAnchor);
                     if (navPrev) navPrev.classList.toggle('active', idx > 0);
-                    if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < orders.length - 1);
+                    if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < anchors.length - 1);
                 }
             }
             updateQNumActiveFn = updateQNumActive;
@@ -2388,17 +2784,27 @@
                     }
                 } else {
                     const current = getVisibleQuestionOrder();
-                    const prevOrder = current - 1;
-                    const prevCard = document.querySelector('.part-q-card[id="question-' + prevOrder + '"]');
+                    const activeRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
+                    const qBtns = activeRow ? Array.from(activeRow.querySelectorAll('.q-num-btn[data-question-id]')) : Array.from(document.querySelectorAll('.q-num-btn[data-question-id]'));
+                    const anchors = [];
+                    qBtns.forEach(function(b) {
+                        var a = b.getAttribute('data-card-anchor');
+                        if (a && anchors.indexOf(a) < 0) anchors.push(a);
+                    });
+                    anchors.sort(function(x, y) { return parseInt(x, 10) - parseInt(y, 10); });
+                    const idx = anchors.indexOf(String(current));
+                    const prevAnchor = idx > 0 ? anchors[idx - 1] : null;
+                    const prevCard = prevAnchor ? document.querySelector('.part-q-card[data-first-order="' + prevAnchor + '"]') : null;
                     if (prevCard) {
+                        var prevOrder = parseInt(prevAnchor, 10);
                         var part = typeof getPartNumberForQuestionOrder === 'function' ? getPartNumberForQuestionOrder(prevOrder) : null;
                         var activePart = document.querySelector('.reading-part-pane.active');
                         var curPart = activePart ? activePart.getAttribute('data-part-number') : null;
-                        if (part && curPart !== part && typeof switchReadingPart === 'function') switchReadingPart(part);
+                        if (part && curPart !== String(part) && typeof switchReadingPart === 'function') switchReadingPart(part);
                         setTimeout(function() {
                             var el = document.getElementById('question-' + prevOrder);
                             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, part && curPart !== part ? 120 : 0);
+                        }, part && curPart !== String(part) ? 120 : 0);
                     }
                 }
             });
@@ -2417,17 +2823,27 @@
                     }
                 } else {
                     const current = getVisibleQuestionOrder();
-                    const nextOrder = current + 1;
-                    const nextCard = document.querySelector('.part-q-card[id="question-' + nextOrder + '"]');
+                    const activeRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
+                    const qBtns = activeRow ? Array.from(activeRow.querySelectorAll('.q-num-btn[data-question-id]')) : Array.from(document.querySelectorAll('.q-num-btn[data-question-id]'));
+                    const anchors = [];
+                    qBtns.forEach(function(b) {
+                        var a = b.getAttribute('data-card-anchor');
+                        if (a && anchors.indexOf(a) < 0) anchors.push(a);
+                    });
+                    anchors.sort(function(x, y) { return parseInt(x, 10) - parseInt(y, 10); });
+                    const idx = anchors.indexOf(String(current));
+                    const nextAnchor = idx >= 0 && idx < anchors.length - 1 ? anchors[idx + 1] : null;
+                    const nextCard = nextAnchor ? document.querySelector('.part-q-card[data-first-order="' + nextAnchor + '"]') : null;
                     if (nextCard) {
+                        var nextOrder = parseInt(nextAnchor, 10);
                         var part = typeof getPartNumberForQuestionOrder === 'function' ? getPartNumberForQuestionOrder(nextOrder) : null;
                         var activePart = document.querySelector('.reading-part-pane.active');
                         var curPart = activePart ? activePart.getAttribute('data-part-number') : null;
-                        if (part && curPart !== part && typeof switchReadingPart === 'function') switchReadingPart(part);
+                        if (part && curPart !== String(part) && typeof switchReadingPart === 'function') switchReadingPart(part);
                         setTimeout(function() {
                             var el = document.getElementById('question-' + nextOrder);
                             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, part && curPart !== part ? 120 : 0);
+                        }, part && curPart !== String(part) ? 120 : 0);
                     }
                 }
             });
@@ -2496,6 +2912,22 @@
         function refreshExamQuestionUI() {
             syncWritingInlineWithRightForm();
             initReadingPartTabs();
+            (function initFillWordLimit() {
+                var form = document.getElementById('exam-take-form');
+                if (!form) return;
+                form.querySelectorAll('input[data-max-words]').forEach(function(inp) {
+                    var max = parseInt(inp.getAttribute('data-max-words') || '0', 10);
+                    if (!max) return;
+                    function tick() {
+                        var v = (inp.value || '').trim();
+                        if (!v) { inp.classList.remove('is-invalid'); return; }
+                        var n = v.split(/\s+/).filter(Boolean).length;
+                        inp.classList.toggle('is-invalid', n > max);
+                    }
+                    inp.addEventListener('blur', tick);
+                    inp.addEventListener('input', tick);
+                });
+            })();
             initPartDock();
             initWritingImageCarousel();
             refreshFlagUI();
@@ -2622,6 +3054,11 @@
                     const m = sel.name.match(/match_(\d+)/);
                     if (m) answeredIds.add(m[1]);
                 }
+            });
+            // List selection (multiple checkbox) — kamida 1 ta tanlangan bo'lsa savol answered hisoblanadi
+            form.querySelectorAll('input[type="checkbox"][name^="list_"]:checked').forEach(function(cb) {
+                const m = cb.name.match(/list_(\d+)_/);
+                if (m) answeredIds.add(m[1]);
             });
             return Math.max(0, total - answeredIds.size);
         }

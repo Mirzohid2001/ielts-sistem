@@ -338,7 +338,7 @@ class Question(models.Model):
         help_text="Faqat test «2 variant» bo'lsa tanlang.",
     )
     question_type = models.CharField(max_length=30, choices=QUESTION_TYPES, default='mcq', verbose_name="Savol turi")
-    question_text = models.TextField(verbose_name="Savol matni")
+    question_text = models.TextField(blank=True, verbose_name="Savol matni", help_text="Bo'sh qoldirsangiz — savol keyinroq to'ldiriladi (draft).")
     question_image = models.ImageField(upload_to='questions/', blank=True, null=True, verbose_name="Rasm")
     # Listening testlar uchun audio timestamp (qaysi vaqtda audio eshitilishi kerak)
     audio_timestamp = models.FloatField(null=True, blank=True, verbose_name="Audio vaqti (soniya) - Listening")
@@ -357,7 +357,13 @@ class Question(models.Model):
     )
     # G'arbiy savol turlari uchun - JSON formatda
     # options_json: {"instruction": "ONE WORD ONLY", "blanks_count": 4}
-    options_json = models.JSONField(default=dict, blank=True, verbose_name="Qo'shimcha parametrlar (JSON)")
+    options_json = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Qo'shimcha parametrlar (JSON)",
+        help_text='MCQ: {"mcq_single_slot": true}, variantlar {"options": [...]}. '
+                  'To\'ldirish: {"instruction": "NO MORE THAN TWO WORDS"} yoki {"max_words_per_blank": 2}.',
+    )
     # correct_answer_json: ["jackals", "diseases", "food", "foxes"] - fill_blank/summary/notes uchun
     correct_answer_json = models.JSONField(default=list, blank=True, verbose_name="To'g'ri javoblar ro'yxati (JSON)")
     explanation = models.TextField(blank=True, verbose_name="Tushuntirish")
@@ -381,6 +387,83 @@ class Question(models.Model):
         """Ko'rsatma matni (options_json.instruction)"""
         opts = self.options_json or {}
         return opts.get('instruction', '')
+
+    @staticmethod
+    def count_answer_words(text):
+        """Javobdagi so'zlar soni (IELTS: bo'shliq bilan ajratilgan tokenlar)."""
+        if not text or not str(text).strip():
+            return 0
+        return len(str(text).strip().split())
+
+    def get_max_words_per_blank(self):
+        """
+        Har bir bo'sh joy uchun maksimal so'z soni.
+        options_json.max_words_per_blank yoki instruction matnidan (ONE WORD / TWO / THREE).
+        None = cheklov yo'q.
+        """
+        opts = self.options_json or {}
+        mw = opts.get('max_words_per_blank')
+        if mw is not None:
+            try:
+                return max(1, int(mw))
+            except (TypeError, ValueError):
+                pass
+        inst = (opts.get('instruction') or '').upper()
+        # Listening (Notes/Summary completion) odatda: "ONE WORD AND/OR A NUMBER"
+        if ('ONE WORD' in inst) and ('AND/OR' in inst) and ('NUMBER' in inst):
+            return 1
+        if 'NO MORE THAN TWO WORDS' in inst or ('TWO WORDS' in inst and 'THREE' not in inst):
+            return 2
+        if 'NO MORE THAN THREE WORDS' in inst or 'THREE WORDS' in inst:
+            return 3
+        if 'ONE WORD ONLY' in inst or ('ONE WORD' in inst and 'TWO' not in inst and 'THREE' not in inst):
+            return 1
+        qt = (self.question_text or '')[:800].upper()
+        if ('ONE WORD' in qt) and ('AND/OR' in qt) and ('NUMBER' in qt):
+            return 1
+        if 'NO MORE THAN TWO WORDS' in qt or ('TWO WORDS' in qt and 'THREE' not in qt):
+            return 2
+        if 'NO MORE THAN THREE WORDS' in qt or 'THREE WORDS' in qt:
+            return 3
+        if 'ONE WORD ONLY' in qt:
+            return 1
+        return None
+
+    def fill_blanks_count(self):
+        """To'ldirish turidagi savolda nechta alohida javob o'rni."""
+        fill_types = (
+            'fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
+            'table_completion', 'short_answer',
+        )
+        if self.question_type not in fill_types:
+            return 1
+        if self.question_type == 'short_answer':
+            sa = (self.options_json or {}).get('short_answer_items') or []
+            if isinstance(sa, list) and sa:
+                return len(sa)
+        cl = self.get_correct_answers_list()
+        if cl:
+            return len(cl)
+        import re
+        nums = re.findall(r'\[(\d+)\]', self.question_text or '')
+        if nums:
+            return max(int(n) for n in nums)
+        return 1
+
+    def get_max_words_for_blank_index(self, idx):
+        """short_answer_items da har band uchun alohida 1/2/3 so'z cheklovi."""
+        opts = self.options_json or {}
+        if self.question_type == 'short_answer':
+            sa = opts.get('short_answer_items') or []
+            if isinstance(sa, list) and 0 <= idx < len(sa) and isinstance(sa[idx], dict):
+                mw = sa[idx].get('max_words')
+                try:
+                    mw = int(mw)
+                    if mw in (1, 2, 3):
+                        return mw
+                except (TypeError, ValueError):
+                    pass
+        return self.get_max_words_per_blank()
 
     def get_task_images(self, request=None):
         """Writing task uchun rasmlar ro'yxati (carousel). question_image + options_json.images"""
@@ -440,6 +523,50 @@ class Question(models.Model):
         if self.correct_answer:
             return [self.correct_answer]
         return []
+
+    def get_correct_answer_review_text(self):
+        """Natija sahifasida barcha savol turlari uchun yagona, qisqa to'g'ri javob matni."""
+        single = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+        if self.question_type in single:
+            t = self.get_correct_answer_display_for_review()
+            return (t or '').strip() or '—'
+        if self.question_type == 'essay':
+            return '—'
+        matching_types = (
+            'matching_headings', 'matching_features', 'matching_info',
+            'matching_sentences', 'classification',
+        )
+        if self.question_type in matching_types:
+            c = self.correct_answer_json
+            if not isinstance(c, dict) or not c:
+                return '— (admin: matching to\'g\'ri javob)'
+            def _sk(k):
+                try:
+                    return (0, int(k))
+                except (TypeError, ValueError):
+                    return (1, str(k))
+            return '; '.join(f"{k} → {v}" for k, v in sorted(c.items(), key=lambda x: _sk(x[0])))
+        if self.question_type == 'list_selection':
+            opts = (self.options_json or {}).get('options', [])
+            letters = self.correct_answer_json if isinstance(self.correct_answer_json, list) else []
+            if not letters:
+                return '—'
+            parts = []
+            for L in letters:
+                lt = str(L).strip().lower()
+                txt = ''
+                for o in opts:
+                    if str(o.get('letter', '')).strip().lower() == lt:
+                        txt = o.get('text', '') or ''
+                        break
+                parts.append(f"{str(L).upper()}) {txt}".strip() if txt else str(L).upper())
+            return '; '.join(parts)
+        lst = self.get_correct_answers_list()
+        if lst and not isinstance(lst, dict):
+            return ', '.join(str(x) for x in lst)
+        if self.correct_answer:
+            return str(self.correct_answer)
+        return '—'
     
     def check_user_answer(self, user_answer):
         """Foydalanuvchi javobi to'g'rimi tekshirish"""
@@ -509,6 +636,8 @@ class Question(models.Model):
             user_answers = [user_answers]
         if len(user_answers) != len(correct_list):
             return False
+        max_w = self.get_max_words_per_blank()
+
         def blank_match(ua, ca):
             ua_n = norm(ua)
             ca_n = norm(ca)
@@ -519,7 +648,88 @@ class Question(models.Model):
                 ua_words = set(w for w in ua_n.split() if w)
                 return ca_words == ua_words
             return ua_n == ca_n
-        return all(blank_match(ua, ca) for ua, ca in zip(user_answers, correct_list))
+
+        for i, (ua, ca) in enumerate(zip(user_answers, correct_list)):
+            slot_mw = self.get_max_words_for_blank_index(i) if self.question_type == 'short_answer' else max_w
+            if slot_mw is not None and ua and str(ua).strip():
+                if self.count_answer_words(ua) > slot_mw:
+                    return False
+            if not blank_match(ua, ca):
+                return False
+        return True
+
+    def mcq_dual_question_slots_enabled(self):
+        """2 variant tanlash = ketma-ket 2 ta savol raqami (21, 22) — faqat MCQ."""
+        if self.question_type != 'mcq' or getattr(self, 'max_choices', 1) != 2:
+            return False
+        return not (self.options_json or {}).get('mcq_single_slot', False)
+
+    def mcq_choose_two_correct_letter_set(self):
+        """To'g'ri harflar to'plami (2 ta)."""
+        norm = lambda x: str(x).strip().lower() if x else ''
+        if isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= 2:
+            return set(norm(x) for x in self.correct_answer_json)
+        ca = (self.correct_answer or '').replace(' ', '')
+        parts = [p.strip().lower() for p in ca.split(',') if p.strip()]
+        return set(parts) if len(parts) >= 2 else set()
+
+    def score_mcq_choose_two_dual(self, user_answer):
+        """
+        Ikki tanlovli MCQ: qisman ball. 2 ta tanlangan va to'g'ri javoblar bilan solishtirish.
+        Qaytadi: (to'g'ri_son, jami_2). To'liq emas (1 ta harf) = (0, 2).
+        """
+        import json
+        norm = lambda x: str(x).strip().lower() if x else ''
+        c_set = self.mcq_choose_two_correct_letter_set()
+        if len(c_set) < 2:
+            ok = self.check_user_answer(user_answer)
+            return (1, 1) if ok else (0, 1)
+        try:
+            if isinstance(user_answer, list):
+                ua = user_answer
+            elif isinstance(user_answer, str) and user_answer.strip().startswith('['):
+                ua = json.loads(user_answer)
+            else:
+                ua = [user_answer] if user_answer else []
+            u_set = set(norm(x) for x in (ua if isinstance(ua, list) else [ua]) if x)
+        except (TypeError, json.JSONDecodeError):
+            return 0, 2
+        if len(u_set) != 2:
+            return 0, 2
+        return len(u_set & c_set), 2
+
+    def gradable_answer_slots(self):
+        """Test yakunida foiz uchun: bu savol nechta 'javob o'rni' (essay=0)."""
+        if self.question_type == 'essay':
+            return 0
+        if self.question_type == 'list_selection':
+            # Choose N answers (masalan: "Choose SIX") progress hisobi uchun
+            if isinstance(self.correct_answer_json, list) and self.correct_answer_json:
+                # duplicate bo'lishi ehtimoli bo'lmasligi kerak, lekin xavfsizlik uchun set
+                return len(set(str(x).strip().lower() for x in self.correct_answer_json if str(x).strip()))
+            return 1
+        if self.mcq_dual_question_slots_enabled():
+            return 2
+        multi_fill = (
+            'sentence_completion', 'table_completion', 'summary_completion',
+            'notes_completion', 'fill_blank', 'short_answer',
+        )
+        if self.question_type in multi_fill:
+            n = self.fill_blanks_count()
+            if n > 1:
+                return n
+        matching_types = (
+            'matching_headings', 'matching_features', 'matching_info',
+            'matching_sentences', 'classification',
+        )
+        if self.question_type in matching_types:
+            c = self.correct_answer_json if isinstance(self.correct_answer_json, dict) else {}
+            if c:
+                return len(c)
+            items = (self.options_json or {}).get('items', [])
+            if isinstance(items, list) and len(items) > 1:
+                return len(items)
+        return 1
 
 
 class QuestionTypeRule(models.Model):
@@ -605,12 +815,30 @@ class UserTestResult(models.Model):
 
     def recalculate_from_answers(self):
         """Javoblar asosida correct/wrong ni qayta hisoblash (admin baholagach chaqiriladi)"""
-        self.correct_answers = self.answers.filter(is_correct=True).count()
-        gradable = self.answers.exclude(question__question_type='essay')
-        self.wrong_answers = gradable.filter(is_correct=False).count()
-        total = self.total_questions or (self.test.total_questions if self.test else 0)
-        self.score = self.correct_answers
-        self.percentage = round((self.correct_answers / total) * 100, 2) if total else 0.0
+        if not self.test_id:
+            return
+        questions = list(self.test.questions.all())
+        total_slots = sum(
+            q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
+        )
+        answers_by_q = {a.question_id: a for a in self.answers.select_related('question')}
+        correct_pts = 0
+        for q in questions:
+            if q.question_type == 'essay':
+                continue
+            ans = answers_by_q.get(q.pk)
+            ua = (ans.user_answer if ans else '') or ''
+            if q.mcq_dual_question_slots_enabled():
+                pts, _ = q.score_mcq_choose_two_dual(ua)
+                correct_pts += pts
+            elif ans:
+                correct_pts += 1 if ans.is_correct else 0
+        self.total_questions = total_slots or self.total_questions
+        self.correct_answers = correct_pts
+        self.wrong_answers = max(0, self.total_questions - correct_pts)
+        self.score = correct_pts
+        t = self.total_questions
+        self.percentage = round((correct_pts / t) * 100, 2) if t else 0.0
         self.save()
 
     def is_passed(self):
