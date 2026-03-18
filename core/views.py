@@ -194,14 +194,12 @@ def video_list(request):
             if selected_subcategory:
                 videos = videos.filter(category=selected_subcategory)
         elif selected_category:
-            # Ota kategoriya bo'yicha: barcha bolalaridagi videolar
+            # Ota kategoriyadagi videolar ham, bolalar (subkategoriya) dagi videolar ham
             child_ids = list(
                 Category.objects.filter(parent=selected_category, is_active=True).values_list('id', flat=True)
             )
-            if child_ids:
-                videos = videos.filter(category_id__in=child_ids)
-            else:
-                videos = videos.filter(category__slug=category_slug)
+            category_ids = [selected_category.id] + child_ids
+            videos = videos.filter(category_id__in=category_ids)
     
     if search_query:
         videos = videos.filter(
@@ -252,12 +250,13 @@ def video_list(request):
     ).order_by('order', 'name')
 
     if not category_slug and not search_query:
-        # Agar ota kategoriya tanlanmagan va qidiruv bo'lmasa, har bir top-level kategoriya uchun blok
+        # Agar ota kategoriya tanlanmagan va qidiruv bo'lmasa, har bir top-level kategoriya uchun blok (ota + bolalar)
         for category in top_categories:
             child_ids = list(
                 Category.objects.filter(parent=category, is_active=True).values_list('id', flat=True)
             )
-            qs = videos.filter(category_id__in=child_ids or [category.id])
+            category_ids = [category.id] + child_ids
+            qs = videos.filter(category_id__in=category_ids)
             if qs.exists():
                 videos_by_category[category] = qs
     else:
