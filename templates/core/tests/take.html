@@ -827,7 +827,8 @@
         }
         /* Engnovate'ga yaqin: Listening/Reading’da word limitni qizil banner emas, oddiy matn ko'rinishida */
         .listening-style .ielts-word-limit-banner,
-        .reading-style .ielts-word-limit-banner {
+        .reading-style .ielts-word-limit-banner,
+        .writing-style .ielts-word-limit-banner {
             background: transparent;
             border: none;
             color: #374151;
@@ -835,6 +836,43 @@
             border-radius: 0;
             font-size: .95rem;
             margin-bottom: .65rem;
+        }
+        /* Barcha test turlari: xato yozilganda ham qizil banner/ramka ko‘rsatilmasin */
+        .exam-container .ielts-mcq-single-banner {
+            background: transparent;
+            border: none;
+            color: #374151;
+            padding: 0;
+            border-radius: 0;
+            font-size: .95rem;
+            margin-bottom: .65rem;
+        }
+        .exam-container .ielts-word-limit-banner {
+            background: transparent;
+            border: none;
+            color: #374151;
+            padding: 0;
+            border-radius: 0;
+            font-size: .95rem;
+            margin-bottom: .65rem;
+        }
+        .exam-container .admin-instruction-box--engnovate-red {
+            background: #f3f4f6 !important;
+            border: 1px solid #e5e7eb !important;
+            color: #374151 !important;
+        }
+        #exam-take-form input:invalid,
+        #exam-take-form textarea:invalid,
+        #exam-take-form select:invalid {
+            border-color: #cbd5e1;
+            box-shadow: none;
+        }
+        #exam-take-form .form-control.is-invalid,
+        #exam-take-form .form-select.is-invalid,
+        #exam-take-form.was-validated .form-control:invalid,
+        #exam-take-form.was-validated .form-select:invalid {
+            border-color: #cbd5e1;
+            box-shadow: none;
         }
         .matching-reference-box {
             border: 1px solid #e5e7eb;
@@ -885,16 +923,195 @@
         margin-right: 8px;
         vertical-align: middle;
     }
-    .listening-section-title { margin-bottom: .75rem !important; }
-    .exam-listening-wrap .listening-part-bar {
-        background: #111827;
-        color: #fff;
-        font-weight: 600;
-        font-size: .95rem;
-        padding: .65rem 1rem;
-        border-radius: 8px;
-        margin: 0 0 .75rem 0;
+    /* ——— Listening: foydalanuvchi uchun zamonaviy UI ——— */
+    .listening-top-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
     }
+    .listening-top-header__icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, .25);
+    }
+    .listening-top-header__kicker {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin: 0 0 .2rem 0;
+    }
+    .listening-top-header__title {
+        font-size: clamp(1.15rem, 2.5vw, 1.35rem);
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.3;
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+    .listening-part-ribbon {
+        font-size: .95rem;
+        color: #334155;
+        line-height: 1.5;
+        margin: 0 0 1rem 0;
+        padding: .65rem 1rem;
+        background: #f1f5f9;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+    .listening-part-ribbon__label {
+        display: inline-block;
+        font-weight: 800;
+        color: #0f172a;
+        margin-right: .35rem;
+    }
+    .listening-audio-shell {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1rem 1.1rem 1.1rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
+    }
+    .listening-audio-shell__label {
+        font-size: .8rem;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: .65rem;
+        letter-spacing: .02em;
+    }
+    .listening-native-audio {
+        width: 100%;
+        height: 44px;
+        border-radius: 8px;
+    }
+    .listening-audio-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        margin-top: .75rem;
+        padding-top: .75rem;
+        border-top: 1px solid #f1f5f9;
+    }
+    .listening-audio-time {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        font-size: .88rem;
+        color: #334155;
+    }
+    .listening-audio-hint { font-size: .78rem; }
+    .listening-audio-empty {
+        background: #eff6ff !important;
+        color: #1e40af !important;
+    }
+    .listening-questions-header--v2 {
+        padding-bottom: .75rem;
+        margin-bottom: 1rem !important;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .listening-questions-kicker {
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin: 0;
+    }
+    .listening-questions-main-title {
+        font-size: clamp(1.35rem, 3vw, 1.65rem);
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+    }
+    .listening-answered-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: .4rem .85rem;
+        font-size: .8rem;
+        font-weight: 700;
+        color: #1e293b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+    .listening-style .exam-questions-card-only {
+        border-radius: 14px !important;
+        box-shadow: 0 4px 24px rgba(15, 23, 42, .06) !important;
+        border: 1px solid #eef2f7 !important;
+        overflow: hidden;
+    }
+    .listening-style .exam-questions-card-only > .card-body {
+        padding: 1.1rem 1.15rem 1.25rem !important;
+    }
+    .listening-style .part-section .part-q-card {
+        border-radius: 10px;
+        padding: 1rem 1rem 1.15rem;
+        margin-bottom: .75rem;
+        border: 1px solid #f1f5f9 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        background: #fafbfc;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .listening-style .part-section .part-q-card:hover {
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 2px 12px rgba(15, 23, 42, .04);
+    }
+    .listening-style .engnovate-notes-format {
+        font-size: 1rem;
+        line-height: 1.85;
+        color: #1e293b;
+    }
+    .listening-style .inline-blank-input {
+        min-height: 40px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        padding: .35rem .6rem;
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .listening-style .inline-blank-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        outline: none;
+    }
+    .listening-style .part-q-card .form-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+    }
+    .listening-style .inline-blank-num {
+        font-weight: 800;
+        color: #0f172a;
+        min-width: 1.5rem;
+    }
+    .listening-style .part-shart-block.instruction-block {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px;
+        padding: .85rem 1rem;
+        margin-bottom: 1rem;
+    }
+    .listening-style .listening-part-heading-text {
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    /* Eski klasslar (boshqa joyda ishlatilishi mumkin) */
+    .listening-section-title { margin-bottom: .75rem !important; }
+    .exam-listening-wrap .listening-part-bar,
     .listening-part-bar {
         background: #111827;
         color: #fff;
@@ -903,15 +1120,6 @@
         padding: .65rem 1rem;
         border-radius: 8px;
         margin: 0 0 .5rem 0;
-    }
-    /* Engnovate'ga yaqin: Listening part sarlavhalari pill emas, oddiy matn */
-    .exam-split-layout.listening-layout .listening-part-bar {
-        background: transparent;
-        color: #111827;
-        padding: 0;
-        border-radius: 0;
-        margin: 0 0 .65rem 0;
-        border: 0;
     }
     /* Listening: partlar va dock — Reading dagidek tartibli dizayn */
     .listening-style.exam-right-pane { background: #fff !important; }
@@ -924,6 +1132,47 @@
         display: block; width: 100%; margin-top: 6px; margin-left: 0;
         font-size: .75rem; color: #64748b; font-style: italic;
     }
+    /* Listening footer: Engnovate — faol part qizil ramka, yig‘ilgan Part N: *N questions* */
+    .listening-exam-footer .listening-dock-part-summary {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: .1rem .35rem;
+        text-align: left;
+        line-height: 1.35;
+    }
+    .listening-exam-footer .dock-summary-title {
+        font-weight: 800;
+        color: #0f172a;
+    }
+    .listening-exam-footer .dock-summary-qty {
+        font-weight: 500;
+        font-style: italic;
+        color: #64748b;
+    }
+    .listening-exam-footer .part-q-buttons.dock-part-wrap.dock-active {
+        background: #fff !important;
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, .22), 0 2px 10px rgba(15, 23, 42, .06) !important;
+    }
+    .listening-exam-footer .part-q-buttons.dock-part-wrap:not(.dock-active) {
+        background: #fff;
+        border-color: #e2e8f0;
+    }
+    .listening-exam-footer .listening-dock-expanded-hint {
+        display: inline !important;
+        width: auto !important;
+        margin-top: 0 !important;
+        margin-left: .35rem;
+        font-size: .78rem;
+        color: #64748b;
+    }
+    .listening-exam-footer .listening-dock-expanded-hint .listening-dock-range {
+        font-style: normal;
+        font-weight: 600;
+        color: #94a3b8;
+        font-size: .92em;
+    }
     .listening-style .part-section-header { font-weight: 700; color: #111827; border-bottom: 1px solid #e5e7eb; padding: .5rem 0 .6rem 0; }
     /* Engnovate'ga yaqin: Listening part headerlari juda sodda ko'rinsin */
     .listening-style .part-section-header {
@@ -932,7 +1181,7 @@
         padding: 0;
         margin: 0 0 .75rem 0;
     }
-    .listening-style .part-section .part-q-card { border-bottom: 1px solid #f3f4f6; padding: .85rem 0 1rem 0; }
+    .listening-style .part-section .part-q-card:first-of-type { border-top: 1px solid #f1f5f9 !important; }
     .listening-style .reading-part-tabs-fullwidth { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid #e5e7eb; }
     .listening-style .reading-part-tabs-fullwidth .reading-dock-part-row { color: #374151; font-weight: 600; }
     .listening-style .reading-part-tab { background: #fff; border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; }
@@ -940,7 +1189,6 @@
     .listening-style .reading-part-tab.active,
     .listening-style .reading-part-tab.btn-dark { background: #374151; border-color: #374151; color: #fff; }
     .listening-style .listening-part-section-header { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
-    .listening-style .listening-part-heading-text { font-weight: 700; color: #111827; }
     .listening-style .listening-listen-from-here { font-size: .8rem; text-decoration: none; white-space: nowrap; }
     /* "Listen From Here" Engnovate'dagi kabi linkga o'xshasin */
     .listening-style .listening-listen-from-here,
@@ -956,12 +1204,30 @@
     .exam-split-layout.listening-layout .listening-listen-from-here:hover {
         text-decoration: underline;
     }
-    .exam-split-layout.listening-layout { flex-direction: column !important; }
-    .exam-split-layout.listening-layout .exam-listening-wrap { max-width: 900px; margin: 0 auto; }
-    .exam-split-layout.listening-layout .exam-split-divider { display: none; }
+    /* Listening: Engnovate — bitta ustun: avval audio, keyin savollar (split emas) */
+    .exam-split-layout.listening-layout { flex-direction: column !important; align-items: stretch; }
+    .exam-split-layout.listening-layout .exam-listening-wrap { max-width: 900px; margin: 0 auto; width: 100%; }
+    .exam-split-layout.listening-layout .exam-split-divider { display: none !important; }
     .exam-split-layout.listening-layout .exam-left-pane,
-    .exam-split-layout.listening-layout .exam-right-pane { flex: none; width: 100%; }
-    .exam-split-layout.listening-layout .exam-right-pane { position: static; max-height: none; }
+    .exam-split-layout.listening-layout .exam-right-pane.listening-style {
+        flex: none !important;
+        width: 100% !important;
+        min-width: 0;
+        position: static !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+        border: 0 !important;
+        padding: .25rem 0;
+    }
+    .exam-split-layout.listening-layout .exam-right-pane.listening-style {
+        background: #fff !important;
+        padding: .5rem .1rem;
+    }
+    .exam-split-layout.listening-layout #question-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
     /* Writing: Engnovate — chapda topshiriq + diagram/rasmlar, o'ngda javob (split) */
     .exam-split-layout.writing-layout { align-items: stretch; }
     .exam-split-layout.writing-layout .exam-left-pane {
@@ -997,9 +1263,10 @@
         max-height: calc(100vh - 20px);
     }
     .exam-listening-wrap .listening-audio-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
     }
     .listening-audio-card {
         background: #fff;
@@ -1007,7 +1274,7 @@
         border-radius: 0;
         margin-bottom: .75rem;
     }
-    /* Engnovate'ga yaqin: audio blok card ko'rinishida emas, sodda */
+    /* Listening bitta ustunda — audio bloki sodda (Engnovate) */
     .exam-split-layout.listening-layout .listening-audio-card {
         border: 0;
         box-shadow: none;
@@ -1108,6 +1375,13 @@
         .listening-questions-header .badge { font-size: 0.75rem !important; }
         #answered-badge { font-size: 0.75rem !important; }
         .listening-questions-header .badge { font-size: 0.75rem !important; }
+        .listening-top-header { gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.85rem; }
+        .listening-top-header__icon { width: 44px; height: 44px; font-size: 1.1rem; border-radius: 10px; }
+        .listening-part-ribbon { font-size: 0.88rem; padding: 0.55rem 0.75rem; }
+        .listening-audio-shell { padding: 0.85rem 0.9rem; border-radius: 12px; }
+        .listening-native-audio { min-height: 48px; height: auto; }
+        .listening-questions-main-title { font-size: 1.2rem !important; }
+        .listening-answered-pill { font-size: 0.75rem; padding: 0.35rem 0.65rem; max-width: 100%; white-space: normal; text-align: center; justify-content: center; }
         .listening-part-bar { font-size: 0.9rem; padding: 0.5rem 0.75rem; }
         .part-read-header h5 { font-size: 0.95rem !important; }
         .part-read-header .font-size-btn { width: 26px; height: 26px; font-size: 0.9rem; }
@@ -1149,7 +1423,7 @@
         .inline-blank-input { width: 70px; min-width: 50px; max-width: 100px; font-size: 0.9rem; }
         .inline-blank-num { min-width: 20px; padding: 2px 4px; font-size: 0.8rem; }
         .engnovate-notes-format { line-height: 1.8; font-size: 0.9rem; word-wrap: break-word; overflow-wrap: break-word; }
-        .listening-audio-card .card-body { padding: 0.5rem !important; }
+        .listening-audio-card .card-body:not(.p-0) { padding: 0.5rem !important; }
         .writing-answer-ta { min-height: 120px !important; font-size: 0.95rem; }
         .tip-bar { font-size: 0.7rem; padding: 0.3rem 0.5rem; }
         .exam-split-divider { width: 4px; cursor: default; }
@@ -1237,41 +1511,44 @@
                 <div class="exam-left-pane">
                     {% if test.test_type == 'listening' %}
                     <div class="exam-listening-wrap">
-                        <div class="listening-section-title d-flex align-items-center gap-2 mb-2">
-                            <i class="fas fa-headphones" style="color: #111827;"></i>
-                            <span style="font-weight: 700; font-size: 1rem; color: #111827;">Listening</span>
-                        </div>
+                        <header class="listening-top-header">
+                            <div class="listening-top-header__icon" aria-hidden="true"><i class="fas fa-headphones"></i></div>
+                            <div>
+                                <p class="listening-top-header__kicker">IELTS Listening</p>
+                                <h1 class="listening-top-header__title">{{ test.title }}</h1>
+                            </div>
+                        </header>
                         {% if part_groups|length > 1 %}
                         {% for pg in part_groups %}
                         <div class="exam-part-pane-left {% if forloop.first %}active{% endif %}" id="left-listening-{{ pg.part_number }}" data-part-number="{{ pg.part_number }}" {% if not forloop.first %}hidden{% endif %}>
-                            <div class="listening-part-bar">
-                                <strong>{{ pg.title }}:</strong> Listen and answer questions {{ pg.range_label }}
-                            </div>
+                            <p class="listening-part-ribbon" role="status"><span class="listening-part-ribbon__label">{{ pg.title }}</span> Listen and answer questions <strong>{{ pg.range_label }}</strong></p>
                         </div>
                         {% endfor %}
                         {% else %}
-                        <div class="listening-part-bar">
-                            <strong>Part 1:</strong> Listen and answer questions {{ questions_range_display|default:total_questions }}
-                        </div>
+                        <p class="listening-part-ribbon" role="status"><span class="listening-part-ribbon__label">Part 1</span> Listen and answer questions <strong>{{ questions_range_display|default:total_questions }}</strong></p>
                         {% endif %}
-                        <div class="listening-audio-card card mb-3">
-                            <div class="card-body p-3">
-                                {% if test.audio_file %}
-                                <audio id="test-audio" controls style="width: 100%;" preload="auto">
-                                    <source src="{{ test.audio_file.url }}" type="audio/mpeg">
-                                    <source src="{{ test.audio_file.url }}" type="audio/wav">
-                                    <source src="{{ test.audio_file.url }}" type="audio/ogg">
-                                    Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
-                                </audio>
-                                <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
-                                    <span class="text-muted small" id="audio-time">0:00 / 0:00</span>
+                        <div class="listening-audio-card card mb-0">
+                            <div class="card-body p-0">
+                                <div class="listening-audio-shell">
+                                    {% if test.audio_file %}
+                                    <div class="listening-audio-shell__label"><i class="fas fa-volume-up me-2 text-primary"></i>Audio</div>
+                                    <audio id="test-audio" class="listening-native-audio" controls preload="metadata">
+                                        <source src="{{ test.audio_file.url }}" type="audio/mpeg">
+                                        <source src="{{ test.audio_file.url }}" type="audio/wav">
+                                        <source src="{{ test.audio_file.url }}" type="audio/ogg">
+                                        Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
+                                    </audio>
+                                    <div class="listening-audio-meta">
+                                        <span id="audio-time" class="listening-audio-time">0:00 / 0:00</span>
+                                        <span class="listening-audio-hint text-muted">Kerak bo‘lsa qayta tinglang</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="listening-audio-empty alert alert-info mb-0 border-0 rounded-3" role="alert">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Audio yo‘q.</strong> Admin testga MP3 yuklaguncha bu yerda pleyer paydo bo‘ladi.
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% else %}
-                                <div class="alert alert-info mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Eslatma:</strong> Bu test uchun audio fayl hozircha yuklanmagan.
-                                </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -1395,11 +1672,16 @@
                                     <div class="reading-questions-scroll flex-grow-1">
                                     {% endif %}
                                     {% if test.test_type != 'writing' %}
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 {% if test.test_type == 'listening' %}listening-questions-header{% endif %}">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <h5 class="mb-0 fw-bold">{% if test.test_type == 'listening' %}Listening{% else %}Questions {{ questions_range_display|default:total_questions }}{% endif %}</h5>
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 {% if test.test_type == 'listening' %}listening-questions-header listening-questions-header--v2{% endif %}">
+                                        <div class="{% if test.test_type == 'listening' %}listening-questions-heading-wrap{% endif %}">
+                                            {% if test.test_type == 'listening' %}
+                                            <p class="listening-questions-kicker mb-1">Savollar</p>
+                                            <h2 class="listening-questions-main-title mb-0">Questions {{ questions_range_display|default:total_questions }}</h2>
+                                            {% else %}
+                                            <h5 class="mb-0 fw-bold">Questions {{ questions_range_display|default:total_questions }}</h5>
+                                            {% endif %}
                                         </div>
-                                        <span class="badge bg-light text-dark border" id="answered-badge" data-total-blanks="{{ total_blanks|default:0 }}" data-answered-blanks="{{ answered_blanks|default:0 }}" data-total-questions="{{ total_answer_slots }}" data-answered-questions="{{ answered_answer_slots }}">{% if total_blanks %}{{ answered_blanks|default:0 }}/{{ total_blanks }} answered{% else %}{{ answered_answer_slots }}/{{ total_answer_slots }} answered{% endif %}</span>
+                                        <span class="{% if test.test_type == 'listening' %}listening-answered-pill{% else %}badge bg-light text-dark border{% endif %}" id="answered-badge" data-total-blanks="{{ total_blanks|default:0 }}" data-answered-blanks="{{ answered_blanks|default:0 }}" data-total-questions="{{ total_answer_slots }}" data-answered-questions="{{ answered_answer_slots }}">{% if total_blanks %}{{ answered_blanks|default:0 }}/{{ total_blanks }} answered{% else %}{{ answered_answer_slots }}/{{ total_answer_slots }} answered{% endif %}</span>
                                     </div>
                                     {% endif %}
 
@@ -1474,7 +1756,7 @@
                                             {% if q.question_type == 'mcq' or q.question_type == 'true_false' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' %}
                                                 <div class="{% if test.test_type == 'reading' %}mcq-options-row{% else %}d-block{% endif %}">
                                                 {% if item.mcq_single_banner and not item.mcq_choose_two and q.question_type == 'mcq' %}
-                                                <div class="ielts-mcq-single-banner admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'engnovate-red' }}" role="note">
+                                                <div class="ielts-mcq-single-banner admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}" role="note">
                                                     {{ item.mcq_single_banner }}
                                                 </div>
                                                 {% endif %}
@@ -1587,7 +1869,8 @@
                                                 {% endif %}
 
                                             {% elif q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
-                                                {% if item.matching_ref_options %}
+                                                {# Matching Information (paragraflar A–H): IELTS da tepada alohida "list of paragraphs" yo'q — matn/passage ko'rsatmasida A-H; faqat savollar + dropdown #}
+                                                {% if item.matching_ref_options and q.question_type != 'matching_info' %}
                                                 <div class="matching-reference-box" aria-label="Tanlash uchun ro'yxat">
                                                     {% if q.question_type == 'matching_headings' %}
                                                     <div class="matching-ref-title">List of Headings</div>
@@ -1595,7 +1878,7 @@
                                                     <div class="matching-ref-row"><span class="text-muted">{{ op.letter }}.</span> {% if op.text %}{{ op.text }}{% endif %}</div>
                                                     {% endfor %}
                                                     {% else %}
-                                                    <div class="matching-ref-title">{% if q.question_type == 'matching_features' or q.question_type == 'matching_info' %}List of {% if q.question_type == 'matching_features' %}people{% else %}paragraphs{% endif %}{% else %}Variantlar{% endif %}</div>
+                                                    <div class="matching-ref-title">{% if q.question_type == 'matching_features' %}List of people{% elif q.question_type == 'matching_sentences' %}Variantlar (sentence endings){% else %}Variantlar{% endif %}</div>
                                                     {% for op in item.matching_ref_options %}
                                                     <div class="matching-ref-row"><strong>{{ op.letter|upper }}.</strong> {% if op.text %}{{ op.text }}{% endif %}</div>
                                                     {% endfor %}
@@ -1604,6 +1887,8 @@
                                                 {% endif %}
                                                 {% if q.question_type == 'matching_headings' %}
                                                 <p class="small text-muted mb-2">{{ q.options_json.instruction|default:"Choose the correct heading for each section from the list of headings below." }}</p>
+                                                {% elif q.question_type == 'matching_info' %}
+                                                <p class="small text-muted mb-2">{{ q.options_json.instruction|default:"Which paragraph contains the following information? Write the correct letter, A–H, in the box for each question." }}</p>
                                                 {% endif %}
                                                 {% for mf in item.matching_fields %}
                                                 <div class="d-flex gap-2 mb-0 matching-statement-row flex-wrap">
@@ -1675,7 +1960,7 @@
                     </div>
                 </div>
             </div>
-            <div class="exam-footer-fullwidth mt-3 w-100" role="region" aria-label="{% if test.test_type == 'writing' %}Vazifa va yuborish{% else %}Partlar va yuborish{% endif %}">
+            <div class="exam-footer-fullwidth mt-3 w-100{% if test.test_type == 'listening' %} listening-exam-footer{% endif %}" role="region" aria-label="{% if test.test_type == 'writing' %}Vazifa va yuborish{% else %}Partlar va yuborish{% endif %}">
                 <div class="exam-bottom-dock exam-dock-below-content">
                     <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
                         <div class="d-flex flex-wrap gap-3 align-items-center dock-parts-row" role="navigation" aria-label="Savol va part navigatsiyasi">
@@ -1686,7 +1971,7 @@
                             {% for pg in part_groups %}
                             <div class="part-q-buttons dock-part-wrap {% if part_groups|length > 1 %}{% if forloop.first %}dock-active{% endif %}{% endif %}" data-part-number="{{ pg.part_number }}">
                                 {% if part_groups|length > 1 %}
-                                <button type="button" class="dock-part-summary dock-part" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" title="Part {{ pg.part_number }} ga o'tish">{{ pg.title }}: {{ pg.question_count }} questions</button>
+                                <button type="button" class="dock-part-summary dock-part{% if test.test_type == 'listening' %} listening-dock-part-summary{% endif %}" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" title="Part {{ pg.part_number }} ga o'tish">{% if test.test_type == 'listening' %}<span class="dock-summary-title">{{ pg.title }}:</span> <span class="dock-summary-qty">{{ pg.question_count }} question{{ pg.question_count|pluralize }}</span>{% else %}{{ pg.title }}: {{ pg.question_count }} questions{% endif %}</button>
                                 <div class="dock-part-expanded d-flex flex-wrap align-items-center gap-2">
                                     <span class="part-label">{{ pg.title }}:</span>
                                     {% if pg.blank_buttons %}
@@ -1695,7 +1980,10 @@
                                     {% endfor %}
                                     {% endif %}
                                     {% if test.test_type == 'reading' and pg.blank_buttons %}
-                                    <span class="dock-questions-count">_{{ pg.question_count }} questions_</span>
+                                    <span class="dock-questions-count"><em>{{ pg.question_count }} question{{ pg.question_count|pluralize }}</em></span>
+                                    {% endif %}
+                                    {% if test.test_type == 'listening' and pg.blank_buttons %}
+                                    <span class="dock-questions-count listening-dock-expanded-hint"><em>{{ pg.question_count }} question{{ pg.question_count|pluralize }}</em> <span class="listening-dock-range">({{ pg.range_label }})</span></span>
                                     {% endif %}
                                 </div>
                                 {% else %}
@@ -1710,7 +1998,7 @@
                                     {% endif %}
                                 </div>
                                 {% if test.test_type == 'reading' and pg.blank_buttons %}
-                                <div class="dock-questions-count w-100">_{{ pg.question_count }} questions_</div>
+                                <div class="dock-questions-count w-100"><em>{{ pg.question_count }} question{{ pg.question_count|pluralize }}</em></div>
                                 {% endif %}
                                 {% endif %}
                             </div>
@@ -1729,7 +2017,7 @@
                                     <span class="reading-dock-part-row me-2" aria-hidden="true">{% if test.test_type == 'writing' %}Taskga o'tish:{% else %}Partga o'tish:{% endif %}</span>
                                     <div class="d-flex flex-wrap gap-2 align-items-center" role="tablist" aria-label="{% if test.test_type == 'writing' %}Tanlang: Task{% else %}Tanlang: Part{% endif %}">
                         {% for pg in part_groups %}
-                        <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{% if test.test_type == 'reading' %}{{ pg.title }}: {{ pg.question_count }} questions{% else %}{{ pg.title }} ({{ pg.range_label }}){% endif %}</button>
+                        <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{% if test.test_type == 'reading' or test.test_type == 'listening' %}{{ pg.title }}: {{ pg.question_count }} question{{ pg.question_count|pluralize }}{% else %}{{ pg.title }} ({{ pg.range_label }}){% endif %}</button>
                         {% endfor %}
                     </div>
                 </div>
@@ -2919,22 +3207,7 @@
         function refreshExamQuestionUI() {
             syncWritingInlineWithRightForm();
             initReadingPartTabs();
-            (function initFillWordLimit() {
-                var form = document.getElementById('exam-take-form');
-                if (!form) return;
-                form.querySelectorAll('input[data-max-words]').forEach(function(inp) {
-                    var max = parseInt(inp.getAttribute('data-max-words') || '0', 10);
-                    if (!max) return;
-                    function tick() {
-                        var v = (inp.value || '').trim();
-                        if (!v) { inp.classList.remove('is-invalid'); return; }
-                        var n = v.split(/\s+/).filter(Boolean).length;
-                        inp.classList.toggle('is-invalid', n > max);
-                    }
-                    inp.addEventListener('blur', tick);
-                    inp.addEventListener('input', tick);
-                });
-            })();
+            /* So'z limiti: qizil border (is-invalid) o'chirildi — foydalanuvchi xato yozganda stress bermaymiz */
             initPartDock();
             initWritingImageCarousel();
             refreshFlagUI();
