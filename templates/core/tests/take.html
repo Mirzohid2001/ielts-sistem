@@ -962,17 +962,39 @@
     .exam-split-layout.listening-layout .exam-left-pane,
     .exam-split-layout.listening-layout .exam-right-pane { flex: none; width: 100%; }
     .exam-split-layout.listening-layout .exam-right-pane { position: static; max-height: none; }
-    /* Writing: Engnovate'ga yaqin (chap prompt panelini berkitib), o'ngda ko'rsatish */
-    .exam-split-layout.writing-layout { flex-direction: column !important; }
-    .exam-split-layout.writing-layout .exam-left-pane { display: none !important; }
-    .exam-split-layout.writing-layout .exam-split-divider { display: none !important; }
-    .exam-split-layout.writing-layout .exam-right-pane {
-        position: static;
-        max-height: none;
-        overflow: visible;
-        background: #fff;
-        border: 0;
-        padding: .25rem .1rem;
+    /* Writing: Engnovate — chapda topshiriq + diagram/rasmlar, o'ngda javob (split) */
+    .exam-split-layout.writing-layout { align-items: stretch; }
+    .exam-split-layout.writing-layout .exam-left-pane {
+        flex: 1.08;
+        min-width: 0;
+        position: sticky;
+        top: 52px;
+        align-self: start;
+        max-height: calc(100vh - 58px);
+        overflow-y: auto;
+        background: #f3f4f6;
+        border: 1px solid #d4d4d8;
+        border-radius: 0;
+        padding: .5rem .65rem;
+    }
+    .exam-split-layout.writing-layout .exam-right-pane.writing-style {
+        flex: 0.92;
+        min-width: min(300px, 100%);
+        position: sticky;
+        top: 52px;
+        align-self: start;
+        max-height: calc(100vh - 58px);
+        overflow: auto;
+        background: #fff !important;
+        border: 1px solid #d4d4d8;
+        padding: .5rem .65rem;
+    }
+    .exam-split-layout.writing-layout .exam-split-divider { display: flex; }
+    .writing-left-pane-scroll .writing-task-card { border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    body.exam-mode .exam-split-layout.writing-layout .exam-left-pane,
+    body.exam-mode .exam-split-layout.writing-layout .exam-right-pane.writing-style {
+        top: 8px;
+        max-height: calc(100vh - 20px);
     }
     .exam-listening-wrap .listening-audio-card {
         border: 1px solid #e5e7eb;
@@ -1061,6 +1083,12 @@
         .exam-split-layout { flex-direction: column; }
         .exam-part-tabs { grid-template-columns: repeat(2, 1fr); }
         .exam-right-pane { position: static; max-height: none; overflow: visible; }
+        .exam-split-layout.writing-layout .exam-left-pane,
+        .exam-split-layout.writing-layout .exam-right-pane.writing-style {
+            position: static;
+            max-height: none;
+            overflow: visible;
+        }
         .reading-passages-container { max-height: 320px !important; }
     }
     /* Telefon - 576px va pastroq */
@@ -1307,7 +1335,7 @@
                     {% endif %}
                     {% endwith %}
                     {% elif test.test_type == 'writing' %}
-                    <div class="writing-tasks-pane">
+                    <div class="writing-tasks-pane writing-left-pane-scroll">
                         {% for pg in part_groups %}
                         <div class="exam-part-pane-left {% if part_groups|length > 1 %}{% if forloop.first %}active{% endif %}{% else %}active{% endif %}" id="left-writing-{{ pg.part_number }}" data-part-number="{{ pg.part_number }}" {% if part_groups|length > 1 and not forloop.first %}hidden{% endif %}>
                             <div class="writing-task-card card border-0 shadow-sm mb-3">
@@ -1316,7 +1344,14 @@
                                     <div class="writing-task-content">
                                         {% for item in pg.cards %}
                                         {% with q=item.question img_list=item.question_images %}
-                                        {{ q.question_text|linebreaks }}
+                                        {% if q.question_instruction %}
+                                        <div class="admin-instruction-box mb-2 admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}">
+                                            {{ q.question_instruction }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="writing-task-prompt admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
+                                            {{ q.question_text|linebreaks }}
+                                        </div>
                                         {% if img_list %}
                                         <div class="writing-task-image-wrap mt-3">
                                             {% if img_list|length > 1 %}
@@ -1349,7 +1384,7 @@
                     {% endif %}
                 </div>
                 <div class="exam-split-divider d-none d-lg-block" aria-hidden="true"></div>
-                <div class="exam-right-pane {% if test.test_type == 'reading' %}reading-style{% endif %}{% if test.test_type == 'listening' %} listening-style{% endif %}">
+                <div class="exam-right-pane {% if test.test_type == 'reading' %}reading-style{% endif %}{% if test.test_type == 'listening' %} listening-style{% endif %}{% if test.test_type == 'writing' %} writing-style{% endif %}">
                     <div id="question-container">
                         <form id="exam-take-form" method="post" action="{% url 'core:test_take' test.pk %}" data-all-questions="1">
                             {% csrf_token %}
@@ -1607,46 +1642,18 @@
 
                                             {% else %}
                                                 {% if test.test_type == 'writing' %}
-                                                {% if q.question_instruction %}
-                                                <div class="admin-instruction-box mb-2 admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}">
-                                                    {{ q.question_instruction }}
-                                                </div>
-                                                {% endif %}
-                                                <div class="writing-task-prompt mb-3 admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
-                                                    {{ q.question_text|linebreaks }}
-                                                </div>
-                                                {% if item.question_images or q.question_image %}
-                                                    <div class="writing-task-image-wrap mt-3">
-                                                        {% if item.question_images %}
-                                                            {% if item.question_images|length > 1 %}
-                                                                <div class="writing-image-carousel" data-question-id="{{ q.pk }}">
-                                                                    <button type="button" class="writing-img-nav writing-img-prev" aria-label="Oldingi rasm"><i class="fas fa-chevron-left"></i></button>
-                                                                    <div class="writing-img-slides">
-                                                                        {% for img_url in item.question_images %}
-                                                                        <div class="writing-img-slide {% if forloop.first %}active{% endif %}">
-                                                                            <img src="{{ img_url }}" class="img-fluid rounded" alt="Task image {{ forloop.counter }}">
-                                                                        </div>
-                                                                        {% endfor %}
-                                                                    </div>
-                                                                    <button type="button" class="writing-img-nav writing-img-next" aria-label="Keyingi rasm"><i class="fas fa-chevron-right"></i></button>
-                                                                </div>
-                                                            {% else %}
-                                                                <img src="{{ item.question_images.0 }}" class="img-fluid rounded" alt="Task image">
-                                                            {% endif %}
-                                                        {% elif q.question_image %}
-                                                            <img src="{{ q.question_image.url }}" class="img-fluid rounded" alt="Task image">
-                                                        {% endif %}
-                                                    </div>
-                                                {% endif %}
-                                                <div class="d-flex justify-content-end mb-1">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-image-to-text"
+                                                {# Topshiriq matni va rasmlar chap panelda (Engnovate split) #}
+                                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                                    <span class="small text-muted d-lg-none"><i class="fas fa-info-circle me-1"></i>Topshiriq yuqoridagi blokda</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-image-to-text ms-lg-auto"
                                                             data-image-url="{% if q.question_image %}{% if request.is_secure %}https{% else %}http{% endif %}://{{ request.get_host }}{{ q.question_image.url }}{% elif item.question_images %}{{ item.question_images.0 }}{% endif %}"
                                                             data-target-textarea="answer_{{ q.pk }}">
                                                         <i class="fas fa-image me-1"></i>Image to Text
                                                     </button>
                                                 </div>
-                                                <textarea class="form-control writing-answer-ta" rows="8" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target>{{ item.current_answer }}</textarea>
-                                                <div class="mt-1 small text-muted"><span class="word-count-label">Words: <strong id="wc-{{ q.pk }}">0</strong></span></div>
+                                                <label class="form-label small fw-semibold text-secondary mb-1 d-none d-lg-block" for="answer-{{ q.pk }}">{{ pg.title }} — javob maydoni</label>
+                                                <textarea id="answer-{{ q.pk }}" class="form-control writing-answer-ta" rows="12" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target>{{ item.current_answer }}</textarea>
+                                                <div class="mt-1 small text-muted"><span class="word-count-label">Word count: <strong id="wc-{{ q.pk }}">0</strong></span></div>
                                                 {% else %}
                                                 <textarea class="form-control" rows="4" name="answer_{{ q.pk }}">{{ item.current_answer }}</textarea>
                                                 {% endif %}

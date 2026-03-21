@@ -30,6 +30,19 @@ MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info',
 QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
 
 
+def _reading_passage_count(test):
+    """Reading: DB dagi passage soni (2 variantli testda birinchi variantdagi passage lar)."""
+    if not hasattr(test, 'get_reading_passages'):
+        return 0
+    pl = test.get_reading_passages() or []
+    if not pl:
+        return 0
+    # 2 variant: [[{passage},...], [{passage},...]]
+    if isinstance(pl[0], list):
+        return len(pl[0])
+    return len(pl)
+
+
 def _get_fill_blank_count(question):
     """Bo'sh joylar soni — model bilan bir xil (qisqa javob jadvalsiz qatorlar ham)."""
     return question.fill_blanks_count()
@@ -1236,16 +1249,21 @@ def test_take(request, pk):
         # Part raqami belgilanmagan: Reading da passage + savollar soniga qarab (13 ta = 1 part)
         default_parts = 1
         if test.test_type == 'reading':
-            passages_list_for_count = test.get_reading_passages()
-            passage_count = len(passages_list_for_count) if passages_list_for_count else 0
-            # Savollar soni bo'yicha: 1–13 → 1 part, 14–26 → 2 part, 27+ → 3 part (IELTS uslubi)
+            passage_count = _reading_passage_count(test)
+            # Savollar soni bo'yicha (passage yo'q bo'lsa): 1–13 → 1 part, 14–26 → 2, 27+ → 3
             if total_questions <= 13:
                 parts_by_questions = 1
             elif total_questions <= 26:
                 parts_by_questions = 2
             else:
                 parts_by_questions = 3
-            default_parts = max(1, min(passage_count, parts_by_questions))
+            # 2+ ta passage bo'lsa — partlar soni passage ga mos (IELTS); kam savol bo'lsa ham 2–3 tab
+            if passage_count >= 2:
+                default_parts = min(passage_count, 3)
+            elif passage_count == 1:
+                default_parts = 1
+            else:
+                default_parts = max(1, min(3, parts_by_questions))
         elif test.test_type == 'listening':
             # Har partda 10 ta savol: Part 1 = 1–10, Part 2 = 11–20, Part 3 = 21–30, Part 4 = 31–40
             default_parts = min(4, max(1, ((total_questions or 0) + 9) // 10))
@@ -1256,14 +1274,23 @@ def test_take(request, pk):
         #mmm
 
         if test.test_type == 'reading' and default_parts <= 3:
-            # IELTS: Part 1 = 13 ta, Part 2 = 13 ta, Part 3 = qolgani (14 yoki kam)
+            # Standart 13+13+14 faqat yetarli savol bo'lsa; aks holda teng bo'linadi (2 passage + 8 savol va hokazo)
             ranges = []
-            if default_parts >= 1:
-                ranges.append((0, min(13, total_questions)))
-            if default_parts >= 2:
-                ranges.append((13, min(26, total_questions)))
-            if default_parts >= 3:
-                ranges.append((26, total_questions))
+            if default_parts == 3 and total_questions >= 27:
+                ranges = [(0, 13), (13, 26), (26, total_questions)]
+            elif default_parts == 2 and total_questions >= 14:
+                ranges = [(0, 13), (13, total_questions)]
+            elif default_parts == 1:
+                ranges = [(0, total_questions)]
+            else:
+                base_size = total_questions // default_parts if default_parts else total_questions
+                extra = total_questions % default_parts if default_parts else 0
+                start = 0
+                for p in range(default_parts):
+                    size = base_size + (1 if p < extra else 0)
+                    end = start + size
+                    ranges.append((start, end))
+                    start = end
         elif test.test_type == 'listening':
             # Listening: har partda 10 ta savol (1–10, 11–20, 21–30, 31–40)
             t = total_questions or 0
@@ -1295,10 +1322,9 @@ def test_take(request, pk):
                     break
             part_indexes.append(assigned)
 
-    # Reading: faqat 0 yoki 1 ta passage bo'lsa — barcha savollar bitta partda; 2 variantli testda part_indexes allaqachon variant bo'yicha
+    # Reading: faqat 1 ta passage bo'lsa — barcha savollar bitta partda; 2+ passage yoki 2 variant — yuqoridagi bo'linish saqlanadi
     if test.test_type == 'reading' and part_indexes and getattr(test, 'variants_to_select', 1) != 2:
-        passage_count = len(test.get_reading_passages()) if hasattr(test, 'get_reading_passages') else 0
-        if passage_count <= 1:
+        if _reading_passage_count(test) <= 1:
             part_indexes = [1] * len(part_indexes)
 
     part_groups = []

@@ -2,6 +2,10 @@
 {% load i18n %}
 
 {% block content %}
+<div class="module" style="margin-bottom: 16px; padding: 12px 16px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 13px; line-height: 1.6; color: #14532d;">
+    <strong>Savol alohida tahrirlanmoqda.</strong> Ko‘p savol qo‘shish uchun <strong>Testlar → testni oching → Savollar inline</strong> qulayroq.
+    Savol turini o‘zgartirsangiz, kerakli maydonlar avtomatik ko‘rinadi. <a href="/admin/yoriqnoma/">Yo‘riqnoma</a>
+</div>
 <script>window.QUESTION_TYPE_RULES = {{ question_type_rules_json|default:"{}"|safe }};</script>
 {{ block.super }}
 {% endblock %}

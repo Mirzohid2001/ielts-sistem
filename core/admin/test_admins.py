@@ -1,8 +1,9 @@
 """Test, savol, passage admin (Reading / Listening / Writing — barcha turlar)."""
 from django.contrib import admin
 from django import forms
+from django.contrib import messages
+from django.db import transaction
 from django.utils.html import format_html
-from django.db.models import Count, Q
 from django.core.management import call_command
 from import_export.admin import ImportExportModelAdmin
 
@@ -17,6 +18,7 @@ class QuestionInline(admin.StackedInline):
     form = QuestionAdminForm
     extra = 0
     min_num = 0
+    ordering = ['order', 'pk']
     classes = []  # ochiq — savollar yopiq bo'lmasin
     verbose_name = "Savol"
     verbose_name_plural = (
@@ -59,10 +61,12 @@ class QuestionInline(admin.StackedInline):
                 ],
                 'classes': ['question-fill-fields'],
                 'description': (
-                    "Part raqami: Reading 1–3, Listening 1–4, <strong>Writing 1 yoki 2 (Task 1 / Task 2) — Writing testda har bir savol uchun aniq tanlang</strong>. "
-                    "Matching Information (paragraflarga): «Savol matni» da ko'rsatma (A–F paragraflar). "
-                    "«Matching itemlar» da har satr: 1|..., 2|..., 3|..., 4|.... "
-                    "«Matching variantlar» da: A|, B|, C|, D|, E|, F|. «To'g'ri javob» da: 1:A, 2:C, 3:E, 4:B."
+                    "Part raqami: Reading 1–3, Listening 1–4, <strong>Writing 1 yoki 2</strong>. "
+                    "<strong>Matching:</strong> 1) Savol matnini to'ldiring (draft bo'lmasin). 2) «Matching itemlar»: har qator <code>14|Paragraph A</code> yoki <code>14 The fact that...</code>. "
+                    "3) «Matching variantlar»: <code>A|</code> yoki <code>a|Matn</code> (Information/Features). "
+                    "<strong>Matching Headings</strong> uchun: <code>i|Sarlavha</code>, <code>ii|Boshqa</code> (rom raqam|matn). "
+                    "4) «To'g'ri javob»: <code>14:ii</code> yoki <code>14: ii</code> (savol raqami:kichik harf/rom). "
+                    "Barcha uchta blok to'ldirilguncha saqlash rad etilishi mumkin — xatolik matnini o'qing."
                 ),
             }),
             (None, {
@@ -97,6 +101,9 @@ class ReadingPassageInline(admin.StackedInline):
 # Test Admin - ideal: partlar, savollar, testlar qo'shish oson
 @admin.register(Test)
 class TestAdmin(ImportExportModelAdmin):
+    """Administrator test yaratadi/tahrirlaydi; saytda ko'rish uchun obyekt ustidagi «Saytda ko'rish»."""
+    view_on_site = True  # Test.get_absolute_url → test tafsiloti
+
     list_display = [
         'title', 'category', 'test_type', 'variants_to_select', 'difficulty',
         'content_summary_display',
@@ -125,12 +132,13 @@ class TestAdmin(ImportExportModelAdmin):
         ('Asosiy ma\'lumotlar', {
             'fields': ('title', 'category', 'test_type', 'difficulty', 'variants_to_select', 'description', 'is_active'),
             'description': (
-                "✅ Sarlavha, kategoriya, <strong>test turi</strong> (Reading / Listening / Writing), <strong>Variantlar soni</strong> (1 yoki 2). <strong>2 variant</strong> tanlasangiz — pastda har bir Savol va Passage da «Variant 1» yoki «Variant 2» ni tanlash majburiy, aks holda barcha savollar Variant 1 da chiqadi. → «Saqlash» bosing. "
-                "Keyin pastda: <strong>Reading</strong> — avval 📖 Passage'lar (3 ta, Order 1–3), keyin 📝 Savollar (Order 1–40; Part 1 = 1–13, Part 2 = 14–26, Part 3 = 27–40). "
-                "<strong>Listening</strong> — Audio + 40 ta savol (tizim Part 1–4 ni 10+10+10+10 qilib ajratadi). Part maydoni ixtiyoriy; "
-                "maxsus bo'lish uchun savolda Part 1–4 belgilang. "
-                "<strong>Writing</strong> — faqat Savollar (2 ta: Task 1, Task 2). <strong>Writing da har bir savolga Part raqami (Task 1 yoki Task 2) aniq belgilang</strong> — «To'ldirish / Matching» blokidagi Part raqami maydonida 1 yoki 2 tanlang."
-                " Reading ni Engnovate uslubida qo'shish: saqlagach yuqoridagi «To'liq yo'riqnoma» yoki «Reading — Engnovate formatida» havolasini oching."
+                "✅ <strong>1-qadam:</strong> maydonlarni to'ldirib <strong>Saqlash</strong> — keyin pastda Passage va Savollar paydo bo'ladi. "
+                "<strong>Reading:</strong> 📖 Passage'lar (2–3 ta mumkin; har biri uchun Order 1,2,3) + 📝 savollar. "
+                "Ko'p passage bo'lsa savolda <strong>Part raqami</strong> (1/2/3) yozing yoki tartibni saqlang — sayt passage soniga qarab partlarni bo'lib beradi. "
+                "<strong>Listening:</strong> Audio fayl + savollar; Part 1–4 odatda 10+10+10+10. "
+                "<strong>Writing:</strong> 2 ta savol (Task 1, 2) — har birida Part = 1 yoki 2; Task 1 rasmlari: «Rasm» yoki qo'shimcha URL ro'yxati. "
+                "<strong>Savol matni bo'sh</strong> qoldirish mumkin (draft), keyin to'ldirib saqlang. "
+                "<strong>2 variant</strong> testda har savol va passage uchun Variant 1 yoki 2 tanlang."
             )
         }),
         ('Parametrlar', {
@@ -141,10 +149,20 @@ class TestAdmin(ImportExportModelAdmin):
             'fields': ('audio_file', 'reading_text'),
             'description': (
                 "<strong>Listening:</strong> shu yerdan audio fayl (MP3) yuklang. "
-                "<strong>Reading:</strong> agar pastdagi Passage'lar blokida 3 ta matn qo'shmagan bo'lsangiz, shu yerga bitta matn yozish mumkin. Writing uchun bu maydonlar kerak emas."
+                "<strong>Reading:</strong> afzal — pastdagi Passage inline; bu yerda faqat bitta zaxira matn (passage bo'lmasa ishlatiladi). Writing uchun kerak emas."
             )
         }),
+        ('Tizim', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
     )
+
+    def get_readonly_fields(self, request, obj=None):
+        ro = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            ro.extend(['created_at', 'updated_at'])
+        return ro
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
@@ -180,26 +198,29 @@ class TestAdmin(ImportExportModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('reading_passages', 'questions')
 
-    @admin.action(description="Testni nusxalash")
+    @admin.action(description="Testni nusxalash (passage + savollar bilan)")
     def duplicate_tests(self, request, queryset):
-        for test in queryset:
-            questions = list(test.questions.all().order_by('order'))
-            passages = list(test.reading_passages.all().order_by('order'))
-            test.pk = None
-            test._state.adding = True
-            test.title = f"{test.title} (nusxa)"
-            test.save()
-            for p in passages:
-                p.pk = None
-                p.test = test
-                p._state.adding = True
-                p.save()
-            for q in questions:
-                q.pk = None
-                q.test = test
-                q._state.adding = True
-                q.save()
-        self.message_user(request, f"{queryset.count()} ta test nusxalandi.")
+        n = 0
+        for old in list(queryset):
+            questions = list(old.questions.all().order_by('order', 'pk'))
+            passages = list(old.reading_passages.all().order_by('order', 'pk'))
+            with transaction.atomic():
+                old.pk = None
+                old._state.adding = True
+                old.title = f"{old.title} (nusxa)"
+                old.save()
+                for p in passages:
+                    p.pk = None
+                    p.test = old
+                    p._state.adding = True
+                    p.save()
+                for q in questions:
+                    q.pk = None
+                    q.test = old
+                    q._state.adding = True
+                    q.save()
+            n += 1
+        self.message_user(request, f"{n} ta test nusxalandi (har biri passage va savollar bilan).", messages.SUCCESS)
 
     @admin.action(description="Faollashtirish")
     def activate_tests(self, request, queryset):
@@ -211,14 +232,24 @@ class TestAdmin(ImportExportModelAdmin):
         n = queryset.update(is_active=False)
         self.message_user(request, f"{n} ta test o'chirildi.")
 
-    @admin.action(description="Ideal testlar qo'shish (DESTRUCTIVE: hammasini o'chiradi)")
+    @admin.action(description="⚠️ DB ni tozalab ideal testlar (faqat superuser)")
     def seed_ideal_tests(self, request, queryset):
-        # Diqqat: bu action test/natija/savollarni o'chirib qayta seeding qiladi.
+        if not request.user.is_superuser:
+            self.message_user(
+                request,
+                "Bu harakat faqat superuser uchun. `python manage.py reset_and_seed` ni serverda ishlating.",
+                level=messages.ERROR,
+            )
+            return
         try:
             call_command('reset_and_seed', verbosity=0)
-            self.message_user(request, "Ideal testlar + coverage seeding qilindi (reset_and_seed).")
+            self.message_user(
+                request,
+                "reset_and_seed bajarildi: ideal testlar + namuna savollar.",
+                level=messages.WARNING,
+            )
         except Exception as e:
-            self.message_user(request, f"Seeding xatolik bilan to'xtadi: {e}")
+            self.message_user(request, f"Seeding xatolik: {e}", level=messages.ERROR)
 
 
 # Question Admin - savol qo'shish qulay (yangi format: part/task ko'rsatish)
@@ -226,8 +257,8 @@ class TestAdmin(ImportExportModelAdmin):
 class QuestionAdmin(ImportExportModelAdmin):
     form = QuestionAdminForm
     list_display = ['test', 'order', 'part_or_task_display', 'question_type', 'question_text_short', 'correct_answer', 'points', 'created_at']
-    list_filter = ['test__category', 'test__test_type', 'question_type', 'created_at']
-    search_fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
+    list_filter = ['test__category', 'test__test_type', 'test__is_active', 'question_type', 'created_at']
+    search_fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'test__title']
     ordering = ['test', 'order']
     list_per_page = 30
     autocomplete_fields = ['test']
@@ -291,8 +322,10 @@ class QuestionAdmin(ImportExportModelAdmin):
             'classes': ('question-fill-fields',),
             'description': (
                 "Bu maydonlarni to'ldirsangiz, JSON avtomatik yoziladi. Notes/Summary: savol matnida [1], [2], [3] yozing; "
-                "To'g'ri javoblar: vergul bilan (masalan: teacher,charcoal,skyscrapers). "
-                "Instruction: ONE WORD ONLY yoki ONE WORD AND/OR A NUMBER. Part raqami: Reading 1–3, Listening 1–4, Writing 1–2."
+                "To'g'ri javoblar: vergul bilan. "
+                "<strong>Reading 2–3 ta passage</strong> bo'lsa, har bir savol uchun «Part raqami» ni 1, 2 yoki 3 qilib belgilang — "
+                "aks holda tizim savollarni passage tartibiga bo'lib beradi. "
+                "Matching uchun yuqoridagi inline yo'riqnomani o'qing."
             )
         }),
         ('Advanced JSON (faqat mutaxassis — odatda kerak emas)', {

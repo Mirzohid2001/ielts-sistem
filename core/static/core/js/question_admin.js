@@ -241,7 +241,7 @@
             });
         }
         if (container.querySelectorAll('[data-role="qt-fill"]').length === 0) {
-            var fillNames = ['part_number', 'instruction_text', 'fill_answers', 'writing_task_images', 'matching_items', 'matching_options', 'matching_correct', 'list_options_simple', 'list_correct_simple'];
+            var fillNames = ['part_number', 'instruction_text', 'fill_answers', 'writing_task_images', 'matching_items', 'matching_options', 'matching_correct', 'list_options_simple', 'list_correct_simple', 'sa_prompt_lines'];
             fillNames.forEach(function(name) {
                 container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) { toggleFormRow(inp, showJsonFields); });
             });
