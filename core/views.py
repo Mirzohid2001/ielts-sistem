@@ -1262,6 +1262,9 @@ def test_take(request, pk):
             for f in card.get('answer_fields') or []:
                 f['global_num'] = d
 
+    # Ko'rsatiladigan savol raqamlari soni (DB yozuvlari emas — bitta TFNG 9 ta raqam berishi mumkin)
+    total_display_slots = max(0, running_display - 1)
+
     # Part bloklari: 2 variantli testda odatda part = exam variant (1 yoki 2).
     # Reading + barcha savollar bir xil variant: passage bo'linishi (13/14) uchun quyidagi tarmoq ishlaydi.
     part_indexes = []
@@ -1316,8 +1319,8 @@ def test_take(request, pk):
         #mmm
 
         if test.test_type == 'reading':
-            # Har partda max 13 (40 ta → 13+13+14); ikki partda 14 ta bo'lsa 13+1 — ikkinchi partda 1 savol
-            ranges = _reading_part_ranges(total_questions)
+            # Bo'linish savol yozuvlari emas, ko'rsatiladigan raqamlar bo'yicha (14 ta slot → 13+1 part)
+            ranges = _reading_part_ranges(total_display_slots)
         elif test.test_type == 'listening':
             # Listening: har partda 10 ta savol (1–10, 11–20, 21–30, 31–40)
             t = total_questions or 0
@@ -1341,13 +1344,28 @@ def test_take(request, pk):
                 ranges.append((start, end))
                 start = end
 
-        for idx in range(total_questions):
-            assigned = 1
-            for p_idx, (s, e) in enumerate(ranges, start=1):
-                if s <= idx < e:
-                    assigned = p_idx
-                    break
-            part_indexes.append(assigned)
+        if test.test_type == 'reading':
+            # Har bir savol kartasi: birinchi ko'rsatiladigan raqam qaysi part oralig'ida (0-based slot)
+            for card in question_cards:
+                d0 = card.get('display_order')
+                try:
+                    slot_idx = max(0, int(d0) - 1) if d0 is not None else 0
+                except (TypeError, ValueError):
+                    slot_idx = 0
+                assigned = 1
+                for p_idx, (s, e) in enumerate(ranges, start=1):
+                    if s <= slot_idx < e:
+                        assigned = p_idx
+                        break
+                part_indexes.append(assigned)
+        else:
+            for idx in range(total_questions):
+                assigned = 1
+                for p_idx, (s, e) in enumerate(ranges, start=1):
+                    if s <= idx < e:
+                        assigned = p_idx
+                        break
+                part_indexes.append(assigned)
 
     part_groups = []
     for idx, card in enumerate(question_cards):

@@ -1781,10 +1781,13 @@
                                             {% endif %}
 
                                             {% if test.test_type != 'writing' %}
+                                            {# Reading matching_info: ko'rsatma yuqoridagi part-shart blokida — bu yerda takrorlanmasin #}
                                             {% if q.question_instruction %}
+                                            {% if not test.test_type == 'reading' or q.question_type != 'matching_info' %}
                                             <div class="admin-instruction-box mb-2 admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }}">
                                                 {{ q.question_instruction }}
                                             </div>
+                                            {% endif %}
                                             {% endif %}
                                             {% if not item.inline_fill_parts %}
                                             {% if q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
