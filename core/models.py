@@ -734,8 +734,8 @@ class Question(models.Model):
 
 class QuestionTypeRule(models.Model):
     """
-    Har bir savol TURI uchun bitta shart (qoida/talab).
-    Savol qo'shishda tanlangan tur uchun shu shart ko'rsatiladi — har bir savolga emas, faqat tur bo'yicha.
+    Har bir savol TURI uchun bitta qoida matni — faqat admin panelda (savol qo'shish/tahrirlash) ko'rsatiladi.
+    Test oluvchiga (foydalanuvchi interfeysi) chiqarilmaydi; talab matni savolning o'zida (question_text) bo'ladi.
     """
     question_type = models.CharField(
         max_length=30,
@@ -747,7 +747,10 @@ class QuestionTypeRule(models.Model):
     shart_text = models.TextField(
         blank=True,
         verbose_name="Shart (qoida / talab)",
-        help_text="Bu savol turi uchun talab matni. Admin da savol qo'shishda tanlangan turda shu matn ko'rsatiladi."
+        help_text=(
+            "Faqat admin uchun yordam matni (masalan: [1],[2] va vergul bilan javoblar). "
+            "Savol qo'shish formasida va JS da ko'rinadi; test yechayotgan foydalanuvchiga chiqmaydi."
+        ),
     )
     order = models.IntegerField(default=0, verbose_name="Tartib")
 

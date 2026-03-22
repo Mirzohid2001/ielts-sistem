@@ -1650,6 +1650,15 @@
                                             <img src="{{ q.question_image.url }}" class="img-fluid rounded" alt="Task image">
                                         </div>
                                         {% endif %}
+                                        {% if img_list or q.question_image %}
+                                        <div class="writing-image-to-text-wrap mt-3">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-image-to-text"
+                                                    data-image-url="{% if q.question_image %}{% if request.is_secure %}https{% else %}http{% endif %}://{{ request.get_host }}{{ q.question_image.url }}{% elif img_list %}{{ img_list.0 }}{% endif %}"
+                                                    data-target-textarea="answer_{{ q.pk }}">
+                                                <i class="fas fa-image me-1"></i>Image to Text
+                                            </button>
+                                        </div>
+                                        {% endif %}
                                         {% endwith %}
                                         {% endfor %}
                                     </div>
@@ -1697,12 +1706,47 @@
                                         </div>
                                         {% endif %}
                                         {% for type_block in pg.type_blocks %}
-                                        {% if test.test_type == 'reading' or type_block.shart_text %}
+                                        {% if test.test_type == 'reading' or type_block.shart_text or type_block.question_type == 'true_false_not_given' or type_block.question_type == 'yes_no_not_given' %}
                                         <div class="part-shart-block part-table-row instruction-block shart-{{ type_block.question_type|default:'default' }}">
-                                            {% if test.test_type != 'listening' and type_block.start_order and type_block.end_order %}
+                                            {% if test.test_type != 'listening' and type_block.start_order and type_block.end_order and type_block.question_type != 'matching_info' %}
                                             <div class="instruction-range-title">Questions {{ type_block.start_order }}{% if type_block.end_order != type_block.start_order %}-{{ type_block.end_order }}{% endif %}</div>
                                             {% endif %}
-                                            {% if type_block.shart_text %}
+                                            {% if type_block.question_type == 'true_false_not_given' %}
+                                            <div class="part-shart-text ielts-instruction-tfng">
+                                                <p class="mb-2 fw-semibold">Do the following statements agree with the information given in the reading passage?</p>
+                                                <p class="mb-2 small text-secondary">
+                                                    {% if type_block.end_order != type_block.start_order %}
+                                                    In boxes {{ type_block.start_order }}–{{ type_block.end_order }} on your answer sheet, write
+                                                    {% else %}
+                                                    In box {{ type_block.start_order }} on your answer sheet, write
+                                                    {% endif %}
+                                                </p>
+                                                <ul class="small mb-0 ps-3">
+                                                    <li class="mb-1"><strong>TRUE</strong> if the statement agrees with the information</li>
+                                                    <li class="mb-1"><strong>FALSE</strong> if the statement contradicts the information</li>
+                                                    <li><strong>NOT GIVEN</strong> if there is no information on this</li>
+                                                </ul>
+                                            </div>
+                                            {% elif type_block.question_type == 'yes_no_not_given' %}
+                                            <div class="part-shart-text ielts-instruction-ynng">
+                                                <p class="mb-2 fw-semibold">Do the following statements agree with the views of the writer in the reading passage?</p>
+                                                <p class="mb-2 small text-secondary">
+                                                    {% if type_block.end_order != type_block.start_order %}
+                                                    In boxes {{ type_block.start_order }}–{{ type_block.end_order }} on your answer sheet, write
+                                                    {% else %}
+                                                    In box {{ type_block.start_order }} on your answer sheet, write
+                                                    {% endif %}
+                                                </p>
+                                                <ul class="small mb-0 ps-3">
+                                                    <li class="mb-1"><strong>YES</strong> if the statement agrees with the views of the writer</li>
+                                                    <li class="mb-1"><strong>NO</strong> if the statement contradicts the views of the writer</li>
+                                                    <li><strong>NOT GIVEN</strong> if it is impossible to say what the writer thinks about this</li>
+                                                </ul>
+                                            </div>
+                                            {% elif type_block.question_type == 'matching_info' and test.test_type == 'reading' and type_block.cards %}
+                                            {# Matching Information: guruh ko‘rsatmasi faqat shu jadval blokida — pastda q.question_text takrorlanmasin #}
+                                            <div class="part-shart-text">{{ type_block.cards.0.question.question_text|format_instruction }}</div>
+                                            {% elif type_block.shart_text %}
                                             <div class="part-shart-text">{{ type_block.shart_text|format_instruction }}</div>
                                             {% endif %}
                                         </div>
@@ -1712,6 +1756,7 @@
                                         <div class="part-q-card" id="question-{{ item.display_order|default:q.order }}" data-question-id="{{ q.pk }}" data-first-order="{{ item.display_order|default:q.order }}" data-last-order="{% if item.display_order_2 %}{{ item.display_order_2 }}{% else %}{{ item.display_order|default:q.order }}{% endif %}">
                                             {% if not item.inline_fill_parts and test.test_type != 'writing' %}
                                                 {% if test.test_type == 'reading' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' or q.question_type == 'mcq' or q.question_type == 'true_false' %}
+                                            {% if not test.test_type == 'reading' or q.question_type != 'matching_info' %}
                                             <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                                                 {% if test.test_type == 'reading' %}
                                                     {% if item.mcq_dual_slots %}
@@ -1731,6 +1776,7 @@
                                                 {% endif %}
                                                 {% endif %}
                                             </div>
+                                            {% endif %}
                                                 {% endif %}
                                             {% endif %}
 
@@ -1742,9 +1788,11 @@
                                             {% endif %}
                                             {% if not item.inline_fill_parts %}
                                             {% if q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
+                                            {% if not test.test_type == 'reading' or q.question_type != 'matching_info' %}
                                             <div class="mb-3 matching-instruction-text admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
                                                 {{ q.question_text|format_instruction }}
                                             </div>
+                                            {% endif %}
                                             {% else %}
                                             <div class="mb-3 admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
                                                 {{ q.question_text|format_instruction }}
@@ -1857,12 +1905,12 @@
                                                     </div>
                                                     {% empty %}
                                                     <div class="col-12">
-                                                        <label class="form-label fw-semibold text-dark mb-1">Javoblarni shu yerga yozing (vergul bilan: <code>[1]</code>, <code>[2]</code>, <code>[3]</code> uchun)</label>
+                                                        <label class="form-label fw-semibold text-dark mb-1 visually-hidden">Answer</label>
                                                         <input type="text" class="form-control"
                                                                name="answer_{{ q.pk }}_1"
                                                                value="{{ item.current_answer }}"
-                                                               placeholder="masalan: javob1,javob2,javob3"
-                                                               title="Har bir bo'sh joy uchun javobni vergul bilan yozing">
+                                                               autocomplete="off"
+                                                               aria-label="Answer">
                                                     </div>
                                                     {% endfor %}
                                                 </div>
@@ -1887,8 +1935,9 @@
                                                 {% endif %}
                                                 {% if q.question_type == 'matching_headings' %}
                                                 <p class="small text-muted mb-2">{{ q.options_json.instruction|default:"Choose the correct heading for each section from the list of headings below." }}</p>
-                                                {% elif q.question_type == 'matching_info' %}
-                                                <p class="small text-muted mb-2">{{ q.options_json.instruction|default:"Which paragraph contains the following information? Write the correct letter, A–H, in the box for each question." }}</p>
+                                                {% elif q.question_type == 'matching_info' and q.options_json.instruction %}
+                                                {# matching_info: asosiy matn guruh blokida (part-shart); qo'shimcha faqat options_json.instruction bo'lsa #}
+                                                <p class="small text-muted mb-2">{{ q.options_json.instruction }}</p>
                                                 {% endif %}
                                                 {% for mf in item.matching_fields %}
                                                 <div class="d-flex gap-2 mb-0 matching-statement-row flex-wrap">
@@ -1927,17 +1976,10 @@
 
                                             {% else %}
                                                 {% if test.test_type == 'writing' %}
-                                                {# Topshiriq matni va rasmlar chap panelda (Engnovate split) #}
-                                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                                                    <span class="small text-muted d-lg-none"><i class="fas fa-info-circle me-1"></i>Topshiriq yuqoridagi blokda</span>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-image-to-text ms-lg-auto"
-                                                            data-image-url="{% if q.question_image %}{% if request.is_secure %}https{% else %}http{% endif %}://{{ request.get_host }}{{ q.question_image.url }}{% elif item.question_images %}{{ item.question_images.0 }}{% endif %}"
-                                                            data-target-textarea="answer_{{ q.pk }}">
-                                                        <i class="fas fa-image me-1"></i>Image to Text
-                                                    </button>
-                                                </div>
-                                                <label class="form-label small fw-semibold text-secondary mb-1 d-none d-lg-block" for="answer-{{ q.pk }}">{{ pg.title }} — javob maydoni</label>
-                                                <textarea id="answer-{{ q.pk }}" class="form-control writing-answer-ta" rows="12" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target>{{ item.current_answer }}</textarea>
+                                                {# Image to Text — chap panelda (topshiriq/rasmdan keyin); bu yerda faqat javob #}
+                                                <p class="small text-muted d-lg-none mb-2"><i class="fas fa-info-circle me-1"></i>Task and diagram are on the left.</p>
+                                                <label class="form-label small fw-semibold text-secondary mb-1 d-none d-lg-block" for="answer-{{ q.pk }}">{{ pg.title }} — answer</label>
+                                                <textarea id="answer-{{ q.pk }}" class="form-control writing-answer-ta" rows="12" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target spellcheck="false" autocomplete="off">{{ item.current_answer }}</textarea>
                                                 <div class="mt-1 small text-muted"><span class="word-count-label">Word count: <strong id="wc-{{ q.pk }}">0</strong></span></div>
                                                 {% else %}
                                                 <textarea class="form-control" rows="4" name="answer_{{ q.pk }}">{{ item.current_answer }}</textarea>
@@ -2926,6 +2968,42 @@
             const navPrev = document.getElementById('nav-prev');
             const navNext = document.getElementById('nav-next');
 
+            /** 2 ta passage / Variant 1+2: dockda har bir part alohida — oxirgi savoldan keyingi partga o'tish */
+            function getSortedDockPartNumbers() {
+                var wraps = Array.from(document.querySelectorAll('.exam-bottom-dock .dock-part-wrap[data-part-number]'));
+                var nums = wraps.map(function(w) { return parseInt(w.getAttribute('data-part-number'), 10); }).filter(function(n) { return !isNaN(n); });
+                nums.sort(function(a, b) { return a - b; });
+                return nums;
+            }
+            function getNextPartNum(currentPart) {
+                if (currentPart == null || currentPart === '') return null;
+                var nums = getSortedDockPartNumbers();
+                var p = parseInt(String(currentPart), 10);
+                var i = nums.indexOf(p);
+                return (i >= 0 && i < nums.length - 1) ? nums[i + 1] : null;
+            }
+            function getPrevPartNum(currentPart) {
+                if (currentPart == null || currentPart === '') return null;
+                var nums = getSortedDockPartNumbers();
+                var p = parseInt(String(currentPart), 10);
+                var i = nums.indexOf(p);
+                return i > 0 ? nums[i - 1] : null;
+            }
+            function getFirstQuestionAnchorInPart(partNum) {
+                var row = document.querySelector('.exam-bottom-dock .dock-part-wrap[data-part-number="' + partNum + '"]');
+                if (!row) return null;
+                var btn = row.querySelector('.q-num-btn[data-question-id]');
+                return btn ? (btn.getAttribute('data-card-anchor') || btn.getAttribute('data-order')) : null;
+            }
+            function getLastQuestionAnchorInPart(partNum) {
+                var row = document.querySelector('.exam-bottom-dock .dock-part-wrap[data-part-number="' + partNum + '"]');
+                if (!row) return null;
+                var btns = Array.from(row.querySelectorAll('.q-num-btn[data-question-id]'));
+                if (!btns.length) return null;
+                var last = btns[btns.length - 1];
+                return last.getAttribute('data-card-anchor') || last.getAttribute('data-order');
+            }
+
             qNumBtns.forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     const blankId = this.getAttribute('data-blank-id');
@@ -3039,8 +3117,12 @@
                         btn.classList.toggle('active', inVisible && btn.getAttribute('data-blank-id') === bid);
                     });
                     const idx = part1BlankBtns.findIndex(function(b) { return b.getAttribute('data-blank-id') === bid; });
-                    if (navPrev) navPrev.classList.toggle('active', idx > 0);
-                    if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < part1BlankBtns.length - 1);
+                    const activePartPaneBlank = document.querySelector('.reading-part-pane.active');
+                    const curPartBlank = activePartPaneBlank ? activePartPaneBlank.getAttribute('data-part-number') : null;
+                    var canPrevB = idx > 0 || (idx === 0 && curPartBlank && getPrevPartNum(curPartBlank));
+                    var canNextB = (idx >= 0 && idx < part1BlankBtns.length - 1) || (idx === part1BlankBtns.length - 1 && curPartBlank && getNextPartNum(curPartBlank));
+                    if (navPrev) navPrev.classList.toggle('active', canPrevB);
+                    if (navNext) navNext.classList.toggle('active', canNextB);
                 } else {
                     const current = getVisibleQuestionOrder();
                     const curAnchor = String(current);
@@ -3058,8 +3140,12 @@
                     });
                     anchors.sort(function(x, y) { return parseInt(x, 10) - parseInt(y, 10); });
                     const idx = anchors.indexOf(curAnchor);
-                    if (navPrev) navPrev.classList.toggle('active', idx > 0);
-                    if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < anchors.length - 1);
+                    const activePartPaneQ = document.querySelector('.reading-part-pane.active');
+                    const curPartQ = activePartPaneQ ? activePartPaneQ.getAttribute('data-part-number') : null;
+                    var canPrevQ = idx > 0 || (idx === 0 && curPartQ && getPrevPartNum(curPartQ));
+                    var canNextQ = (idx >= 0 && idx < anchors.length - 1) || (idx === anchors.length - 1 && curPartQ && getNextPartNum(curPartQ));
+                    if (navPrev) navPrev.classList.toggle('active', canPrevQ);
+                    if (navNext) navNext.classList.toggle('active', canNextQ);
                 }
             }
             updateQNumActiveFn = updateQNumActive;
@@ -3100,6 +3186,21 @@
                             var el = document.getElementById('question-' + prevOrder);
                             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, part && curPart !== String(part) ? 120 : 0);
+                    } else if (idx === 0 && typeof switchReadingPart === 'function') {
+                        var activePartEl = document.querySelector('.reading-part-pane.active');
+                        var curPartNum = activePartEl ? activePartEl.getAttribute('data-part-number') : (activeRow ? activeRow.getAttribute('data-part-number') : null);
+                        var prevPart = getPrevPartNum(curPartNum);
+                        if (prevPart) {
+                            var lastA = getLastQuestionAnchorInPart(prevPart);
+                            if (lastA) {
+                                switchReadingPart(String(prevPart));
+                                setTimeout(function() {
+                                    var el = document.getElementById('question-' + lastA);
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    if (typeof updateQNumActiveFn === 'function') updateQNumActiveFn();
+                                }, 120);
+                            }
+                        }
                     }
                 }
             });
@@ -3139,6 +3240,21 @@
                             var el = document.getElementById('question-' + nextOrder);
                             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, part && curPart !== String(part) ? 120 : 0);
+                    } else if (idx >= 0 && idx === anchors.length - 1 && typeof switchReadingPart === 'function') {
+                        var activePartEl2 = document.querySelector('.reading-part-pane.active');
+                        var curPartNum2 = activePartEl2 ? activePartEl2.getAttribute('data-part-number') : (activeRow ? activeRow.getAttribute('data-part-number') : null);
+                        var nextPart = getNextPartNum(curPartNum2);
+                        if (nextPart) {
+                            var firstA = getFirstQuestionAnchorInPart(nextPart);
+                            if (firstA) {
+                                switchReadingPart(String(nextPart));
+                                setTimeout(function() {
+                                    var el = document.getElementById('question-' + firstA);
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    if (typeof updateQNumActiveFn === 'function') updateQNumActiveFn();
+                                }, 120);
+                            }
+                        }
                     }
                 }
             });

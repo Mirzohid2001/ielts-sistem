@@ -17,7 +17,7 @@ from calendar import monthrange
 import json
 import re
 from .models import (
-    Category, VideoLesson, Test, Question, QuestionTypeRule,
+    Category, VideoLesson, Test, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard
@@ -1341,7 +1341,7 @@ def test_take(request, pk):
         part_groups[-1]['cards'].append(card)
         part_groups[-1]['end_order'] = card['question'].order
 
-    type_shart_map = {r.question_type: (r.shart_text or '').strip() for r in QuestionTypeRule.objects.all()}
+    # QuestionTypeRule.shart_text — faqat admin (savol qo'shish) uchun; test oluvchiga ko'rsatilmaydi
     for pg in part_groups:
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
@@ -1446,7 +1446,7 @@ def test_take(request, pk):
             else:
                 pg['range_label'] = f"{pg['start_order']}-{pg['end_order']}" if pg['start_order'] != pg['end_order'] else str(pg['start_order'])
 
-        # Savol turi bo'yicha guruhlash: har bir turdan oldin shart (QuestionTypeRule) ko'rsatiladi
+        # Savol turi bo'yicha guruhlash (shart_text bo'sh — admin qoidalari test interfeysida ko'rinmaydi)
         type_blocks = []
         for card in pg['cards']:
             q_type = card['question'].question_type
@@ -1458,7 +1458,7 @@ def test_take(request, pk):
             else:
                 type_blocks.append({
                     'question_type': q_type,
-                    'shart_text': type_shart_map.get(q_type, ''),
+                    'shart_text': '',
                     'cards': [card],
                     'start_order': d0,
                     'end_order': d1,
