@@ -1381,6 +1381,10 @@ def test_take(request, pk):
         part_groups[-1]['cards'].append(card)
         part_groups[-1]['end_order'] = card['question'].order
 
+    # Reading: Part 1/2/3 doim tartibda; passage N ↔ part N (savollar DB tartibi boshqacha bo'lsa ham)
+    if test.test_type == 'reading' and part_groups:
+        part_groups.sort(key=lambda x: x['part_number'])
+
     # QuestionTypeRule.shart_text — faqat admin (savol qo'shish) uchun; test oluvchiga ko'rsatilmaydi
     for pg in part_groups:
         # Dockda ko'rinadigan raqamlar soni != DB dagi savol yozuvlari (bir savol 2+ raqam: TFNG guruh, MCQ juft, matching)
@@ -1538,9 +1542,11 @@ def test_take(request, pk):
                 else:
                     pg['passage'] = sub[0] if sub else None
         else:
-            for idx, pg in enumerate(part_groups):
-                if idx < len(passages_list):
-                    p = passages_list[idx]
+            # Part k → passages_list[k-1] (Passage 1,2,3). enumerate(idx) noto'g'ri: savollar tartibi Part2,Part1 bo'lsa idx buziladi.
+            for pg in part_groups:
+                pi = pg['part_number'] - 1
+                if 0 <= pi < len(passages_list):
+                    p = passages_list[pi]
                     if isinstance(p, list):
                         pg['passage'] = p[0] if p else None
                     else:
@@ -1562,7 +1568,9 @@ def test_take(request, pk):
     # "Questions 1-10" yoki "Questions 1-7" ko'rsatish uchun
     first_pg = part_groups[0] if part_groups else {}
     first_blanks = first_pg.get('blank_buttons', [])
-    if first_blanks and all(b.get('is_blank') for b in first_blanks):
+    if test.test_type == 'reading' and total_display_slots > 0:
+        questions_range_display = f"1-{total_display_slots}" if total_display_slots > 1 else "1"
+    elif first_blanks and all(b.get('is_blank') for b in first_blanks):
         nums = [b['num'] for b in first_blanks]
         questions_range_display = f"{min(nums)}-{max(nums)}" if len(nums) > 1 else str(nums[0])
     else:
