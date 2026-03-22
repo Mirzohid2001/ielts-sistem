@@ -1257,11 +1257,11 @@ def test_take(request, pk):
                 parts_by_questions = 2
             else:
                 parts_by_questions = 3
-            # 2+ ta passage bo'lsa — partlar soni passage ga mos (IELTS); kam savol bo'lsa ham 2–3 tab
+            # 2+ ta passage — partlar soni passage ga mos. 0 yoki 1 passage bo'lsa ham 14+ savolda
+            # IELTS bo'linishi (1–13 | 14–26 | 27–40) saqlanadi; aks holda 14-savol ham "Part 1"da qolib,
+            # chapda faqat birinchi matn ko'rinadi (server yangilanganda ham xuddi shu muammo bo'lardi).
             if passage_count >= 2:
                 default_parts = min(passage_count, 3)
-            elif passage_count == 1:
-                default_parts = 1
             else:
                 default_parts = max(1, min(3, parts_by_questions))
         elif test.test_type == 'listening':
@@ -1321,11 +1321,6 @@ def test_take(request, pk):
                     assigned = p_idx
                     break
             part_indexes.append(assigned)
-
-    # Reading: faqat 1 ta passage bo'lsa — barcha savollar bitta partda; 2+ passage yoki 2 variant — yuqoridagi bo'linish saqlanadi
-    if test.test_type == 'reading' and part_indexes and getattr(test, 'variants_to_select', 1) != 2:
-        if _reading_passage_count(test) <= 1:
-            part_indexes = [1] * len(part_indexes)
 
     part_groups = []
     for idx, card in enumerate(question_cards):
