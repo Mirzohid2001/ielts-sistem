@@ -43,6 +43,20 @@ def _reading_passage_count(test):
     return len(pl)
 
 
+def _reading_uniform_variant(test, questions):
+    """
+    «2 variant» testda barcha savollar bir xil exam variantida bo'lsa (masalan hammasi 1).
+    Bu holda part_indexes faqat q.variant dan olinmasin — aks holda 14-savol ham «Variant 1»da qoladi,
+    IELTS passage bo'linishi (1–13 | 14–26) ishlamaydi.
+    """
+    if getattr(test, 'variants_to_select', 1) != 2 or getattr(test, 'test_type', None) != 'reading':
+        return False
+    if not questions:
+        return False
+    vl = [getattr(q, 'variant', None) or 1 for q in questions]
+    return len(set(vl)) == 1
+
+
 def _get_fill_blank_count(question):
     """Bo'sh joylar soni — model bilan bir xil (qisqa javob jadvalsiz qatorlar ham)."""
     return question.fill_blanks_count()
@@ -1224,11 +1238,15 @@ def test_take(request, pk):
             for f in card.get('answer_fields') or []:
                 f['global_num'] = d
 
-    # Part bloklari: 2 variantli testda part = variant (1 yoki 2); boshqalarida explicit part yoki default
+    # Part bloklari: 2 variantli testda odatda part = exam variant (1 yoki 2).
+    # Reading + barcha savollar bir xil variant: passage bo'linishi (13/14) uchun quyidagi tarmoq ishlaydi.
     part_indexes = []
     explicit_parts = []
     if getattr(test, 'variants_to_select', 1) == 2:
-        part_indexes = [getattr(q, 'variant', None) or 1 for q in questions]
+        if _reading_uniform_variant(test, questions):
+            part_indexes = []
+        else:
+            part_indexes = [getattr(q, 'variant', None) or 1 for q in questions]
     else:
         for idx, q in enumerate(questions):
             opts = q.options_json or {}
@@ -1341,7 +1359,11 @@ def test_take(request, pk):
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
         if getattr(test, 'variants_to_select', 1) == 2:
-            pg['title'] = f"Variant {pg['part_number']}"
+            if _reading_uniform_variant(test, questions):
+                vnum = getattr(questions[0], 'variant', None) or 1 if questions else 1
+                pg['title'] = f"Variant {vnum} · Part {pg['part_number']}"
+            else:
+                pg['title'] = f"Variant {pg['part_number']}"
         elif test.test_type == 'writing':
             pg['title'] = f"Task {pg['part_number']}"
         blank_buttons = []
@@ -1467,18 +1489,33 @@ def test_take(request, pk):
             }]
         pg['type_blocks'] = type_blocks
 
-    # Reading: har bir partga mos passage (2 variantli da [v1_list, v2_list] — har partga o'sha variantning birinchi passage'i)
+    # Reading: passage tayinlash — flat ro'yxat yoki 2-variant [[v1...], [v2...]]
     if test.test_type == 'reading':
-        passages_list = test.get_reading_passages()
-        for idx, pg in enumerate(part_groups):
-            if idx < len(passages_list):
-                p = passages_list[idx]
-                if isinstance(p, list):
-                    pg['passage'] = p[0] if p else None
+        passages_list = test.get_reading_passages() or []
+        uniform_v = _reading_uniform_variant(test, questions)
+        if passages_list and isinstance(passages_list[0], list):
+            # [[variant1 passage'lari], [variant2 passage'lari]]
+            for pg in part_groups:
+                q0 = pg['cards'][0]['question'] if pg.get('cards') else None
+                var = getattr(q0, 'variant', None) or 1 if q0 else 1
+                sub = passages_list[var - 1] if 0 <= var - 1 < len(passages_list) else []
+                if not isinstance(sub, list):
+                    sub = []
+                if uniform_v:
+                    pi = pg['part_number'] - 1
+                    pg['passage'] = sub[pi] if 0 <= pi < len(sub) else None
                 else:
-                    pg['passage'] = p
-            else:
-                pg['passage'] = None
+                    pg['passage'] = sub[0] if sub else None
+        else:
+            for idx, pg in enumerate(part_groups):
+                if idx < len(passages_list):
+                    p = passages_list[idx]
+                    if isinstance(p, list):
+                        pg['passage'] = p[0] if p else None
+                    else:
+                        pg['passage'] = p
+                else:
+                    pg['passage'] = None
 
     # Listening: har bir part uchun "Listen From Here" da boshlash vaqti (birinchi savolning audio_timestamp)
     if test.test_type == 'listening':
