@@ -259,24 +259,51 @@ class Test(models.Model):
         return reverse('core:test_detail', kwargs={'pk': self.pk})
 
     def get_reading_passages(self):
-        """Reading: passage'lar ro'yxati. 2 variantli testda [v1_list, v2_list], aks holda bitta ro'yxat."""
+        """Reading: passage'lar ro'yxati. 2 variantli testda [v1_list, v2_list], aks holda bitta ro'yxat.
+        Har bir dict da 'order' (Tartib maydoni) bo'ladi — test sahifasida Part N ↔ order==N."""
+        def _row(p, fallback_order):
+            if isinstance(p, dict):
+                o = p.get('order', fallback_order)
+            else:
+                o = getattr(p, 'order', None)
+                if o is None:
+                    o = fallback_order
+            try:
+                o = int(o)
+            except (TypeError, ValueError):
+                o = int(fallback_order) if fallback_order is not None else 1
+            if isinstance(p, dict):
+                title = (p.get('title') or '').strip() or f'Passage {o}'
+                return {'title': title, 'text': p.get('text', '') or '', 'order': o}
+            title = (p.title or '').strip() or f'Passage {o}'
+            return {'title': title, 'text': p.text or '', 'order': o}
+
         # 1) Inline model (eng qulay)
-        objs = list(self.reading_passages.all().order_by('variant', 'order'))
+        objs = list(self.reading_passages.all().order_by('variant', 'order', 'pk'))
         if objs:
             if self.variants_to_select == 2:
-                v1 = [{'title': p.title or f'Passage {i+1}', 'text': p.text or ''} for i, p in enumerate([x for x in objs if (x.variant or 1) == 1])]
-                v2 = [{'title': p.title or f'Passage {i+1}', 'text': p.text or ''} for i, p in enumerate([x for x in objs if x.variant == 2])]
+                v1_objs = sorted([x for x in objs if (x.variant or 1) == 1], key=lambda x: (x.order, x.pk))
+                v2_objs = sorted([x for x in objs if x.variant == 2], key=lambda x: (x.order, x.pk))
+                v1 = [_row(p, i + 1) for i, p in enumerate(v1_objs)]
+                v2 = [_row(p, i + 1) for i, p in enumerate(v2_objs)]
                 return [v1, v2]
-            return [{'title': p.title or f'Passage {i+1}', 'text': p.text or ''} for i, p in enumerate(objs)]
+            return [_row(p, i + 1) for i, p in enumerate(objs)]
         # 2) JSON (eski format)
         passages = self.reading_passages_json or []
         if passages and isinstance(passages, list) and len(passages) > 0:
             if self.variants_to_select == 2:
-                return [passages[: len(passages) // 2], passages[len(passages) // 2 :]] if len(passages) >= 2 else [passages, []]
-            return [{'title': p.get('title', f'Passage {i+1}'), 'text': p.get('text', '')} for i, p in enumerate(passages) if isinstance(p, dict)]
+                half = [p for p in passages if isinstance(p, dict)]
+                mid = len(half) // 2 if len(half) >= 2 else len(half)
+                left = half[:mid]
+                right = half[mid:]
+                return [
+                    [_row(p, i + 1) for i, p in enumerate(left)],
+                    [_row(p, i + 1) for i, p in enumerate(right)],
+                ] if len(half) >= 2 else [[_row(p, i + 1) for i, p in enumerate(half)], []]
+            return [_row(p, i + 1) for i, p in enumerate(passages) if isinstance(p, dict)]
         # 3) Bitta matn
         if self.reading_text:
-            return [{'title': 'Passage 1', 'text': self.reading_text}]
+            return [{'title': 'Passage 1', 'text': self.reading_text, 'order': 1}]
         return []
 
 

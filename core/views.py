@@ -81,6 +81,37 @@ def _reading_part_ranges(total_questions):
     return ranges
 
 
+def _passage_dict_for_reading_part(passage_items, part_number):
+    """
+    Part N → ReadingPassage tartibi (order) bilan mos: order==N bo'lgan matn.
+    Bunday yozuv bo'lmasa, 'order' bo'yicha saralangan ro'yxatdan N-o'rindagi (1-based).
+    """
+    if not passage_items:
+        return None
+    items = [d for d in passage_items if isinstance(d, dict)]
+    if not items:
+        return None
+    try:
+        pn = int(part_number)
+    except (TypeError, ValueError):
+        pn = 1
+
+    def _same_part(d, n):
+        try:
+            return int(d.get('order')) == int(n)
+        except (TypeError, ValueError):
+            return False
+
+    exact = next((d for d in items if _same_part(d, pn)), None)
+    if exact is not None:
+        return dict(exact)
+    # order==N yo'q (masalan hammasi 1): get_reading_passages tartibi = DB (order, pk) — N-chi yozuv
+    idx = pn - 1
+    if 0 <= idx < len(items):
+        return dict(items[idx])
+    return None
+
+
 def _get_fill_blank_count(question):
     """Bo'sh joylar soni — model bilan bir xil (qisqa javob jadvalsiz qatorlar ham)."""
     return question.fill_blanks_count()
@@ -1537,22 +1568,12 @@ def test_take(request, pk):
                 if not isinstance(sub, list):
                     sub = []
                 if uniform_v:
-                    pi = pg['part_number'] - 1
-                    pg['passage'] = sub[pi] if 0 <= pi < len(sub) else None
+                    pg['passage'] = _passage_dict_for_reading_part(sub, pg['part_number'])
                 else:
                     pg['passage'] = sub[0] if sub else None
         else:
-            # Part k → passages_list[k-1] (Passage 1,2,3). enumerate(idx) noto'g'ri: savollar tartibi Part2,Part1 bo'lsa idx buziladi.
             for pg in part_groups:
-                pi = pg['part_number'] - 1
-                if 0 <= pi < len(passages_list):
-                    p = passages_list[pi]
-                    if isinstance(p, list):
-                        pg['passage'] = p[0] if p else None
-                    else:
-                        pg['passage'] = p
-                else:
-                    pg['passage'] = None
+                pg['passage'] = _passage_dict_for_reading_part(passages_list, pg['part_number'])
 
     # Listening: har bir part uchun "Listen From Here" da boshlash vaqti (birinchi savolning audio_timestamp)
     if test.test_type == 'listening':
