@@ -159,9 +159,9 @@ class TestAdmin(ImportExportModelAdmin):
     )
 
     def get_readonly_fields(self, request, obj=None):
+        # Har doim (add + change): auto_now / auto_now_add — formada faqat o'qiladi, aks holda add_view FieldError
         ro = list(super().get_readonly_fields(request, obj))
-        if obj is not None:
-            ro.extend(['created_at', 'updated_at'])
+        ro.extend(['created_at', 'updated_at'])
         return ro
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
