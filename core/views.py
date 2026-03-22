@@ -57,6 +57,30 @@ def _reading_uniform_variant(test, questions):
     return len(set(vl)) == 1
 
 
+def _reading_part_ranges(total_questions):
+    """
+    Reading: har partda ko'pi bilan 13 ta savol (IELTS uslubi).
+    40 savol → 13 + 13 + 14; qolganlari → ketma-ket 13 lik qatorlar, oxirgi partda qolganlar (1–13).
+    """
+    n = total_questions or 0
+    if n <= 0:
+        return []
+    if n <= 13:
+        return [(0, n)]
+    if n == 40:
+        return [(0, 13), (13, 26), (26, 40)]
+    ranges = []
+    i = 0
+    while i < n:
+        left = n - i
+        if left <= 13:
+            ranges.append((i, n))
+            break
+        ranges.append((i, i + 13))
+        i += 13
+    return ranges
+
+
 def _get_fill_blank_count(question):
     """Bo'sh joylar soni — model bilan bir xil (qisqa javob jadvalsiz qatorlar ham)."""
     return question.fill_blanks_count()
@@ -1291,24 +1315,9 @@ def test_take(request, pk):
             default_parts = max(1, min(default_parts, total_questions or 1))
         #mmm
 
-        if test.test_type == 'reading' and default_parts <= 3:
-            # Standart 13+13+14 faqat yetarli savol bo'lsa; aks holda teng bo'linadi (2 passage + 8 savol va hokazo)
-            ranges = []
-            if default_parts == 3 and total_questions >= 27:
-                ranges = [(0, 13), (13, 26), (26, total_questions)]
-            elif default_parts == 2 and total_questions >= 14:
-                ranges = [(0, 13), (13, total_questions)]
-            elif default_parts == 1:
-                ranges = [(0, total_questions)]
-            else:
-                base_size = total_questions // default_parts if default_parts else total_questions
-                extra = total_questions % default_parts if default_parts else 0
-                start = 0
-                for p in range(default_parts):
-                    size = base_size + (1 if p < extra else 0)
-                    end = start + size
-                    ranges.append((start, end))
-                    start = end
+        if test.test_type == 'reading':
+            # Har partda max 13 (40 ta → 13+13+14); ikki partda 14 ta bo'lsa 13+1 — ikkinchi partda 1 savol
+            ranges = _reading_part_ranges(total_questions)
         elif test.test_type == 'listening':
             # Listening: har partda 10 ta savol (1–10, 11–20, 21–30, 31–40)
             t = total_questions or 0
@@ -1356,6 +1365,7 @@ def test_take(request, pk):
 
     # QuestionTypeRule.shart_text — faqat admin (savol qo'shish) uchun; test oluvchiga ko'rsatilmaydi
     for pg in part_groups:
+        # Dockda ko'rinadigan raqamlar soni != DB dagi savol yozuvlari (bir savol 2+ raqam: TFNG guruh, MCQ juft, matching)
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
         if getattr(test, 'variants_to_select', 1) == 2:
@@ -1451,6 +1461,9 @@ def test_take(request, pk):
                 else:
                     blank_buttons.append({'num': do, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
         pg['blank_buttons'] = blank_buttons
+        # Reading/Listening: footer va tablarda "N questions" — dock tugmalari soni bilan mos (9 ta raqam → 9, 5 ta yozuv emas)
+        if test.test_type in ('reading', 'listening') and blank_buttons:
+            pg['question_count'] = len(blank_buttons)
         # range_label: har bir part o'z oralig'ini ko'rsatadi (Part 1: 1-13, Part 2: 14-26, Part 3: 27-40)
         if blank_buttons and all(b.get('is_blank') for b in blank_buttons):
             nums = [b['num'] for b in blank_buttons]
