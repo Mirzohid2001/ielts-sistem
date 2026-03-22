@@ -112,6 +112,30 @@ def _passage_dict_for_reading_part(passage_items, part_number):
     return None
 
 
+def _all_reading_passage_dicts_ordered(test):
+    """
+    DB dagi barcha passage lar order bo'yicha.
+    «2 variant» testda ham savollar hammasi bir xil exam variantida bo'lsa, admin bitta passage ni
+    noto'g'ri «Variant 2» qo'ygan bo'lsa, get_reading_passages() dagi faqat v1 ro'yxatida order=2 yo'qolib,
+    Part 2 ga Passage 3 tushib qolardi — shuning uchun uniform holda shu ro'yxat ishlatiladi.
+    """
+    if not hasattr(test, 'reading_passages'):
+        return []
+    objs = list(test.reading_passages.all().order_by('order', 'pk'))
+    out = []
+    for i, p in enumerate(objs):
+        o = p.order
+        if o is None:
+            o = i + 1
+        try:
+            o = int(o)
+        except (TypeError, ValueError):
+            o = i + 1
+        title = (p.title or '').strip() or f'Passage {o}'
+        out.append({'title': title, 'text': p.text or '', 'order': o})
+    return out
+
+
 def _get_fill_blank_count(question):
     """Bo'sh joylar soni — model bilan bir xil (qisqa javob jadvalsiz qatorlar ham)."""
     return question.fill_blanks_count()
@@ -1561,15 +1585,18 @@ def test_take(request, pk):
         uniform_v = _reading_uniform_variant(test, questions)
         if passages_list and isinstance(passages_list[0], list):
             # [[variant1 passage'lari], [variant2 passage'lari]]
-            for pg in part_groups:
-                q0 = pg['cards'][0]['question'] if pg.get('cards') else None
-                var = getattr(q0, 'variant', None) or 1 if q0 else 1
-                sub = passages_list[var - 1] if 0 <= var - 1 < len(passages_list) else []
-                if not isinstance(sub, list):
-                    sub = []
-                if uniform_v:
-                    pg['passage'] = _passage_dict_for_reading_part(sub, pg['part_number'])
-                else:
+            if uniform_v:
+                # Savollar hammasi bir xil variant: passage larni variant bo'yicha ajratmasdan, order bo'yicha
+                sub_all = _all_reading_passage_dicts_ordered(test)
+                for pg in part_groups:
+                    pg['passage'] = _passage_dict_for_reading_part(sub_all, pg['part_number'])
+            else:
+                for pg in part_groups:
+                    q0 = pg['cards'][0]['question'] if pg.get('cards') else None
+                    var = getattr(q0, 'variant', None) or 1 if q0 else 1
+                    sub = passages_list[var - 1] if 0 <= var - 1 < len(passages_list) else []
+                    if not isinstance(sub, list):
+                        sub = []
                     pg['passage'] = sub[0] if sub else None
         else:
             for pg in part_groups:
