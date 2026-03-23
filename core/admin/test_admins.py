@@ -45,12 +45,15 @@ class QuestionInline(admin.StackedInline):
             ('Variantlar — faqat savol turi MCQ / True–False / T-F NG / Y-N NG bo\'lganda ko\'rinadi', {
                 'fields': [
                     'max_choices', 'mcq_options_advanced',
-                    ('option_a', 'option_b', 'option_c', 'option_d'), 'correct_answer',
+                    ('option_a', 'option_b', 'option_c', 'option_d'),
+                    ('option_e', 'option_f', 'option_g', 'option_h'),
+                    'correct_answer',
                 ],
                 'classes': ['question-mcq-fields'],
                 'description': (
-                    '<strong>MCQ:</strong> «Variantlar (ro\'yxat)» da 3–10 ta qator (harf|matn) — ixtiyoriy son variant. '
-                    'Bo\'sh qoldirsangiz — A,B,C,D maydonlari. «Tanlash soni» 1 = bitta tanlov; 2 = ikkita harf (a,c).'
+                    '<strong>MCQ:</strong> Oddiy 4 variant: A–D. <strong>5–8 ta variant</strong> kerak bo‘lsa E–H ni ham to‘ldiring '
+                    '(saytda a–h sifatida chiqadi). 9+ yoki maxsus harflar uchun «MCQ variantlar (ro‘yxat)» matn maydoni. '
+                    '«Tanlash soni» 1 = bitta tanlov; 2 = ikkita harf (masalan a,c).'
                 ),
             }),
             ("To'ldirish / Matching (Summary, Qisqa javob, Matching va b.)", {

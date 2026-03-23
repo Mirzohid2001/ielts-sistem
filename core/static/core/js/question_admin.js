@@ -44,9 +44,9 @@
         return input.parentElement && input.parentElement.parentElement ? input.parentElement.parentElement : input.parentElement;
     }
 
-    /** Barcha option inputlari bo'lgan eng kichik ajdod (Variant A-D bloki) */
+    /** Barcha option inputlari bo'lgan eng kichik ajdod (Variant A-H bloki) */
     function findOptionsBlock(container) {
-        var sel = 'input[name*="option_a"], input[name*="option_b"], input[name*="option_c"], input[name*="option_d"]';
+        var sel = 'input[name*="option_a"], input[name*="option_b"], input[name*="option_c"], input[name*="option_d"], input[name*="option_e"], input[name*="option_f"], input[name*="option_g"], input[name*="option_h"]';
         var opts = container.querySelectorAll(sel);
         if (opts.length === 0) return null;
         var first = opts[0];
@@ -72,7 +72,7 @@
         if (!input) return;
         var row = input.closest('.form-row');
         var wrap = input.closest('div');
-        var optionCount = row ? row.querySelectorAll('[name*="option_a"], [name*="option_b"], [name*="option_c"], [name*="option_d"]').length : 0;
+        var optionCount = row ? row.querySelectorAll('[name*="option_a"], [name*="option_b"], [name*="option_c"], [name*="option_d"], [name*="option_e"], [name*="option_f"], [name*="option_g"], [name*="option_h"]').length : 0;
         if (row && optionCount > 1 && wrap && wrap.parentNode === row) {
             wrap.style.display = show ? '' : 'none';
         } else {

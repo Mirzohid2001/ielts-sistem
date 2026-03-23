@@ -106,6 +106,15 @@ class QuestionAdminForm(forms.ModelForm):
         label="List to'g'ri javob",
         help_text="Masalan: A,C",
     )
+    option_e = forms.CharField(
+        required=False,
+        max_length=500,
+        label="Variant E",
+        help_text="5–8 ta variant kerak bo'lsa shu qatorlarni to'ldiring (saytda a–h harflari bilan chiqadi).",
+    )
+    option_f = forms.CharField(required=False, max_length=500, label="Variant F")
+    option_g = forms.CharField(required=False, max_length=500, label="Variant G")
+    option_h = forms.CharField(required=False, max_length=500, label="Variant H")
     mcq_options_advanced = forms.CharField(
         required=False,
         label="MCQ variantlar (ro'yxat — ixtiyoriy)",
@@ -113,19 +122,14 @@ class QuestionAdminForm(forms.ModelForm):
             'rows': 8,
             'data-role': 'qt-mcq',
             'placeholder': (
-                "Bo'sh qoldirsangiz — quyidagi A, B, C, D maydonlari ishlatiladi.\n"
-                "To'ldirsangiz — 3 ta, 5 ta, ixtiyoriy harf bilan variantlar:\n"
-                "a|Birinchi variant matni\n"
-                "b|Ikkinchi variant\n"
-                "c|Uchinchi\n"
-                "d|To'rtinchi\n"
-                "e|Beshinchi (ixtiyoriy)"
+                "Odatda E–H maydonlari yetarli. Bu yerni faqat 9+ variant yoki maxsus tartib uchun ishlating.\n"
+                "Har satr: harf|matn\n"
+                "a|Birinchi\nb|Ikkinchi\n…\ni|To'qqizinchi"
             ),
         }),
         help_text=(
-            "Har satr: <strong>harf|matn</strong> (masalan: a|It gives a clear overview…). "
-            "Kamida 2, ko'pi bilan 10 ta qator. Harflar takrorlanmasin (a,b,c,d,e…). "
-            "Bu maydon to'ldirilganda testda shu ro'yxat chiqadi; A–D maydonlari e'tiborga olinmaydi."
+            "Har satr: <strong>harf|matn</strong>. Kamida 2, ko'pi bilan 10 ta qator; harflar takrorlanmasin. "
+            "Bu maydon to'ldirilganda u ustunlik qiladi; A–H va pastdagi qatorlar testda shu ro'yxat bo'yicha chiqadi."
         ),
     )
     part_number = forms.IntegerField(
@@ -193,7 +197,10 @@ class QuestionAdminForm(forms.ModelForm):
                 "aks holda barcha savollar bir variantda chiqadi."
             )
         # Savol turiga qarab JS maydonlarni yashirish uchun data-role (admin) — faqat MCQ/T-F/T-F NG/Y-N NG da ko'rinadi
-        for fname in ('max_choices', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'):
+        for fname in (
+            'max_choices', 'option_a', 'option_b', 'option_c', 'option_d',
+            'option_e', 'option_f', 'option_g', 'option_h', 'correct_answer',
+        ):
             if fname in self.fields:
                 self.fields[fname].widget.attrs.setdefault('data-role', 'qt-mcq')
         for fname in ('part_number', 'instruction_text', 'fill_answers', 'writing_task_images', 'matching_items', 'matching_options',
@@ -295,15 +302,27 @@ class QuestionAdminForm(forms.ModelForm):
         if inst and inst.question_type == 'mcq':
             mcq_opts = opts.get('options') or []
             if isinstance(mcq_opts, list) and mcq_opts:
-                lines = []
+                by_let = {}
                 for o in mcq_opts:
-                    if isinstance(o, dict):
-                        lines.append(f"{o.get('letter', '')}|{o.get('text', '')}".strip())
-                self.fields['mcq_options_advanced'].initial = "\n".join(lines)
+                    if isinstance(o, dict) and o.get('letter'):
+                        lt = str(o['letter']).strip().lower()
+                        if lt:
+                            by_let[lt] = (o.get('text') or '').strip()
+                if by_let and all(k in 'abcdefgh' for k in by_let) and len(mcq_opts) <= 8:
+                    for L in 'abcdefgh':
+                        fname = f'option_{L}'
+                        if fname in self.fields and L in by_let:
+                            self.fields[fname].initial = by_let[L]
+                else:
+                    lines = []
+                    for o in mcq_opts:
+                        if isinstance(o, dict):
+                            lines.append(f"{o.get('letter', '')}|{o.get('text', '')}".strip())
+                    self.fields['mcq_options_advanced'].initial = "\n".join(lines)
 
         # To'g'ri javob maydoni — har doim qisqa yo'riqnoma
         self.fields['correct_answer'].help_text = (
-            "MCQ: to'g'ri variant harfi (masalan: d). Ro'yxat ishlatilsa — shu ro'yxatdagi harflardan biri. "
+            "MCQ: to'g'ri variant harfi (masalan: d yoki g). A–H yoki ro'yxatdagi harflardan biri. "
             "2 ta tanlov: a,c. True/False: a yoki b. T/F/NG va Y/N/NG: a, b yoki c."
         )
 
@@ -370,7 +389,33 @@ class QuestionAdminForm(forms.ModelForm):
                 options_json['options'] = parsed_mcq
                 mcq_allowed_letters = tuple(o['letter'] for o in parsed_mcq)
             else:
-                options_json.pop('options', None)
+                field_map = [
+                    ('a', cleaned.get('option_a')),
+                    ('b', cleaned.get('option_b')),
+                    ('c', cleaned.get('option_c')),
+                    ('d', cleaned.get('option_d')),
+                    ('e', cleaned.get('option_e')),
+                    ('f', cleaned.get('option_f')),
+                    ('g', cleaned.get('option_g')),
+                    ('h', cleaned.get('option_h')),
+                ]
+                parsed_from_fields = []
+                for letter, val in field_map:
+                    t = (val or '').strip()
+                    if t:
+                        parsed_from_fields.append({'letter': letter, 'text': t})
+                if has_content and len(parsed_from_fields) == 1:
+                    raise forms.ValidationError("MCQ: kamida 2 ta variant (A–H) kiriting.")
+                letters_in_parsed = [o['letter'] for o in parsed_from_fields]
+                needs_json_list = len(parsed_from_fields) > 4 or any(x in 'efgh' for x in letters_in_parsed)
+                if len(parsed_from_fields) >= 2:
+                    if needs_json_list:
+                        options_json['options'] = parsed_from_fields
+                        mcq_allowed_letters = tuple(letters_in_parsed)
+                    else:
+                        options_json.pop('options', None)
+                else:
+                    options_json.pop('options', None)
 
         # MCQ/True-False da 2 ta javob: correct_answer "a,c" -> correct_answer_json ["a","c"]
         max_choices = cleaned.get('max_choices') or 1
