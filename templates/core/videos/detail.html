@@ -854,7 +854,7 @@ document.getElementById('save-note-btn').addEventListener('click', function() {
             }
             
             const noteHtml = `
-                <div class="card mb-3 border-0 shadow-sm note-item" data-note-id="${data.note.id}" style="border-left: 4px solid var(--primary) !important;">
+                <div class="card mb-3 border-0 shadow-sm video-note-item" data-note-id="${data.note.id}" style="border-left: 4px solid var(--primary) !important;">
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
@@ -890,6 +890,8 @@ document.getElementById('save-note-btn').addEventListener('click', function() {
 // Delete note
 function attachDeleteListeners() {
     document.querySelectorAll('.delete-note-btn').forEach(btn => {
+        if (btn.dataset.boundDelete === '1') return;
+        btn.dataset.boundDelete = '1';
         btn.addEventListener('click', function() {
             if (!confirm('Eslatmani o\'chirishni xohlaysizmi?')) {
                 return;
@@ -913,7 +915,10 @@ function attachDeleteListeners() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    document.querySelector(`.note-item[data-note-id="${noteId}"]`).remove();
+                    const noteEl = document.querySelector(`.video-note-item[data-note-id="${noteId}"], .note-item[data-note-id="${noteId}"]`);
+                    if (noteEl) {
+                        noteEl.remove();
+                    }
                     
                     // Agar eslatmalar bo'sh bo'lsa
                     const notesList = document.getElementById('notes-list');
@@ -1333,6 +1338,176 @@ window.addEventListener('beforeunload', function() {
     if (progressUpdateInterval{{ video.pk }}) {
         clearInterval(progressUpdateInterval{{ video.pk }});
     }
+});
+{% endif %}
+
+{% if not video.youtube_id or video.youtube_id|length != 11 %}
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfTokenEl = document.querySelector('[name=csrfmiddlewaretoken]');
+    const csrfToken = csrfTokenEl ? csrfTokenEl.value : '';
+    const addNoteBtn = document.getElementById('add-note-btn');
+    const saveNoteBtn = document.getElementById('save-note-btn');
+    const addBookmarkBtn = document.getElementById('add-bookmark-btn');
+
+    function formatTimeSimple(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function getCurrentPlaybackSeconds() {
+        const html5 = document.getElementById('html5-video-{{ video.pk }}');
+        if (html5 && !Number.isNaN(html5.currentTime)) {
+            return Math.floor(html5.currentTime || 0);
+        }
+        return 0;
+    }
+
+    function bindDeleteNoteButtons() {
+        document.querySelectorAll('.delete-note-btn').forEach(btn => {
+            if (btn.dataset.boundDelete === '1') return;
+            btn.dataset.boundDelete = '1';
+            btn.addEventListener('click', function() {
+                if (!confirm('Eslatmani o\'chirishni xohlaysizmi?')) return;
+                const noteId = this.getAttribute('data-note-id');
+                const formData = new FormData();
+                if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken);
+                fetch(`/video/note/${noteId}/delete/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-CSRFToken': csrfToken}
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+                    const noteEl = document.querySelector(`.video-note-item[data-note-id="${noteId}"], .note-item[data-note-id="${noteId}"]`);
+                    if (noteEl) noteEl.remove();
+                    const notesList = document.getElementById('notes-list');
+                    if (notesList && notesList.children.length === 0) {
+                        notesList.innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-sticky-note fa-3x mb-3 opacity-25"></i>
+                                <p>Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin.</p>
+                            </div>
+                        `;
+                    }
+                });
+            });
+        });
+    }
+
+    if (addNoteBtn) {
+        addNoteBtn.addEventListener('click', function() {
+            const currentTime = getCurrentPlaybackSeconds();
+            document.getElementById('note-timestamp').value = currentTime;
+            document.getElementById('note-timestamp-display').textContent = formatTimeSimple(currentTime);
+            new bootstrap.Modal(document.getElementById('addNoteModal')).show();
+        });
+    }
+
+    if (saveNoteBtn) {
+        saveNoteBtn.addEventListener('click', function() {
+            const noteText = (document.getElementById('note-text').value || '').trim();
+            const timestamp = document.getElementById('note-timestamp').value || 0;
+            if (!noteText) {
+                alert('Eslatma matni bo\'sh bo\'lishi mumkin emas!');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('note_text', noteText);
+            formData.append('timestamp', timestamp);
+            if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken);
+            fetch('{% url "core:add_video_note" video.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-CSRFToken': csrfToken}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                    return;
+                }
+                const notesList = document.getElementById('notes-list');
+                if (notesList.querySelector('.text-center')) notesList.innerHTML = '';
+                notesList.insertAdjacentHTML('beforeend', `
+                    <div class="card mb-3 border-0 shadow-sm video-note-item" data-note-id="${data.note.id}" style="border-left: 4px solid var(--primary) !important;">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-primary me-2">${data.note.timestamp_display}</span>
+                                    <small class="text-muted">${data.note.created_at}</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-note-btn" data-note-id="${data.note.id}" title="O'chirish">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <p class="mb-0">${data.note.text.replace(/\n/g, '<br>')}</p>
+                        </div>
+                    </div>
+                `);
+                bootstrap.Modal.getInstance(document.getElementById('addNoteModal')).hide();
+                document.getElementById('note-text').value = '';
+                bindDeleteNoteButtons();
+            });
+        });
+    }
+
+    if (addBookmarkBtn) {
+        addBookmarkBtn.addEventListener('click', function() {
+            const currentTime = getCurrentPlaybackSeconds();
+            const formData = new FormData();
+            formData.append('timestamp', currentTime);
+            if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken);
+            fetch('{% url "core:add_video_bookmark" video.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-CSRFToken': csrfToken}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                addBookmarkBtn.innerHTML = data.bookmarked
+                    ? '<i class="fas fa-bookmark me-1"></i>Bookmark qo\'yildi'
+                    : '<i class="fas fa-bookmark me-1"></i>Bookmark olib tashlandi';
+                setTimeout(() => {
+                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                }, 1500);
+            });
+        });
+    }
+
+    document.querySelectorAll('.playlist-item').forEach(item => {
+        if (item.dataset.boundPlaylist === '1') return;
+        item.dataset.boundPlaylist = '1';
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const playlistId = this.getAttribute('data-playlist-id');
+            const isInPlaylist = this.querySelector('.fa-check');
+            const formData = new FormData();
+            formData.append('playlist_id', playlistId);
+            if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken);
+            const url = isInPlaylist
+                ? '{% url "core:remove_video_from_playlist" video.pk %}'
+                : '{% url "core:add_video_to_playlist" video.pk %}';
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {'X-CSRFToken': csrfToken}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                if (isInPlaylist) {
+                    this.innerHTML = '<i class="fas fa-plus me-2"></i>' + this.textContent.replace('✓', '').trim();
+                } else {
+                    this.innerHTML = '<i class="fas fa-check text-success me-2"></i>' + this.textContent.replace('+', '').trim();
+                }
+            });
+        });
+    });
+
+    bindDeleteNoteButtons();
 });
 {% endif %}
 
