@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.db.models import Count, Avg, Q, Sum, Max, Min, Case, When, IntegerField, F
 from django.db.models.functions import Coalesce
 from django.db.models import Value
@@ -20,7 +20,8 @@ from .models import (
     Category, VideoLesson, Test, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
-    VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard
+    VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard,
+    SATResource, SATResourceProgress, SATResourceBookmark, SATResourceNote,
 )
 
 FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 
@@ -28,6 +29,200 @@ FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_
 MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info', 
                   'matching_sentences', 'classification')
 QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
+
+
+@login_required
+def sat_home(request):
+    """SAT yo'nalishi bosh sahifasi (Math / English)."""
+    resources = SATResource.objects.filter(is_active=True)
+    progress_qs = SATResourceProgress.objects.filter(user=request.user)
+    sat_summary = progress_qs.aggregate(
+        avg_progress=Avg('watch_percentage'),
+        completed=Count('id', filter=Q(watched=True)),
+    )
+    context = {
+        'math_count': resources.filter(subject=SATResource.SUBJECT_MATH).count(),
+        'english_count': resources.filter(subject=SATResource.SUBJECT_ENGLISH).count(),
+        'total_resources': resources.count(),
+        'bookmarks_count': SATResourceBookmark.objects.filter(user=request.user).count(),
+        'notes_count': SATResourceNote.objects.filter(user=request.user).count(),
+        'avg_progress': round(sat_summary['avg_progress'] or 0, 1),
+        'completed_count': sat_summary['completed'] or 0,
+    }
+    return render(request, 'core/sat/home.html', context)
+
+
+@login_required
+def sat_subject(request, subject):
+    """SAT bo'limi: matematika yoki ingliz tili."""
+    valid_subjects = {SATResource.SUBJECT_MATH, SATResource.SUBJECT_ENGLISH}
+    if subject not in valid_subjects:
+        return redirect('core:sat_home')
+    items = list(SATResource.objects.filter(is_active=True, subject=subject).order_by('order', '-created_at'))
+    resource_ids = [x.pk for x in items]
+    progress_map = {
+        x.resource_id: x
+        for x in SATResourceProgress.objects.filter(user=request.user, resource_id__in=resource_ids)
+    }
+    bookmark_map = {
+        x.resource_id: x
+        for x in SATResourceBookmark.objects.filter(user=request.user, resource_id__in=resource_ids)
+    }
+    notes_map = {}
+    for n in SATResourceNote.objects.filter(user=request.user, resource_id__in=resource_ids).order_by('-created_at'):
+        notes_map.setdefault(n.resource_id, []).append(n)
+
+    enriched_items = []
+    for x in items:
+        enriched_items.append({
+            'obj': x,
+            'progress': progress_map.get(x.pk),
+            'bookmark': bookmark_map.get(x.pk),
+            'notes': notes_map.get(x.pk, []),
+        })
+
+    subject_label = dict(SATResource.SUBJECT_CHOICES).get(subject, subject)
+    return render(
+        request,
+        'core/sat/subject.html',
+        {
+            'subject': subject,
+            'subject_label': subject_label,
+            'items': enriched_items,
+        },
+    )
+
+
+@login_required
+def sat_pdf_viewer(request, pk):
+    """SAT PDF ni inline viewer sahifasida ko'rsatish."""
+    resource = get_object_or_404(SATResource, pk=pk, is_active=True)
+    if not resource.pdf_file:
+        return redirect('core:sat_subject', subject=resource.subject)
+    return render(request, 'core/sat/pdf_viewer.html', {'resource': resource})
+
+
+@login_required
+def sat_pdf_stream(request, pk):
+    """SAT PDF oqimi (inline). Download tugmasini standart browser toolbar orqali cheklash uchun inline beriladi."""
+    resource = get_object_or_404(SATResource, pk=pk, is_active=True)
+    if not resource.pdf_file:
+        return HttpResponse("PDF topilmadi.", status=404)
+    resource.pdf_file.open('rb')
+    filename = f"{resource.title}.pdf".replace('"', '')
+    response = FileResponse(resource.pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
+@login_required
+def sat_dashboard(request):
+    resources = SATResource.objects.filter(is_active=True)
+    progress_qs = SATResourceProgress.objects.filter(user=request.user)
+    by_subject = resources.values('subject').annotate(total=Count('id'))
+    prog_subject = progress_qs.values('resource__subject').annotate(
+        avg=Avg('watch_percentage'),
+        completed=Count('id', filter=Q(watched=True)),
+    )
+    prog_map = {x['resource__subject']: x for x in prog_subject}
+    cards = []
+    for row in by_subject:
+        s = row['subject']
+        cards.append({
+            'subject': s,
+            'label': dict(SATResource.SUBJECT_CHOICES).get(s, s),
+            'total': row['total'],
+            'avg_progress': round((prog_map.get(s) or {}).get('avg') or 0, 1),
+            'completed': (prog_map.get(s) or {}).get('completed') or 0,
+        })
+    context = {
+        'subject_cards': cards,
+        'bookmarks_count': SATResourceBookmark.objects.filter(user=request.user).count(),
+        'notes_count': SATResourceNote.objects.filter(user=request.user).count(),
+    }
+    return render(request, 'core/sat/dashboard.html', context)
+
+
+@login_required
+def sat_statistics(request):
+    progress_qs = SATResourceProgress.objects.filter(user=request.user)
+    context = {
+        'total_resources': SATResource.objects.filter(is_active=True).count(),
+        'tracked_resources': progress_qs.count(),
+        'completed_resources': progress_qs.filter(watched=True).count(),
+        'avg_progress': round(progress_qs.aggregate(v=Avg('watch_percentage'))['v'] or 0, 1),
+        'bookmarks_count': SATResourceBookmark.objects.filter(user=request.user).count(),
+        'notes_count': SATResourceNote.objects.filter(user=request.user).count(),
+    }
+    return render(request, 'core/sat/statistics.html', context)
+
+
+@login_required
+@require_POST
+def sat_update_progress(request, pk):
+    resource = get_object_or_404(SATResource, pk=pk, is_active=True)
+    try:
+        progress = int(request.POST.get('progress', 0))
+    except (TypeError, ValueError):
+        progress = 0
+    obj, _ = SATResourceProgress.objects.get_or_create(user=request.user, resource=resource)
+    obj.update_progress(progress)
+    return JsonResponse({'success': True, 'progress': obj.watch_percentage, 'watched': obj.watched})
+
+
+@login_required
+@require_POST
+def sat_toggle_bookmark(request, pk):
+    resource = get_object_or_404(SATResource, pk=pk, is_active=True)
+    try:
+        ts = int(request.POST.get('timestamp', 0))
+    except (TypeError, ValueError):
+        ts = 0
+    obj, created = SATResourceBookmark.objects.get_or_create(
+        user=request.user,
+        resource=resource,
+        defaults={'timestamp': max(0, ts)},
+    )
+    if not created:
+        obj.delete()
+        return JsonResponse({'success': True, 'bookmarked': False})
+    return JsonResponse({'success': True, 'bookmarked': True})
+
+
+@login_required
+@require_POST
+def sat_add_note(request, pk):
+    resource = get_object_or_404(SATResource, pk=pk, is_active=True)
+    note_text = (request.POST.get('note_text') or '').strip()
+    try:
+        ts = int(request.POST.get('timestamp', 0))
+    except (TypeError, ValueError):
+        ts = 0
+    if not note_text:
+        return JsonResponse({'success': False, 'error': "Eslatma matni bo'sh."}, status=400)
+    note = SATResourceNote.objects.create(
+        user=request.user, resource=resource, note_text=note_text, timestamp=max(0, ts)
+    )
+    return JsonResponse({
+        'success': True,
+        'note': {
+            'id': note.pk,
+            'text': note.note_text,
+            'timestamp': note.timestamp,
+            'created_at': note.created_at.strftime('%d.%m.%Y %H:%M'),
+        },
+    })
+
+
+@login_required
+@require_POST
+def sat_delete_note(request, note_id):
+    note = get_object_or_404(SATResourceNote, pk=note_id, user=request.user)
+    note.delete()
+    return JsonResponse({'success': True})
 
 
 def _reading_passage_count(test):

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}SAT - IELTS Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sat-hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0ea5e9 100%); color: #fff; border-radius: 16px; padding: 1.2rem 1.4rem; }
+    .sat-stat-card { border: 0; border-radius: 12px; box-shadow: 0 10px 24px rgba(2, 6, 23, .08); }
+    .sat-box { border: 0; border-radius: 14px; box-shadow: 0 12px 30px rgba(2, 6, 23, .08); transition: transform .18s ease; }
+    .sat-box:hover { transform: translateY(-2px); }
+    .sat-hero-btn-primary {
+        border: 1px solid #fcd34d;
+        color: #111827;
+        background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+    }
+    .sat-hero-btn-primary:hover {
+        color: #111827;
+        border-color: #fbbf24;
+        background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
+    }
+    .sat-hero-btn-secondary {
+        border: 1px solid #a7f3d0;
+        color: #ecfeff;
+        background: rgba(16, 185, 129, 0.18);
+    }
+    .sat-hero-btn-secondary:hover {
+        color: #ecfeff;
+        border-color: #6ee7b7;
+        background: rgba(16, 185, 129, 0.32);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="sat-hero d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-1">SAT Yo'nalishi</h2>
+            <p class="mb-0 opacity-75">Matematika va Ingliz tili bo'yicha video hamda PDF resurslar.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'core:sat_dashboard' %}" class="btn sat-hero-btn-primary btn-sm">
+                <i class="fas fa-chart-line me-1"></i>Dashboard
+            </a>
+            <a href="{% url 'core:sat_statistics' %}" class="btn sat-hero-btn-secondary btn-sm">
+                <i class="fas fa-chart-pie me-1"></i>Statistika
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">Jami resurs</small><div class="fw-bold">{{ total_resources }}</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">Yakunlangan</small><div class="fw-bold">{{ completed_count }}</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">O'rtacha progress</small><div class="fw-bold">{{ avg_progress }}%</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">Bookmark / Note</small><div class="fw-bold">{{ bookmarks_count }} / {{ notes_count }}</div></div></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-md-6">
+            <a href="{% url 'core:sat_subject' 'math' %}" class="text-decoration-none">
+                <div class="card sat-box h-100">
+                    <div class="card-body">
+                        <h4 class="mb-2"><i class="fas fa-square-root-alt me-2 text-primary"></i>Matematika</h4>
+                        <p class="text-muted mb-3">SAT Math uchun video darslar va PDF materiallar.</p>
+                        <span class="badge bg-primary">{{ math_count }} ta resurs</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6">
+            <a href="{% url 'core:sat_subject' 'english' %}" class="text-decoration-none">
+                <div class="card sat-box h-100">
+                    <div class="card-body">
+                        <h4 class="mb-2"><i class="fas fa-language me-2 text-success"></i>Ingliz tili</h4>
+                        <p class="text-muted mb-3">SAT English uchun video darslar va PDF materiallar.</p>
+                        <span class="badge bg-success">{{ english_count }} ta resurs</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

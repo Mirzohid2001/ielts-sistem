@@ -43,6 +43,10 @@
                            href="{% url 'core:video_list' %}">Video Darslar</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if '/sat/' in request.path %}active{% endif %}"
+                           href="{% url 'core:sat_home' %}">SAT</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if 'test' in request.path %}active{% endif %}" 
                            href="{% url 'core:test_list' %}">Testlar</a>
                     </li>

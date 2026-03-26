@@ -10,6 +10,7 @@ from .forms import QuestionAdminForm, QuestionResource, TestResource, question_t
 from . import category_admins  # noqa: F401
 from . import test_admins  # noqa: F401
 from . import user_admins  # noqa: F401
+from . import sat_admins  # noqa: F401
 from . import site_custom  # noqa: F401 — index override
 
 __all__ = [

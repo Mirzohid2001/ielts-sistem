@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}SAT {{ subject_label }} - IELTS Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sat-hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0891b2 100%); color: #fff; border-radius: 16px; padding: 1.25rem 1.5rem; }
+    .sat-card { border: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 30px rgba(2, 6, 23, .08); }
+    .sat-card .card-body { padding: 1.25rem; }
+    .sat-chip { background: #eef2ff; color: #3730a3; border-radius: 999px; padding: .2rem .7rem; font-size: .78rem; font-weight: 600; }
+    .sat-notes { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .65rem; }
+    .sat-note-item { background: #fff; }
+    .sat-progress-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .65rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="sat-hero d-flex flex-wrap align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-1">SAT - {{ subject_label }}</h2>
+            <p class="mb-0 opacity-75">Bo'limdagi video va PDF resurslar ro'yxati.</p>
+        </div>
+        <a href="{% url 'core:sat_home' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Orqaga
+        </a>
+    </div>
+
+    {% if items %}
+    <div class="row g-4">
+        {% for row in items %}
+        <div class="col-12">
+            <div class="card sat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <h5 class="mb-2">{{ row.obj.title }}</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="sat-chip">{{ subject_label }}</span>
+                            <button class="btn btn-sm {% if row.bookmark %}btn-warning{% else %}btn-outline-warning{% endif %} sat-bookmark-btn" data-id="{{ row.obj.pk }}">
+                            <i class="fas fa-bookmark me-1"></i>{% if row.bookmark %}Bookmarked{% else %}Bookmark{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                    {% if row.obj.description %}
+                    <p class="text-muted mb-3">{{ row.obj.description|linebreaksbr }}</p>
+                    {% endif %}
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% if row.obj.pdf_file %}
+                        <a href="{% url 'core:sat_pdf_viewer' row.obj.pk %}" class="btn btn-sm btn-danger" target="_blank" rel="noopener">
+                            <i class="fas fa-file-pdf me-1"></i>PDF ko'rish
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% if row.obj.video_file %}
+                    <div class="ratio ratio-16x9">
+                        <video controls preload="metadata" class="w-100">
+                            <source src="{{ row.obj.video_file.url }}">
+                        </video>
+                    </div>
+                    {% elif row.obj.youtube_id %}
+                    <div class="ratio ratio-16x9">
+                        <iframe
+                            src="https://www.youtube.com/embed/{{ row.obj.youtube_id }}?rel=0&modestbranding=1&playsinline=1"
+                            title="{{ row.obj.title }}"
+                            allowfullscreen
+                            frameborder="0">
+                        </iframe>
+                    </div>
+                    {% elif row.obj.youtube_url %}
+                    <a href="{{ row.obj.youtube_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
+                        <i class="fab fa-youtube me-1"></i>YouTube'da ochish
+                    </a>
+                    {% else %}
+                    <small class="text-muted">Video biriktirilmagan.</small>
+                    {% endif %}
+
+                    <hr>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 sat-progress-wrap">
+                            <label class="form-label small text-muted mb-1">Progress (0-100)</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <input type="range" min="0" max="100" value="{% if row.progress %}{{ row.progress.watch_percentage }}{% else %}0{% endif %}" class="form-range sat-progress-input" data-id="{{ row.obj.pk }}">
+                                <span class="badge bg-secondary sat-progress-val" id="sat-progress-val-{{ row.obj.pk }}">{% if row.progress %}{{ row.progress.watch_percentage }}{% else %}0{% endif %}%</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary sat-progress-save mt-1" data-id="{{ row.obj.pk }}">Progress saqlash</button>
+                        </div>
+                        <div class="col-12 col-md-6 sat-progress-wrap">
+                            <label class="form-label small text-muted mb-1">Eslatma</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control sat-note-text" data-id="{{ row.obj.pk }}" placeholder="Eslatma yozing...">
+                                <button class="btn btn-outline-success sat-note-add" data-id="{{ row.obj.pk }}">Qo'shish</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 sat-notes" id="sat-notes-{{ row.obj.pk }}">
+                        {% if row.notes %}
+                            {% for note in row.notes %}
+                            <div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1 sat-note-item" data-note-id="{{ note.pk }}">
+                                <small>{{ note.note_text }}</small>
+                                <button class="btn btn-sm btn-link text-danger p-0 sat-note-del" data-note-id="{{ note.pk }}"><i class="fas fa-times"></i></button>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <small class="text-muted">Eslatma yo'q</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-folder-open fa-2x text-muted mb-3"></i>
+            <p class="text-muted mb-0">Bu bo'limda hozircha resurs yo'q.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+    const csrf = getCookie('csrftoken') || '';
+
+    document.querySelectorAll('.sat-progress-input').forEach((el) => {
+        el.addEventListener('input', function () {
+            const id = this.dataset.id;
+            const val = this.value || 0;
+            const out = document.getElementById('sat-progress-val-' + id);
+            if (out) out.textContent = val + '%';
+        });
+    });
+
+    document.querySelectorAll('.sat-progress-save').forEach((btn) => {
+        btn.addEventListener('click', function () {
+            const id = this.dataset.id;
+            const input = document.querySelector('.sat-progress-input[data-id="' + id + '"]');
+            const fd = new FormData();
+            fd.append('progress', input ? input.value : 0);
+            fd.append('csrfmiddlewaretoken', csrf);
+            fetch('/sat/resource/' + id + '/progress/', { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf}})
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) return;
+                    this.textContent = 'Saqlandi';
+                    setTimeout(() => { this.textContent = 'Progress saqlash'; }, 1000);
+                });
+        });
+    });
+
+    document.querySelectorAll('.sat-bookmark-btn').forEach((btn) => {
+        btn.addEventListener('click', function () {
+            const id = this.dataset.id;
+            const fd = new FormData();
+            fd.append('csrfmiddlewaretoken', csrf);
+            fetch('/sat/resource/' + id + '/bookmark/', { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf}})
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) return;
+                    if (d.bookmarked) {
+                        this.classList.remove('btn-outline-warning');
+                        this.classList.add('btn-warning');
+                        this.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmarked';
+                    } else {
+                        this.classList.remove('btn-warning');
+                        this.classList.add('btn-outline-warning');
+                        this.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                    }
+                });
+        });
+    });
+
+    document.querySelectorAll('.sat-note-add').forEach((btn) => {
+        btn.addEventListener('click', function () {
+            const id = this.dataset.id;
+            const input = document.querySelector('.sat-note-text[data-id="' + id + '"]');
+            const text = (input?.value || '').trim();
+            if (!text) return;
+            const fd = new FormData();
+            fd.append('note_text', text);
+            fd.append('csrfmiddlewaretoken', csrf);
+            fetch('/sat/resource/' + id + '/note/add/', { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf}})
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) return;
+                    const wrap = document.getElementById('sat-notes-' + id);
+                    if (wrap && wrap.innerHTML.indexOf("Eslatma yo'q") >= 0) wrap.innerHTML = '';
+                    if (wrap) {
+                        wrap.insertAdjacentHTML('afterbegin',
+                            '<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1 sat-note-item" data-note-id="' + d.note.id + '">' +
+                            '<small>' + d.note.text + '</small>' +
+                            '<button class="btn btn-sm btn-link text-danger p-0 sat-note-del" data-note-id="' + d.note.id + '"><i class="fas fa-times"></i></button>' +
+                            '</div>');
+                    }
+                    if (input) input.value = '';
+                });
+        });
+    });
+
+    document.body.addEventListener('click', function (e) {
+        const btn = e.target.closest('.sat-note-del');
+        if (!btn) return;
+        const noteId = btn.dataset.noteId;
+        const fd = new FormData();
+        fd.append('csrfmiddlewaretoken', csrf);
+        fetch('/sat/note/' + noteId + '/delete/', { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf}})
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) return;
+                const item = document.querySelector('.sat-note-item[data-note-id="' + noteId + '"]');
+                if (item) item.remove();
+            });
+    });
+});
+</script>
+{% endblock %}
+

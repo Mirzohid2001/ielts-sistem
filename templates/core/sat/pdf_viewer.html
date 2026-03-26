@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ resource.title }} - PDF Viewer{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pdf-wrap { height: calc(100vh - 165px); border-radius: 12px; overflow: hidden; border: 1px solid #dbeafe; background: #0f172a; }
+    .pdf-tip { background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: .75rem .9rem; font-size: .92rem; color: #1e3a8a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0">{{ resource.title }}</h5>
+        <a href="{% url 'core:sat_subject' resource.subject %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Orqaga
+        </a>
+    </div>
+    <div class="pdf-tip mb-3">
+        PDF faqat ko'rish rejimida ochiladi.
+    </div>
+    <div class="pdf-wrap">
+        <iframe
+            src="{% url 'core:sat_pdf_stream' resource.pk %}#toolbar=0&navpanes=0&scrollbar=1"
+            width="100%"
+            height="100%"
+            frameborder="0"
+            title="{{ resource.title }}">
+        </iframe>
+    </div>
+</div>
+{% endblock %}
+

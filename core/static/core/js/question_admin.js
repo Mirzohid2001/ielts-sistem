@@ -140,16 +140,82 @@
         }
     }
 
+    function isNewInlineQuestion(container) {
+        var idInput = container.querySelector('input[name$="-id"]');
+        if (!idInput) return true;
+        var v = String(idInput.value || '').trim();
+        if (!v) return true;
+        if (v.indexOf('__prefix__') >= 0) return true;
+        return !/^\d+$/.test(v);
+    }
+
+    function ensureQuestionTypePlaceholder(select, forceEmpty) {
+        if (!select) return;
+        if (!select.querySelector('option[value=""]')) {
+            var opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '--- Savol turini tanlang ---';
+            select.insertBefore(opt, select.firstChild);
+        }
+        if (forceEmpty) select.value = '';
+    }
+
+    function hideUntilQuestionTypeChosen(container) {
+        // doim ko'rinadiganlar
+        ['order', 'variant', 'question_type'].forEach(function(name) {
+            container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) { toggleFormRow(inp, true); });
+        });
+        // qolganlar yashirin
+        [
+            'question_text', 'question_image', 'instruction_box_style', 'prompt_text_style',
+            'max_choices', 'mcq_options_advanced',
+            'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'option_f', 'option_g', 'option_h',
+            'correct_answer', 'part_number', 'instruction_text', 'fill_answers', 'writing_task_images', 'sa_prompt_lines',
+            'matching_items', 'matching_options', 'matching_correct',
+            'list_options_simple', 'list_correct_simple',
+            'points', 'explanation', 'audio_timestamp', 'correct_answer_json', 'options_json'
+        ].forEach(function(name) {
+            container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) { toggleFormRow(inp, false); });
+        });
+        var shartDiv = container.querySelector('.question-type-shart-box');
+        if (shartDiv) shartDiv.style.display = 'none';
+        var preview = container.querySelector('.qt-style-preview');
+        if (preview) preview.style.display = 'none';
+        var mcqFieldset = container.querySelector('.question-mcq-fields');
+        var fillFieldset = container.querySelector('.question-fill-fields');
+        if (mcqFieldset) toggleFieldset(mcqFieldset, false);
+        if (fillFieldset) toggleFieldset(fillFieldset, false);
+    }
+
     function toggleByQuestionType(container) {
         var select = container.querySelector('select[name*="question_type"]');
         if (!select) return;
 
-        var qType = select.value;
+        var qType = (select.value || '').trim();
+        if (!qType) {
+            hideUntilQuestionTypeChosen(container);
+            return;
+        }
         var showMcqFields = showMcq(qType);
         var showJsonFields = showJson(qType);
 
         updateShartForType(container, qType);
         updateQuestionTextHelp(container, qType);
+
+        // Savol turi tanlangandan keyin har doim ko'rinadigan asosiy maydonlar
+        [
+            'question_text',
+            'question_image',
+            'instruction_box_style',
+            'prompt_text_style',
+            'points',
+            'explanation',
+            'audio_timestamp'
+        ].forEach(function(name) {
+            container.querySelectorAll('[name*="' + name + '"]').forEach(function(inp) {
+                toggleFormRow(inp, true);
+            });
+        });
 
         // Asosiy form (fieldsets) — faqat MCQ/T-F/T-F NG/Y-N NG da «Variantlar» bloki, qolgan turlarda yopiq
         var mcqFieldset = container.querySelector('.question-mcq-fields');
@@ -256,10 +322,25 @@
 
     function initQuestionForm(container) {
         if (!container) return;
+        // Test add/change sahifasida butun formga qo'llamaslik kerak;
+        // aks holda bitta savol selecti topilib, butun forma maydonlari noto'g'ri toggle bo'ladi.
+        if (
+            container.tagName === 'FORM' &&
+            container.querySelectorAll('.inline-related select[name*="question_type"]').length > 0 &&
+            !container.id
+        ) {
+            return;
+        }
         var typeSelect = container.querySelector('select[name*="question_type"]');
         if (typeSelect) {
+            var isNew = isNewInlineQuestion(container);
+            var userSelected = container.dataset && container.dataset.qtUserSelected === '1';
+            ensureQuestionTypePlaceholder(typeSelect, isNew && !userSelected);
             typeSelect.removeEventListener('change', typeSelect._qtHandler);
-            typeSelect._qtHandler = function() { toggleByQuestionType(container); };
+            typeSelect._qtHandler = function() {
+                if (container.dataset) container.dataset.qtUserSelected = this.value ? '1' : '0';
+                toggleByQuestionType(container);
+            };
             typeSelect.addEventListener('change', typeSelect._qtHandler);
             toggleByQuestionType(container);
         }
@@ -293,6 +374,10 @@
         if (!container) return;
         var preview = ensureStylePreview(container);
         if (!preview) return;
+        var typeSelect = container.querySelector('select[name*="question_type"]');
+        var hasQType = !!(typeSelect && (typeSelect.value || '').trim());
+        preview.style.display = hasQType ? '' : 'none';
+        if (!hasQType) return;
 
         var instSelect = container.querySelector('select[name*="instruction_box_style"]');
         var promptSelect = container.querySelector('select[name*="prompt_text_style"]');
@@ -347,8 +432,11 @@
 
     function init() {
         var mainForm = document.getElementById('question_form') || document.querySelector('#content-main form');
-        if (mainForm) initQuestionForm(mainForm);
-        if (mainForm) initStylePreview(mainForm);
+        // Faqat Question modelning alohida formida (id=question_form) mainFormni init qilamiz.
+        if (mainForm && mainForm.id === 'question_form') {
+            initQuestionForm(mainForm);
+            initStylePreview(mainForm);
+        }
         var inlines = document.querySelectorAll('.inline-related');
         inlines.forEach(function(el) {
             if (el.querySelector('select[name*="question_type"]')) initQuestionForm(el);

@@ -5,6 +5,16 @@ app_name = 'core'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    path('sat/', views.sat_home, name='sat_home'),
+    path('sat/dashboard/', views.sat_dashboard, name='sat_dashboard'),
+    path('sat/statistics/', views.sat_statistics, name='sat_statistics'),
+    path('sat/<str:subject>/', views.sat_subject, name='sat_subject'),
+    path('sat/resource/<int:pk>/progress/', views.sat_update_progress, name='sat_update_progress'),
+    path('sat/resource/<int:pk>/bookmark/', views.sat_toggle_bookmark, name='sat_toggle_bookmark'),
+    path('sat/resource/<int:pk>/note/add/', views.sat_add_note, name='sat_add_note'),
+    path('sat/resource/<int:pk>/pdf/', views.sat_pdf_viewer, name='sat_pdf_viewer'),
+    path('sat/resource/<int:pk>/pdf/stream/', views.sat_pdf_stream, name='sat_pdf_stream'),
+    path('sat/note/<int:note_id>/delete/', views.sat_delete_note, name='sat_delete_note'),
     path('videos/', views.video_list, name='video_list'),
     path('videos/<int:pk>/', views.video_detail, name='video_detail'),
     path('tests/', views.test_list, name='test_list'),

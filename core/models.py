@@ -1273,6 +1273,128 @@ class Flashcard(models.Model):
         return f"{self.user.username} - {self.term[:50]}"
 
 
+class SATResource(models.Model):
+    """SAT yo'nalishi uchun resurslar (Math / English). IELTS dan alohida oqim."""
+    SUBJECT_MATH = 'math'
+    SUBJECT_ENGLISH = 'english'
+    SUBJECT_CHOICES = [
+        (SUBJECT_MATH, 'Matematika'),
+        (SUBJECT_ENGLISH, 'Ingliz tili'),
+    ]
+
+    title = models.CharField(max_length=300, verbose_name="Sarlavha")
+    subject = models.CharField(max_length=20, choices=SUBJECT_CHOICES, db_index=True, verbose_name="Bo'lim")
+    description = models.TextField(blank=True, verbose_name="Tavsif")
+
+    video_file = models.FileField(
+        upload_to='sat/videos/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Video fayl",
+    )
+    youtube_url = models.URLField(blank=True, null=True, verbose_name="YouTube URL")
+    youtube_id = models.CharField(max_length=50, blank=True, db_index=True, verbose_name="YouTube ID")
+
+    pdf_file = models.FileField(
+        upload_to='sat/pdfs/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="PDF fayl",
+    )
+    order = models.IntegerField(default=0, verbose_name="Tartib")
+    is_active = models.BooleanField(default=True, verbose_name="Faol")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "SAT Resurs"
+        verbose_name_plural = "SAT Resurslar"
+        ordering = ['subject', 'order', '-created_at']
+        indexes = [
+            models.Index(fields=['subject', 'is_active']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_subject_display()} - {self.title}"
+
+    def save(self, *args, **kwargs):
+        if self.youtube_url:
+            extracted_id = VideoLesson.extract_youtube_id(self.youtube_url)
+            self.youtube_id = extracted_id if extracted_id and len(extracted_id) == 11 else ''
+        else:
+            self.youtube_id = ''
+        super().save(*args, **kwargs)
+
+
+class SATResourceProgress(models.Model):
+    """SAT resurslari bo'yicha foydalanuvchi progressi."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sat_progress', verbose_name="Foydalanuvchi")
+    resource = models.ForeignKey(SATResource, on_delete=models.CASCADE, related_name='progress', verbose_name="Resurs")
+    watch_percentage = models.IntegerField(default=0, verbose_name="Foiz (0-100)")
+    watched = models.BooleanField(default=False, verbose_name="Yakunlangan")
+    last_accessed_at = models.DateTimeField(auto_now=True, verbose_name="Oxirgi kirish")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Yakunlangan vaqt")
+
+    class Meta:
+        verbose_name = "SAT Progress"
+        verbose_name_plural = "SAT Progresslar"
+        unique_together = ['user', 'resource']
+        indexes = [
+            models.Index(fields=['user', 'resource']),
+            models.Index(fields=['user', 'watched']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.resource.title} ({self.watch_percentage}%)"
+
+    def update_progress(self, percentage):
+        self.watch_percentage = min(100, max(0, int(percentage or 0)))
+        if self.watch_percentage >= 90:
+            self.watched = True
+            if not self.completed_at:
+                self.completed_at = timezone.now()
+        self.save()
+
+
+class SATResourceBookmark(models.Model):
+    """SAT resurslari uchun bookmark."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sat_bookmarks', verbose_name="Foydalanuvchi")
+    resource = models.ForeignKey(SATResource, on_delete=models.CASCADE, related_name='bookmarks', verbose_name="Resurs")
+    timestamp = models.IntegerField(default=0, verbose_name="Vaqt (soniya)")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqt")
+
+    class Meta:
+        verbose_name = "SAT Bookmark"
+        verbose_name_plural = "SAT Bookmarklar"
+        unique_together = ['user', 'resource']
+        indexes = [
+            models.Index(fields=['user', 'resource']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.resource.title}"
+
+
+class SATResourceNote(models.Model):
+    """SAT resurslari uchun eslatmalar."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sat_notes', verbose_name="Foydalanuvchi")
+    resource = models.ForeignKey(SATResource, on_delete=models.CASCADE, related_name='notes', verbose_name="Resurs")
+    note_text = models.TextField(verbose_name="Eslatma matni")
+    timestamp = models.IntegerField(default=0, verbose_name="Vaqt (soniya)")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqt")
+
+    class Meta:
+        verbose_name = "SAT Eslatma"
+        verbose_name_plural = "SAT Eslatmalar"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'resource']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.resource.title}"
+
+
 # Signal: UserTestAnswer o'zgarganda natijani qayta hisoblash (admin essay baholaganda)
 from django.db.models.signals import post_save
 from django.dispatch import receiver
