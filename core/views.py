@@ -1179,8 +1179,10 @@ def test_take(request, pk):
                         continue
                     if user_answer:
                         is_correct = q.check_user_answer(user_answer)
-                        if is_correct:
-                            correct_count += 1
+                        matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+                        if q.question_type in matching_types:
+                            slots_correct, _ = q.score_matching_answer(user_answer)
+                            correct_count += slots_correct
                         UserTestAnswer.objects.update_or_create(
                             test_result=test_result,
                             question=q,
@@ -2014,7 +2016,11 @@ def test_result(request, pk):
                         continue
                     if user_answer:
                         is_correct = question.check_user_answer(user_answer)
-                        if is_correct:
+                        matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+                        if question.question_type in matching_types:
+                            slots_correct, _ = question.score_matching_answer(user_answer)
+                            correct += slots_correct
+                        elif is_correct:
                             correct += 1
                         UserTestAnswer.objects.update_or_create(
                             test_result=test_result,

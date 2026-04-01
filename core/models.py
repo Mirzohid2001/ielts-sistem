@@ -685,6 +685,39 @@ class Question(models.Model):
                 return False
         return True
 
+    def score_matching_answer(self, user_answer):
+        """
+        Matching turlari uchun qisman ball:
+        qaytaradi (to'g'ri_slotlar_soni, jami_slotlar_soni).
+        """
+        matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+        correct = self.correct_answer_json if isinstance(self.correct_answer_json, dict) else {}
+        total_slots = len(correct) or self.gradable_answer_slots()
+        if self.question_type not in matching_types or not total_slots:
+            # matching emas yoki noto'g'ri format — oddiy True/False ga tushiramiz
+            return (1 if self.check_user_answer(user_answer) else 0, 1)
+
+        import json
+        norm = lambda x: (str(x).strip().lower() if x else '')
+        try:
+            if not user_answer:
+                user_map = {}
+            else:
+                t = str(user_answer).strip()
+                user_map = json.loads(t) if t.startswith('{') else {}
+        except json.JSONDecodeError:
+            user_map = {}
+
+        if not isinstance(user_map, dict):
+            user_map = {}
+
+        correct_norm = {str(k): norm(v) for k, v in correct.items()}
+        got = 0
+        for k, v in correct_norm.items():
+            if norm(user_map.get(str(k))) == v:
+                got += 1
+        return (got, total_slots)
+
     def mcq_dual_question_slots_enabled(self):
         """2 variant tanlash = ketma-ket 2 ta savol raqami (21, 22) — faqat MCQ."""
         if self.question_type != 'mcq' or getattr(self, 'max_choices', 1) != 2:
