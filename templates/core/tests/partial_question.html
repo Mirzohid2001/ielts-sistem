@@ -197,9 +197,34 @@
                 {% if current_question.options_json.instruction %}
                 <p class="text-muted mb-3" style="font-size: 0.9rem;"><i class="fas fa-info-circle me-1"></i>{{ current_question.options_json.instruction }}</p>
                 {% endif %}
+
                 {% if not matching_fields %}
                 <p class="text-warning">Admin panelda options_json ni to'ldiring (items, options).</p>
                 {% endif %}
+
+                {# List of Headings / variantlar tepada bitta marta #}
+                {% if matching_fields and matching_fields.0.options %}
+                    {% if current_question.question_type == 'matching_headings' %}
+                    <div class="matching-reference-box mb-3" aria-label="List of Headings">
+                        <div class="matching-ref-title fw-semibold mb-1">List of Headings</div>
+                        {% for op in matching_fields.0.options %}
+                        <div class="matching-ref-row small"><span class="text-muted">{{ op.letter }}.</span> {% if op.text %}{{ op.text }}{% endif %}</div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="matching-reference-box mb-3" aria-label="Variantlar">
+                        <div class="matching-ref-title fw-semibold mb-1">Variants</div>
+                        {% for op in matching_fields.0.options %}
+                        <div class="matching-ref-row small"><strong>{{ op.letter|upper }}.</strong> {% if op.text %}{{ op.text }}{% endif %}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                {% if current_question.question_type == 'matching_headings' %}
+                <p class="small text-muted mb-2">{{ current_question.options_json.instruction|default:"Choose the correct heading for each paragraph from the list above." }}</p>
+                {% endif %}
+
                 {% for field in matching_fields %}
                 <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
                     <label class="form-label mb-0 fw-semibold" style="min-width: 40px;">{{ field.num }}.</label>
