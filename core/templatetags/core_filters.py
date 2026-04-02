@@ -155,3 +155,46 @@ def matching_review_state(question, user_answer):
         return 'partial'
     return 'wrong'
 
+
+@register.filter
+def answer_slot_review_state(question, user_answer):
+    """
+    Matching yoki ko'p bo'sh joyli fill (notes/summary/...) uchun review holati:
+    'correct' | 'partial' | 'wrong' | '' (boshqa savol turlari).
+    """
+    if not question:
+        return ''
+
+    qt = getattr(question, 'question_type', None)
+    matching_types = (
+        'matching_headings',
+        'matching_features',
+        'matching_info',
+        'matching_sentences',
+        'classification',
+    )
+    fill_types = (
+        'fill_blank',
+        'summary_completion',
+        'notes_completion',
+        'sentence_completion',
+        'table_completion',
+        'short_answer',
+    )
+    if qt in matching_types:
+        return matching_review_state(question, user_answer)
+    if qt in fill_types:
+        user_answer = (user_answer or '').strip()
+        if not user_answer:
+            return 'wrong'
+        try:
+            got, total = question.score_fill_answer(user_answer)
+        except Exception:
+            return 'wrong'
+        if total and got >= total:
+            return 'correct'
+        if total and got > 0:
+            return 'partial'
+        return 'wrong'
+    return ''
+

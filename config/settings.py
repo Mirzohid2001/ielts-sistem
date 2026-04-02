@@ -165,6 +165,10 @@ MEDIA_URL = 'https://eu2.contabostorage.com/02d832178b204df09a76be02aefe96ec:iel
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Admin: Test + Question inline bir sahifada yuzlab maydon yuboriladi.
+# Django default 1000 — ko'p savolda TooManyFieldsSent beradi.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.environ.get('DATA_UPLOAD_MAX_NUMBER_FIELDS', '10000'))
+
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"

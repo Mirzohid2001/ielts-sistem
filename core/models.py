@@ -685,6 +685,77 @@ class Question(models.Model):
                 return False
         return True
 
+    def score_fill_answer(self, user_answer):
+        """
+        Ko'p bo'sh joyli fill turlar uchun qisman ball (har bir slot alohida).
+        Qaytadi: (to'g'ri_slotlar_soni, jami_slotlar_soni).
+        """
+        fill_types = (
+            'fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
+            'table_completion', 'short_answer',
+        )
+        if self.question_type not in fill_types:
+            return (1 if self.check_user_answer(user_answer) else 0, 1)
+
+        correct_list = list(self.get_correct_answers_list())
+        if not correct_list:
+            return (0, max(self.gradable_answer_slots(), 1))
+
+        total_slots = self.gradable_answer_slots() or len(correct_list)
+        if len(correct_list) < total_slots:
+            correct_list = correct_list + [''] * (total_slots - len(correct_list))
+        elif len(correct_list) > total_slots:
+            correct_list = correct_list[:total_slots]
+        total = len(correct_list)
+
+        import json
+        norm = lambda x: (str(x).strip().lower() if x else '')
+
+        def parse_user_json(text):
+            if not text:
+                return []
+            t = str(text).strip()
+            if t.startswith('[') or t.startswith('{'):
+                try:
+                    return json.loads(t)
+                except json.JSONDecodeError:
+                    return [t]
+            return [t]
+
+        user_raw = parse_user_json(user_answer)
+        if isinstance(user_raw, dict):
+            user_answers = [user_raw.get(str(i + 1), '') for i in range(total)]
+        elif isinstance(user_raw, list):
+            user_answers = list(user_raw)
+        else:
+            user_answers = [user_raw]
+        while len(user_answers) < total:
+            user_answers.append('')
+        user_answers = user_answers[:total]
+
+        max_w = self.get_max_words_per_blank()
+
+        def blank_match(ua, ca):
+            ua_n = norm(ua)
+            ca_n = norm(ca)
+            if not ca_n:
+                return not ua_n
+            if ' ' in ca_n or ' ' in ua_n:
+                ca_words = set(w for w in ca_n.split() if w)
+                ua_words = set(w for w in ua_n.split() if w)
+                return ca_words == ua_words
+            return ua_n == ca_n
+
+        got = 0
+        for i, (ua, ca) in enumerate(zip(user_answers, correct_list)):
+            slot_mw = self.get_max_words_for_blank_index(i) if self.question_type == 'short_answer' else max_w
+            if slot_mw is not None and ua and str(ua).strip():
+                if self.count_answer_words(ua) > slot_mw:
+                    continue
+            if blank_match(ua, ca):
+                got += 1
+        return (got, total)
+
     def score_matching_answer(self, user_answer):
         """
         Matching turlari uchun qisman ball:
@@ -885,6 +956,14 @@ class UserTestResult(models.Model):
             q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
         )
         answers_by_q = {a.question_id: a for a in self.answers.select_related('question')}
+        matching_types = (
+            'matching_headings', 'matching_features', 'matching_info',
+            'matching_sentences', 'classification',
+        )
+        fill_types = (
+            'fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
+            'table_completion', 'short_answer',
+        )
         correct_pts = 0
         for q in questions:
             if q.question_type == 'essay':
@@ -894,8 +973,18 @@ class UserTestResult(models.Model):
             if q.mcq_dual_question_slots_enabled():
                 pts, _ = q.score_mcq_choose_two_dual(ua)
                 correct_pts += pts
-            elif ans:
-                correct_pts += 1 if ans.is_correct else 0
+            elif q.question_type in matching_types:
+                pts, _ = q.score_matching_answer(ua)
+                correct_pts += pts
+            elif q.question_type in fill_types:
+                pts, _ = q.score_fill_answer(ua)
+                correct_pts += pts
+            elif ua.strip():
+                if q.check_user_answer(ua):
+                    if q.question_type == 'list_selection':
+                        correct_pts += q.gradable_answer_slots()
+                    else:
+                        correct_pts += 1
         self.total_questions = total_slots or self.total_questions
         self.correct_answers = correct_pts
         self.wrong_answers = max(0, self.total_questions - correct_pts)
