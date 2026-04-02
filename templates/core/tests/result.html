@@ -191,20 +191,34 @@
                     {% for question in ordered_questions %}
                     {% with answer=user_answers|get_item:question.id %}
                     <div class="card mb-4 border-0 shadow-sm" 
-                         style="border-left: 4px solid {% if answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %} !important; 
-                                background: {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.05){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.08){% elif answer %}rgba(239, 68, 68, 0.05){% else %}rgba(107, 114, 128, 0.05){% endif %}; 
+                         style="border-left: 4px solid {% if answer and question|matching_review_state:answer.user_answer == 'correct' %}var(--success){% elif answer and question|matching_review_state:answer.user_answer == 'partial' %}#f59e0b{% elif answer and question|matching_review_state:answer.user_answer == 'wrong' %}var(--danger){% elif answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %} !important; 
+                                background: {% if answer and question|matching_review_state:answer.user_answer == 'correct' %}rgba(16, 185, 129, 0.05){% elif answer and question|matching_review_state:answer.user_answer == 'partial' %}rgba(245, 158, 11, 0.08){% elif answer and question|matching_review_state:answer.user_answer == 'wrong' %}rgba(239, 68, 68, 0.05){% elif answer and answer.is_correct %}rgba(16, 185, 129, 0.05){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.08){% elif answer %}rgba(239, 68, 68, 0.05){% else %}rgba(107, 114, 128, 0.05){% endif %}; 
                                 border-radius: 16px;">
                         <div class="card-body p-4">
                             <!-- Header -->
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div style="width: 48px; height: 48px; background: {% if answer and answer.is_correct %}linear-gradient(135deg, var(--success) 0%, #059669 100%){% elif answer and question.question_type == 'essay' %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% elif answer %}linear-gradient(135deg, var(--danger) 0%, #dc2626 100%){% else %}linear-gradient(135deg, var(--gray-400) 0%, var(--gray-500) 100%){% endif %}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; margin-right: 1rem; box-shadow: 0 4px 12px {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.3){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.3){% elif answer %}rgba(239, 68, 68, 0.3){% else %}rgba(107, 114, 128, 0.3){% endif %}; font-size: 1.1rem;">
+                                <div style="width: 48px; height: 48px; background: {% if answer and question|matching_review_state:answer.user_answer == 'correct' %}linear-gradient(135deg, var(--success) 0%, #059669 100%){% elif answer and question|matching_review_state:answer.user_answer == 'partial' %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% elif answer and question|matching_review_state:answer.user_answer == 'wrong' %}linear-gradient(135deg, var(--danger) 0%, #dc2626 100%){% elif answer and answer.is_correct %}linear-gradient(135deg, var(--success) 0%, #059669 100%){% elif answer and question.question_type == 'essay' %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% elif answer %}linear-gradient(135deg, var(--danger) 0%, #dc2626 100%){% else %}linear-gradient(135deg, var(--gray-400) 0%, var(--gray-500) 100%){% endif %}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; margin-right: 1rem; box-shadow: 0 4px 12px {% if answer and question|matching_review_state:answer.user_answer == 'correct' %}rgba(16, 185, 129, 0.3){% elif answer and question|matching_review_state:answer.user_answer == 'partial' %}rgba(245, 158, 11, 0.3){% elif answer and question|matching_review_state:answer.user_answer == 'wrong' %}rgba(239, 68, 68, 0.3){% elif answer and answer.is_correct %}rgba(16, 185, 129, 0.3){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.3){% elif answer %}rgba(239, 68, 68, 0.3){% else %}rgba(107, 114, 128, 0.3){% endif %}; font-size: 1.1rem;">
                                     {{ forloop.counter }}
                                 </div>
                                 <div class="flex-grow-1">
                                     <h6 class="mb-2" style="font-weight: 700; font-size: 1.1rem; color: var(--gray-900);">Savol {{ forloop.counter }}</h6>
                                 </div>
                                 {% if answer %}
-                                    {% if answer.is_correct %}
+                                    {% if question.question_type == 'matching_headings' or question.question_type == 'matching_features' or question.question_type == 'matching_info' or question.question_type == 'matching_sentences' or question.question_type == 'classification' %}
+                                        {% if question|matching_slots_total:answer.user_answer > 0 and question|matching_slots_correct:answer.user_answer == question|matching_slots_total:answer.user_answer %}
+                                        <span class="badge" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border-radius: 10px; font-weight: 600;">
+                                            <i class="fas fa-check me-1"></i>To'g'ri
+                                        </span>
+                                        {% elif question|matching_slots_total:answer.user_answer > 0 and question|matching_slots_correct:answer.user_answer > 0 %}
+                                        <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); border-radius: 10px; font-weight: 600;">
+                                            <i class="fas fa-star-half-alt me-1"></i>Qisman to'g'ri
+                                        </span>
+                                        {% else %}
+                                        <span class="badge" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); border-radius: 10px; font-weight: 600;">
+                                            <i class="fas fa-times me-1"></i>Noto'g'ri
+                                        </span>
+                                        {% endif %}
+                                    {% elif answer.is_correct %}
                                     <span class="badge" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border-radius: 10px; font-weight: 600;">
                                         <i class="fas fa-check me-1"></i>To'g'ri
                                     </span>
@@ -230,15 +244,15 @@
                             <!-- Answers - Bir xil dizayn -->
                             <div class="row g-3">
                                 <div class="col-12 col-md-6">
-                                    <div class="card" style="background: {% if answer and answer.is_correct %}rgba(16, 185, 129, 0.1){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.1){% elif answer %}rgba(239, 68, 68, 0.1){% else %}rgba(107, 114, 128, 0.1){% endif %}; 
-                                                              border: 2px solid {% if answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %}; 
+                                    <div class="card" style="background: {% if answer and question|matching_review_state:answer.user_answer == 'correct' %}rgba(16, 185, 129, 0.1){% elif answer and question|matching_review_state:answer.user_answer == 'partial' %}rgba(245, 158, 11, 0.1){% elif answer and question|matching_review_state:answer.user_answer == 'wrong' %}rgba(239, 68, 68, 0.1){% elif answer and answer.is_correct %}rgba(16, 185, 129, 0.1){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.1){% elif answer %}rgba(239, 68, 68, 0.1){% else %}rgba(107, 114, 128, 0.1){% endif %}; 
+                                                              border: 2px solid {% if answer and question|matching_review_state:answer.user_answer == 'correct' %}var(--success){% elif answer and question|matching_review_state:answer.user_answer == 'partial' %}#f59e0b{% elif answer and question|matching_review_state:answer.user_answer == 'wrong' %}var(--danger){% elif answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %}; 
                                                               border-radius: 12px; min-height: 80px;">
                                         <div class="card-body p-3">
                                             <p class="mb-2" style="font-weight: 700; font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase;">
                                                 <i class="fas fa-user me-1"></i>Sizning javobingiz
                                             </p>
                                             {% if answer %}
-                                            <div class="review-answer-box" style="color: {% if answer.is_correct %}var(--success){% elif question.question_type == 'essay' %}#b45309{% else %}var(--danger){% endif %}; font-weight: 600;">
+                                            <div class="review-answer-box" style="color: {% if question.question_type == 'matching_headings' or question.question_type == 'matching_features' or question.question_type == 'matching_info' or question.question_type == 'matching_sentences' or question.question_type == 'classification' %}{% if question|matching_slots_total:answer.user_answer > 0 and question|matching_slots_correct:answer.user_answer == question|matching_slots_total:answer.user_answer %}var(--success){% elif question|matching_slots_total:answer.user_answer > 0 and question|matching_slots_correct:answer.user_answer > 0 %}#b45309{% else %}var(--danger){% endif %}{% elif answer.is_correct %}var(--success){% elif question.question_type == 'essay' %}#b45309{% else %}var(--danger){% endif %}; font-weight: 600;">
                                                 {% if question.question_type == 'mcq' or question.question_type == 'true_false' or question.question_type == 'true_false_not_given' or question.question_type == 'yes_no_not_given' %}
                                                 {{ question|display_user_answer:answer.user_answer }}
                                                 {% else %}

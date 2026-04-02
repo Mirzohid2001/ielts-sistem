@@ -89,3 +89,69 @@ def format_user_answer(value):
         return '; '.join(f'{k}:{v}' for k, v in sorted(value.items()))
     return str(value)
 
+
+@register.filter
+def matching_slots_score(question, user_answer):
+    """
+    Matching turlari uchun qisman ball: (got, total) qaytaradi.
+    Template’da ishlatish uchun got va total alohida filterlar bilan ham foydalanish mumkin.
+    """
+    if not question:
+        return (0, 0)
+    try:
+        if getattr(question, 'question_type', None) not in (
+            'matching_headings',
+            'matching_features',
+            'matching_info',
+            'matching_sentences',
+            'classification',
+        ):
+            return (0, 0)
+        got, total = question.score_matching_answer(user_answer)
+        return (int(got or 0), int(total or 0))
+    except Exception:
+        return (0, 0)
+
+
+@register.filter
+def matching_slots_correct(question, user_answer):
+    got, total = matching_slots_score(question, user_answer)
+    return got
+
+
+@register.filter
+def matching_slots_total(question, user_answer):
+    got, total = matching_slots_score(question, user_answer)
+    return total
+
+
+@register.filter
+def matching_review_state(question, user_answer):
+    """
+    Matching turlari uchun review holati:
+    - 'correct'  : hamma slot to'g'ri
+    - 'partial'  : ba'zi slot to'g'ri
+    - 'wrong'     : hech bo'lmaganda slot noto'g'ri (yoki jami 0)
+    - ''          : matching bo'lmasa
+    """
+    if not question:
+        return ''
+
+    matching_types = (
+        'matching_headings',
+        'matching_features',
+        'matching_info',
+        'matching_sentences',
+        'classification',
+    )
+    if getattr(question, 'question_type', None) not in matching_types:
+        return ''
+
+    user_answer = (user_answer or '').strip()
+    got, total = matching_slots_score(question, user_answer)
+    if total and got >= total:
+        return 'correct'
+    if total and got > 0:
+        return 'partial'
+    return 'wrong'
+
