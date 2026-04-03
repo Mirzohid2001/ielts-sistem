@@ -234,7 +234,7 @@
         }
         if (mcqFieldset === fillFieldset) mcqFieldset = fillFieldset = null;
         if (mcqFieldset) toggleFieldset(mcqFieldset, showMcqFields);
-        if (fillFieldset) toggleFieldset(fillFieldset, showJsonFields);
+        if (fillFieldset) toggleFieldset(fillFieldset, showJsonFields || showMcqFields);
         if (fillFieldset) fillFieldset.classList.toggle('question-type-fill-visible', showJsonFields);
 
         // 1) data-role orqali (forma maydonlarida qt-mcq / qt-fill qo'yilgan)
@@ -277,8 +277,8 @@
         var isMatching = ['matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'].indexOf(qType) >= 0;
         var isListSel = qType === 'list_selection';
 
-        // Part raqami barcha JSON-ish bloklar uchun ko'rsatildi (baribir writing da task uchun kerak)
-        var showPart = (isFill || isShort || isMatching || isListSel || isEssay);
+        // Part raqami: Listening/Reading da MCQ ham Part 2–4 ga ajratish uchun kerak
+        var showPart = (isFill || isShort || isMatching || isListSel || isEssay || showMcqFields);
         toggleByField('part_number', showPart);
 
         // Fill-in turlari: instruction + fill_answers

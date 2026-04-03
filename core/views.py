@@ -1536,7 +1536,9 @@ def test_take(request, pk):
     # Reading + barcha savollar bir xil variant: passage bo'linishi (13/14) uchun quyidagi tarmoq ishlaydi.
     part_indexes = []
     explicit_parts = []
-    if getattr(test, 'variants_to_select', 1) == 2:
+    # Listening: Part 1–4 alohida (10+10+10+10 yoki options_json.part). «2 variant» faqat qaysi
+    # imtihon qog‘ozini tanlash uchun; variantni «listening part» deb ishlatmaslik kerak.
+    if getattr(test, 'variants_to_select', 1) == 2 and test.test_type != 'listening':
         if _reading_uniform_variant(test, questions):
             part_indexes = []
         else:
@@ -1577,8 +1579,8 @@ def test_take(request, pk):
             else:
                 default_parts = max(1, min(3, parts_by_questions))
         elif test.test_type == 'listening':
-            # Har partda 10 ta savol: Part 1 = 1–10, Part 2 = 11–20, Part 3 = 21–30, Part 4 = 31–40
-            default_parts = min(4, max(1, ((total_questions or 0) + 9) // 10))
+            # IELTS: har partda 10 ta raqamli savol (1–10, 11–20, …) — DB yozuvlari emas, slotlar bo'yicha
+            default_parts = min(4, max(1, ((total_display_slots or 0) + 9) // 10))
         elif test.test_type == 'writing':
             default_parts = 2
         if test.test_type != 'listening':
@@ -1589,8 +1591,8 @@ def test_take(request, pk):
             # Bo'linish savol yozuvlari emas, ko'rsatiladigan raqamlar bo'yicha (14 ta slot → 13+1 part)
             ranges = _reading_part_ranges(total_display_slots)
         elif test.test_type == 'listening':
-            # Listening: har partda 10 ta savol (1–10, 11–20, 21–30, 31–40)
-            t = total_questions or 0
+            # 0-based slot indeksi = ko'rsatiladigan savol raqami - 1 (har partda 10 slot)
+            t = total_display_slots or 0
             ranges = []
             if t > 0:
                 ranges.append((0, min(10, t)))
@@ -1613,6 +1615,20 @@ def test_take(request, pk):
 
         if test.test_type == 'reading':
             # Har bir savol kartasi: birinchi ko'rsatiladigan raqam qaysi part oralig'ida (0-based slot)
+            for card in question_cards:
+                d0 = card.get('display_order')
+                try:
+                    slot_idx = max(0, int(d0) - 1) if d0 is not None else 0
+                except (TypeError, ValueError):
+                    slot_idx = 0
+                assigned = 1
+                for p_idx, (s, e) in enumerate(ranges, start=1):
+                    if s <= slot_idx < e:
+                        assigned = p_idx
+                        break
+                part_indexes.append(assigned)
+        elif test.test_type == 'listening':
+            # Reading bilan bir xil: kartaning birinchi savol raqami qaysi 10 lik blokka kirsa
             for card in question_cards:
                 d0 = card.get('display_order')
                 try:
@@ -1648,8 +1664,11 @@ def test_take(request, pk):
         part_groups[-1]['cards'].append(card)
         part_groups[-1]['end_order'] = card['question'].order
 
-    # Reading: Part 1/2/3 doim tartibda; passage N ↔ part N (savollar DB tartibi boshqacha bo'lsa ham)
+    # Reading: partlar doim raqam bo'yicha (passage N ↔ part N).
     if test.test_type == 'reading' and part_groups:
+        part_groups.sort(key=lambda x: x['part_number'])
+    # Listening: alohida — slot 10+10+10+10 bo'linishi; reading kodiga aralashmaydi.
+    elif test.test_type == 'listening' and part_groups:
         part_groups.sort(key=lambda x: x['part_number'])
 
     # QuestionTypeRule.shart_text — faqat admin (savol qo'shish) uchun; test oluvchiga ko'rsatilmaydi
@@ -1657,7 +1676,7 @@ def test_take(request, pk):
         # Dockda ko'rinadigan raqamlar soni != DB dagi savol yozuvlari (bir savol 2+ raqam: TFNG guruh, MCQ juft, matching)
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
-        if getattr(test, 'variants_to_select', 1) == 2:
+        if getattr(test, 'variants_to_select', 1) == 2 and test.test_type != 'listening':
             if _reading_uniform_variant(test, questions):
                 vnum = getattr(questions[0], 'variant', None) or 1 if questions else 1
                 pg['title'] = f"Variant {vnum} · Part {pg['part_number']}"
@@ -1824,11 +1843,23 @@ def test_take(request, pk):
                     first_ts = float(q.audio_timestamp)
             pg['audio_start_time'] = first_ts if first_ts is not None else 0
 
+    listening_parts_overview = []
+    if test.test_type == 'listening' and part_groups:
+        for pg in part_groups:
+            listening_parts_overview.append({
+                'part_number': pg['part_number'],
+                'title': pg.get('title') or f"Part {pg['part_number']}",
+                'range_label': pg.get('range_label') or '',
+                'question_count': pg.get('question_count') or 0,
+            })
+
     current_question = questions[0] if questions else None
     # "Questions 1-10" yoki "Questions 1-7" ko'rsatish uchun
     first_pg = part_groups[0] if part_groups else {}
     first_blanks = first_pg.get('blank_buttons', [])
     if test.test_type == 'reading' and total_display_slots > 0:
+        questions_range_display = f"1-{total_display_slots}" if total_display_slots > 1 else "1"
+    elif test.test_type == 'listening' and total_display_slots > 0:
         questions_range_display = f"1-{total_display_slots}" if total_display_slots > 1 else "1"
     elif first_blanks and all(b.get('is_blank') for b in first_blanks):
         nums = [b['num'] for b in first_blanks]
@@ -1879,6 +1910,8 @@ def test_take(request, pk):
         'is_paused': test_result.is_paused,
         'flashcard_sets': FlashcardSet.objects.filter(user=request.user).order_by('name'),
     }
+    if test.test_type == 'listening':
+        context['listening_parts_overview'] = listening_parts_overview
 
     return render(request, 'core/tests/take.html', context)
 

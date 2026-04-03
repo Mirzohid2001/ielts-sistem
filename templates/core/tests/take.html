@@ -1104,6 +1104,22 @@
         padding: .85rem 1rem;
         margin-bottom: 1rem;
     }
+    .listening-parts-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+    }
+    .listening-part-chip {
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 0.28rem 0.65rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        color: #334155;
+        white-space: nowrap;
+    }
     .listening-style .listening-part-heading-text {
         font-size: 1.02rem;
         font-weight: 700;
@@ -1686,6 +1702,13 @@
                                             {% if test.test_type == 'listening' %}
                                             <p class="listening-questions-kicker mb-1">Savollar</p>
                                             <h2 class="listening-questions-main-title mb-0">Questions {{ questions_range_display|default:total_questions }}</h2>
+                                            {% if listening_parts_overview %}
+                                            <div class="listening-parts-strip mt-2" role="list" aria-label="Listening partlari bo‘yicha">
+                                                {% for row in listening_parts_overview %}
+                                                <span class="listening-part-chip" role="listitem">{{ row.title }}: {{ row.range_label }} — {{ row.question_count }} ta savol</span>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
                                             {% else %}
                                             <h5 class="mb-0 fw-bold">Questions {{ questions_range_display|default:total_questions }}</h5>
                                             {% endif %}
@@ -1700,7 +1723,7 @@
                                         {% if test.test_type == 'writing' or test.test_type == 'listening' or part_groups|length > 1 %}
                                         <div class="part-section-header{% if test.test_type == 'writing' %} writing-answer-header{% endif %}{% if test.test_type == 'listening' %} listening-part-section-header{% endif %}">
                                             {% if test.test_type == 'writing' %}{{ pg.title }}{% elif test.test_type == 'listening' %}
-                                            <span class="listening-part-heading-text">{{ pg.title }}: Listen and answer questions {{ pg.range_label }}</span>
+                                            <span class="listening-part-heading-text">{{ pg.title }}: savollar {{ pg.range_label }} — {{ pg.question_count }} ta. Listen and answer questions {{ pg.range_label }}.</span>
                                             {% if test.audio_file %}<a href="#" class="btn btn-sm btn-outline-primary listening-listen-from-here ms-2" data-part="{{ pg.part_number }}" data-audio-start="{{ pg.audio_start_time|default:0 }}"><i class="fas fa-headphones me-1"></i>Listen From Here</a>{% endif %}
                                             {% else %}{{ pg.title }}: Questions {{ pg.range_label }}{% endif %}
                                         </div>
@@ -1788,6 +1811,12 @@
                                                 {{ q.question_instruction }}
                                             </div>
                                             {% endif %}
+                                            {% endif %}
+                                            {# Writing: rasm chap panelda (writing-task-image-wrap). Reading + Listening: savol kartasida #}
+                                            {% if test.test_type != 'writing' and q.question_image %}
+                                            <div class="mb-3 question-task-image-wrap">
+                                                <img src="{{ q.question_image.url }}" class="img-fluid rounded border" alt="Diagram or map for this question group">
+                                            </div>
                                             {% endif %}
                                             {% if not item.inline_fill_parts %}
                                             {% if q.question_type == 'matching_headings' or q.question_type == 'matching_features' or q.question_type == 'matching_info' or q.question_type == 'matching_sentences' or q.question_type == 'classification' %}
@@ -2016,7 +2045,7 @@
                             {% for pg in part_groups %}
                             <div class="part-q-buttons dock-part-wrap {% if part_groups|length > 1 %}{% if forloop.first %}dock-active{% endif %}{% endif %}" data-part-number="{{ pg.part_number }}">
                                 {% if part_groups|length > 1 %}
-                                <button type="button" class="dock-part-summary dock-part{% if test.test_type == 'listening' %} listening-dock-part-summary{% endif %}" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" title="Part {{ pg.part_number }} ga o'tish">{% if test.test_type == 'listening' %}<span class="dock-summary-title">{{ pg.title }}:</span> <span class="dock-summary-qty">{{ pg.question_count }} question{{ pg.question_count|pluralize }}</span>{% else %}{{ pg.title }}: {{ pg.question_count }} questions{% endif %}</button>
+                                <button type="button" class="dock-part-summary dock-part{% if test.test_type == 'listening' %} listening-dock-part-summary{% endif %}" data-part-target="{{ pg.slug }}" data-part-number="{{ pg.part_number }}" title="Part {{ pg.part_number }} ga o'tish">{% if test.test_type == 'listening' %}<span class="dock-summary-title">{{ pg.title }} · {{ pg.range_label }}:</span> <span class="dock-summary-qty">{{ pg.question_count }} ta savol</span>{% else %}{{ pg.title }}: {{ pg.question_count }} questions{% endif %}</button>
                                 <div class="dock-part-expanded d-flex flex-wrap align-items-center gap-2">
                                     <span class="part-label">{{ pg.title }}:</span>
                                     {% if pg.blank_buttons %}
@@ -2062,7 +2091,7 @@
                                     <span class="reading-dock-part-row me-2" aria-hidden="true">{% if test.test_type == 'writing' %}Taskga o'tish:{% else %}Partga o'tish:{% endif %}</span>
                                     <div class="d-flex flex-wrap gap-2 align-items-center" role="tablist" aria-label="{% if test.test_type == 'writing' %}Tanlang: Task{% else %}Tanlang: Part{% endif %}">
                         {% for pg in part_groups %}
-                        <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{% if test.test_type == 'reading' or test.test_type == 'listening' %}{{ pg.title }}: {{ pg.question_count }} question{{ pg.question_count|pluralize }}{% else %}{{ pg.title }} ({{ pg.range_label }}){% endif %}</button>
+                        <button type="button" class="reading-part-tab btn btn-sm {% if forloop.first %}btn-dark active{% else %}btn-outline-dark{% endif %}" data-part-number="{{ pg.part_number }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="reading-part-pane-{{ pg.part_number }}" id="tab-part-{{ pg.part_number }}">{% if test.test_type == 'listening' %}{{ pg.title }} · {{ pg.range_label }} · {{ pg.question_count }} ta{% elif test.test_type == 'reading' %}{{ pg.title }}: {{ pg.question_count }} question{{ pg.question_count|pluralize }}{% else %}{{ pg.title }} ({{ pg.range_label }}){% endif %}</button>
                         {% endfor %}
                     </div>
                 </div>
