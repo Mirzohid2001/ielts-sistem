@@ -829,6 +829,17 @@ class Question(models.Model):
             return 0, 2
         return len(u_set & c_set), 2
 
+    def uses_choose_two_letter_scoring(self):
+        """
+        Ikki harf tanlash (Choose TWO) — bitta qator yoki juft slot; har doim
+        score_mcq_choose_two_dual orqali 0/1/2 ball (natija sahifasi bilan bir xil).
+        """
+        single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+        return (
+            getattr(self, 'question_type', None) in single_choice
+            and getattr(self, 'max_choices', 1) == 2
+        )
+
     def gradable_answer_slots(self):
         """Test yakunida foiz uchun: bu savol nechta 'javob o'rni' (essay=0)."""
         if self.question_type == 'essay':
@@ -839,7 +850,7 @@ class Question(models.Model):
                 # duplicate bo'lishi ehtimoli bo'lmasligi kerak, lekin xavfsizlik uchun set
                 return len(set(str(x).strip().lower() for x in self.correct_answer_json if str(x).strip()))
             return 1
-        if self.mcq_dual_question_slots_enabled():
+        if self.uses_choose_two_letter_scoring():
             return 2
         multi_fill = (
             'sentence_completion', 'table_completion', 'summary_completion',
@@ -970,7 +981,7 @@ class UserTestResult(models.Model):
                 continue
             ans = answers_by_q.get(q.pk)
             ua = (ans.user_answer if ans else '') or ''
-            if q.mcq_dual_question_slots_enabled():
+            if q.uses_choose_two_letter_scoring():
                 pts, _ = q.score_mcq_choose_two_dual(ua)
                 correct_pts += pts
             elif q.question_type in matching_types:

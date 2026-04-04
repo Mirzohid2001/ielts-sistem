@@ -157,6 +157,23 @@ def matching_review_state(question, user_answer):
 
 
 @register.filter
+def mcq_choose_two_score_label(question, user_answer):
+    """Choose TWO: '1/2' kabi qisqa ball ko'rsatkich (natija sahifasi)."""
+    if not question:
+        return ''
+    single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+    if getattr(question, 'question_type', None) not in single_choice:
+        return ''
+    if getattr(question, 'max_choices', 1) != 2:
+        return ''
+    try:
+        pts, total = question.score_mcq_choose_two_dual(user_answer)
+        return f'{pts}/{total}'
+    except Exception:
+        return ''
+
+
+@register.filter
 def answer_slot_review_state(question, user_answer):
     """
     Matching yoki ko'p bo'sh joyli fill (notes/summary/...) uchun review holati:
@@ -196,5 +213,21 @@ def answer_slot_review_state(question, user_answer):
         if total and got > 0:
             return 'partial'
         return 'wrong'
+
+    # MCQ / T-F / T-F-NG / Y-N-NG: 2 ta variant tanlash — qisman to'g'ri (masalan B+D kerak, B+C berilgan)
+    single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+    if qt in single_choice and getattr(question, 'max_choices', 1) == 2:
+        try:
+            pts, total = question.score_mcq_choose_two_dual(user_answer)
+        except Exception:
+            return 'wrong'
+        if not total:
+            return 'wrong'
+        if pts >= total:
+            return 'correct'
+        if pts > 0:
+            return 'partial'
+        return 'wrong'
+
     return ''
 

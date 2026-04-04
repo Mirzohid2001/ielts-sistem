@@ -6,6 +6,16 @@
 {% block content %}
 <style>
 .review-answer-box { word-break: break-word; overflow-wrap: anywhere; font-size: 0.98rem; line-height: 1.5; }
+.review-q-card { transition: box-shadow .2s ease, transform .2s ease; }
+.review-q-card:hover { box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08) !important; }
+.review-badge-pill { border-radius: 999px !important; font-size: 0.8125rem; letter-spacing: .01em; }
+.review-partial-strip {
+    border-radius: 12px;
+    border: 1px dashed rgba(245, 158, 11, 0.55);
+    background: linear-gradient(135deg, rgba(254, 243, 199, 0.45) 0%, rgba(255, 251, 235, 0.9) 100%);
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+}
 @media (max-width: 767.98px) {
     .review-answer-box { max-height: 140px; overflow-y: auto; -webkit-overflow-scrolling: touch; font-size: 0.92rem; }
     .review-question-snippet { max-height: 120px; overflow-y: auto; }
@@ -190,7 +200,7 @@
                 <div class="card-body p-4">
                     {% for question in ordered_questions %}
                     {% with answer=user_answers|get_item:question.id %}
-                    <div class="card mb-4 border-0 shadow-sm" 
+                    <div class="card mb-4 border-0 shadow-sm review-q-card" 
                          style="border-left: 4px solid {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}var(--success){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}#f59e0b{% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}var(--danger){% elif answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %} !important; 
                                 background: {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}rgba(16, 185, 129, 0.05){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}rgba(245, 158, 11, 0.08){% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}rgba(239, 68, 68, 0.05){% elif answer and answer.is_correct %}rgba(16, 185, 129, 0.05){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.08){% elif answer %}rgba(239, 68, 68, 0.05){% else %}rgba(107, 114, 128, 0.05){% endif %}; 
                                 border-radius: 16px;">
@@ -210,8 +220,8 @@
                                             <i class="fas fa-check me-1"></i>To'g'ri
                                         </span>
                                     {% elif rs == 'partial' %}
-                                        <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); border-radius: 10px; font-weight: 600;">
-                                            <i class="fas fa-star-half-alt me-1"></i>Qisman to'g'ri
+                                        <span class="badge review-badge-pill" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 0.5rem 1rem 0.5rem 0.85rem; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); font-weight: 600;">
+                                            <i class="fas fa-adjust me-1"></i>Qisman to'g'ri{% if question.max_choices == 2 %} <span class="opacity-90 fw-normal">({{ question|mcq_choose_two_score_label:answer.user_answer }})</span>{% endif %}
                                         </span>
                                     {% elif rs == 'wrong' %}
                                         <span class="badge" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); border-radius: 10px; font-weight: 600;">
@@ -237,6 +247,12 @@
                                 </span>
                                 {% endif %}
                             </div>
+                            {% if answer and question|answer_slot_review_state:answer.user_answer == 'partial' and question.max_choices == 2 %}
+                            <div class="review-partial-strip mb-3 text-dark">
+                                <i class="fas fa-info-circle text-warning me-2"></i>
+                                Ikkita variantdan biri to‘g‘ri: <strong>{{ question|mcq_choose_two_score_label:answer.user_answer }}</strong> mos keldi. To‘liq ball uchun ikkalasi ham to‘g‘ri bo‘lishi kerak.
+                            </div>
+                            {% endif %}
                             
                             <!-- Question text -->
                             <p class="mb-4 review-question-snippet" style="font-size: 1.05rem; line-height: 1.8; color: var(--gray-800); font-weight: 500;">{{ question.question_text|linebreaks }}</p>

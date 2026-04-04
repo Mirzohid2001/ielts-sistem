@@ -276,6 +276,68 @@ def _reading_part_ranges(total_questions):
     return ranges
 
 
+def _listening_ielts_part_from_global_num(num):
+    """Listening: Part 1 = 1–10, Part 2 = 11–20, Part 3 = 21–30, Part 4 = 31–40 (global savol raqami)."""
+    try:
+        n = int(num)
+    except (TypeError, ValueError):
+        return 1
+    if n < 1:
+        return 1
+    return min(4, (n - 1) // 10 + 1)
+
+
+def _listening_flat_dock_buttons(question_cards):
+    """
+    Barcha kartalar uchun bitta ro'yxat — har bir ko'rsatiladigan raqam alohida.
+    MCQ juft (20+21) ikkita tugma: ularni keyin har partga global raqam bo'yicha ajratish mumkin.
+    """
+    out = []
+    for card in question_cards:
+        q = card['question']
+        do = card.get('display_order', q.order)
+        if card.get('fill_multi_slots') and card.get('fill_global_nums'):
+            first = card['fill_global_nums'][0]
+            for gn in card['fill_global_nums']:
+                out.append({
+                    'num': gn,
+                    'question_id': f'question-{first}',
+                    'card_anchor': str(first),
+                    'is_blank': False,
+                })
+        elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
+            first = card['matching_global_nums'][0]
+            for gn in card['matching_global_nums']:
+                out.append({
+                    'num': gn,
+                    'question_id': f'question-{first}',
+                    'card_anchor': str(first),
+                    'is_blank': False,
+                })
+        elif card.get('mcq_dual_slots'):
+            do2 = card.get('display_order_2') or (do + 1)
+            out.append({
+                'num': do,
+                'question_id': f'question-{do}',
+                'card_anchor': str(do),
+                'is_blank': False,
+            })
+            out.append({
+                'num': do2,
+                'question_id': f'question-{do}',
+                'card_anchor': str(do),
+                'is_blank': False,
+            })
+        else:
+            out.append({
+                'num': do,
+                'question_id': f'question-{do}',
+                'card_anchor': str(do),
+                'is_blank': False,
+            })
+    return out
+
+
 def _passage_dict_for_reading_part(passage_items, part_number):
     """
     Part N → ReadingPassage tartibi (order) bilan mos: order==N bo'lgan matn.
@@ -1165,7 +1227,7 @@ def test_take(request, pk):
                                 defaults={'user_answer': user_answer, 'is_correct': False},
                             )
                         continue
-                    if q.mcq_dual_question_slots_enabled():
+                    if q.uses_choose_two_letter_scoring():
                         pts, _ = q.score_mcq_choose_two_dual(user_answer)
                         correct_count += pts
                         UserTestAnswer.objects.update_or_create(
@@ -1239,7 +1301,7 @@ def test_take(request, pk):
         raw = answers.get(str(q.pk), '')
         if not raw or not str(raw).strip():
             continue
-        if q.mcq_dual_question_slots_enabled():
+        if q.uses_choose_two_letter_scoring():
             try:
                 arr = json.loads(raw) if str(raw).strip().startswith('[') else []
                 arr = arr if isinstance(arr, list) else []
@@ -1671,6 +1733,10 @@ def test_take(request, pk):
     elif test.test_type == 'listening' and part_groups:
         part_groups.sort(key=lambda x: x['part_number'])
 
+    # Listening: dockda har bir raqam o'z IELTS partiga (1–10, 11–20, …). Juft MCQ (masalan 20+21)
+    # bitta kartada bo'lsa ham 21 → Part 3 tugmasi alohida (avvalgi xato: hammasi Part 2 qatorida).
+    listening_flat_dock = _listening_flat_dock_buttons(question_cards) if test.test_type == 'listening' else None
+
     # QuestionTypeRule.shart_text — faqat admin (savol qo'shish) uchun; test oluvchiga ko'rsatilmaydi
     for pg in part_groups:
         # Dockda ko'rinadigan raqamlar soni != DB dagi savol yozuvlari (bir savol 2+ raqam: TFNG guruh, MCQ juft, matching)
@@ -1685,70 +1751,79 @@ def test_take(request, pk):
         elif test.test_type == 'writing':
             pg['title'] = f"Task {pg['part_number']}"
         blank_buttons = []
-        # Reading va Listening testlarda dockda faqat savol raqamlari (blanklar bo'yicha emas)
-        # Inline blanklar bo'yicha alohida navigatsiya faqat boshqa test turlarida kerak bo'lishi mumkin
-        use_question_buttons_only = (test.test_type in ('reading', 'listening'))
-        for card in pg['cards']:
-            q = card['question']
-            if not use_question_buttons_only and pg['part_number'] == 1 and (card.get('inline_fill_parts') or (card.get('answer_fields') and len(card['answer_fields']) > 1)):
-                if card.get('inline_fill_parts'):
-                    for p in card['inline_fill_parts']:
-                        if p.get('type') == 'input':
+        if listening_flat_dock is not None:
+            pnum = pg['part_number']
+            blank_buttons = sorted(
+                (
+                    b for b in listening_flat_dock
+                    if _listening_ielts_part_from_global_num(b['num']) == pnum
+                ),
+                key=lambda b: int(b['num']) if b.get('num') is not None else 0,
+            )
+        else:
+            # Reading: dock kartalar bo'yicha; Listening yuqoridagi ro'yxat bilan (global raqam → part)
+            use_question_buttons_only = (test.test_type in ('reading', 'listening'))
+            for card in pg['cards']:
+                q = card['question']
+                if not use_question_buttons_only and pg['part_number'] == 1 and (card.get('inline_fill_parts') or (card.get('answer_fields') and len(card['answer_fields']) > 1)):
+                    if card.get('inline_fill_parts'):
+                        for p in card['inline_fill_parts']:
+                            if p.get('type') == 'input':
+                                blank_buttons.append({
+                                    'num': p['num'],
+                                    'blank_id': f"blank-{q.pk}-{p['num']}",
+                                    'card_anchor': str(p['num']),
+                                    'is_blank': True,
+                                })
+                    else:
+                        for f in card['answer_fields']:
                             blank_buttons.append({
-                                'num': p['num'],
-                                'blank_id': f"blank-{q.pk}-{p['num']}",
-                                'card_anchor': str(p['num']),
+                                'num': f['num'],
+                                'blank_id': f"blank-{q.pk}-{f['num']}",
+                                'card_anchor': str(f['num']),
                                 'is_blank': True,
                             })
                 else:
-                    for f in card['answer_fields']:
+                    do = card.get('display_order', q.order)
+                    if card.get('fill_multi_slots') and card.get('fill_global_nums'):
+                        first = card['fill_global_nums'][0]
+                        for gn in card['fill_global_nums']:
+                            blank_buttons.append({
+                                'num': gn,
+                                'question_id': f'question-{first}',
+                                'card_anchor': str(first),
+                                'is_blank': False,
+                            })
+                    elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
+                        first = card['matching_global_nums'][0]
+                        for gn in card['matching_global_nums']:
+                            blank_buttons.append({
+                                'num': gn,
+                                'question_id': f'question-{first}',
+                                'card_anchor': str(first),
+                                'is_blank': False,
+                            })
+                    elif card.get('mcq_dual_slots'):
+                        do2 = card.get('display_order_2') or (do + 1)
                         blank_buttons.append({
-                            'num': f['num'],
-                            'blank_id': f"blank-{q.pk}-{f['num']}",
-                            'card_anchor': str(f['num']),
-                            'is_blank': True,
-                        })
-            else:
-                do = card.get('display_order', q.order)
-                if card.get('fill_multi_slots') and card.get('fill_global_nums'):
-                    first = card['fill_global_nums'][0]
-                    for gn in card['fill_global_nums']:
-                        blank_buttons.append({
-                            'num': gn,
-                            'question_id': f'question-{first}',
-                            'card_anchor': str(first),
+                            'num': do,
+                            'question_id': f'question-{do}',
+                            'card_anchor': str(do),
                             'is_blank': False,
                         })
-                elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
-                    first = card['matching_global_nums'][0]
-                    for gn in card['matching_global_nums']:
                         blank_buttons.append({
-                            'num': gn,
-                            'question_id': f'question-{first}',
-                            'card_anchor': str(first),
+                            'num': do2,
+                            'question_id': f'question-{do}',
+                            'card_anchor': str(do),
                             'is_blank': False,
                         })
-                elif card.get('mcq_dual_slots'):
-                    do2 = card.get('display_order_2') or (do + 1)
-                    blank_buttons.append({
-                        'num': do,
-                        'question_id': f'question-{do}',
-                        'card_anchor': str(do),
-                        'is_blank': False,
-                    })
-                    blank_buttons.append({
-                        'num': do2,
-                        'question_id': f'question-{do}',
-                        'card_anchor': str(do),
-                        'is_blank': False,
-                    })
-                else:
-                    blank_buttons.append({
-                        'num': do,
-                        'question_id': f'question-{do}',
-                        'card_anchor': str(do),
-                        'is_blank': False,
-                    })
+                    else:
+                        blank_buttons.append({
+                            'num': do,
+                            'question_id': f'question-{do}',
+                            'card_anchor': str(do),
+                            'is_blank': False,
+                        })
         # Reading: partda savollar bor lekin tugmalar bo'sh qolsa (eski ma'lumot), har savol uchun tugma yaratamiz
         if test.test_type == 'reading' and not blank_buttons and pg['cards']:
             for card in pg['cards']:
@@ -2050,7 +2125,7 @@ def test_result(request, pk):
                                 defaults={'user_answer': user_answer, 'is_correct': False},
                             )
                         continue
-                    if question.mcq_dual_question_slots_enabled():
+                    if question.uses_choose_two_letter_scoring():
                         pts, _ = question.score_mcq_choose_two_dual(user_answer)
                         correct += pts
                         UserTestAnswer.objects.update_or_create(
@@ -2175,15 +2250,19 @@ def test_result(request, pk):
                 'label': question_type_labels.get(q_type, q_type.replace('_', ' ').title()),
                 'total': 0,
                 'answered': 0,
-                'correct': 0,
+                'correct': 0.0,
                 'accuracy': 0.0,
             }
         type_stats_map[q_type]['total'] += 1
         ans = user_answers.get(q.id)
         if ans:
             type_stats_map[q_type]['answered'] += 1
-            if ans.is_correct:
-                type_stats_map[q_type]['correct'] += 1
+            if q.uses_choose_two_letter_scoring():
+                pts, tot = q.score_mcq_choose_two_dual((ans.user_answer or '').strip())
+                if tot:
+                    type_stats_map[q_type]['correct'] += float(pts) / float(tot)
+            elif ans.is_correct:
+                type_stats_map[q_type]['correct'] += 1.0
 
     type_stats = []
     for item in type_stats_map.values():
