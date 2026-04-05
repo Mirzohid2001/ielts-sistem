@@ -472,7 +472,13 @@ class Question(models.Model):
         if cl:
             return len(cl)
         import re
-        nums = re.findall(r'\[(\d+)\]', self.question_text or '')
+        text = self.question_text or ''
+        # IELTS map/notes: [15], [16] kabi savol raqamlari — bo'sh joylar soni qavs juftlari soni bilan bir xil.
+        # max(15..20)=20 bo'lib ketardi va ortiqcha slotlar UI/POST ni buzardi.
+        bracket_placeholders = re.findall(r'\[[^\]]+\]', text)
+        if bracket_placeholders:
+            return len(bracket_placeholders)
+        nums = re.findall(r'\[(\d+)\]', text)
         if nums:
             return max(int(n) for n in nums)
         return 1
