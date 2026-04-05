@@ -28,6 +28,9 @@ FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_
               'table_completion', 'short_answer')
 MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info', 
                   'matching_sentences', 'classification')
+# Matching bilan bir xil JSON (slot → harf), lekin UI matn ichida inline select
+SUMMARY_BOX_TYPE = 'summary_box'
+MATCHING_SCORE_TYPES = MATCHING_TYPES + (SUMMARY_BOX_TYPE,)
 QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
 
 
@@ -428,6 +431,54 @@ def _build_inline_fill_parts(question, ans_fields):
     return parts if parts else None
 
 
+def _build_summary_box_inline_parts(question, cur_dict):
+    """summary_box: matn ichidagi [36], [1] qavslar uchun inline <select> (A–H ro'yxati)."""
+    text = question.question_text or ''
+    opts = question.options_json or {}
+    raw_options = opts.get('options') or opts.get('headings') or []
+    opts_list = []
+    for o in raw_options:
+        if isinstance(o, dict):
+            lt = str(o.get('letter', '')).strip().lower()
+            opts_list.append({'letter': lt, 'text': (o.get('text') or '').strip()})
+        elif o:
+            s = str(o).strip()
+            opts_list.append({'letter': s[:1].lower() if s else '', 'text': s})
+    opts_list = [x for x in opts_list if x.get('letter')]
+    if not opts_list:
+        return None
+    cur_dict = cur_dict if isinstance(cur_dict, dict) else {}
+    parts = []
+    last = 0
+    slot = 0
+    for m in re.finditer(r'\[([^\]]+)\]', text):
+        slot += 1
+        if m.start() > last:
+            parts.append({'type': 'text', 'content': text[last:m.start()]})
+        raw_val = cur_dict.get(str(slot), '')
+        parts.append({
+            'type': 'select',
+            'num': slot,
+            'label': m.group(1).strip(),
+            'value': str(raw_val).strip().lower() if raw_val is not None else '',
+            'options': opts_list,
+        })
+        last = m.end()
+    if last < len(text):
+        parts.append({'type': 'text', 'content': text[last:]})
+    if not parts or not any(p.get('type') == 'select' for p in parts):
+        return None
+    return parts
+
+
+def _summary_box_slot_count(question):
+    n = len(re.findall(r'\[[^\]]+\]', question.question_text or ''))
+    if n:
+        return n
+    c = question.correct_answer_json if isinstance(question.correct_answer_json, dict) else {}
+    return len(c) if c else 0
+
+
 FILL_MULTI_DISPLAY_TYPES = (
     'sentence_completion', 'table_completion', 'summary_completion',
     'notes_completion', 'fill_blank', 'short_answer',
@@ -443,8 +494,9 @@ def _card_fill_input_count(card):
 
 
 def _get_question_context_extra(question, current_answer):
-    """Savol turiga qarab answer_fields, matching_fields, list_options qaytarish"""
+    """Savol turiga qarab answer_fields, matching_fields, list_options, box_inline_parts qaytarish"""
     ans_fields, matching_fields, list_options = [], [], []
+    box_inline_parts = None
     opts = question.options_json or {}
     correct = question.correct_answer_json or {}
     
@@ -533,6 +585,16 @@ def _get_question_context_extra(question, current_answer):
                     'options': [{'letter': o.get('letter', o) if isinstance(o, dict) else o, 'text': o.get('text', o) if isinstance(o, dict) else str(o)} for o in opts_list]
                 })
     
+    elif question.question_type == SUMMARY_BOX_TYPE:
+        cur_dict = {}
+        if current_answer:
+            try:
+                if isinstance(current_answer, str) and current_answer.strip().startswith('{'):
+                    cur_dict = json.loads(current_answer)
+            except json.JSONDecodeError:
+                cur_dict = {}
+        box_inline_parts = _build_summary_box_inline_parts(question, cur_dict)
+    
     elif question.question_type == 'list_selection':
         options = opts.get('options', [])
         if not options:
@@ -549,7 +611,7 @@ def _get_question_context_extra(question, current_answer):
             text = o.get('text', o) if isinstance(o, dict) else str(o)
             list_options.append({'letter': letter, 'text': text, 'checked': str(letter).lower() in cur_set})
     
-    return ans_fields, matching_fields, list_options
+    return ans_fields, matching_fields, list_options, box_inline_parts
 
 
 @login_required
@@ -1178,6 +1240,15 @@ def test_take(request, pk):
                     vals = [v.strip() for v in vals[0].split(',')]
                 if any(v for v in vals):
                     val = json.dumps(vals)
+            elif q.question_type == SUMMARY_BOX_TYPE:
+                match_dict = {}
+                n_slots = _summary_box_slot_count(q)
+                for i in range(1, n_slots + 1):
+                    mval = (request.POST.get(f'match_{q.pk}_{i}') or '').strip()
+                    if mval:
+                        match_dict[str(i)] = mval
+                if match_dict:
+                    val = json.dumps(match_dict)
             elif q.question_type in MATCHING_TYPES:
                 match_dict = {}
                 opts = q.options_json or {}
@@ -1240,11 +1311,7 @@ def test_take(request, pk):
                         )
                         continue
                     if user_answer:
-                        matching_types = (
-                            'matching_headings', 'matching_features', 'matching_info',
-                            'matching_sentences', 'classification',
-                        )
-                        if q.question_type in matching_types:
+                        if q.question_type in MATCHING_SCORE_TYPES:
                             slots_ok, slots_tot = q.score_matching_answer(user_answer)
                             correct_count += slots_ok
                             is_correct = bool(slots_tot and slots_ok >= slots_tot)
@@ -1322,7 +1389,7 @@ def test_take(request, pk):
                     answered_answer_slots += 1
             except (json.JSONDecodeError, TypeError):
                 answered_answer_slots += 1
-        elif q.question_type in MATCHING_TYPES:
+        elif q.question_type in MATCHING_TYPES or q.question_type == SUMMARY_BOX_TYPE:
             try:
                 d = json.loads(raw) if str(raw).strip().startswith('{') else {}
                 if isinstance(d, dict):
@@ -1375,7 +1442,7 @@ def test_take(request, pk):
     single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
     for q in questions:
         current_answer_val = answers.get(str(q.pk), '')
-        ans_fields, match_flds, list_opts = _get_question_context_extra(q, current_answer_val)
+        ans_fields, match_flds, list_opts, box_inline_parts = _get_question_context_extra(q, current_answer_val)
         mcq_opts = []
         mcq_single_banner = ''
         mcq_choose_two_banner = ''
@@ -1527,6 +1594,11 @@ def test_take(request, pk):
             'fill_banner_text': fill_banner_text,
             'short_answer_banner_text': fill_banner_text,
             'mcq_choose_two_banner': mcq_choose_two_banner,
+            'box_inline_parts': box_inline_parts,
+            'box_ref_options': next(
+                (p.get('options') for p in (box_inline_parts or []) if p.get('type') == 'select' and p.get('options')),
+                None,
+            ),
         })
 
     # Savol raqamlari: MCQ 2 tanlov → 21,22; bir nechta bo'sh joy → 23–26; boshqa → bittadan
@@ -1558,6 +1630,32 @@ def test_take(request, pk):
                         gi += 1
             for i, f in enumerate(card.get('answer_fields') or []):
                 f['global_num'] = nums[i] if i < len(nums) else nums[-1]
+        elif q.question_type == SUMMARY_BOX_TYPE and card.get('box_inline_parts'):
+            selects = [p for p in card['box_inline_parts'] if p.get('type') == 'select']
+            k = len(selects)
+            if k > 1:
+                nums = list(range(running_display, running_display + k))
+                running_display += k
+                card['display_order'] = nums[0]
+                card['display_order_2'] = None
+                card['display_order_end'] = nums[-1]
+                card['mcq_dual_slots'] = False
+                card['summary_box_multi_slots'] = True
+                card['summary_box_global_nums'] = nums
+                si = 0
+                for p in card['box_inline_parts']:
+                    if p.get('type') == 'select':
+                        p['global_num'] = nums[si] if si < len(nums) else nums[-1]
+                        si += 1
+            elif k == 1:
+                d = running_display
+                running_display += 1
+                card['display_order'] = d
+                card['display_order_2'] = None
+                card['mcq_dual_slots'] = False
+                for p in card['box_inline_parts']:
+                    if p.get('type') == 'select':
+                        p['global_num'] = d
         elif q.question_type in MATCHING_TYPES and len(card.get('matching_fields') or []) > 1:
             mfs = card['matching_fields']
             k = len(mfs)
@@ -1836,6 +1934,10 @@ def test_take(request, pk):
                 elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
                     first = card['matching_global_nums'][0]
                     for gn in card['matching_global_nums']:
+                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
+                elif card.get('summary_box_multi_slots') and card.get('summary_box_global_nums'):
+                    first = card['summary_box_global_nums'][0]
+                    for gn in card['summary_box_global_nums']:
                         blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
                 elif card.get('mcq_dual_slots'):
                     do2 = card.get('display_order_2') or (do + 1)
@@ -2138,11 +2240,7 @@ def test_result(request, pk):
                         )
                         continue
                     if user_answer:
-                        matching_types = (
-                            'matching_headings', 'matching_features', 'matching_info',
-                            'matching_sentences', 'classification',
-                        )
-                        if question.question_type in matching_types:
+                        if question.question_type in MATCHING_SCORE_TYPES:
                             slots_ok, slots_tot = question.score_matching_answer(user_answer)
                             correct += slots_ok
                             is_correct = bool(slots_tot and slots_ok >= slots_tot)
@@ -2292,6 +2390,7 @@ def test_result(request, pk):
         'fill_blank': "Word limitga qat'iy rioya qilib, imlo ustida ishlang.",
         'notes_completion': "Audio'da raqamlar, ism-sharif va joy nomlarini tez yozishga odatlaning.",
         'summary_completion': "Matnning mantiqiy oqimini (before/after) ushlashga e'tibor bering.",
+        'summary_box': "Har bir qavs uchun ro'yxatdan bitta harf tanlang; kalit so'zlarni variant matnida qidiring.",
         'sentence_completion': "Grammar mosligini (singular/plural, tense) tekshirib yozing.",
         'table_completion': "Jadval kategoriyalarini oldindan skanerlab oling.",
         'short_answer': "Qisqa va aniq javob yozing; keraksiz so'z qo'shmang.",

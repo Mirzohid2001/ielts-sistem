@@ -15,6 +15,7 @@
     function showMcq(qType) { return qType && MCQ_TYPES.indexOf(qType) >= 0; }
     function showJson(qType) {
         if (!qType) return false;
+        if (qType === 'summary_box') return true;
         return FILL_TYPES.indexOf(qType) >= 0 || MATCHING_TYPES.indexOf(qType) >= 0 || OTHER_FILL_BLOCK_TYPES.indexOf(qType) >= 0 || !showMcq(qType);
     }
     function showOptionC(qType) { return qType === 'mcq' || ONLY_ABC.indexOf(qType) >= 0; }  // True/False da C ham yashirin
@@ -275,10 +276,11 @@
         var isEssay = qType === 'essay';
         var isFill = ['fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion'].indexOf(qType) >= 0;
         var isMatching = ['matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'].indexOf(qType) >= 0;
+        var isSummaryBox = qType === 'summary_box';
         var isListSel = qType === 'list_selection';
 
         // Part raqami: Listening/Reading da MCQ ham Part 2–4 ga ajratish uchun kerak
-        var showPart = (isFill || isShort || isMatching || isListSel || isEssay || showMcqFields);
+        var showPart = (isFill || isShort || isMatching || isSummaryBox || isListSel || isEssay || showMcqFields);
         toggleByField('part_number', showPart);
 
         // Fill-in turlari: instruction + fill_answers
@@ -287,9 +289,9 @@
         toggleByField('writing_task_images', isEssay);
 
         // Matching turlari
-        toggleByField('matching_items', isMatching);
-        toggleByField('matching_options', isMatching);
-        toggleByField('matching_correct', isMatching);
+        toggleByField('matching_items', isMatching && !isSummaryBox);
+        toggleByField('matching_options', isMatching || isSummaryBox);
+        toggleByField('matching_correct', isMatching || isSummaryBox);
 
         // List selection
         toggleByField('list_options_simple', isListSel);

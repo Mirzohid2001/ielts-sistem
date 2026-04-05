@@ -1825,7 +1825,7 @@
                                                 {{ q.question_text|format_instruction }}
                                             </div>
                                             {% endif %}
-                                            {% else %}
+                                            {% elif q.question_type != 'summary_box' %}
                                             <div class="mb-3 admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">
                                                 {{ q.question_text|format_instruction }}
                                             </div>
@@ -1995,6 +1995,39 @@
                                                     {% endif %}
                                                 </div>
                                                 {% endfor %}
+
+                                            {% elif q.question_type == 'summary_box' %}
+                                                {% if q.options_json.instruction %}
+                                                <p class="small text-muted mb-2">{{ q.options_json.instruction }}</p>
+                                                {% endif %}
+                                                {% if item.box_inline_parts and item.box_ref_options %}
+                                                <div class="matching-reference-box mb-3" aria-label="Variantlar ro'yxati">
+                                                    <div class="matching-ref-title">{% if q.options_json.box_title %}{{ q.options_json.box_title }}{% else %}Variants{% endif %}</div>
+                                                    {% for op in item.box_ref_options %}
+                                                    <div class="matching-ref-row"><strong>{{ op.letter|upper }}.</strong> {% if op.text %}{{ op.text }}{% endif %}</div>
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="engnovate-notes-format summary-box-inline">
+                                                    {% for p in item.box_inline_parts %}
+                                                    {% if p.type == 'text' %}
+                                                        <span class="admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">{{ p.content|linebreaksbr }}</span>
+                                                    {% endif %}
+                                                    {% if p.type == 'select' %}
+                                                    <span class="inline-blank-wrap d-inline-flex align-items-center flex-wrap gap-1 mx-1">
+                                                        <span class="inline-blank-num">{{ p.global_num|default:p.num }}</span>
+                                                        <select class="form-select form-select-sm summary-box-select d-inline-block" style="min-width: 4.5rem; max-width: 8rem;" name="match_{{ q.pk }}_{{ p.num }}" aria-label="Javob {{ p.global_num|default:p.num }}" data-matching-select>
+                                                            <option value="">—</option>
+                                                            {% for op in p.options %}
+                                                            <option value="{{ op.letter|lower }}" {% if p.value|lower == op.letter|lower %}selected{% endif %}>{{ op.letter|upper }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </span>
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                {% else %}
+                                                <div class="alert alert-warning mb-0 small">Admin: savol matnida [36] kabi qavslar, «Matching variantlar» (a|matn) va «Matching to'g'ri javob» (1:f, 2:e) kiriting.</div>
+                                                {% endif %}
 
                                             {% elif q.question_type == 'list_selection' %}
                                                 <div class="d-flex flex-wrap gap-2">

@@ -508,6 +508,54 @@ class QuestionAdminForm(forms.ModelForm):
         elif q_type == 'short_answer' and not sa_prompt_lines:
             options_json.pop('short_answer_items', None)
 
+        if q_type == 'summary_box' and (matching_options or matching_correct):
+            import re
+            bracket_count = len(re.findall(r'\[[^\]]+\]', question_text or ''))
+            headings = []
+            for line in [ln.strip() for ln in matching_options.splitlines() if ln.strip()]:
+                if '|' in line:
+                    letter, text = line.split('|', 1)
+                    headings.append({'letter': letter.strip().lower(), 'text': text.strip()})
+                else:
+                    parts = line.split(None, 1)
+                    tok = parts[0] if parts else ''
+                    if len(tok) == 1 and tok.isalpha():
+                        headings.append({'letter': tok.lower(), 'text': (parts[1] if len(parts) > 1 else '').strip()})
+
+            corr_map = {}
+            for line in [ln.strip() for ln in matching_correct.splitlines() if ln.strip()]:
+                if ':' in line:
+                    k, v = line.split(':', 1)
+                    corr_map[k.strip()] = v.strip().lower()
+                else:
+                    m = re.match(r'^(\d+)\s+(.+)$', line)
+                    if m:
+                        corr_map[m.group(1).strip()] = m.group(2).strip().lower()
+
+            if headings:
+                options_json['options'] = headings
+            if corr_map:
+                cleaned['correct_answer_json'] = corr_map
+                correct_json = corr_map
+
+            if has_content:
+                if bracket_count == 0:
+                    raise forms.ValidationError(
+                        "Summary + box: savol matnida kamida bitta qavs yozing (masalan [36], [37])."
+                    )
+                if not headings:
+                    raise forms.ValidationError(
+                        "Summary + box: «Matching variantlar» maydoniga har satrda a|Matn kiriting."
+                    )
+                if not corr_map:
+                    raise forms.ValidationError(
+                        "Summary + box: «Matching to'g'ri javob» — har satr 1:f, 2:g (slot : harf)."
+                    )
+                if len(corr_map) != bracket_count:
+                    raise forms.ValidationError(
+                        f"Summary + box: qavslar ({bracket_count} ta) va to'g'ri javob qatorlari ({len(corr_map)} ta) mos emas."
+                    )
+
         if q_type in matching_types and (matching_items or matching_options or matching_correct):
             import re
             items = []
@@ -636,6 +684,14 @@ class QuestionAdminForm(forms.ModelForm):
             if q_type == 'list_selection':
                 if not isinstance(correct_json, list) or not correct_json:
                     raise forms.ValidationError("List selection da «List to'g'ri javob» maydonini to'ldiring. Masalan: A,C")
+
+            if q_type == 'summary_box':
+                if not isinstance(correct_json, dict) or not correct_json:
+                    raise forms.ValidationError(
+                        "Summary + box: «Matching variantlar» va «Matching to'g'ri javob» (1:a, 2:b …) to'ldiring."
+                    )
+                if not (options_json.get('options') or []):
+                    raise forms.ValidationError("Summary + box: variantlar ro'yxati (a|matn) kerak.")
 
         return cleaned
 

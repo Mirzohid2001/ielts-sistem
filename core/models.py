@@ -354,6 +354,8 @@ class Question(models.Model):
         # Boshqa
         ('classification', 'Classification (A/B/C ga tasniflash)'),
         ('list_selection', 'List Selection (ro\'yxatdan tanlash)'),
+        # Matn ichida [36] kabi qavslar + pastda A–H ro‘yxatidan har bir qavs uchun bitta harf (yangi tur)
+        ('summary_box', 'Summary + box (inline qavslar, A–H tanlash)'),
     ]
     
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='questions', verbose_name="Test")
@@ -567,7 +569,7 @@ class Question(models.Model):
             return '—'
         matching_types = (
             'matching_headings', 'matching_features', 'matching_info',
-            'matching_sentences', 'classification',
+            'matching_sentences', 'classification', 'summary_box',
         )
         if self.question_type in matching_types:
             c = self.correct_answer_json
@@ -625,7 +627,10 @@ class Question(models.Model):
         
         fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
                       'table_completion', 'short_answer')
-        matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+        matching_types = (
+            'matching_headings', 'matching_features', 'matching_info',
+            'matching_sentences', 'classification', 'summary_box',
+        )
         
         import json
         norm = lambda x: (str(x).strip().lower() if x else '')
@@ -767,7 +772,10 @@ class Question(models.Model):
         Matching turlari uchun qisman ball:
         qaytaradi (to'g'ri_slotlar_soni, jami_slotlar_soni).
         """
-        matching_types = ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification')
+        matching_types = (
+            'matching_headings', 'matching_features', 'matching_info',
+            'matching_sentences', 'classification', 'summary_box',
+        )
         correct = self.correct_answer_json if isinstance(self.correct_answer_json, dict) else {}
         total_slots = len(correct) or self.gradable_answer_slots()
         if self.question_type not in matching_types or not total_slots:
@@ -866,6 +874,13 @@ class Question(models.Model):
             n = self.fill_blanks_count()
             if n > 1:
                 return n
+        if self.question_type == 'summary_box':
+            c = self.correct_answer_json if isinstance(self.correct_answer_json, dict) else {}
+            if c:
+                return len(c)
+            import re
+            n = len(re.findall(r'\[[^\]]+\]', self.question_text or ''))
+            return n if n else 1
         matching_types = (
             'matching_headings', 'matching_features', 'matching_info',
             'matching_sentences', 'classification',
@@ -975,7 +990,7 @@ class UserTestResult(models.Model):
         answers_by_q = {a.question_id: a for a in self.answers.select_related('question')}
         matching_types = (
             'matching_headings', 'matching_features', 'matching_info',
-            'matching_sentences', 'classification',
+            'matching_sentences', 'classification', 'summary_box',
         )
         fill_types = (
             'fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',

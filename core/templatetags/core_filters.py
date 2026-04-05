@@ -105,6 +105,7 @@ def matching_slots_score(question, user_answer):
             'matching_info',
             'matching_sentences',
             'classification',
+            'summary_box',
         ):
             return (0, 0)
         got, total = question.score_matching_answer(user_answer)
@@ -143,6 +144,7 @@ def matching_review_state(question, user_answer):
         'matching_info',
         'matching_sentences',
         'classification',
+        'summary_box',
     )
     if getattr(question, 'question_type', None) not in matching_types:
         return ''
@@ -189,6 +191,7 @@ def answer_slot_review_state(question, user_answer):
         'matching_info',
         'matching_sentences',
         'classification',
+        'summary_box',
     )
     fill_types = (
         'fill_blank',
