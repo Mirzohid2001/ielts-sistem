@@ -522,15 +522,16 @@ class QuestionAdminForm(forms.ModelForm):
                     if len(tok) == 1 and tok.isalpha():
                         headings.append({'letter': tok.lower(), 'text': (parts[1] if len(parts) > 1 else '').strip()})
 
+            # Kalitlar har doim "1","2",... — testda match_<pk>_<i> bilan bir xil (36:f yozilsa ham).
             corr_map = {}
-            for line in [ln.strip() for ln in matching_correct.splitlines() if ln.strip()]:
+            for slot_idx, line in enumerate([ln.strip() for ln in matching_correct.splitlines() if ln.strip()], start=1):
                 if ':' in line:
-                    k, v = line.split(':', 1)
-                    corr_map[k.strip()] = v.strip().lower()
+                    _ignored_key, v = line.split(':', 1)
+                    corr_map[str(slot_idx)] = v.strip().lower()
                 else:
                     m = re.match(r'^(\d+)\s+(.+)$', line)
                     if m:
-                        corr_map[m.group(1).strip()] = m.group(2).strip().lower()
+                        corr_map[str(slot_idx)] = m.group(2).strip().lower()
 
             if headings:
                 options_json['options'] = headings
@@ -549,7 +550,7 @@ class QuestionAdminForm(forms.ModelForm):
                     )
                 if not corr_map:
                     raise forms.ValidationError(
-                        "Summary + box: «Matching to'g'ri javob» — har satr 1:f, 2:g (slot : harf)."
+                        "Summary + box: «Matching to'g'ri javob» — har satr tartib bo'yicha, masalan: 36:f yoki 1:f (birinchi qavs, ikkinchi qavs...); kalitlar avtomatik 1,2,3... bo'ladi."
                     )
                 if len(corr_map) != bracket_count:
                     raise forms.ValidationError(

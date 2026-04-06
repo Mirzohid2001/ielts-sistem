@@ -635,6 +635,42 @@
         box-shadow: 0 0 0 1px rgba(37, 99, 235, .35);
     }
     .engnovate-notes-format { line-height: 2; font-size: .95rem; }
+    /* summary_box: raqam + select bitta matn qatorida (Bootstrap form-select width:100% buzmasin) */
+    .engnovate-notes-format.summary-box-inline {
+        line-height: 1.72;
+    }
+    .engnovate-notes-format.summary-box-inline .admin-prompt-text {
+        display: inline;
+    }
+    .summary-box-inline .summary-box-blank-wrap {
+        display: inline-flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 4px;
+        margin: 0 3px;
+        vertical-align: text-bottom;
+    }
+    .summary-box-inline .summary-box-blank-wrap .inline-blank-num {
+        margin-right: 0;
+        flex-shrink: 0;
+        vertical-align: middle;
+    }
+    #exam-take-form .summary-box-inline .summary-box-select.form-select {
+        width: auto !important;
+        min-width: 2.75rem;
+        max-width: 4.25rem;
+        flex: 0 0 auto;
+        display: inline-block !important;
+        padding: 0.12rem 1.65rem 0.12rem 0.3rem;
+        font-size: 0.82rem;
+        line-height: 1.35;
+        vertical-align: middle;
+    }
+    .reading-style .engnovate-notes-format.summary-box-inline,
+    .listening-style .engnovate-notes-format.summary-box-inline {
+        line-height: 1.72;
+    }
     .engnovate-notes-format strong,
     .engnovate-notes-format b {
         font-weight: 800;
@@ -1439,6 +1475,7 @@
         .inline-blank-input { width: 70px; min-width: 50px; max-width: 100px; font-size: 0.9rem; }
         .inline-blank-num { min-width: 20px; padding: 2px 4px; font-size: 0.8rem; }
         .engnovate-notes-format { line-height: 1.8; font-size: 0.9rem; word-wrap: break-word; overflow-wrap: break-word; }
+        .engnovate-notes-format.summary-box-inline { line-height: 1.65; }
         .listening-audio-card .card-body:not(.p-0) { padding: 0.5rem !important; }
         .writing-answer-ta { min-height: 120px !important; font-size: 0.95rem; }
         .tip-bar { font-size: 0.7rem; padding: 0.3rem 0.5rem; }
@@ -2013,9 +2050,9 @@
                                                         <span class="admin-prompt-text admin-prompt-text--{{ q.options_json.ui_prompt_text_style|default:'default' }}">{{ p.content|linebreaksbr }}</span>
                                                     {% endif %}
                                                     {% if p.type == 'select' %}
-                                                    <span class="inline-blank-wrap d-inline-flex align-items-center flex-wrap gap-1 mx-1">
+                                                    <span class="inline-blank-wrap summary-box-blank-wrap">
                                                         <span class="inline-blank-num">{{ p.global_num|default:p.num }}</span>
-                                                        <select class="form-select form-select-sm summary-box-select d-inline-block" style="min-width: 4.5rem; max-width: 8rem;" name="match_{{ q.pk }}_{{ p.num }}" aria-label="Javob {{ p.global_num|default:p.num }}" data-matching-select>
+                                                        <select class="form-select form-select-sm summary-box-select" name="match_{{ q.pk }}_{{ p.num }}" aria-label="Javob {{ p.global_num|default:p.num }}" data-matching-select>
                                                             <option value="">—</option>
                                                             {% for op in p.options %}
                                                             <option value="{{ op.letter|lower }}" {% if p.value|lower == op.letter|lower %}selected{% endif %}>{{ op.letter|upper }}</option>
