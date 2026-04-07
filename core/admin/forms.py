@@ -417,27 +417,37 @@ class QuestionAdminForm(forms.ModelForm):
                 else:
                     options_json.pop('options', None)
 
-        # MCQ/True-False da 2 ta javob: correct_answer "a,c" -> correct_answer_json ["a","c"]
-        max_choices = cleaned.get('max_choices') or 1
-        if q_type in single_choice and max_choices == 2 and correct_answer:
+        # MCQ/T-F: 2 yoki 3 ta javob — correct_answer "a,c,f" -> correct_answer_json
+        max_choices = int(cleaned.get('max_choices') or 1)
+        if max_choices == 3 and q_type != 'mcq':
+            raise forms.ValidationError(
+                "«3 ta javob» tanlash faqat Multiple Choice (MCQ) uchun. Boshqa turlarda 1 yoki 2 tanlang."
+            )
+        if q_type in single_choice and max_choices >= 2 and correct_answer:
             if q_type == 'mcq':
-                allowed_for_dual = set(mcq_allowed_letters) if mcq_allowed_letters else {'a', 'b', 'c', 'd'}
+                allowed_for_multi = set(mcq_allowed_letters) if mcq_allowed_letters else {'a', 'b', 'c', 'd'}
             elif q_type == 'true_false':
-                allowed_for_dual = {'a', 'b'}
+                allowed_for_multi = {'a', 'b'}
             else:
-                allowed_for_dual = {'a', 'b', 'c'}
+                allowed_for_multi = {'a', 'b', 'c'}
             parts = [
                 x.strip().lower()
                 for x in correct_answer.replace(',', ' ').split()
-                if x.strip() and x.strip().lower() in allowed_for_dual
+                if x.strip() and x.strip().lower() in allowed_for_multi
             ]
-            if len(parts) >= 2:
-                cleaned['correct_answer_json'] = sorted(set(parts))[:2]
+            uniq = sorted(set(parts))
+            if len(uniq) == max_choices:
+                cleaned['correct_answer_json'] = uniq
                 cleaned['correct_answer'] = cleaned['correct_answer_json'][0]
                 correct_answer = cleaned['correct_answer']
-            elif len(parts) == 1:
+            elif len(uniq) > max_choices:
                 raise forms.ValidationError(
-                    "«Tanlash soni» 2 ta javob qilib tanlangan. «To'g'ri javob» da ikkita harf kiriting (masalan: a,c)."
+                    f"«To'g'ri javob» da aynan {max_choices} ta turli harf bo'lsin (hozir {len(uniq)} ta)."
+                )
+            else:
+                raise forms.ValidationError(
+                    f"«Tanlash soni» {max_choices} ta javob. «To'g'ri javob» da {max_choices} ta harf kiriting "
+                    f"(masalan: a,c" + (",f" if max_choices == 3 else "") + ")."
                 )
 
         if instruction_text:
@@ -644,11 +654,11 @@ class QuestionAdminForm(forms.ModelForm):
         # Savol matni bo'sh bo'lsa (draft) — to'g'ri javob / fill / matching majburiy emas; klient keyinroq to'ldiradi
         if has_content:
             if q_type in single_choice:
-                if q_type == 'mcq' and max_choices == 2:
+                if q_type == 'mcq' and max_choices >= 2:
                     pass
                 elif not correct_answer:
                     raise forms.ValidationError(
-                        "«To'g'ri javob» majburiy (bitta harf yoki 2 ta tanlovda vergul bilan ikkita harf)."
+                        "«To'g'ri javob» majburiy (1 ta harf yoki 2/3 ta tanlovda vergul bilan harflar)."
                     )
                 elif q_type == 'mcq':
                     allowed_mcq = set(mcq_allowed_letters or ('a', 'b', 'c', 'd'))

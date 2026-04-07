@@ -445,12 +445,12 @@ class Question(models.Model):
     option_c = models.CharField(max_length=500, blank=True, verbose_name="Variant C")
     option_d = models.CharField(max_length=500, blank=True, verbose_name="Variant D")
     correct_answer = models.CharField(max_length=10, blank=True, verbose_name="To'g'ri javob (MCQ: a/b/c/d)")
-    # MCQ/True-False da: 1 = bitta variant tanlash (radio), 2 = ikkita variant tanlash (checkbox)
+    # MCQ / T-F: 1 = bitta tanlov (radio), 2 yoki 3 = bir nechta harf (checkbox; asosan MCQ A–H)
     max_choices = models.PositiveSmallIntegerField(
         default=1,
-        choices=[(1, "1 ta javob"), (2, "2 ta javob")],
+        choices=[(1, "1 ta javob"), (2, "2 ta javob"), (3, "3 ta javob")],
         verbose_name="Tanlash soni (MCQ/T-F)",
-        help_text="«2 ta javob» qilsangiz — foydalanuvchi ikkita variantni belgilaydi; to'g'ri javobda ikkalasini kiriting (masalan a,c).",
+        help_text="2 yoki 3 — foydalanuvchi shuncha variantni belgilaydi; «To'g'ri javob» da vergul bilan shuncha harf (masalan a,c,f). 3 ta faqat MCQ uchun.",
     )
     # G'arbiy savol turlari uchun - JSON formatda
     # options_json: {"instruction": "ONE WORD ONLY", "blanks_count": 4}
@@ -592,7 +592,7 @@ class Question(models.Model):
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
         if self.question_type in single_choice:
             opts = {'a': self.option_a, 'b': self.option_b, 'c': self.option_c, 'd': self.option_d}
-            if getattr(self, 'max_choices', 1) == 2 and user_answer:
+            if getattr(self, 'max_choices', 1) >= 2 and user_answer:
                 try:
                     import json
                     raw = user_answer if isinstance(user_answer, str) else str(user_answer)
@@ -612,8 +612,9 @@ class Question(models.Model):
         if self.question_type not in single_choice:
             return ''
         opts = {'a': self.option_a, 'b': self.option_b, 'c': self.option_c, 'd': self.option_d}
-        if getattr(self, 'max_choices', 1) == 2 and self.correct_answer_json and isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= 2:
-            parts = [f"{str(l).upper()}) {opts.get(str(l).lower(), '')}" for l in self.correct_answer_json[:2]]
+        mc = int(getattr(self, 'max_choices', 1) or 1)
+        if mc >= 2 and self.correct_answer_json and isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= mc:
+            parts = [f"{str(l).upper()}) {opts.get(str(l).lower(), '')}" for l in self.correct_answer_json[:mc]]
             return '; '.join(parts)
         letter = str(self.correct_answer).strip().lower() if self.correct_answer else ''
         text = opts.get(letter, '')
@@ -682,13 +683,20 @@ class Question(models.Model):
         if self.question_type in single_choice:
             norm = lambda x: str(x).strip().lower() if x else ''
             # 2 ta javob tanlash: user_answer JSON ro'yxat ["a","c"], to'g'ri javob correct_answer_json yoki correct_answer
-            if getattr(self, 'max_choices', 1) == 2:
+            mc = int(getattr(self, 'max_choices', 1) or 1)
+            if mc >= 2:
                 try:
                     ua = user_answer if isinstance(user_answer, list) else (json.loads(user_answer) if isinstance(user_answer, str) and user_answer.strip().startswith('[') else [user_answer])
-                    u_set = set(norm(x) for x in (ua if isinstance(ua, list) else [ua]))
-                    correct_list = self.correct_answer_json if isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= 2 else [self.correct_answer]
-                    c_set = set(norm(x) for x in correct_list)
-                    return u_set == c_set
+                    u_list = ua if isinstance(ua, list) else [ua]
+                    u_set = set(norm(x) for x in u_list if x)
+                    if len(u_set) != mc or len(u_list) != mc:
+                        return False
+                    if isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= mc:
+                        c_set = set(norm(x) for x in self.correct_answer_json[:mc])
+                    else:
+                        parts = [p.strip().lower() for p in (self.correct_answer or '').replace(',', ' ').split() if p.strip()]
+                        c_set = set(parts[:mc])
+                    return u_set == c_set and len(c_set) == mc
                 except (TypeError, json.JSONDecodeError):
                     return False
             return norm(user_answer) == norm(self.correct_answer)
@@ -872,29 +880,37 @@ class Question(models.Model):
         return (got, total_slots)
 
     def mcq_dual_question_slots_enabled(self):
-        """2 variant tanlash = ketma-ket 2 ta savol raqami (21, 22) — faqat MCQ."""
-        if self.question_type != 'mcq' or getattr(self, 'max_choices', 1) != 2:
+        """2 yoki 3 harf tanlash = ketma-ket savol raqamlari (21–22 yoki 21–23) — faqat MCQ."""
+        if self.question_type != 'mcq' or int(getattr(self, 'max_choices', 1) or 1) not in (2, 3):
             return False
         return not (self.options_json or {}).get('mcq_single_slot', False)
 
-    def mcq_choose_two_correct_letter_set(self):
-        """To'g'ri harflar to'plami (2 ta)."""
+    def multi_letter_correct_set(self):
+        """To'g'ri harflar to'plami (max_choices ta)."""
         norm = lambda x: str(x).strip().lower() if x else ''
-        if isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= 2:
-            return set(norm(x) for x in self.correct_answer_json)
+        need = int(getattr(self, 'max_choices', 2) or 2)
+        need = max(2, min(need, 8))
+        if isinstance(self.correct_answer_json, list) and len(self.correct_answer_json) >= need:
+            return set(norm(x) for x in self.correct_answer_json[:need])
         ca = (self.correct_answer or '').replace(' ', '')
-        parts = [p.strip().lower() for p in ca.split(',') if p.strip()]
-        return set(parts) if len(parts) >= 2 else set()
+        parts = [p.strip().lower() for p in ca.replace(',', ' ').split() if p.strip()]
+        return set(parts[:need]) if len(parts) >= need else set()
 
-    def score_mcq_choose_two_dual(self, user_answer):
+    def mcq_choose_two_correct_letter_set(self):
+        """Eski nom; multi_letter_correct_set ga yo‘naltiriladi."""
+        return self.multi_letter_correct_set()
+
+    def score_multi_letter_choice(self, user_answer):
         """
-        Ikki tanlovli MCQ: qisman ball. 2 ta tanlangan va to'g'ri javoblar bilan solishtirish.
-        Qaytadi: (to'g'ri_son, jami_2). To'liq emas (1 ta harf) = (0, 2).
+        Bir nechta harf tanlash (2 yoki 3): qisman ball.
+        Qaytadi: (togri_son, jami_n). Tanlov soni noto‘g‘ri bo‘lsa — (0, n).
         """
         import json
         norm = lambda x: str(x).strip().lower() if x else ''
-        c_set = self.mcq_choose_two_correct_letter_set()
-        if len(c_set) < 2:
+        n = int(getattr(self, 'max_choices', 2) or 2)
+        n = max(2, min(n, 8))
+        c_set = self.multi_letter_correct_set()
+        if len(c_set) < n:
             ok = self.check_user_answer(user_answer)
             return (1, 1) if ok else (0, 1)
         try:
@@ -906,20 +922,23 @@ class Question(models.Model):
                 ua = [user_answer] if user_answer else []
             u_set = set(norm(x) for x in (ua if isinstance(ua, list) else [ua]) if x)
         except (TypeError, json.JSONDecodeError):
-            return 0, 2
-        if len(u_set) != 2:
-            return 0, 2
-        return len(u_set & c_set), 2
+            return 0, n
+        if len(u_set) != n:
+            return 0, n
+        return len(u_set & c_set), n
+
+    def score_mcq_choose_two_dual(self, user_answer):
+        """Eski API: 2 yoki 3 harf uchun score_multi_letter_choice."""
+        return self.score_multi_letter_choice(user_answer)
 
     def uses_choose_two_letter_scoring(self):
         """
-        Ikki harf tanlash (Choose TWO) — bitta qator yoki juft slot; har doim
-        score_mcq_choose_two_dual orqali 0/1/2 ball (natija sahifasi bilan bir xil).
+        Ko'p harf tanlash (Choose TWO / THREE) — checkbox; qisman ball.
         """
         single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
         return (
             getattr(self, 'question_type', None) in single_choice
-            and getattr(self, 'max_choices', 1) == 2
+            and int(getattr(self, 'max_choices', 1) or 1) >= 2
         )
 
     def gradable_answer_slots(self):
@@ -933,7 +952,7 @@ class Question(models.Model):
                 return len(set(str(x).strip().lower() for x in self.correct_answer_json if str(x).strip()))
             return 1
         if self.uses_choose_two_letter_scoring():
-            return 2
+            return int(getattr(self, 'max_choices', 2) or 2)
         multi_fill = (
             'sentence_completion', 'table_completion', 'summary_completion',
             'notes_completion', 'fill_blank', 'short_answer',

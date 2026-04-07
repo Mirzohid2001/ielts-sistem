@@ -166,7 +166,7 @@ def mcq_choose_two_score_label(question, user_answer):
     single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
     if getattr(question, 'question_type', None) not in single_choice:
         return ''
-    if getattr(question, 'max_choices', 1) != 2:
+    if int(getattr(question, 'max_choices', 1) or 1) < 2:
         return ''
     try:
         pts, total = question.score_mcq_choose_two_dual(user_answer)
@@ -219,7 +219,7 @@ def answer_slot_review_state(question, user_answer):
 
     # MCQ / T-F / T-F-NG / Y-N-NG: 2 ta variant tanlash — qisman to'g'ri (masalan B+D kerak, B+C berilgan)
     single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
-    if qt in single_choice and getattr(question, 'max_choices', 1) == 2:
+    if qt in single_choice and int(getattr(question, 'max_choices', 1) or 1) >= 2:
         try:
             pts, total = question.score_mcq_choose_two_dual(user_answer)
         except Exception:

@@ -318,19 +318,14 @@ def _listening_flat_dock_buttons(question_cards):
                     'is_blank': False,
                 })
         elif card.get('mcq_dual_slots'):
-            do2 = card.get('display_order_2') or (do + 1)
-            out.append({
-                'num': do,
-                'question_id': f'question-{do}',
-                'card_anchor': str(do),
-                'is_blank': False,
-            })
-            out.append({
-                'num': do2,
-                'question_id': f'question-{do}',
-                'card_anchor': str(do),
-                'is_blank': False,
-            })
+            end = card.get('mcq_slot_end') or card.get('display_order_2') or (do + 1)
+            for num in range(do, int(end) + 1):
+                out.append({
+                    'num': num,
+                    'question_id': f'question-{do}',
+                    'card_anchor': str(do),
+                    'is_blank': False,
+                })
         else:
             out.append({
                 'num': do,
@@ -1211,7 +1206,7 @@ def test_take(request, pk):
         for q in questions:
             val = ''
             if q.question_type in single_choice:
-                if getattr(q, 'max_choices', 1) == 2:
+                if int(getattr(q, 'max_choices', 1) or 1) >= 2:
                     selected = []
                     opts_json = q.options_json or {}
                     mcq_opts = opts_json.get('options') or []
@@ -1299,14 +1294,14 @@ def test_take(request, pk):
                             )
                         continue
                     if q.uses_choose_two_letter_scoring():
-                        pts, _ = q.score_mcq_choose_two_dual(user_answer)
+                        pts, tot = q.score_mcq_choose_two_dual(user_answer)
                         correct_count += pts
                         UserTestAnswer.objects.update_or_create(
                             test_result=test_result,
                             question=q,
                             defaults={
                                 'user_answer': user_answer,
-                                'is_correct': pts >= 2,
+                                'is_correct': bool(tot) and pts >= tot,
                             },
                         )
                         continue
@@ -1372,7 +1367,8 @@ def test_take(request, pk):
             try:
                 arr = json.loads(raw) if str(raw).strip().startswith('[') else []
                 arr = arr if isinstance(arr, list) else []
-                answered_answer_slots += min(len([x for x in arr if str(x).strip()]), 2)
+                mc = int(getattr(q, 'max_choices', 2) or 2)
+                answered_answer_slots += min(len([x for x in arr if str(x).strip()]), mc)
             except (json.JSONDecodeError, TypeError):
                 pass
         elif q.question_type in FILL_TYPES:
@@ -1469,9 +1465,11 @@ def test_take(request, pk):
         task_images = []
         if test.test_type == 'writing' and hasattr(q, 'get_task_images'):
             task_images = q.get_task_images(request)
-        mcq_choose_two = (q.question_type in single_choice and getattr(q, 'max_choices', 1) == 2)
+        mcq_choose_two = (
+            q.question_type in single_choice and int(getattr(q, 'max_choices', 1) or 1) >= 2
+        )
         if mcq_choose_two and q.question_type == 'mcq':
-            # max_choices=2 bo'lsa (Choose TWO...) banner matnini chiqaramiz.
+            # max_choices 2 yoki 3 (Choose TWO / THREE...) banner
             letters = [
                 str(o.get('letter', '')).strip().upper()
                 for o in (mcq_opts or [])
@@ -1508,7 +1506,15 @@ def test_take(request, pk):
                 else:
                     letters_label = ', '.join(letters_sorted)
 
-                mcq_choose_two_banner = f"Choose TWO letters, {letters_label}. Write the correct letters in boxes on your answer sheet."
+                nch = int(getattr(q, 'max_choices', 2) or 2)
+                if nch >= 3:
+                    mcq_choose_two_banner = (
+                        f"Choose THREE letters, {letters_label}. Write the correct letters in boxes on your answer sheet."
+                    )
+                else:
+                    mcq_choose_two_banner = (
+                        f"Choose TWO letters, {letters_label}. Write the correct letters in boxes on your answer sheet."
+                    )
         if q.question_type == 'mcq' and not mcq_choose_two and mcq_opts:
             lets = [
                 str(o.get('letter', '')).strip().upper()
@@ -1608,10 +1614,15 @@ def test_take(request, pk):
         card['fill_multi_slots'] = False
         card['matching_multi_slots'] = False
         if q.mcq_dual_question_slots_enabled():
-            card['display_order'] = running_display
-            card['display_order_2'] = running_display + 1
+            n_mc = int(getattr(q, 'max_choices', 2) or 2)
+            nums = list(range(running_display, running_display + n_mc))
+            card['display_order'] = nums[0]
+            card['display_order_2'] = nums[1] if n_mc >= 2 else None
+            card['display_order_3'] = nums[2] if n_mc >= 3 else None
+            card['mcq_slot_end'] = nums[-1]
+            card['display_order_end'] = nums[-1]
             card['mcq_dual_slots'] = True
-            running_display += 2
+            running_display += n_mc
         elif q.question_type in FILL_MULTI_DISPLAY_TYPES and _card_fill_input_count(card) > 1:
             k = _card_fill_input_count(card)
             nums = list(range(running_display, running_display + k))
@@ -1902,19 +1913,14 @@ def test_take(request, pk):
                                 'is_blank': False,
                             })
                     elif card.get('mcq_dual_slots'):
-                        do2 = card.get('display_order_2') or (do + 1)
-                        blank_buttons.append({
-                            'num': do,
-                            'question_id': f'question-{do}',
-                            'card_anchor': str(do),
-                            'is_blank': False,
-                        })
-                        blank_buttons.append({
-                            'num': do2,
-                            'question_id': f'question-{do}',
-                            'card_anchor': str(do),
-                            'is_blank': False,
-                        })
+                        end = card.get('mcq_slot_end') or card.get('display_order_2') or (do + 1)
+                        for num in range(do, int(end) + 1):
+                            blank_buttons.append({
+                                'num': num,
+                                'question_id': f'question-{do}',
+                                'card_anchor': str(do),
+                                'is_blank': False,
+                            })
                     else:
                         blank_buttons.append({
                             'num': do,
@@ -1940,9 +1946,9 @@ def test_take(request, pk):
                     for gn in card['summary_box_global_nums']:
                         blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
                 elif card.get('mcq_dual_slots'):
-                    do2 = card.get('display_order_2') or (do + 1)
-                    blank_buttons.append({'num': do, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
-                    blank_buttons.append({'num': do2, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
+                    end = card.get('mcq_slot_end') or card.get('display_order_2') or (do + 1)
+                    for num in range(do, int(end) + 1):
+                        blank_buttons.append({'num': num, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
                 else:
                     blank_buttons.append({'num': do, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
         pg['blank_buttons'] = blank_buttons
@@ -2228,14 +2234,14 @@ def test_result(request, pk):
                             )
                         continue
                     if question.uses_choose_two_letter_scoring():
-                        pts, _ = question.score_mcq_choose_two_dual(user_answer)
+                        pts, tot = question.score_mcq_choose_two_dual(user_answer)
                         correct += pts
                         UserTestAnswer.objects.update_or_create(
                             test_result=test_result,
                             question=question,
                             defaults={
                                 'user_answer': user_answer,
-                                'is_correct': pts >= 2,
+                                'is_correct': bool(tot) and pts >= tot,
                             },
                         )
                         continue

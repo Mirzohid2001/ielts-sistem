@@ -1813,7 +1813,7 @@
                                         {% endif %}
                                         {% for item in type_block.cards %}
                                         {% with q=item.question %}
-                                        <div class="part-q-card" id="question-{{ item.display_order|default:q.order }}" data-question-id="{{ q.pk }}" data-first-order="{{ item.display_order|default:q.order }}" data-last-order="{% if item.display_order_2 %}{{ item.display_order_2 }}{% else %}{{ item.display_order|default:q.order }}{% endif %}">
+                                        <div class="part-q-card" id="question-{{ item.display_order|default:q.order }}" data-question-id="{{ q.pk }}" data-first-order="{{ item.display_order|default:q.order }}" data-last-order="{% if item.mcq_slot_end %}{{ item.mcq_slot_end }}{% elif item.display_order_2 %}{{ item.display_order_2 }}{% else %}{{ item.display_order|default:q.order }}{% endif %}">
                                             {% if not item.inline_fill_parts and test.test_type != 'writing' %}
                                                 {% if test.test_type == 'reading' or q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' or q.question_type == 'mcq' or q.question_type == 'true_false' %}
                                             {% if not test.test_type == 'reading' or q.question_type != 'matching_info' %}
@@ -1821,7 +1821,8 @@
                                                 {% if test.test_type == 'reading' %}
                                                     {% if item.mcq_dual_slots %}
                                                     <span class="question-num-box">{{ item.display_order }}</span>
-                                                    <span class="question-num-box">{{ item.display_order_2 }}</span>
+                                                    {% if item.display_order_2 %}<span class="question-num-box">{{ item.display_order_2 }}</span>{% endif %}
+                                                    {% if item.display_order_3 %}<span class="question-num-box">{{ item.display_order_3 }}</span>{% endif %}
                                                     {% else %}
                                                     <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
                                                     {% endif %}
@@ -1829,7 +1830,8 @@
                                                 {% if q.question_type == 'true_false_not_given' or q.question_type == 'yes_no_not_given' or q.question_type == 'mcq' or q.question_type == 'true_false' %}
                                                     {% if item.mcq_dual_slots %}
                                                     <span class="question-num-box">{{ item.display_order }}</span>
-                                                    <span class="question-num-box">{{ item.display_order_2 }}</span>
+                                                    {% if item.display_order_2 %}<span class="question-num-box">{{ item.display_order_2 }}</span>{% endif %}
+                                                    {% if item.display_order_3 %}<span class="question-num-box">{{ item.display_order_3 }}</span>{% endif %}
                                                     {% else %}
                                                     <span class="question-num-box">{{ item.display_order|default:q.order }}</span>
                                                     {% endif %}
@@ -1880,7 +1882,11 @@
                                                 {% if item.mcq_choose_two %}
                                                 <p class="admin-instruction-box admin-instruction-box--{{ q.options_json.ui_instruction_box_style|default:'plain' }} small mb-2">
                                                     {% if item.mcq_dual_slots %}
-                                                    Choose <strong>TWO</strong> letters, <strong>A–E</strong>. Write the correct letters in boxes on your answer sheet.
+                                                        {% if q.max_choices >= 3 %}
+                                                        Choose <strong>THREE</strong> letters. Write the correct letters in boxes on your answer sheet.
+                                                        {% else %}
+                                                        Choose <strong>TWO</strong> letters. Write the correct letters in boxes on your answer sheet.
+                                                        {% endif %}
                                                     {% else %}
                                                     {{ item.mcq_choose_two_banner|default:"Choose TWO letters." }}
                                                     {% endif %}
@@ -1892,7 +1898,7 @@
                                                            value="{{ option.letter }}"
                                                            class="mcq-multi-checkbox"
                                                            data-question-pk="{{ q.pk }}"
-                                                           data-max="2"
+                                                           data-max="{{ q.max_choices|default:2 }}"
                                                            {% if option.letter in item.current_answer_list %}checked{% endif %}>
                                                     <span><strong>{{ option.letter }}</strong> {{ option.text }}</span>
                                                 </label>
@@ -3147,8 +3153,10 @@
                 let answered = 0;
                 if (form) {
                     dualPks.forEach(function(pk) {
+                        const sel = form.querySelector('.mcq-multi-checkbox[data-question-pk="' + pk + '"]');
+                        const maxPick = sel ? parseInt(sel.getAttribute('data-max'), 10) || 2 : 2;
                         const n = form.querySelectorAll('.mcq-multi-checkbox[data-question-pk="' + pk + '"]:checked').length;
-                        answered += Math.min(n, 2);
+                        answered += Math.min(n, maxPick);
                     });
                     const other = new Set();
                     form.querySelectorAll('input[type="radio"]:checked').forEach(function(inp) {

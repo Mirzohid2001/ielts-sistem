@@ -53,7 +53,7 @@ class QuestionInline(admin.StackedInline):
                 'description': (
                     '<strong>MCQ:</strong> Oddiy 4 variant: A–D. <strong>5–8 ta variant</strong> kerak bo‘lsa E–H ni ham to‘ldiring '
                     '(saytda a–h sifatida chiqadi). 9+ yoki maxsus harflar uchun «MCQ variantlar (ro‘yxat)» matn maydoni. '
-                    '«Tanlash soni» 1 = bitta tanlov; 2 = ikkita harf (masalan a,c).'
+                    '«Tanlash soni» 1 = bitta tanlov; 2 yoki 3 = bir nechta harf (MCQ). «To‘g‘ri javob» da vergul bilan 2 yoki 3 harf (masalan a,c,f). 3 ta faqat MCQ uchun.'
                 ),
             }),
             ("To'ldirish / Matching (Summary, Qisqa javob, Matching va b.)", {

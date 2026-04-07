@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from core.models import Category, ReadingPassage, Test
+from core.models import Category, Question, ReadingPassage, Test
 
 
 class GetReadingPassagesTests(TestCase):
@@ -127,3 +127,49 @@ class GetReadingPassagesTests(TestCase):
         out = exam.get_reading_passages()
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["title"], "db")
+
+
+class McqMaxChoicesThreeTests(TestCase):
+    """Tanlash soni = 3: to‘liq javob, qisman ball, gradable slotlar."""
+
+    def setUp(self):
+        self.category = Category.objects.create(name="C2", slug="cat-mcq3")
+
+    def _q(self, **kwargs):
+        exam = Test.objects.create(
+            title="E",
+            category=self.category,
+            test_type="listening",
+            reading_passages_json=[],
+            reading_text="",
+        )
+        data = {
+            "test": exam,
+            "question_type": "mcq",
+            "order": 1,
+            "max_choices": 3,
+            "correct_answer": "a",
+            "correct_answer_json": ["a", "c", "f"],
+            "option_a": "A",
+            "option_b": "B",
+            "option_c": "C",
+            "option_d": "D",
+        }
+        data.update(kwargs)
+        return Question.objects.create(**data)
+
+    def test_check_user_answer_three_letters(self):
+        q = self._q()
+        self.assertTrue(q.check_user_answer('["a","c","f"]'))
+        self.assertFalse(q.check_user_answer('["a","c","b"]'))
+        self.assertFalse(q.check_user_answer('["a","c"]'))
+
+    def test_score_multi_letter_partial(self):
+        q = self._q()
+        self.assertEqual(q.score_multi_letter_choice('["a","c","f"]'), (3, 3))
+        self.assertEqual(q.score_multi_letter_choice('["a","c","b"]'), (2, 3))
+        self.assertEqual(q.score_multi_letter_choice('["a","c"]'), (0, 3))
+
+    def test_gradable_slots_three(self):
+        q = self._q()
+        self.assertEqual(q.gradable_answer_slots(), 3)
