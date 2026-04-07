@@ -96,7 +96,7 @@ class ReadingPassageInline(admin.StackedInline):
     min_num = 0
     ordering = ['order']
     verbose_name = "Passage (o'qish matni)"
-    verbose_name_plural = "📖 1-QADAM: Passage'lar — faqat Reading test uchun. 3 ta qo'shing (Order 1 = Part 1, 2 = Part 2, 3 = Part 3). 2 variantli testda har bir passage uchun Variant 1 yoki 2 tanlang. Listening/Writing da bo'sh qoldiring."
+    verbose_name_plural = "📖 1-QADAM: Passage'lar — faqat Reading test uchun. 3 ta qo'shing (Order 1 = Part 1, 2 = Part 2, 3 = Part 3). 2 yoki 3 variantli testda har passage uchun Variant 1, 2 yoki 3 tanlang. Listening/Writing da bo'sh qoldiring."
     fields = ['order', 'variant', 'title', 'text']
     classes = []  # ochiq turishi uchun collapse yo'q
 
@@ -141,7 +141,7 @@ class TestAdmin(ImportExportModelAdmin):
                 "<strong>Listening:</strong> Audio fayl + savollar; Part 1–4 odatda 10+10+10+10. "
                 "<strong>Writing:</strong> 2 ta savol (Task 1, 2) — har birida Part = 1 yoki 2; Task 1 rasmlari: «Rasm» yoki qo'shimcha URL ro'yxati. "
                 "<strong>Savol matni bo'sh</strong> qoldirish mumkin (draft), keyin to'ldirib saqlang. "
-                "<strong>2 variant</strong> testda har savol va passage uchun Variant 1 yoki 2 tanlang."
+                "<strong>2 yoki 3 variant</strong> testda har savol va passage uchun imtihon qog‘ozi varianti (1, 2 yoki 3) tanlang."
             )
         }),
         ('Parametrlar', {

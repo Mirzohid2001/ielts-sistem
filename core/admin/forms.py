@@ -193,8 +193,8 @@ class QuestionAdminForm(forms.ModelForm):
             )
         if 'variant' in self.fields:
             self.fields['variant'].help_text = (
-                "Agar testda «Variantlar soni = 2» bo'lsa — har bir savol uchun Variant 1 yoki 2 majburiy tanlang; "
-                "aks holda barcha savollar bir variantda chiqadi."
+                "Agar testda «Variantlar soni» 2 yoki 3 bo'lsa — har savol uchun imtihon qog‘ozi varianti (1, 2 yoki 3) tanlang; "
+                "1 variantli testda maydon bo'sh qolishi mumkin."
             )
         # Savol turiga qarab JS maydonlarni yashirish uchun data-role (admin) — faqat MCQ/T-F/T-F NG/Y-N NG da ko'rinadi
         for fname in (

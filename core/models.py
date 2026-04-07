@@ -228,12 +228,12 @@ class Test(models.Model):
     reading_text = models.TextField(blank=True, verbose_name="O'qish matni (Reading)")
     # Reading: 3 ta passage [{"title": "...", "text": "..."}, ...]. Bo'sh bo'lsa reading_text ishlatiladi
     reading_passages_json = models.JSONField(default=list, blank=True, verbose_name="Passage'lar (3 ta)")
-    # 1 yoki 2 variantli test: 2 bo'lsa har bir savol/passage da variant (1 yoki 2) belgilash kerak
+    # 1 / 2 / 3 imtihon qog‘ozi variantlari: 2+ bo‘lsa har savol va Reading passage da variant raqami
     variants_to_select = models.PositiveSmallIntegerField(
         default=1,
-        choices=[(1, "1 variant"), (2, "2 variant")],
+        choices=[(1, "1 variant"), (2, "2 variant"), (3, "3 variant")],
         verbose_name="Variantlar soni",
-        help_text="2 qilsangiz — foydalanuvchi ikkala variantni ham bajaradi; har bir savol va passage da «Variant 1» yoki «Variant 2» tanlang.",
+        help_text="2 yoki 3 — foydalanuvchi barcha variantlarni ketma-ket yechadi; har savol va passage uchun Variant 1, 2 yoki 3 tanlang.",
     )
     is_active = models.BooleanField(default=True, verbose_name="Faol")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -259,8 +259,8 @@ class Test(models.Model):
         return reverse('core:test_detail', kwargs={'pk': self.pk})
 
     def get_reading_passages(self):
-        """Reading: passage'lar ro'yxati. 2 variantli testda [v1_list, v2_list], aks holda bitta ro'yxat.
-        Har bir dict da 'order' (Tartib maydoni) bo'ladi — test sahifasida Part N ↔ order==N."""
+        """Reading: bitta ro'yxat yoki ko'p variantda [v1_list, v2_list, ...].
+        Har bir dict da 'order' bo'ladi — test sahifasida Part N ↔ order==N."""
         def _row(p, fallback_order):
             if isinstance(p, dict):
                 o = p.get('order', fallback_order)
@@ -278,28 +278,96 @@ class Test(models.Model):
             title = (p.title or '').strip() or f'Passage {o}'
             return {'title': title, 'text': p.text or '', 'order': o}
 
+        n_var = int(self.variants_to_select or 1)
+        if n_var < 1:
+            n_var = 1
+
         # 1) Inline model (eng qulay)
         objs = list(self.reading_passages.all().order_by('variant', 'order', 'pk'))
         if objs:
-            if self.variants_to_select == 2:
-                v1_objs = sorted([x for x in objs if (x.variant or 1) == 1], key=lambda x: (x.order, x.pk))
-                v2_objs = sorted([x for x in objs if x.variant == 2], key=lambda x: (x.order, x.pk))
-                v1 = [_row(p, i + 1) for i, p in enumerate(v1_objs)]
-                v2 = [_row(p, i + 1) for i, p in enumerate(v2_objs)]
-                return [v1, v2]
-            return [_row(p, i + 1) for i, p in enumerate(objs)]
+            if n_var >= 2:
+                buckets = [[] for _ in range(n_var)]
+                for x in objs:
+                    v = getattr(x, 'variant', None)
+                    if v is None:
+                        v = 1
+                    try:
+                        v = int(v)
+                    except (TypeError, ValueError):
+                        v = 1
+                    if v < 1 or v > n_var:
+                        v = 1
+                    buckets[v - 1].append(x)
+                for j in range(n_var):
+                    buckets[j] = sorted(buckets[j], key=lambda z: (z.order, z.pk))
+                return [[_row(p, i + 1) for i, p in enumerate(buckets[j])] for j in range(n_var)]
+            return [_row(p, i + 1) for i, p in enumerate(sorted(objs, key=lambda x: (x.order, x.pk)))]
         # 2) JSON (eski format)
         passages = self.reading_passages_json or []
         if passages and isinstance(passages, list) and len(passages) > 0:
-            if self.variants_to_select == 2:
+            if n_var >= 2:
                 half = [p for p in passages if isinstance(p, dict)]
-                mid = len(half) // 2 if len(half) >= 2 else len(half)
-                left = half[:mid]
-                right = half[mid:]
-                return [
-                    [_row(p, i + 1) for i, p in enumerate(left)],
-                    [_row(p, i + 1) for i, p in enumerate(right)],
-                ] if len(half) >= 2 else [[_row(p, i + 1) for i, p in enumerate(half)], []]
+                if n_var == 2:
+                    mid = len(half) // 2 if len(half) >= 2 else len(half)
+                    left = half[:mid]
+                    right = half[mid:]
+                    return [
+                        [_row(p, i + 1) for i, p in enumerate(left)],
+                        [_row(p, i + 1) for i, p in enumerate(right)],
+                    ] if len(half) >= 2 else [[_row(p, i + 1) for i, p in enumerate(half)], []]
+                by_v = {1: [], 2: [], 3: []}
+                unassigned = []
+                for idx, p in enumerate(half):
+                    v = p.get('variant')
+                    try:
+                        v = int(v) if v is not None else None
+                    except (TypeError, ValueError):
+                        v = None
+                    if v in (1, 2, 3):
+                        by_v[v].append((idx, p))
+                    else:
+                        unassigned.append((idx, p))
+
+                def _rows_from_bucket(bucket):
+                    def _k(ip):
+                        idx, p = ip
+                        o = p.get('order', idx)
+                        try:
+                            o = int(o)
+                        except (TypeError, ValueError):
+                            o = idx
+                        return (o, idx)
+
+                    bucket.sort(key=_k)
+                    return [_row(p, i + 1) for i, (_, p) in enumerate(bucket)]
+
+                if n_var == 3:
+                    if not unassigned:
+                        return [
+                            _rows_from_bucket(by_v[1]),
+                            _rows_from_bucket(by_v[2]),
+                            _rows_from_bucket(by_v[3]),
+                        ]
+                    has_assigned = any(by_v[k] for k in (1, 2, 3))
+                    if not has_assigned:
+                        n = len(half)
+                        if n == 0:
+                            return [[], [], []]
+                        a = max(1, (n + 2) // 3)
+                        b = max(1, (n - a + 1) // 2)
+                        chunks = [half[:a], half[a:a + b], half[a + b:]]
+                        while len(chunks) < 3:
+                            chunks.append([])
+                        return [[_row(p, i + 1) for i, p in enumerate(chunks[j])] for j in range(3)]
+                    ri = 0
+                    for pair in unassigned:
+                        by_v[(ri % 3) + 1].append(pair)
+                        ri += 1
+                    return [
+                        _rows_from_bucket(by_v[1]),
+                        _rows_from_bucket(by_v[2]),
+                        _rows_from_bucket(by_v[3]),
+                    ]
             return [_row(p, i + 1) for i, p in enumerate(passages) if isinstance(p, dict)]
         # 3) Bitta matn
         if self.reading_text:
@@ -316,9 +384,9 @@ class ReadingPassage(models.Model):
     variant = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
-        choices=[(1, "Variant 1"), (2, "Variant 2")],
-        verbose_name="Variant (2 variantli testda)",
-        help_text="Faqat test «2 variant» bo'lsa to'ldiring.",
+        choices=[(1, "Variant 1"), (2, "Variant 2"), (3, "Variant 3")],
+        verbose_name="Variant (ko'p variantli testda)",
+        help_text="Testda 2 yoki 3 variant bo'lsa — har passage uchun Variant 1, 2 yoki 3 tanlang.",
     )
 
     class Meta:
@@ -362,9 +430,9 @@ class Question(models.Model):
     variant = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
-        choices=[(1, "Variant 1"), (2, "Variant 2")],
-        verbose_name="Variant (2 variantli testda)",
-        help_text="Faqat test «2 variant» bo'lsa tanlang.",
+        choices=[(1, "Variant 1"), (2, "Variant 2"), (3, "Variant 3")],
+        verbose_name="Variant (ko'p variantli testda)",
+        help_text="Testda 2 yoki 3 variant bo'lsa — har savol uchun imtihon qog‘ozi variantini tanlang.",
     )
     question_type = models.CharField(max_length=30, choices=QUESTION_TYPES, default='mcq', verbose_name="Savol turi")
     question_text = models.TextField(blank=True, verbose_name="Savol matni", help_text="Bo'sh qoldirsangiz — savol keyinroq to'ldiriladi (draft).")

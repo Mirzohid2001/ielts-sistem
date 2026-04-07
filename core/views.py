@@ -243,11 +243,11 @@ def _reading_passage_count(test):
 
 def _reading_uniform_variant(test, questions):
     """
-    «2 variant» testda barcha savollar bir xil exam variantida bo'lsa (masalan hammasi 1).
+    «2+ variant» reading testda barcha savollar bir xil exam variantida bo'lsa (masalan hammasi 1).
     Bu holda part_indexes faqat q.variant dan olinmasin — aks holda 14-savol ham «Variant 1»da qoladi,
     IELTS passage bo'linishi (1–13 | 14–26) ishlamaydi.
     """
-    if getattr(test, 'variants_to_select', 1) != 2 or getattr(test, 'test_type', None) != 'reading':
+    if getattr(test, 'variants_to_select', 1) < 2 or getattr(test, 'test_type', None) != 'reading':
         return False
     if not questions:
         return False
@@ -1191,8 +1191,8 @@ def test_take(request, pk):
     if test_result.answers_json:
         answers = test_result.answers_json
     
-    # Hamma savollarni bitta sahifada ko'rsatamiz (2 variantli: avval Variant 1, keyin Variant 2)
-    if getattr(test, 'variants_to_select', 1) == 2:
+    # Ko'p variantli: avval variant raqami, keyin tartib
+    if getattr(test, 'variants_to_select', 1) >= 2:
         questions = list(test.questions.all().order_by(Coalesce(F('variant'), Value(1)), 'order'))
     else:
         questions = list(test.questions.all().order_by('order'))
@@ -1692,13 +1692,13 @@ def test_take(request, pk):
     # Ko'rsatiladigan savol raqamlari soni (DB yozuvlari emas — bitta TFNG 9 ta raqam berishi mumkin)
     total_display_slots = max(0, running_display - 1)
 
-    # Part bloklari: 2 variantli testda odatda part = exam variant (1 yoki 2).
+    # Part bloklari: 2+ variantli testda odatda part = exam variant (1, 2, 3…).
     # Reading + barcha savollar bir xil variant: passage bo'linishi (13/14) uchun quyidagi tarmoq ishlaydi.
     part_indexes = []
     explicit_parts = []
-    # Listening: Part 1–4 alohida (10+10+10+10 yoki options_json.part). «2 variant» faqat qaysi
+    # Listening: Part 1–4 alohida (10+10+10+10 yoki options_json.part). Ko'p variant faqat qaysi
     # imtihon qog‘ozini tanlash uchun; variantni «listening part» deb ishlatmaslik kerak.
-    if getattr(test, 'variants_to_select', 1) == 2 and test.test_type != 'listening':
+    if getattr(test, 'variants_to_select', 1) >= 2 and test.test_type != 'listening':
         if _reading_uniform_variant(test, questions):
             part_indexes = []
         else:
@@ -1840,7 +1840,7 @@ def test_take(request, pk):
         # Dockda ko'rinadigan raqamlar soni != DB dagi savol yozuvlari (bir savol 2+ raqam: TFNG guruh, MCQ juft, matching)
         pg['question_count'] = len(pg['cards'])
         pg['slug'] = f"part-{pg['part_number']}"
-        if getattr(test, 'variants_to_select', 1) == 2 and test.test_type != 'listening':
+        if getattr(test, 'variants_to_select', 1) >= 2 and test.test_type != 'listening':
             if _reading_uniform_variant(test, questions):
                 vnum = getattr(questions[0], 'variant', None) or 1 if questions else 1
                 pg['title'] = f"Variant {vnum} · Part {pg['part_number']}"
@@ -2401,7 +2401,7 @@ def test_result(request, pk):
     improvement_tips = [tip_map.get(w['question_type'], "Ushbu savol turida ko'proq amaliy test ishlang.") for w in weak_areas]
 
     test = test_result.test
-    if getattr(test, 'variants_to_select', 1) == 2:
+    if getattr(test, 'variants_to_select', 1) >= 2:
         ordered_questions = list(
             test.questions.order_by(Coalesce(F('variant'), Value(1)), 'order')
         )
