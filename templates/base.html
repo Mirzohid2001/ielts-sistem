@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#6366f1">
-    <meta name="description" content="IELTS Center - Reading, Listening, Writing testlar va video darslar">
-    <title>{% block title %}IELTS Center{% endblock %}</title>
+    <meta name="description" content="Ton academy - IELTS va SAT uchun video darslar, testlar va analitika">
+    <title>{% block title %}Ton academy{% endblock %}</title>
     
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
     
@@ -24,16 +24,22 @@
 <body class="d-flex flex-column min-vh-100">
     <a href="#main-content" class="skip-to-content">Asosiy kontentga o'tish</a>
     {% if user.is_authenticated %}
+    {% with ns=request.resolver_match.namespace name=request.resolver_match.url_name %}
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'core:dashboard' %}">
-                <i class="fas fa-graduation-cap me-2"></i>IELTS Center
+            <a class="navbar-brand" href="{% url 'core:module_selector' %}">
+                <i class="fas fa-graduation-cap me-2"></i>Ton academy
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                {% if ns == 'core' and name != 'module_selector' and name != 'profile' and name != 'profile_section' %}
                 <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'module_selector' %}active{% endif %}" 
+                           href="{% url 'core:module_selector' %}">Bo'limlar</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
                            href="{% url 'core:dashboard' %}">Bosh sahifa</a>
@@ -41,10 +47,6 @@
                     <li class="nav-item">
                         <a class="nav-link {% if 'video' in request.path %}active{% endif %}" 
                            href="{% url 'core:video_list' %}">Video Darslar</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/sat/' in request.path %}active{% endif %}"
-                           href="{% url 'core:sat_home' %}">SAT</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'test' in request.path %}active{% endif %}" 
@@ -55,13 +57,84 @@
                            href="{% url 'core:leaderboard' %}">Reyting</a>
                     </li>
                 </ul>
-                <ul class="navbar-nav">
+                {% else %}
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if name == 'module_selector' %}active{% endif %}" href="{% url 'core:module_selector' %}">
+                            Bo'limlar
+                        </a>
+                    </li>
+                    {% if ns == 'core' and name == 'profile' or ns == 'core' and name == 'profile_section' %}
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'core:profile_section' 'overall' %}">
+                            Umumiy profil
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if ns == 'sat' %}
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'sat:sat_home' %}">SAT</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                {% endif %}
+                <ul class="navbar-nav align-items-lg-center">
+                    <li class="nav-item dropdown me-lg-2">
+                        <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            {% if notification_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ notification_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 340px;">
+                            <li><h6 class="dropdown-header">Eslatmalar va e'lonlar</h6></li>
+                            {% if notification_items %}
+                                {% for item in notification_items %}
+                                <li>
+                                    {% if item.url %}
+                                    <a class="dropdown-item py-2" href="{{ item.url }}">
+                                        <div class="fw-semibold">
+                                            <i class="fas {{ item.icon|default:'fa-bell' }} me-1 text-primary"></i>
+                                            {{ item.title }}
+                                        </div>
+                                        <div class="small text-muted">{{ item.message }}</div>
+                                        <div class="small text-secondary mt-1">{{ item.time_ago }}</div>
+                                    </a>
+                                    {% else %}
+                                    <div class="dropdown-item-text py-2">
+                                        <div class="fw-semibold">
+                                            <i class="fas {{ item.icon|default:'fa-bell' }} me-1 text-primary"></i>
+                                            {{ item.title }}
+                                        </div>
+                                        <div class="small text-muted">{{ item.message }}</div>
+                                        <div class="small text-secondary mt-1">{{ item.time_ago }}</div>
+                                    </div>
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-center fw-semibold" href="{% url 'core:notifications' %}">
+                                    Hammasini ko'rish
+                                </a>
+                            </li>
+                            {% else %}
+                            <li>
+                                <div class="dropdown-item-text text-muted small">
+                                    Hozircha yangi bildirishnoma yo'q.
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                             {{ user.first_name|default:user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'core:profile' %}">
+                            <li><a class="dropdown-item" href="{% url 'core:profile_section' 'overall' %}">
                                 <i class="fas fa-user me-2"></i>Profil
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -74,6 +147,7 @@
             </div>
         </div>
     </nav>
+    {% endwith %}
     {% endif %}
 
     <div id="messages-container" class="container mt-3">
@@ -97,7 +171,7 @@
 
     <footer>
         <div class="container text-center py-3">
-            <p class="mb-0 text-muted">&copy; 2026 IELTS Center. Barcha huquqlar himoyalangan.</p>
+            <p class="mb-0 text-muted">&copy; 2026 Ton academy. Barcha huquqlar himoyalangan.</p>
         </div>
     </footer>
 

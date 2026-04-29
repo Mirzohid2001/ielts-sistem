@@ -4,12 +4,14 @@ from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 
 from ..models import (
+    AdminAnnouncement,
     Bookmark,
     Flashcard,
     FlashcardSet,
     PlaylistVideo,
     StudyStreak,
     UserActivity,
+    UserModuleAccess,
     UserTestAnswer,
     UserTestResult,
     UserVideoProgress,
@@ -150,6 +152,25 @@ class UserActivityAdmin(admin.ModelAdmin):
             'fields': ('created_at',)
         }),
     )
+
+
+@admin.register(AdminAnnouncement)
+class AdminAnnouncementAdmin(admin.ModelAdmin):
+    list_display = ['title', 'is_active', 'starts_at', 'ends_at', 'created_at']
+    list_filter = ['is_active', 'starts_at', 'ends_at', 'created_at']
+    search_fields = ['title', 'message']
+    readonly_fields = ['created_at']
+    ordering = ['-created_at']
+
+
+@admin.register(UserModuleAccess)
+class UserModuleAccessAdmin(admin.ModelAdmin):
+    list_display = ['user', 'can_access_ielts', 'can_access_sat', 'can_access_jobs', 'updated_at']
+    list_filter = ['can_access_ielts', 'can_access_sat', 'can_access_jobs', 'updated_at']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'user__email']
+    autocomplete_fields = ['user']
+    readonly_fields = ['updated_at']
+    ordering = ['user__username']
 
 
 @admin.register(Bookmark)

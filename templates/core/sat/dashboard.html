@@ -1,19 +1,46 @@
 {% extends 'base.html' %}
 
-{% block title %}SAT Dashboard - IELTS Center{% endblock %}
+{% block title %}SAT Dashboard - Ton academy{% endblock %}
 
 {% block extra_css %}
 <style>
+    .sat-mini-nav {
+        display: flex;
+        gap: .55rem;
+        flex-wrap: wrap;
+    }
+    .sat-mini-link {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid #dbeafe;
+        background: #fff;
+        color: #1f2937;
+        text-decoration: none;
+        font-size: .84rem;
+        font-weight: 700;
+        padding: .42rem .8rem;
+    }
+    .sat-mini-link.active {
+        color: #0b3b8f;
+        background: rgba(59, 130, 246, .14);
+        border-color: rgba(59, 130, 246, .3);
+    }
     .sat-d-head { background: linear-gradient(135deg, #111827 0%, #1d4ed8 100%); color: #fff; border-radius: 14px; padding: 1rem 1.2rem; }
     .sat-d-card { border: 0; border-radius: 12px; box-shadow: 0 10px 24px rgba(2, 6, 23, .08); }
+    @media (max-width: 576px) {
+        .sat-mini-nav { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+        .sat-mini-link { white-space: nowrap; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container py-4">
+    {% include 'core/sat/_mini_nav.html' %}
     <div class="sat-d-head d-flex align-items-center justify-content-between mb-4">
         <h2 class="mb-0">SAT Dashboard</h2>
-        <a href="{% url 'core:sat_home' %}" class="btn btn-outline-secondary btn-sm">SAT Home</a>
+        <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-secondary btn-sm">SAT Home</a>
     </div>
 
     <div class="row g-3 mb-4">

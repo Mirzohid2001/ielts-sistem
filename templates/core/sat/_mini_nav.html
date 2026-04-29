@@ -1,0 +1,19 @@
+<div class="sat-mini-nav mb-3">
+    <a href="{% url 'sat:sat_home' %}" class="sat-mini-link {% if request.resolver_match.url_name == 'sat_home' %}active{% endif %}">
+        <i class="fas fa-home me-1"></i>Home
+    </a>
+    <a href="{% url 'sat:sat_dashboard' %}" class="sat-mini-link {% if request.resolver_match.url_name == 'sat_dashboard' %}active{% endif %}">
+        <i class="fas fa-chart-line me-1"></i>Dashboard
+    </a>
+    <a href="{% url 'sat:sat_statistics' %}" class="sat-mini-link {% if request.resolver_match.url_name == 'sat_statistics' %}active{% endif %}">
+        <i class="fas fa-chart-pie me-1"></i>Statistika
+    </a>
+    <a href="{% url 'sat:sat_bookmarks' %}" class="sat-mini-link {% if request.resolver_match.url_name == 'sat_bookmarks' %}active{% endif %}">
+        <i class="fas fa-bookmark me-1"></i>Saqlanganlar
+    </a>
+    {% if request.resolver_match.url_name == 'sat_subject' %}
+    <span class="sat-mini-link active">
+        <i class="fas fa-layer-group me-1"></i>{{ subject_label }}
+    </span>
+    {% endif %}
+</div>

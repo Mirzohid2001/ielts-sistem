@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Bildirishnomalar - Ton academy{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Bildirishnomalar</h2>
+        <a href="{% url 'core:module_selector' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-th-large me-1"></i> Bo'limlarga qaytish
+        </a>
+    </div>
+
+    {% if notification_items %}
+    <div class="list-group shadow-sm">
+        {% for item in notification_items %}
+            {% if item.url %}
+            <a href="{{ item.url }}" class="list-group-item list-group-item-action py-3">
+            {% else %}
+            <div class="list-group-item py-3">
+            {% endif %}
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <div class="fw-semibold">
+                            <i class="fas {{ item.icon|default:'fa-bell' }} me-2 text-primary"></i>
+                            {{ item.title }}
+                        </div>
+                        <div class="text-muted small mt-1">{{ item.message }}</div>
+                    </div>
+                    <small class="text-muted text-nowrap">{{ item.time_ago }}</small>
+                </div>
+            {% if item.url %}
+            </a>
+            {% else %}
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-light border mb-0">
+        Hozircha bildirishnoma yo'q.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

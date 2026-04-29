@@ -5,7 +5,7 @@ from crispy_bootstrap5.bootstrap5 import FloatingField
 
 
 class OTPLoginForm(forms.Form):
-    """OTP bilan kirish formasi"""
+    """Kirish kodi orqali login formasi"""
     username = forms.CharField(
         max_length=150,
         label="Foydalanuvchi nomi",
@@ -17,10 +17,10 @@ class OTPLoginForm(forms.Form):
     )
     otp_code = forms.CharField(
         max_length=20,
-        label="OTP Kod",
+        label="Kirish kodi",
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'OTP kodni kiriting',
+            'placeholder': 'Kirish kodini kiriting',
             'autocomplete': 'off'
         })
     )

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Kirish - IELTS Center{% endblock %}
+{% block title %}Kirish - Ton academy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -51,6 +51,62 @@
     @media (min-width: 768px) {
         .login-card {
             padding: 3rem 2.5rem;
+        }
+    }
+    @media (max-width: 576px) {
+        main {
+            padding: 1rem 0.65rem;
+            align-items: flex-start;
+        }
+        .login-wrapper {
+            max-width: 100%;
+        }
+        .login-card {
+            border-radius: 16px;
+            padding: 1.25rem 1rem;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+        }
+        .login-header {
+            margin-bottom: 1.2rem;
+        }
+        .login-title {
+            font-size: 1.8rem;
+            margin-bottom: .3rem;
+        }
+        .login-subtitle {
+            font-size: .95rem;
+        }
+        .login-form-group {
+            margin-bottom: 1rem;
+        }
+        .login-form-label {
+            margin-bottom: .45rem;
+            font-size: .86rem;
+        }
+        .login-form-input {
+            padding: .78rem .95rem;
+            border-radius: 10px;
+            font-size: .94rem;
+        }
+        .login-btn {
+            min-height: 42px;
+            font-size: .93rem;
+            padding: .75rem 1rem;
+        }
+        .login-help {
+            margin-top: 1rem;
+            padding: .9rem .85rem;
+            border-radius: 12px;
+        }
+        .login-help-title {
+            font-size: .92rem;
+        }
+        .login-help-item {
+            font-size: .82rem;
+            gap: .45rem;
+        }
+        #messages-container {
+            padding: .55rem;
         }
     }
     
@@ -381,7 +437,7 @@
             <div class="login-icon-wrapper">
                 <i class="fas fa-graduation-cap"></i>
             </div>
-            <h1 class="login-title">IELTS Center</h1>
+            <h1 class="login-title">Ton academy</h1>
             <p class="login-subtitle">Tizimga kirish</p>
         </div>
         
@@ -443,7 +499,7 @@
                     name="{{ form.otp_code.name }}" 
                     id="{{ form.otp_code.id_for_label }}"
                     class="login-form-input"
-                    placeholder="OTP kodni kiriting"
+                    placeholder="Kirish kodini kiriting"
                     autocomplete="off"
                     required
                     value="{{ form.otp_code.value|default:'' }}"
@@ -467,7 +523,7 @@
                 </li>
                 <li class="login-help-item">
                     <i class="fas fa-check-circle"></i>
-                    <span>Admin panel orqali olingan OTP kodni kiriting</span>
+                    <span>Admin panel orqali berilgan kirish kodini kiriting</span>
                 </li>
                 <li class="login-help-item">
                     <i class="fas fa-check-circle"></i>

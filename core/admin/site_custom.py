@@ -1,6 +1,7 @@
 """Admin bosh sahifa va index override (CustomAdminSite — kelajakda statistics URL uchun)."""
 import json
 from datetime import timedelta
+from types import MethodType
 
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -198,6 +199,74 @@ admin.site.index_title = "Boshqaruv paneli"
 
 # Admin index view ni override qilish
 original_index = admin.site.index
+original_get_app_list = admin.site.get_app_list
+
+
+def custom_get_app_list(self, request, app_label=None):
+    """
+    Sidebar va admin index ro'yxatini mantiqiy bo'limlarga ajratish:
+    - IELTS
+    - SAT
+    - RUXSATLAR
+    """
+    app_list = original_get_app_list(request, app_label)
+
+    core_app = None
+    remaining_apps = []
+    for app in app_list:
+        if app.get('app_label') == 'core':
+            core_app = app
+        else:
+            remaining_apps.append(app)
+
+    if not core_app:
+        return app_list
+
+    sat_model_names = {'SATResource', 'SATResourceProgress', 'SATResourceBookmark', 'SATResourceNote'}
+    permission_model_names = {'UserModuleAccess'}
+
+    ielts_models = []
+    sat_models = []
+    permission_models = []
+
+    for model in core_app.get('models', []):
+        object_name = model.get('object_name')
+        if object_name in sat_model_names:
+            sat_models.append(model)
+        elif object_name in permission_model_names:
+            permission_models.append(model)
+        else:
+            ielts_models.append(model)
+
+    split_apps = []
+    if ielts_models:
+        split_apps.append({
+            'name': 'IELTS - Testlar va videolar',
+            'app_label': 'core_ielts',
+            'app_url': core_app.get('app_url', '#'),
+            'has_module_perms': core_app.get('has_module_perms', True),
+            'models': sorted(ielts_models, key=lambda m: m.get('name', '')),
+        })
+
+    if sat_models:
+        split_apps.append({
+            'name': 'SAT - Resurslar',
+            'app_label': 'core_sat',
+            'app_url': core_app.get('app_url', '#'),
+            'has_module_perms': core_app.get('has_module_perms', True),
+            'models': sorted(sat_models, key=lambda m: m.get('name', '')),
+        })
+
+    if permission_models:
+        split_apps.append({
+            'name': 'RUXSATLAR',
+            'app_label': 'core_permissions',
+            'app_url': core_app.get('app_url', '#'),
+            'has_module_perms': core_app.get('has_module_perms', True),
+            'models': sorted(permission_models, key=lambda m: m.get('name', '')),
+        })
+
+    return split_apps + remaining_apps
 
 def custom_index(request, extra_context=None):
     """Admin index sahifasini yaxshilash"""
@@ -291,3 +360,4 @@ def custom_index(request, extra_context=None):
     return original_index(request, extra_context=extra_context)
 
 admin.site.index = custom_index
+admin.site.get_app_list = MethodType(custom_get_app_list, admin.site)

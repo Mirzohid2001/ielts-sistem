@@ -34,6 +34,7 @@ urlpatterns = [
     path('admin/yoriqnoma/', admin_toliq_yoriqnoma, name='admin_toliq_yoriqnoma'),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
+    path('sat/', include('sat.urls')),
     path('', include('core.urls')),
 ]
 

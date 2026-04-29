@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+
+{% block title %}Bo'lim tanlash - Ton academy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .module-page {
+        background:
+            radial-gradient(circle at 12% 10%, rgba(99, 102, 241, 0.16), transparent 45%),
+            radial-gradient(circle at 88% 18%, rgba(14, 165, 233, 0.14), transparent 45%),
+            radial-gradient(circle at 45% 92%, rgba(168, 85, 247, 0.12), transparent 45%),
+            linear-gradient(180deg, #f8fafc 0%, #eef2ff 60%, #f8fafc 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    .module-page::before,
+    .module-page::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .module-page::before {
+        width: 340px;
+        height: 340px;
+        top: -120px;
+        right: -80px;
+        background: radial-gradient(circle, rgba(79, 70, 229, .20), rgba(79, 70, 229, 0));
+    }
+    .module-page::after {
+        width: 280px;
+        height: 280px;
+        bottom: -120px;
+        left: -80px;
+        background: radial-gradient(circle, rgba(14, 165, 233, .18), rgba(14, 165, 233, 0));
+    }
+    .module-shell { max-width: 1120px; margin: 0 auto; position: relative; z-index: 1; }
+    .module-hero {
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 24px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(10px);
+        padding: 1.7rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .module-hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(115deg, rgba(99, 102, 241, .10), rgba(14, 165, 233, .08), rgba(244, 114, 182, .06));
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-weight: 700;
+        font-size: .76rem;
+        color: #4f46e5;
+        background: rgba(99, 102, 241, .12);
+        border: 1px solid rgba(99, 102, 241, .22);
+        border-radius: 999px;
+        padding: .35rem .7rem;
+        text-transform: uppercase;
+        margin-bottom: .7rem;
+    }
+    .hero-title { font-size: clamp(1.55rem, 3vw, 2.15rem); letter-spacing: -.02em; }
+    .hero-points { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .9rem; }
+    .hero-point {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border: 1px solid rgba(148, 163, 184, .25);
+        background: rgba(255,255,255,.78);
+        color: #475569;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: .74rem;
+        padding: .27rem .62rem;
+    }
+    .module-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+        padding: .35rem .8rem;
+    }
+    .badge-open { background: rgba(16, 185, 129, .12); color: #047857; }
+    .badge-locked { background: rgba(239, 68, 68, .1); color: #b91c1c; }
+    .module-grid { margin-top: 1rem; }
+    .module-card {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 20px;
+        box-shadow: 0 16px 40px rgba(2, 6, 23, 0.09);
+        transition: transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s ease, border-color .25s ease, opacity .3s ease;
+        height: 100%;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255,255,255,.80));
+        backdrop-filter: blur(4px);
+        opacity: 0;
+        transform: translateY(16px) scale(0.985);
+        overflow: hidden;
+        position: relative;
+    }
+    .module-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        opacity: .85;
+    }
+    .module-card.card-ielts::before { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+    .module-card.card-sat::before { background: linear-gradient(90deg, #0ea5e9, #22d3ee); }
+    .module-card.card-jobs::before { background: linear-gradient(90deg, #94a3b8, #64748b); }
+    .module-card .card-body { position: relative; z-index: 1; }
+    .module-card.is-enabled::after {
+        content: "";
+        position: absolute;
+        inset: 20% -30% -40% 30%;
+        background: radial-gradient(circle, rgba(99, 102, 241, .10), transparent 65%);
+        pointer-events: none;
+    }
+    .module-card.is-enabled:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 22px 50px rgba(2, 6, 23, 0.16);
+        border-color: rgba(99, 102, 241, 0.34);
+    }
+    .module-card.is-disabled { opacity: .8; }
+    .module-card.module-enter { animation: moduleEnter .6s cubic-bezier(.22,.61,.36,1) forwards; }
+    .module-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: #fff;
+        transition: transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s ease;
+    }
+    .module-card.is-enabled:hover .module-icon {
+        transform: translateY(-2px) scale(1.04);
+        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.22);
+    }
+    .module-ielts { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .module-sat { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    .module-jobs { background: linear-gradient(135deg, #94a3b8, #64748b); }
+    .module-status {
+        font-size: .75rem;
+        letter-spacing: .02em;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: .25rem .65rem;
+    }
+    .status-ready { background: rgba(16, 185, 129, .12); color: #047857; }
+    .status-soon { background: rgba(245, 158, 11, .14); color: #92400e; }
+    .status-lock { background: rgba(239, 68, 68, .12); color: #b91c1c; }
+    .module-card h5 { margin-top: .3rem; }
+    .module-meta {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        color: #64748b;
+        font-weight: 600;
+        font-size: .78rem;
+        margin-bottom: .8rem;
+    }
+    .module-card p { transition: color .25s ease; }
+    .module-card.is-enabled:hover p { color: #4b5563 !important; }
+    .module-link-last {
+        box-shadow: 0 0 0 3px rgba(250, 204, 21, .28);
+        position: relative;
+    }
+    .module-link-last::after {
+        content: "Oxirgi tanlov";
+        position: absolute;
+        top: -28px;
+        right: 0;
+        font-size: .68rem;
+        font-weight: 700;
+        color: #92400e;
+        background: rgba(245, 158, 11, .16);
+        border: 1px solid rgba(245, 158, 11, .28);
+        border-radius: 999px;
+        padding: .2rem .5rem;
+    }
+    .module-link {
+        transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+        position: relative;
+        border: 0;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+    .module-link.module-link-ielts { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff !important; }
+    .module-link.module-link-sat { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff !important; }
+    .module-link:hover,
+    .module-link:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(37, 99, 235, .28);
+        filter: saturate(1.05);
+    }
+    .module-link:focus-visible {
+        outline: 3px solid rgba(59, 130, 246, 0.35);
+        outline-offset: 2px;
+    }
+    .module-link.module-pulse { animation: modulePulse 2.4s ease-in-out infinite; }
+    .module-shortcut-hint {
+        font-size: .72rem;
+        font-weight: 700;
+        color: #6366f1;
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 999px;
+        padding: .2rem .45rem;
+        line-height: 1;
+    }
+    .module-link.module-pulse:hover,
+    .module-link.module-pulse:focus-visible { animation-play-state: paused; }
+    .module-ready-glow { animation: readyGlow 3.2s ease-in-out infinite; }
+
+    @keyframes moduleEnter {
+        from { opacity: 0; transform: translateY(16px) scale(0.985); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes modulePulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        50% { box-shadow: 0 0 0 8px rgba(79, 70, 229, 0.12); }
+    }
+    @keyframes readyGlow {
+        0%, 100% { box-shadow: inset 0 0 0 0 rgba(16, 185, 129, 0.0); }
+        50% { box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.25); }
+    }
+    @media (max-width: 991px) {
+        .module-page { padding-top: 1.25rem !important; padding-bottom: 1.5rem !important; }
+        .module-shell { max-width: 100%; }
+        .module-hero { padding: 1rem; border-radius: 16px; }
+        .module-hero h2 { font-size: 1.3rem; }
+        .module-badge { font-size: .72rem; padding: .28rem .65rem; }
+    }
+    @media (max-width: 768px) {
+        .module-grid { margin-top: .5rem; }
+        .module-card { border-radius: 14px; }
+        .module-card .card-body { padding: 1rem !important; }
+        .module-icon { width: 48px; height: 48px; font-size: 1.2rem; border-radius: 12px; }
+        .module-status { font-size: .68rem; padding: .2rem .52rem; }
+        .module-link, .module-card button.btn { min-height: 42px; font-size: .92rem; }
+    }
+    @media (max-width: 576px) {
+        .module-page { padding-top: .75rem !important; padding-bottom: 1rem !important; }
+        .module-hero { margin-bottom: .85rem !important; }
+        .module-hero .d-flex.gap-2 { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+        .module-shortcut-hint { font-size: .68rem; }
+        .module-link-last::after {
+            position: static;
+            display: inline-flex;
+            margin-left: .4rem;
+            top: auto;
+            right: auto;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .module-card,
+        .module-link,
+        .module-icon,
+        .module-ready-glow,
+        .module-link.module-pulse {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="module-page py-5">
+<div class="container">
+    <div class="module-shell">
+        <div class="module-hero mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 hero-content">
+                <div>
+                    <div class="hero-kicker"><i class="fas fa-sparkles"></i> Ton academy platformasi</div>
+                    <h2 class="fw-bold mb-1 hero-title">Bo'limni tanlang</h2>
+                    <p class="text-muted mb-0">Kerakli tizimga kirish uchun quyidagi bo'limlardan birini tanlang.</p>
+                    <small class="text-muted d-inline-block mt-2">
+                        Tez kirish: <span class="module-shortcut-hint">1</span> IELTS, <span class="module-shortcut-hint">2</span> SAT
+                    </small>
+                    <div class="hero-points">
+                        <span class="hero-point"><i class="fas fa-shield-check"></i>Xavfsiz kirish</span>
+                        <span class="hero-point"><i class="fas fa-bolt"></i>Tez ishlash</span>
+                        <span class="hero-point"><i class="fas fa-chart-line"></i>Progress kuzatuvi</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="module-badge badge-open">
+                        <i class="fas fa-unlock-alt"></i>{{ available_count }} ta ochiq
+                    </span>
+                    <span class="module-badge badge-locked">
+                        <i class="fas fa-lock"></i>{{ locked_count }} ta yopiq
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 module-grid">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card module-card card-ielts {% if can_access_ielts %}is-enabled module-ready-glow{% else %}is-disabled{% endif %}" data-module-card>
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="module-icon module-ielts">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        {% if can_access_ielts %}
+                        <span class="module-status status-ready">Tayyor</span>
+                        {% else %}
+                        <span class="module-status status-lock">Yopiq</span>
+                        {% endif %}
+                        </div>
+                        <h5 class="fw-bold">IELTS</h5>
+                        <div class="module-meta"><i class="fas fa-layer-group"></i>Video + Test + Statistika</div>
+                        <p class="text-muted flex-grow-1 mb-3">IELTS video darslar, testlar, statistika va reyting.</p>
+                        {% if can_access_ielts %}
+                        <a href="{% url 'core:dashboard' %}" class="btn module-link module-link-ielts" data-module="ielts" data-shortcut="1">IELTS tizimiga kirish</a>
+                        {% else %}
+                        <button class="btn btn-outline-secondary" disabled>Ruxsat yo'q</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card module-card card-sat {% if can_access_sat %}is-enabled module-ready-glow{% else %}is-disabled{% endif %}" data-module-card>
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="module-icon module-sat">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        {% if can_access_sat %}
+                        <span class="module-status status-ready">Tayyor</span>
+                        {% else %}
+                        <span class="module-status status-lock">Yopiq</span>
+                        {% endif %}
+                        </div>
+                        <h5 class="fw-bold">SAT</h5>
+                        <div class="module-meta"><i class="fas fa-layer-group"></i>Resurs + Eslatma + Progress</div>
+                        <p class="text-muted flex-grow-1 mb-3">SAT Math va English resurslari, progress va eslatmalar.</p>
+                        {% if can_access_sat %}
+                        <a href="{% url 'sat:sat_home' %}" class="btn module-link module-link-sat" data-module="sat" data-shortcut="2">SAT bo'limiga kirish</a>
+                        {% else %}
+                        <button class="btn btn-outline-secondary" disabled>Ruxsat yo'q</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card module-card card-jobs is-disabled" data-module-card>
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="module-icon module-jobs">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <span class="module-status status-soon">Tez orada</span>
+                        </div>
+                        <h5 class="fw-bold">Jobs</h5>
+                        <div class="module-meta"><i class="fas fa-hourglass-half"></i>Yangi modul tayyorlanmoqda</div>
+                        <p class="text-muted flex-grow-1 mb-3">Ish o'rinlari bo'limi keyingi bosqichda alohida modul sifatida ochiladi.</p>
+                        <button class="btn btn-outline-secondary" disabled>Tez orada</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if not has_any_access %}
+        <div class="alert alert-warning mt-4 mb-0">
+            Sizga hozircha hech bir bo'limga ruxsat berilmagan. Administrator bilan bog'laning.
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const cards = document.querySelectorAll('[data-module-card]');
+    cards.forEach((card, index) => {
+        setTimeout(() => card.classList.add('module-enter'), 80 * (index + 1));
+    });
+
+    const links = document.querySelectorAll('.module-link');
+    links.forEach((link) => {
+        link.addEventListener('click', function () {
+            const moduleName = this.dataset.module || '';
+            if (moduleName) {
+                localStorage.setItem('last_module', moduleName);
+            }
+        });
+    });
+
+    const lastModule = localStorage.getItem('last_module');
+    if (!lastModule) return;
+    const preferred = document.querySelector('.module-link[data-module="' + lastModule + '"]');
+    if (preferred) {
+        preferred.classList.add('module-link-last');
+        preferred.classList.add('module-pulse');
+    } else if (links.length > 0) {
+        links[0].classList.add('module-pulse');
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        const targetTag = (event.target && event.target.tagName) || '';
+        if (targetTag === 'INPUT' || targetTag === 'TEXTAREA') return;
+
+        const shortcut = String(event.key || '').trim();
+        if (!shortcut) return;
+        const link = document.querySelector('.module-link[data-shortcut="' + shortcut + '"]');
+        if (link) {
+            link.click();
+        }
+    });
+});
+</script>
+{% endblock %}

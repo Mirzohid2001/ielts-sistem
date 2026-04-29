@@ -5,6 +5,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from .models import UserOTP
 from .utils import generate_otp_for_user
+from core.models import UserModuleAccess
 
 
 class UserOTPInline(admin.TabularInline):
@@ -27,6 +28,16 @@ class UserOTPInline(admin.TabularInline):
             return format_html('<span style="color: green;">✓ Ha</span>')
         return format_html('<span style="color: red;">✗ Yo\'q</span>')
     is_valid_display.short_description = "Yaroqli"
+
+
+class UserModuleAccessInline(admin.StackedInline):
+    """User uchun modul ruxsatlarini oddiy toggle ko'rinishida berish."""
+    model = UserModuleAccess
+    extra = 0
+    max_num = 1
+    can_delete = False
+    fields = ['can_access_ielts', 'can_access_sat', 'can_access_jobs', 'active_session_key', 'updated_at']
+    readonly_fields = ['active_session_key', 'updated_at']
 
 
 @admin.register(UserOTP)
@@ -57,8 +68,20 @@ class UserOTPAdmin(admin.ModelAdmin):
 
 # User admin ni extend qilish
 class UserAdmin(BaseUserAdmin):
-    inlines = [UserOTPInline]
+    inlines = [UserModuleAccessInline, UserOTPInline]
     actions = ['generate_otp_action']
+    fieldsets = (
+        ('Asosiy ma\'lumotlar', {'fields': ('username', 'password')}),
+        ('Shaxsiy ma\'lumotlar', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Tizim holati', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+        ('Muhim sanalar', {'fields': ('last_login', 'date_joined')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2', 'is_active', 'is_staff'),
+        }),
+    )
     
     def generate_otp_action(self, request, queryset):
         """Foydalanuvchilar uchun OTP yaratish"""
@@ -74,6 +97,11 @@ class UserAdmin(BaseUserAdmin):
         if not request.user.is_superuser:
             return actions
         return actions
+
+    def get_inline_instances(self, request, obj=None):
+        if obj:
+            UserModuleAccess.objects.get_or_create(user=obj)
+        return super().get_inline_instances(request, obj)
 
 
 # Mavjud UserAdmin ni almashtirish

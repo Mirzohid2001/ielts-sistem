@@ -1254,6 +1254,38 @@ class UserActivity(models.Model):
         return f"{self.user.username} - {self.get_activity_type_display()} - {self.created_at}"
 
 
+class AdminAnnouncement(models.Model):
+    """Admin tomonidan beriladigan umumiy e'lonlar."""
+    title = models.CharField(max_length=200, verbose_name="Sarlavha")
+    message = models.TextField(verbose_name="Xabar")
+    link_url = models.URLField(blank=True, verbose_name="Havola (ixtiyoriy)")
+    is_active = models.BooleanField(default=True, verbose_name="Faol")
+    starts_at = models.DateTimeField(null=True, blank=True, verbose_name="Boshlanish vaqti")
+    ends_at = models.DateTimeField(null=True, blank=True, verbose_name="Tugash vaqti")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Admin E'loni"
+        verbose_name_plural = "Admin E'lonlari"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_active', '-created_at']),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def is_currently_active(self):
+        now = timezone.now()
+        if not self.is_active:
+            return False
+        if self.starts_at and self.starts_at > now:
+            return False
+        if self.ends_at and self.ends_at < now:
+            return False
+        return True
+
+
 class Bookmark(models.Model):
     """Sevimli videolar va testlar"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks', verbose_name="Foydalanuvchi")
@@ -1514,6 +1546,32 @@ class Flashcard(models.Model):
         return f"{self.user.username} - {self.term[:50]}"
 
 
+class UserModuleAccess(models.Model):
+    """Foydalanuvchi uchun modulga kirish ruxsatlari."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='module_access', verbose_name="Foydalanuvchi")
+    can_access_ielts = models.BooleanField(default=True, verbose_name="IELTS bo'limiga ruxsat")
+    can_access_sat = models.BooleanField(default=True, verbose_name="SAT bo'limiga ruxsat")
+    can_access_jobs = models.BooleanField(default=False, verbose_name="Jobs bo'limiga ruxsat")
+    active_session_key = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        verbose_name="Aktiv session kaliti",
+        help_text="Bir foydalanuvchi bir vaqtda faqat bitta session bilan kirishi uchun ishlatiladi.",
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan vaqt")
+
+    class Meta:
+        verbose_name = "User Module Access"
+        verbose_name_plural = "User Module Accesslar"
+
+    def __str__(self):
+        return f"{self.user.username} access"
+
+    def has_any_access(self):
+        return self.can_access_ielts or self.can_access_sat or self.can_access_jobs
+
+
 class SATResource(models.Model):
     """SAT yo'nalishi uchun resurslar (Math / English). IELTS dan alohida oqim."""
     SUBJECT_MATH = 'math'
@@ -1572,6 +1630,7 @@ class SATResourceProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sat_progress', verbose_name="Foydalanuvchi")
     resource = models.ForeignKey(SATResource, on_delete=models.CASCADE, related_name='progress', verbose_name="Resurs")
     watch_percentage = models.IntegerField(default=0, verbose_name="Foiz (0-100)")
+    last_position_seconds = models.IntegerField(default=0, verbose_name="Oxirgi pozitsiya (soniya)")
     watched = models.BooleanField(default=False, verbose_name="Yakunlangan")
     last_accessed_at = models.DateTimeField(auto_now=True, verbose_name="Oxirgi kirish")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Yakunlangan vaqt")
@@ -1588,8 +1647,10 @@ class SATResourceProgress(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.resource.title} ({self.watch_percentage}%)"
 
-    def update_progress(self, percentage):
+    def update_progress(self, percentage, position_seconds=None):
         self.watch_percentage = min(100, max(0, int(percentage or 0)))
+        if position_seconds is not None:
+            self.last_position_seconds = max(0, int(position_seconds or 0))
         if self.watch_percentage >= 90:
             self.watched = True
             if not self.completed_at:
@@ -1599,21 +1660,32 @@ class SATResourceProgress(models.Model):
 
 class SATResourceBookmark(models.Model):
     """SAT resurslari uchun bookmark."""
+    TYPE_GENERAL = 'general'
+    TYPE_VIDEO = 'video'
+    TYPE_PDF = 'pdf'
+    TYPE_CHOICES = [
+        (TYPE_GENERAL, "Umumiy"),
+        (TYPE_VIDEO, "Video"),
+        (TYPE_PDF, "PDF"),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sat_bookmarks', verbose_name="Foydalanuvchi")
     resource = models.ForeignKey(SATResource, on_delete=models.CASCADE, related_name='bookmarks', verbose_name="Resurs")
+    bookmark_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default=TYPE_GENERAL, verbose_name="Bookmark turi")
     timestamp = models.IntegerField(default=0, verbose_name="Vaqt (soniya)")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqt")
 
     class Meta:
         verbose_name = "SAT Bookmark"
         verbose_name_plural = "SAT Bookmarklar"
-        unique_together = ['user', 'resource']
+        unique_together = ['user', 'resource', 'bookmark_type']
         indexes = [
             models.Index(fields=['user', 'resource']),
+            models.Index(fields=['user', 'bookmark_type']),
         ]
 
     def __str__(self):
-        return f"{self.user.username} - {self.resource.title}"
+        return f"{self.user.username} - {self.resource.title} ({self.get_bookmark_type_display()})"
 
 
 class SATResourceNote(models.Model):

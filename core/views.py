@@ -23,6 +23,8 @@ from .models import (
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard,
     SATResource, SATResourceProgress, SATResourceBookmark, SATResourceNote,
 )
+from .access import get_user_module_access
+from .context_processors import build_notification_items
 
 FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 
               'table_completion', 'short_answer')
@@ -39,18 +41,46 @@ def sat_home(request):
     """SAT yo'nalishi bosh sahifasi (Math / English)."""
     resources = SATResource.objects.filter(is_active=True)
     progress_qs = SATResourceProgress.objects.filter(user=request.user)
+    recent_notes = SATResourceNote.objects.filter(user=request.user).select_related('resource').order_by('-created_at')[:5]
+    bookmarks_qs = SATResourceBookmark.objects.filter(user=request.user)
+    last_progress = progress_qs.select_related('resource').order_by('-last_accessed_at').first()
+    recent_progress_items = progress_qs.filter(watch_percentage__gt=0).select_related('resource').order_by('-last_accessed_at')[:5]
+    started_resource_ids = set(progress_qs.filter(watch_percentage__gt=0).values_list('resource_id', flat=True))
+
+    recommendation_qs = resources
+    if last_progress and last_progress.resource_id:
+        recommendation_qs = recommendation_qs.filter(subject=last_progress.resource.subject)
+    recommendations = list(
+        recommendation_qs.exclude(pk__in=started_resource_ids).order_by('order', '-created_at')[:3]
+    )
+    if not recommendations:
+        recommendations = list(resources.exclude(pk__in=started_resource_ids).order_by('order', '-created_at')[:3])
+    if not recommendations:
+        recommendations = list(resources.order_by('order', '-created_at')[:3])
     sat_summary = progress_qs.aggregate(
         avg_progress=Avg('watch_percentage'),
         completed=Count('id', filter=Q(watched=True)),
     )
+    progress_by_subject = {
+        row['resource__subject']: row
+        for row in progress_qs.values('resource__subject').annotate(avg=Avg('watch_percentage'))
+    }
     context = {
         'math_count': resources.filter(subject=SATResource.SUBJECT_MATH).count(),
         'english_count': resources.filter(subject=SATResource.SUBJECT_ENGLISH).count(),
         'total_resources': resources.count(),
-        'bookmarks_count': SATResourceBookmark.objects.filter(user=request.user).count(),
+        'bookmarks_count': bookmarks_qs.count(),
+        'video_bookmarks_count': bookmarks_qs.filter(bookmark_type=SATResourceBookmark.TYPE_VIDEO).count(),
+        'pdf_bookmarks_count': bookmarks_qs.filter(bookmark_type=SATResourceBookmark.TYPE_PDF).count(),
         'notes_count': SATResourceNote.objects.filter(user=request.user).count(),
         'avg_progress': round(sat_summary['avg_progress'] or 0, 1),
         'completed_count': sat_summary['completed'] or 0,
+        'math_avg_progress': round((progress_by_subject.get(SATResource.SUBJECT_MATH) or {}).get('avg') or 0, 1),
+        'english_avg_progress': round((progress_by_subject.get(SATResource.SUBJECT_ENGLISH) or {}).get('avg') or 0, 1),
+        'recent_notes': recent_notes,
+        'last_progress': last_progress,
+        'recent_progress_items': recent_progress_items,
+        'recommended_resources': recommendations,
     }
     return render(request, 'core/sat/home.html', context)
 
@@ -60,15 +90,49 @@ def sat_subject(request, subject):
     """SAT bo'limi: matematika yoki ingliz tili."""
     valid_subjects = {SATResource.SUBJECT_MATH, SATResource.SUBJECT_ENGLISH}
     if subject not in valid_subjects:
-        return redirect('core:sat_home')
-    items = list(SATResource.objects.filter(is_active=True, subject=subject).order_by('order', '-created_at'))
+        return redirect('sat:sat_home')
+    search_query = (request.GET.get('q') or '').strip()
+    bookmarked_only = request.GET.get('bookmarked') == '1'
+    content_type = (request.GET.get('content_type') or 'all').strip().lower()
+    progress_status = (request.GET.get('progress_status') or 'all').strip().lower()
+
+    base_qs = SATResource.objects.filter(is_active=True, subject=subject)
+    if search_query:
+        base_qs = base_qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+    if bookmarked_only:
+        base_qs = base_qs.filter(bookmarks__user=request.user).distinct()
+    if content_type == 'video':
+        base_qs = base_qs.filter(
+            (Q(video_file__isnull=False) & ~Q(video_file=''))
+            | Q(youtube_id__gt='')
+            | Q(youtube_url__gt='')
+        ).distinct()
+    elif content_type == 'pdf':
+        base_qs = base_qs.filter(Q(pdf_file__isnull=False) & ~Q(pdf_file='')).distinct()
+
+    if progress_status == 'completed':
+        base_qs = base_qs.filter(progress__user=request.user, progress__watched=True).distinct()
+    elif progress_status == 'in_progress':
+        base_qs = base_qs.filter(
+            progress__user=request.user,
+            progress__watch_percentage__gt=0,
+            progress__watch_percentage__lt=90,
+        ).distinct()
+    elif progress_status == 'not_started':
+        started_ids = SATResourceProgress.objects.filter(
+            user=request.user,
+            watch_percentage__gt=0,
+        ).values_list('resource_id', flat=True)
+        base_qs = base_qs.exclude(pk__in=started_ids)
+
+    items = list(base_qs.order_by('order', '-created_at'))
     resource_ids = [x.pk for x in items]
     progress_map = {
         x.resource_id: x
         for x in SATResourceProgress.objects.filter(user=request.user, resource_id__in=resource_ids)
     }
     bookmark_map = {
-        x.resource_id: x
+        (x.resource_id, x.bookmark_type): x
         for x in SATResourceBookmark.objects.filter(user=request.user, resource_id__in=resource_ids)
     }
     notes_map = {}
@@ -80,9 +144,15 @@ def sat_subject(request, subject):
         enriched_items.append({
             'obj': x,
             'progress': progress_map.get(x.pk),
-            'bookmark': bookmark_map.get(x.pk),
+            'bookmark_video': bookmark_map.get((x.pk, SATResourceBookmark.TYPE_VIDEO)),
+            'bookmark_pdf': bookmark_map.get((x.pk, SATResourceBookmark.TYPE_PDF)),
+            'bookmark_general': bookmark_map.get((x.pk, SATResourceBookmark.TYPE_GENERAL)),
             'notes': notes_map.get(x.pk, []),
         })
+
+    paginator = Paginator(enriched_items, 6)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     subject_label = dict(SATResource.SUBJECT_CHOICES).get(subject, subject)
     return render(
@@ -91,7 +161,13 @@ def sat_subject(request, subject):
         {
             'subject': subject,
             'subject_label': subject_label,
-            'items': enriched_items,
+            'items': page_obj.object_list,
+            'page_obj': page_obj,
+            'search_query': search_query,
+            'bookmarked_only': bookmarked_only,
+            'content_type': content_type,
+            'progress_status': progress_status,
+            'results_count': paginator.count,
         },
     )
 
@@ -101,7 +177,7 @@ def sat_pdf_viewer(request, pk):
     """SAT PDF ni inline viewer sahifasida ko'rsatish."""
     resource = get_object_or_404(SATResource, pk=pk, is_active=True)
     if not resource.pdf_file:
-        return redirect('core:sat_subject', subject=resource.subject)
+        return redirect('sat:sat_subject', subject=resource.subject)
     return render(request, 'core/sat/pdf_viewer.html', {'resource': resource})
 
 
@@ -171,15 +247,33 @@ def sat_update_progress(request, pk):
         progress = int(request.POST.get('progress', 0))
     except (TypeError, ValueError):
         progress = 0
+    try:
+        position_seconds = int(float(request.POST.get('position_seconds', 0)))
+    except (TypeError, ValueError):
+        position_seconds = 0
     obj, _ = SATResourceProgress.objects.get_or_create(user=request.user, resource=resource)
-    obj.update_progress(progress)
-    return JsonResponse({'success': True, 'progress': obj.watch_percentage, 'watched': obj.watched})
+    obj.update_progress(progress, position_seconds=position_seconds)
+    return JsonResponse({
+        'success': True,
+        'progress': obj.watch_percentage,
+        'watched': obj.watched,
+        'position_seconds': obj.last_position_seconds,
+    })
 
 
 @login_required
 @require_POST
 def sat_toggle_bookmark(request, pk):
     resource = get_object_or_404(SATResource, pk=pk, is_active=True)
+    bookmark_type = (request.POST.get('bookmark_type') or SATResourceBookmark.TYPE_GENERAL).strip().lower()
+    valid_types = {
+        SATResourceBookmark.TYPE_GENERAL,
+        SATResourceBookmark.TYPE_VIDEO,
+        SATResourceBookmark.TYPE_PDF,
+    }
+    if bookmark_type not in valid_types:
+        bookmark_type = SATResourceBookmark.TYPE_GENERAL
+
     try:
         ts = int(request.POST.get('timestamp', 0))
     except (TypeError, ValueError):
@@ -187,12 +281,56 @@ def sat_toggle_bookmark(request, pk):
     obj, created = SATResourceBookmark.objects.get_or_create(
         user=request.user,
         resource=resource,
+        bookmark_type=bookmark_type,
         defaults={'timestamp': max(0, ts)},
     )
     if not created:
         obj.delete()
-        return JsonResponse({'success': True, 'bookmarked': False})
-    return JsonResponse({'success': True, 'bookmarked': True})
+        return JsonResponse({'success': True, 'bookmarked': False, 'bookmark_type': bookmark_type})
+    return JsonResponse({'success': True, 'bookmarked': True, 'bookmark_type': bookmark_type})
+
+
+@login_required
+def sat_bookmarks(request):
+    """SAT bo'limi uchun barcha saqlangan bookmarklar."""
+    bookmark_type = (request.GET.get('type') or 'all').strip().lower()
+    qs = SATResourceBookmark.objects.filter(user=request.user).select_related('resource').order_by('-created_at')
+    if bookmark_type in {SATResourceBookmark.TYPE_VIDEO, SATResourceBookmark.TYPE_PDF, SATResourceBookmark.TYPE_GENERAL}:
+        qs = qs.filter(bookmark_type=bookmark_type)
+    return render(
+        request,
+        'core/sat/bookmarks.html',
+        {
+            'bookmarks': qs,
+            'active_type': bookmark_type,
+            'counts': {
+                'all': SATResourceBookmark.objects.filter(user=request.user).count(),
+                'video': SATResourceBookmark.objects.filter(user=request.user, bookmark_type=SATResourceBookmark.TYPE_VIDEO).count(),
+                'pdf': SATResourceBookmark.objects.filter(user=request.user, bookmark_type=SATResourceBookmark.TYPE_PDF).count(),
+                'general': SATResourceBookmark.objects.filter(user=request.user, bookmark_type=SATResourceBookmark.TYPE_GENERAL).count(),
+            },
+        },
+    )
+
+
+@login_required
+@require_POST
+def sat_clear_bookmarks(request):
+    """SAT bookmarklarni type bo'yicha bulk tozalash."""
+    clear_type = (request.POST.get('type') or 'all').strip().lower()
+    qs = SATResourceBookmark.objects.filter(user=request.user)
+
+    if clear_type in {
+        SATResourceBookmark.TYPE_VIDEO,
+        SATResourceBookmark.TYPE_PDF,
+        SATResourceBookmark.TYPE_GENERAL,
+    }:
+        deleted_count, _ = qs.filter(bookmark_type=clear_type).delete()
+    else:
+        deleted_count, _ = qs.delete()
+
+    messages.success(request, f"{deleted_count} ta izbranniy o'chirildi.")
+    return redirect('sat:sat_bookmarks')
 
 
 @login_required
@@ -607,6 +745,31 @@ def _get_question_context_extra(question, current_answer):
             list_options.append({'letter': letter, 'text': text, 'checked': str(letter).lower() in cur_set})
     
     return ans_fields, matching_fields, list_options, box_inline_parts
+
+
+@login_required
+def module_selector(request):
+    """Foydalanuvchi uchun bo'lim tanlash sahifasi."""
+    access = get_user_module_access(request.user)
+    module_flags = {
+        'ielts': access.can_access_ielts,
+        'sat': access.can_access_sat,
+        'jobs': access.can_access_jobs,
+    }
+    available_count = sum(1 for v in module_flags.values() if v)
+    locked_count = len(module_flags) - available_count
+    return render(
+        request,
+        'core/module_selector.html',
+        {
+            'can_access_ielts': module_flags['ielts'],
+            'can_access_sat': module_flags['sat'],
+            'can_access_jobs': module_flags['jobs'],
+            'has_any_access': access.has_any_access(),
+            'available_count': available_count,
+            'locked_count': locked_count,
+        },
+    )
 
 
 @login_required
@@ -2437,8 +2600,11 @@ def test_result(request, pk):
 
 
 @login_required
-def profile(request):
+def profile(request, section=None):
     """Foydalanuvchi profili"""
+    active_section = (section or request.GET.get('section') or 'overall').strip().lower()
+    if active_section not in {'overall', 'ielts', 'sat', 'jobs'}:
+        active_section = 'overall'
     # Test natijalari (faqat tugallanganlar — jadval va hisobotlar uchun)
     test_results = UserTestResult.objects.filter(
         user=request.user,
@@ -2502,8 +2668,29 @@ def profile(request):
         'total_videos': monthly_videos.count(),
         'study_days': StudyStreak.objects.filter(user=request.user, date__gte=month_start.date(), date__lte=month_end.date()).count(),
     }
+
+    # SAT statistikasi (umumiy profil uchun)
+    sat_progress_qs = SATResourceProgress.objects.filter(user=request.user).select_related('resource')
+    sat_stats = {
+        'total_resources': SATResource.objects.filter(is_active=True).count(),
+        'tracked_resources': sat_progress_qs.count(),
+        'completed_resources': sat_progress_qs.filter(watched=True).count(),
+        'avg_progress': round(sat_progress_qs.aggregate(v=Avg('watch_percentage'))['v'] or 0, 1),
+        'bookmarks_total': SATResourceBookmark.objects.filter(user=request.user).count(),
+        'bookmarks_video': SATResourceBookmark.objects.filter(user=request.user, bookmark_type=SATResourceBookmark.TYPE_VIDEO).count(),
+        'bookmarks_pdf': SATResourceBookmark.objects.filter(user=request.user, bookmark_type=SATResourceBookmark.TYPE_PDF).count(),
+        'notes_total': SATResourceNote.objects.filter(user=request.user).count(),
+    }
+    sat_recent_progress = sat_progress_qs.filter(watch_percentage__gt=0).order_by('-last_accessed_at')[:5]
+
+    # Jobs hali yo'q — kelajak uchun placeholder
+    jobs_stats = {
+        'available': False,
+        'label': "Tez orada",
+    }
     
     context = {
+        'active_section': active_section,
         'test_results': test_results,
         'video_progress': video_progress,
         'bookmarks': bookmarks,
@@ -2512,8 +2699,18 @@ def profile(request):
         'analytics_summary': analytics_summary,
         'weekly_summary_stats': weekly_summary_stats,
         'monthly_summary_stats': monthly_summary_stats,
+        'sat_stats': sat_stats,
+        'sat_recent_progress': sat_recent_progress,
+        'jobs_stats': jobs_stats,
     }
     return render(request, 'core/profile.html', context)
+
+
+@login_required
+def notifications(request):
+    """Barcha bildirishnoma va e'lonlar sahifasi."""
+    items = build_notification_items(request.user, limit=50)
+    return render(request, 'core/notifications.html', {'notification_items': items})
 
 
 @login_required

@@ -1,9 +1,31 @@
 {% extends 'base.html' %}
 
-{% block title %}SAT {{ subject_label }} - IELTS Center{% endblock %}
+{% block title %}SAT {{ subject_label }} - Ton academy{% endblock %}
 
 {% block extra_css %}
 <style>
+    .sat-mini-nav {
+        display: flex;
+        gap: .55rem;
+        flex-wrap: wrap;
+    }
+    .sat-mini-link {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid #dbeafe;
+        background: #fff;
+        color: #1f2937;
+        text-decoration: none;
+        font-size: .84rem;
+        font-weight: 700;
+        padding: .42rem .8rem;
+    }
+    .sat-mini-link.active {
+        color: #0b3b8f;
+        background: rgba(59, 130, 246, .14);
+        border-color: rgba(59, 130, 246, .3);
+    }
     .sat-hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0891b2 100%); color: #fff; border-radius: 16px; padding: 1.25rem 1.5rem; }
     .sat-card { border: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 30px rgba(2, 6, 23, .08); }
     .sat-card .card-body { padding: 1.25rem; }
@@ -11,34 +33,153 @@
     .sat-notes { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .65rem; }
     .sat-note-item { background: #fff; }
     .sat-progress-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .65rem; }
+    .sat-filter {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: .85rem;
+        box-shadow: 0 8px 20px rgba(2, 6, 23, .06);
+    }
+    .sat-note-empty {
+        color: #6b7280;
+        font-size: .86rem;
+    }
+    .sat-bookmark-pill { border-radius: 999px; font-weight: 700; }
+    .sat-loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, .24);
+        backdrop-filter: blur(2px);
+        z-index: 1060;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .sat-loading-overlay.show { display: flex; }
+    .sat-loading-box {
+        background: #fff;
+        border-radius: 14px;
+        padding: .9rem 1.1rem;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .2);
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        font-weight: 700;
+        color: #334155;
+    }
+    .sat-pagination .page-link {
+        border-radius: 10px;
+        margin: 0 .15rem;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+        font-weight: 600;
+    }
+    .sat-pagination .page-item.active .page-link {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+    }
+    @media (max-width: 991px) {
+        .sat-hero { padding: 1rem 1.05rem; border-radius: 12px; }
+        .sat-hero h2 { font-size: 1.25rem; }
+        .sat-filter { padding: .7rem; }
+        .sat-filter .btn { min-height: 38px; }
+    }
+    @media (max-width: 768px) {
+        .sat-card .card-body { padding: 1rem; }
+        .sat-progress-wrap { padding: .6rem; }
+        .sat-progress-wrap .form-label { font-size: .78rem; }
+        .sat-note-text { font-size: .9rem; }
+    }
+    @media (max-width: 576px) {
+        .sat-mini-nav { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+        .sat-mini-link { white-space: nowrap; }
+        .sat-hero { margin-bottom: .9rem !important; }
+        .sat-hero p { font-size: .84rem; }
+        .sat-filter .row > div { width: 100%; }
+        .sat-filter .d-flex { flex-direction: column; }
+        .sat-filter .d-flex .btn { width: 100%; }
+        .sat-card h5 { font-size: 1rem; }
+        .sat-chip { font-size: .7rem; }
+        .sat-progress-save,
+        .sat-note-add {
+            min-height: 38px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container py-4">
+    {% include 'core/sat/_mini_nav.html' %}
     <div class="sat-hero d-flex flex-wrap align-items-center justify-content-between mb-4">
         <div>
             <h2 class="mb-1">SAT - {{ subject_label }}</h2>
             <p class="mb-0 opacity-75">Bo'limdagi video va PDF resurslar ro'yxati.</p>
         </div>
-        <a href="{% url 'core:sat_home' %}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-arrow-left me-1"></i>Orqaga
         </a>
     </div>
 
+    <form method="get" class="sat-filter mb-4" id="sat-filter-form">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-lg-4">
+                <input type="text" name="q" class="form-control form-control-sm" value="{{ search_query }}" placeholder="Resurs nomi yoki tavsif bo'yicha qidirish...">
+            </div>
+            <div class="col-6 col-lg-2">
+                <select class="form-select form-select-sm" name="content_type">
+                    <option value="all" {% if content_type == 'all' %}selected{% endif %}>Kontent: Barchasi</option>
+                    <option value="video" {% if content_type == 'video' %}selected{% endif %}>Faqat Video</option>
+                    <option value="pdf" {% if content_type == 'pdf' %}selected{% endif %}>Faqat PDF</option>
+                </select>
+            </div>
+            <div class="col-6 col-lg-3">
+                <select class="form-select form-select-sm" name="progress_status">
+                    <option value="all" {% if progress_status == 'all' %}selected{% endif %}>Progress: Barchasi</option>
+                    <option value="not_started" {% if progress_status == 'not_started' %}selected{% endif %}>Boshlanmagan</option>
+                    <option value="in_progress" {% if progress_status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
+                    <option value="completed" {% if progress_status == 'completed' %}selected{% endif %}>Yakunlangan</option>
+                </select>
+            </div>
+            <div class="col-12 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="bookmarked" value="1" id="bookmarkedOnly" {% if bookmarked_only %}checked{% endif %}>
+                    <label class="form-check-label small" for="bookmarkedOnly">
+                        Faqat saqlanganlar
+                    </label>
+                </div>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>Filterlash
+                </button>
+                <a href="{% url 'sat:sat_subject' subject %}" class="btn btn-sm btn-outline-secondary">Tozalash</a>
+            </div>
+        </div>
+        <small class="text-muted d-block mt-2">Topildi: {{ results_count }} ta resurs</small>
+    </form>
+
     {% if items %}
     <div class="row g-4">
         {% for row in items %}
-        <div class="col-12">
+        <div class="col-12" id="sat-resource-{{ row.obj.pk }}" data-resource-id="{{ row.obj.pk }}">
             <div class="card sat-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                         <h5 class="mb-2">{{ row.obj.title }}</h5>
                         <div class="d-flex align-items-center gap-2">
                             <span class="sat-chip">{{ subject_label }}</span>
-                            <button class="btn btn-sm {% if row.bookmark %}btn-warning{% else %}btn-outline-warning{% endif %} sat-bookmark-btn" data-id="{{ row.obj.pk }}">
-                            <i class="fas fa-bookmark me-1"></i>{% if row.bookmark %}Bookmarked{% else %}Bookmark{% endif %}
+                            {% if row.obj.video_file or row.obj.youtube_id or row.obj.youtube_url %}
+                            <button class="btn btn-sm sat-bookmark-btn sat-bookmark-pill {% if row.bookmark_video %}btn-warning{% else %}btn-outline-warning{% endif %}" data-id="{{ row.obj.pk }}" data-bookmark-type="video">
+                                <i class="fas fa-video me-1"></i>{% if row.bookmark_video %}Video saqlangan{% else %}Video saqlash{% endif %}
                             </button>
+                            {% endif %}
+                            {% if row.obj.pdf_file %}
+                            <button class="btn btn-sm sat-bookmark-btn sat-bookmark-pill {% if row.bookmark_pdf %}btn-danger{% else %}btn-outline-danger{% endif %}" data-id="{{ row.obj.pk }}" data-bookmark-type="pdf">
+                                <i class="fas fa-file-pdf me-1"></i>{% if row.bookmark_pdf %}PDF saqlangan{% else %}PDF saqlash{% endif %}
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                     {% if row.obj.description %}
@@ -47,7 +188,7 @@
 
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         {% if row.obj.pdf_file %}
-                        <a href="{% url 'core:sat_pdf_viewer' row.obj.pk %}" class="btn btn-sm btn-danger" target="_blank" rel="noopener">
+                        <a href="{% url 'sat:sat_pdf_viewer' row.obj.pk %}" class="btn btn-sm btn-danger" target="_blank" rel="noopener">
                             <i class="fas fa-file-pdf me-1"></i>PDF ko'rish
                         </a>
                         {% endif %}
@@ -55,7 +196,7 @@
 
                     {% if row.obj.video_file %}
                     <div class="ratio ratio-16x9">
-                        <video controls preload="metadata" class="w-100">
+                        <video controls preload="metadata" class="w-100 sat-video-player" data-id="{{ row.obj.pk }}" data-resume-seconds="{% if row.progress %}{{ row.progress.last_position_seconds|default:0 }}{% else %}0{% endif %}">
                             <source src="{{ row.obj.video_file.url }}">
                         </video>
                     </div>
@@ -103,7 +244,7 @@
                             </div>
                             {% endfor %}
                         {% else %}
-                            <small class="text-muted">Eslatma yo'q</small>
+                            <small class="sat-note-empty">Eslatma yo'q</small>
                         {% endif %}
                     </div>
                 </div>
@@ -111,20 +252,101 @@
         </div>
         {% endfor %}
     </div>
+    {% if page_obj and page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="SAT pagination" class="mt-4">
+        <ul class="pagination justify-content-center sat-pagination flex-wrap">
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                {% if page_obj.has_previous %}
+                <a class="page-link sat-page-link" href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if bookmarked_only %}bookmarked=1&{% endif %}{% if content_type and content_type != 'all' %}content_type={{ content_type }}&{% endif %}{% if progress_status and progress_status != 'all' %}progress_status={{ progress_status }}&{% endif %}page={{ page_obj.previous_page_number }}">Oldingi</a>
+                {% else %}
+                <span class="page-link">Oldingi</span>
+                {% endif %}
+            </li>
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                <li class="page-item">
+                    <a class="page-link sat-page-link" href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if bookmarked_only %}bookmarked=1&{% endif %}{% if content_type and content_type != 'all' %}content_type={{ content_type }}&{% endif %}{% if progress_status and progress_status != 'all' %}progress_status={{ progress_status }}&{% endif %}page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                {% if page_obj.has_next %}
+                <a class="page-link sat-page-link" href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if bookmarked_only %}bookmarked=1&{% endif %}{% if content_type and content_type != 'all' %}content_type={{ content_type }}&{% endif %}{% if progress_status and progress_status != 'all' %}progress_status={{ progress_status }}&{% endif %}page={{ page_obj.next_page_number }}">Keyingi</a>
+                {% else %}
+                <span class="page-link">Keyingi</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
     {% else %}
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
             <i class="fas fa-folder-open fa-2x text-muted mb-3"></i>
-            <p class="text-muted mb-0">Bu bo'limda hozircha resurs yo'q.</p>
+            <p class="text-muted mb-2">Filter bo'yicha mos resurs topilmadi.</p>
+            <a href="{% url 'sat:sat_subject' subject %}" class="btn btn-sm btn-outline-primary">Filterni tozalash</a>
         </div>
     </div>
     {% endif %}
+</div>
+
+<div class="sat-loading-overlay" id="sat-loading-overlay" aria-live="polite" aria-hidden="true">
+    <div class="sat-loading-box">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Yuklanmoqda...
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const params = new URLSearchParams(window.location.search);
+    const continueResourceId = params.get('res');
+    const continueTime = parseInt(params.get('t') || '0', 10);
+
+    if (continueResourceId) {
+        const target = document.getElementById('sat-resource-' + continueResourceId);
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const card = target.querySelector('.sat-card');
+            if (card) {
+                card.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, .25), 0 12px 30px rgba(2, 6, 23, .08)';
+                setTimeout(() => { card.style.boxShadow = ''; }, 2200);
+            }
+
+            if (continueTime > 0) {
+                const video = target.querySelector('video');
+                if (video) {
+                    video.currentTime = continueTime;
+                }
+            }
+        }
+    }
+
+    const loadingOverlay = document.getElementById('sat-loading-overlay');
+    function showLoading() {
+        if (!loadingOverlay) return;
+        loadingOverlay.classList.add('show');
+        loadingOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    const filterForm = document.getElementById('sat-filter-form');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function () {
+            showLoading();
+        });
+    }
+    document.querySelectorAll('.sat-page-link').forEach((link) => {
+        link.addEventListener('click', function () {
+            showLoading();
+        });
+    });
+
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -144,10 +366,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.sat-progress-save').forEach((btn) => {
         btn.addEventListener('click', function () {
+            this.disabled = true;
             const id = this.dataset.id;
             const input = document.querySelector('.sat-progress-input[data-id="' + id + '"]');
+            const video = document.querySelector('.sat-video-player[data-id="' + id + '"]');
             const fd = new FormData();
             fd.append('progress', input ? input.value : 0);
+            if (video) {
+                fd.append('position_seconds', Math.floor(video.currentTime || 0));
+            }
             fd.append('csrfmiddlewaretoken', csrf);
             fetch('/sat/resource/' + id + '/progress/', { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf}})
                 .then(r => r.json())
@@ -155,38 +382,59 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!d.success) return;
                     this.textContent = 'Saqlandi';
                     setTimeout(() => { this.textContent = 'Progress saqlash'; }, 1000);
-                });
+                })
+                .finally(() => { this.disabled = false; });
         });
     });
 
     document.querySelectorAll('.sat-bookmark-btn').forEach((btn) => {
         btn.addEventListener('click', function () {
+            this.disabled = true;
             const id = this.dataset.id;
+            const bookmarkType = this.dataset.bookmarkType || 'general';
             const fd = new FormData();
             fd.append('csrfmiddlewaretoken', csrf);
+            fd.append('bookmark_type', bookmarkType);
             fetch('/sat/resource/' + id + '/bookmark/', { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf}})
                 .then(r => r.json())
                 .then(d => {
                     if (!d.success) return;
-                    if (d.bookmarked) {
-                        this.classList.remove('btn-outline-warning');
-                        this.classList.add('btn-warning');
-                        this.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmarked';
+                    if (bookmarkType === 'pdf') {
+                        if (d.bookmarked) {
+                            this.classList.remove('btn-outline-danger');
+                            this.classList.add('btn-danger');
+                            this.innerHTML = '<i class="fas fa-file-pdf me-1"></i>PDF saqlangan';
+                        } else {
+                            this.classList.remove('btn-danger');
+                            this.classList.add('btn-outline-danger');
+                            this.innerHTML = '<i class="fas fa-file-pdf me-1"></i>PDF saqlash';
+                        }
                     } else {
-                        this.classList.remove('btn-warning');
-                        this.classList.add('btn-outline-warning');
-                        this.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                        if (d.bookmarked) {
+                            this.classList.remove('btn-outline-warning');
+                            this.classList.add('btn-warning');
+                            this.innerHTML = '<i class="fas fa-video me-1"></i>Video saqlangan';
+                        } else {
+                            this.classList.remove('btn-warning');
+                            this.classList.add('btn-outline-warning');
+                            this.innerHTML = '<i class="fas fa-video me-1"></i>Video saqlash';
+                        }
                     }
-                });
+                })
+                .finally(() => { this.disabled = false; });
         });
     });
 
     document.querySelectorAll('.sat-note-add').forEach((btn) => {
         btn.addEventListener('click', function () {
+            this.disabled = true;
             const id = this.dataset.id;
             const input = document.querySelector('.sat-note-text[data-id="' + id + '"]');
             const text = (input?.value || '').trim();
-            if (!text) return;
+            if (!text) {
+                this.disabled = false;
+                return;
+            }
             const fd = new FormData();
             fd.append('note_text', text);
             fd.append('csrfmiddlewaretoken', csrf);
@@ -196,6 +444,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!d.success) return;
                     const wrap = document.getElementById('sat-notes-' + id);
                     if (wrap && wrap.innerHTML.indexOf("Eslatma yo'q") >= 0) wrap.innerHTML = '';
+                    const empty = wrap ? wrap.querySelector('.sat-note-empty') : null;
+                    if (empty) empty.remove();
                     if (wrap) {
                         wrap.insertAdjacentHTML('afterbegin',
                             '<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1 sat-note-item" data-note-id="' + d.note.id + '">' +
@@ -204,7 +454,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             '</div>');
                     }
                     if (input) input.value = '';
-                });
+                })
+                .finally(() => { this.disabled = false; });
         });
     });
 
@@ -220,7 +471,57 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!d.success) return;
                 const item = document.querySelector('.sat-note-item[data-note-id="' + noteId + '"]');
                 if (item) item.remove();
+                const wrap = item ? item.closest('.sat-notes') : null;
+                if (wrap && wrap.querySelectorAll('.sat-note-item').length === 0) {
+                    wrap.insertAdjacentHTML('afterbegin', '<small class="sat-note-empty">Eslatma yo\\'q</small>');
+                }
             });
+    });
+
+    // Uploaded video bo'lsa: oxirgi sekunddan davom etish + avtomatik saqlash.
+    document.querySelectorAll('.sat-video-player').forEach((video) => {
+        const id = video.dataset.id;
+        const resumeSec = parseInt(video.dataset.resumeSeconds || '0', 10);
+        let resumeApplied = false;
+        let autoSaveTimer = null;
+
+        video.addEventListener('loadedmetadata', function () {
+            if (!resumeApplied && resumeSec > 0 && resumeSec < Math.floor(video.duration || 0)) {
+                video.currentTime = resumeSec;
+                resumeApplied = true;
+            }
+        });
+
+        const saveProgress = function () {
+            const duration = video.duration || 0;
+            if (!duration || duration <= 0) return;
+            const current = Math.floor(video.currentTime || 0);
+            const percent = Math.max(0, Math.min(100, Math.round((current / duration) * 100)));
+
+            const fd = new FormData();
+            fd.append('progress', percent);
+            fd.append('position_seconds', current);
+            fd.append('csrfmiddlewaretoken', csrf);
+            fetch('/sat/resource/' + id + '/progress/', { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf}})
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) return;
+                    const out = document.getElementById('sat-progress-val-' + id);
+                    const slider = document.querySelector('.sat-progress-input[data-id="' + id + '"]');
+                    if (out) out.textContent = (d.progress || percent) + '%';
+                    if (slider) slider.value = d.progress || percent;
+                })
+                .catch(() => {});
+        };
+
+        const scheduleSave = function () {
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(saveProgress, 700);
+        };
+
+        video.addEventListener('timeupdate', scheduleSave);
+        video.addEventListener('pause', saveProgress);
+        video.addEventListener('ended', saveProgress);
     });
 });
 </script>

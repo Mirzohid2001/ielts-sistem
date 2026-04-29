@@ -1,6 +1,24 @@
-from django.test import TestCase
+from datetime import timedelta
 
-from core.models import Category, Question, ReadingPassage, Test
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils import timezone
+
+from core.models import (
+    AdminAnnouncement,
+    Category,
+    Question,
+    ReadingPassage,
+    SATResource,
+    SATResourceBookmark,
+    SATResourceNote,
+    SATResourceProgress,
+    Test,
+    StudyStreak,
+    UserTestResult,
+    UserModuleAccess,
+)
 
 
 class GetReadingPassagesTests(TestCase):
@@ -173,3 +191,195 @@ class McqMaxChoicesThreeTests(TestCase):
     def test_gradable_slots_three(self):
         q = self._q()
         self.assertEqual(q.gradable_answer_slots(), 3)
+
+
+class ModuleSelectorViewTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="module_user",
+            password="secret123",
+        )
+        self.client.force_login(self.user)
+
+    def test_module_selector_loads_for_authenticated_user(self):
+        response = self.client.get(reverse('core:module_selector'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bo'limni tanlang")
+
+    def test_module_selector_shows_denied_button_when_sat_closed(self):
+        access = UserModuleAccess.objects.get(user=self.user)
+        access.can_access_sat = False
+        access.save(update_fields=['can_access_sat'])
+
+        response = self.client.get(reverse('core:module_selector'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ruxsat yo'q")
+
+
+class ModuleAccessMiddlewareTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="guarded_user",
+            password="secret123",
+        )
+        self.client.force_login(self.user)
+
+    def test_sat_blocked_when_user_has_no_sat_access(self):
+        access = UserModuleAccess.objects.get(user=self.user)
+        access.can_access_sat = False
+        access.save(update_fields=['can_access_sat'])
+
+        response = self.client.get(reverse('sat:sat_home'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('core:module_selector'))
+
+    def test_ielts_blocked_when_user_has_no_ielts_access(self):
+        access = UserModuleAccess.objects.get(user=self.user)
+        access.can_access_ielts = False
+        access.save(update_fields=['can_access_ielts'])
+
+        response = self.client.get(reverse('core:dashboard'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('core:module_selector'))
+
+    def test_ielts_allowed_when_access_exists(self):
+        response = self.client.get(reverse('core:dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+
+class SatExperienceTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='sat_user', password='secret123')
+        self.client.force_login(self.user)
+        self.math_1 = SATResource.objects.create(title='Algebra Basics', subject=SATResource.SUBJECT_MATH, is_active=True)
+        self.math_2 = SATResource.objects.create(title='Geometry', subject=SATResource.SUBJECT_MATH, is_active=True)
+        self.eng_1 = SATResource.objects.create(title='Reading Drill', subject=SATResource.SUBJECT_ENGLISH, is_active=True)
+        SATResourceBookmark.objects.create(user=self.user, resource=self.math_1)
+
+    def test_sat_subject_search_filters_results(self):
+        response = self.client.get(reverse('sat:sat_subject', kwargs={'subject': 'math'}), {'q': 'Algebra'})
+        self.assertEqual(response.status_code, 200)
+        items = response.context['items']
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['obj'].title, 'Algebra Basics')
+
+    def test_sat_subject_bookmark_filter_returns_only_bookmarked(self):
+        response = self.client.get(reverse('sat:sat_subject', kwargs={'subject': 'math'}), {'bookmarked': '1'})
+        self.assertEqual(response.status_code, 200)
+        items = response.context['items']
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['obj'].pk, self.math_1.pk)
+
+    def test_sat_home_shows_recent_notes(self):
+        SATResourceNote.objects.create(user=self.user, resource=self.math_1, note_text='First note')
+        SATResourceNote.objects.create(user=self.user, resource=self.eng_1, note_text='Second note')
+        response = self.client.get(reverse('sat:sat_home'))
+        self.assertEqual(response.status_code, 200)
+        notes = list(response.context['recent_notes'])
+        self.assertEqual(len(notes), 2)
+        self.assertEqual(notes[0].note_text, 'Second note')
+
+    def test_sat_toggle_bookmark_by_type(self):
+        response_video = self.client.post(
+            reverse('sat:sat_toggle_bookmark', kwargs={'pk': self.math_1.pk}),
+            data={'bookmark_type': 'video'},
+        )
+        self.assertEqual(response_video.status_code, 200)
+        self.assertTrue(SATResourceBookmark.objects.filter(user=self.user, resource=self.math_1, bookmark_type='video').exists())
+
+        response_pdf = self.client.post(
+            reverse('sat:sat_toggle_bookmark', kwargs={'pk': self.math_1.pk}),
+            data={'bookmark_type': 'pdf'},
+        )
+        self.assertEqual(response_pdf.status_code, 200)
+        self.assertTrue(SATResourceBookmark.objects.filter(user=self.user, resource=self.math_1, bookmark_type='pdf').exists())
+
+    def test_sat_clear_bookmarks_by_type(self):
+        SATResourceBookmark.objects.create(user=self.user, resource=self.math_1, bookmark_type='video')
+        SATResourceBookmark.objects.create(user=self.user, resource=self.math_1, bookmark_type='pdf')
+
+        response = self.client.post(reverse('sat:sat_clear_bookmarks'), data={'type': 'video'})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(SATResourceBookmark.objects.filter(user=self.user, resource=self.math_1, bookmark_type='video').exists())
+        self.assertTrue(SATResourceBookmark.objects.filter(user=self.user, resource=self.math_1, bookmark_type='pdf').exists())
+
+    def test_sat_update_progress_saves_last_position(self):
+        response = self.client.post(
+            reverse('sat:sat_update_progress', kwargs={'pk': self.math_1.pk}),
+            data={'progress': '42', 'position_seconds': '135'},
+        )
+        self.assertEqual(response.status_code, 200)
+        progress = SATResourceProgress.objects.get(user=self.user, resource=self.math_1)
+        self.assertEqual(progress.watch_percentage, 42)
+        self.assertEqual(progress.last_position_seconds, 135)
+
+    def test_sat_subject_is_paginated(self):
+        for i in range(8):
+            SATResource.objects.create(
+                title=f'Math item {i}',
+                subject=SATResource.SUBJECT_MATH,
+                is_active=True,
+            )
+        response = self.client.get(reverse('sat:sat_subject', kwargs={'subject': 'math'}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['items']), 6)
+        self.assertTrue(response.context['page_obj'].has_next())
+
+    def test_sat_subject_content_type_filter_pdf(self):
+        self.math_1.pdf_file = 'sat/pdfs/test.pdf'
+        self.math_1.save(update_fields=['pdf_file'])
+        response = self.client.get(
+            reverse('sat:sat_subject', kwargs={'subject': 'math'}),
+            {'content_type': 'pdf'},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['results_count'], 1)
+
+    def test_sat_home_contains_history_and_recommendations(self):
+        SATResourceProgress.objects.create(user=self.user, resource=self.math_1, watch_percentage=35)
+        SATResource.objects.create(title='Next Math', subject=SATResource.SUBJECT_MATH, is_active=True)
+
+        response = self.client.get(reverse('sat:sat_home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['recent_progress_items']) >= 1)
+        self.assertTrue(len(response.context['recommended_resources']) >= 1)
+
+
+class NotificationContextTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="notif_user", password="secret123")
+        self.client.force_login(self.user)
+        self.category = Category.objects.create(name="Notif Cat", slug="notif-cat")
+        self.test = Test.objects.create(
+            title="Paused Test",
+            category=self.category,
+            test_type="reading",
+            reading_text="",
+            reading_passages_json=[],
+        )
+        self.sat_resource = SATResource.objects.create(
+            title="SAT Continue",
+            subject=SATResource.SUBJECT_MATH,
+            is_active=True,
+        )
+
+    def test_navbar_shows_dynamic_notification_sources(self):
+        StudyStreak.objects.create(user=self.user, date=timezone.localdate() - timedelta(days=1), activities_count=1)
+        UserTestResult.objects.create(user=self.user, test=self.test, total_questions=10, is_paused=True)
+        SATResourceProgress.objects.create(user=self.user, resource=self.sat_resource, watch_percentage=40)
+        AdminAnnouncement.objects.create(title="Yangi e'lon", message="Bugun yangilik bor", is_active=True)
+
+        response = self.client.get(reverse('core:module_selector'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Eslatmalar va e'lonlar")
+        self.assertContains(response, "IELTS davom ettirish")
+        self.assertContains(response, "SAT davom ettirish")
+        self.assertContains(response, "Bugun yangilik bor")
+        self.assertContains(response, "Hammasini ko'rish")
+
+    def test_notifications_page_renders_time_and_icons(self):
+        AdminAnnouncement.objects.create(title="Yangi e'lon", message="Bugun yangilik bor", is_active=True)
+        response = self.client.get(reverse('core:notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bildirishnomalar")
+        self.assertContains(response, "fa-bullhorn")

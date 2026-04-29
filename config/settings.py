@@ -55,6 +55,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.ModuleAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -81,6 +82,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.platform_notifications',
             ],
         },
     },
@@ -181,6 +183,9 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 # OTP Settings
 OTP_EXPIRY_HOURS = 24
 OTP_LENGTH = 10
+# OTP kirishni doimiy ishlatish (single-use va expiry tekshiruvi o'chirilgan)
+OTP_SINGLE_USE = False
+OTP_LOGIN_REQUIRES_EXPIRY = False
 
 try:
     from .settings_dev import *

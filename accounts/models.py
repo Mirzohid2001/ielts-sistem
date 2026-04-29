@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.conf import settings
 from datetime import timedelta
 import secrets
 import string
@@ -45,10 +46,22 @@ class UserOTP(models.Model):
         super().save(*args, **kwargs)
 
     def is_valid(self):
-        """OTP hali ishlatilmagan va muddati o'tmaganmi tekshirish"""
-        if not self.expires_at:
+        """
+        OTP tekshirish (sozlama orqali boshqariladi):
+        - OTP_SINGLE_USE=True bo'lsa, is_used tekshiriladi
+        - OTP_LOGIN_REQUIRES_EXPIRY=True bo'lsa, expires_at tekshiriladi
+        """
+        require_single_use = getattr(settings, 'OTP_SINGLE_USE', False)
+        require_expiry = getattr(settings, 'OTP_LOGIN_REQUIRES_EXPIRY', False)
+
+        if require_single_use and self.is_used:
             return False
-        return not self.is_used and self.expires_at > timezone.now()
+        if require_expiry:
+            if not self.expires_at:
+                return False
+            if self.expires_at <= timezone.now():
+                return False
+        return True
 
     def mark_as_used(self):
         """OTP ni ishlatilgan deb belgilash"""

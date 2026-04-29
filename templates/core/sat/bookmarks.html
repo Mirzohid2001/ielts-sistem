@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}SAT Saqlanganlar - Ton academy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sat-mini-nav { display: flex; gap: .55rem; flex-wrap: wrap; }
+    .sat-mini-link {
+        display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid #dbeafe;
+        background: #fff; color: #1f2937; text-decoration: none; font-size: .84rem; font-weight: 700; padding: .42rem .8rem;
+    }
+    .sat-mini-link.active { color: #0b3b8f; background: rgba(59,130,246,.14); border-color: rgba(59,130,246,.3); }
+    .sat-tabs .btn { border-radius: 999px; font-weight: 700; }
+    .sat-bookmark-card { border: 0; border-radius: 14px; box-shadow: 0 10px 24px rgba(2,6,23,.08); }
+    .sat-type-chip { border-radius: 999px; font-size: .72rem; font-weight: 700; padding: .25rem .6rem; }
+    .chip-video { background: rgba(37,99,235,.14); color: #1d4ed8; }
+    .chip-pdf { background: rgba(239,68,68,.14); color: #b91c1c; }
+    .chip-general { background: rgba(99,102,241,.14); color: #4338ca; }
+    @media (max-width: 576px) {
+        .sat-mini-nav { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+        .sat-mini-link { white-space: nowrap; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% include 'core/sat/_mini_nav.html' %}
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h3 class="mb-0">SAT Saqlanganlar</h3>
+        <a href="{% url 'sat:sat_home' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Orqaga
+        </a>
+    </div>
+
+    <div class="sat-tabs d-flex gap-2 flex-wrap mb-4">
+        <a href="{% url 'sat:sat_bookmarks' %}" class="btn btn-sm {% if active_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">Barchasi ({{ counts.all }})</a>
+        <a href="{% url 'sat:sat_bookmarks' %}?type=video" class="btn btn-sm {% if active_type == 'video' %}btn-primary{% else %}btn-outline-primary{% endif %}">Video ({{ counts.video }})</a>
+        <a href="{% url 'sat:sat_bookmarks' %}?type=pdf" class="btn btn-sm {% if active_type == 'pdf' %}btn-primary{% else %}btn-outline-primary{% endif %}">PDF ({{ counts.pdf }})</a>
+        <a href="{% url 'sat:sat_bookmarks' %}?type=general" class="btn btn-sm {% if active_type == 'general' %}btn-primary{% else %}btn-outline-primary{% endif %}">Umumiy ({{ counts.general }})</a>
+    </div>
+
+    {% if bookmarks %}
+    <form method="post" action="{% url 'sat:sat_clear_bookmarks' %}" class="d-flex gap-2 flex-wrap mb-3">
+        {% csrf_token %}
+        <input type="hidden" name="type" value="{{ active_type }}">
+        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Haqiqatan ham tanlangan saqlanganlarni o\\'chirasizmi?')">
+            <i class="fas fa-trash me-1"></i>
+            {% if active_type == 'all' %}Barchasini tozalash{% else %}Tanlangan turini tozalash{% endif %}
+        </button>
+    </form>
+    <div class="row g-3">
+        {% for item in bookmarks %}
+        <div class="col-12 col-md-6">
+            <div class="card sat-bookmark-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="mb-0">{{ item.resource.title }}</h6>
+                        <span class="sat-type-chip {% if item.bookmark_type == 'video' %}chip-video{% elif item.bookmark_type == 'pdf' %}chip-pdf{% else %}chip-general{% endif %}">
+                            {{ item.get_bookmark_type_display }}
+                        </span>
+                    </div>
+                    <p class="small text-muted mb-2">{{ item.resource.get_subject_display }} • {{ item.created_at|date:"d.m.Y H:i" }}</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{% url 'sat:sat_subject' item.resource.subject %}?res={{ item.resource.pk }}{% if item.bookmark_type == 'video' %}&t={{ item.timestamp }}{% endif %}" class="btn btn-sm btn-outline-secondary">Davom etish</a>
+                        {% if item.resource.pdf_file %}
+                        <a href="{% url 'sat:sat_pdf_viewer' item.resource.pk %}" target="_blank" rel="noopener" class="btn btn-sm btn-danger">
+                            <i class="fas fa-file-pdf me-1"></i>PDF
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-bookmark fa-2x text-muted mb-3"></i>
+            <p class="text-muted mb-0">Hozircha saqlanganlar yo'q.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
