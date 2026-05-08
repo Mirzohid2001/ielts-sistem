@@ -65,6 +65,56 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Global Ctrl/Cmd + B shortcut for bold text
+document.addEventListener('keydown', function(event) {
+    const isBoldShortcut = (event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'b';
+    if (!isBoldShortcut || event.altKey || event.shiftKey) return;
+
+    const target = event.target;
+    if (!target) return;
+
+    // Contenteditable areas: use browser native bold command
+    if (target.isContentEditable) {
+        event.preventDefault();
+        document.execCommand('bold');
+        return;
+    }
+
+    const isInput = target.tagName === 'INPUT';
+    const isTextarea = target.tagName === 'TEXTAREA';
+    if (!isInput && !isTextarea) return;
+    if (target.disabled || target.readOnly) return;
+
+    // Non-text inputs uchun shortcutni ushlab qolmaymiz
+    if (isInput) {
+        const textLikeTypes = ['text', 'search', 'url', 'tel', 'email', 'password'];
+        const inputType = (target.type || 'text').toLowerCase();
+        if (!textLikeTypes.includes(inputType)) return;
+    }
+
+    event.preventDefault();
+    const start = target.selectionStart ?? 0;
+    const end = target.selectionEnd ?? 0;
+    const value = target.value || '';
+    const selectedText = value.slice(start, end);
+
+    let newValue = '';
+    let caretPos = start;
+
+    if (start === end) {
+        // Selection bo'lmasa, yozishni davom ettirish uchun marker qo'yamiz: **|**
+        newValue = value.slice(0, start) + '****' + value.slice(end);
+        caretPos = start + 2;
+    } else {
+        newValue = value.slice(0, start) + '**' + selectedText + '**' + value.slice(end);
+        caretPos = end + 4;
+    }
+
+    target.value = newValue;
+    target.setSelectionRange(caretPos, caretPos);
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+});
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initNavbarCollapse();
