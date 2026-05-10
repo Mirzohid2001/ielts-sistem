@@ -65,9 +65,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Global Ctrl/Cmd + B shortcut for bold text
+// Global Ctrl/Cmd + B shortcut for bold text (physical KeyB — klaviatura tartibidan qat'i nazar)
 document.addEventListener('keydown', function(event) {
-    const isBoldShortcut = (event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'b';
+    const isBKey = event.code === 'KeyB' || String(event.key).toLowerCase() === 'b';
+    const isBoldShortcut = (event.ctrlKey || event.metaKey) && isBKey;
     if (!isBoldShortcut || event.altKey || event.shiftKey) return;
 
     const target = event.target;

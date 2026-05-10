@@ -83,6 +83,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.platform_notifications',
+                'core.context_processors.static_asset_version',
             ],
         },
     },
@@ -147,6 +148,9 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Cache busting for CSS/JS — bump after changing static assets (or set STATIC_ASSET_VERSION env on deploy).
+STATIC_ASSET_VERSION = os.environ.get('STATIC_ASSET_VERSION', '2')
 
 # Media files
 

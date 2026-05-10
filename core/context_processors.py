@@ -1,7 +1,12 @@
+from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 
 from .models import AdminAnnouncement, SATResourceProgress, StudyStreak, UserTestResult
+
+
+def static_asset_version(request):
+    return {'STATIC_ASSET_VERSION': getattr(settings, 'STATIC_ASSET_VERSION', '1')}
 
 
 def _relative_time(dt):

@@ -45,7 +45,10 @@
     .reading-text { font-size: 1rem !important; line-height: 1.8 !important; background: #fff !important; padding: 1rem !important; border-radius: 0 !important; }
     .reading-passages-container { max-height: calc(100vh - 240px) !important; }
     .reading-tools { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
-    .reading-mark { background: #fff59d; padding: 0 .15rem; border-radius: .2rem; }
+    .reading-mark,
+    .exam-text-highlight { background: #fff59d; padding: 0 .15rem; border-radius: .2rem; }
+    .listening-highlight-tools .btn,
+    .reading-tools--questions-pane .btn { font-weight: 600; }
     .reading-note-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .5rem .65rem; margin-bottom: .5rem; }
     .exam-save-status { font-size: .78rem; opacity: .9; }
     .exam-question-footer { border-top: 1px solid #d1d5db; padding-top: .7rem; margin-top: .7rem; }
@@ -1618,8 +1621,8 @@
                                 </div>
                             </div>
                             <div class="reading-tools mb-3">
-                                <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-reading">
-                                    <i class="fas fa-highlighter me-1"></i>Highlight
+                                <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-reading" title="Tanlangan matnni sariq bilan ajratish">
+                                    <i class="fas fa-highlighter me-1"></i>Ajratish
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-info" id="btn-note-reading">
                                     <i class="fas fa-note-sticky me-1"></i>Add Note
@@ -1752,6 +1755,22 @@
                                         </div>
                                         <span class="{% if test.test_type == 'listening' %}listening-answered-pill{% else %}badge bg-light text-dark border{% endif %}" id="answered-badge" data-total-blanks="{{ total_blanks|default:0 }}" data-answered-blanks="{{ answered_blanks|default:0 }}" data-total-questions="{{ total_answer_slots }}" data-answered-questions="{{ answered_answer_slots }}">{% if total_blanks %}{{ answered_blanks|default:0 }}/{{ total_blanks }} answered{% else %}{{ answered_answer_slots }}/{{ total_answer_slots }} answered{% endif %}</span>
                                     </div>
+                                    {% if test.test_type == 'reading' %}
+                                    <div class="reading-tools reading-tools--questions-pane mb-2" aria-label="Savollar matnini ajratish">
+                                        <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-reading-questions" title="Tanlangan matnni sariq bilan ajratish">
+                                            <i class="fas fa-highlighter me-1"></i>Ajratish
+                                        </button>
+                                        <span class="text-muted small ms-1 d-none d-md-inline">Matnni tanlang, keyin bosing</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if test.test_type == 'listening' %}
+                                    <div class="reading-tools listening-highlight-tools mb-2" aria-label="Listening savollar matnini ajratish">
+                                        <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-listening" title="Tanlangan matnni sariq bilan ajratish">
+                                            <i class="fas fa-highlighter me-1"></i>Ajratish
+                                        </button>
+                                        <span class="text-muted small ms-1 d-none d-md-inline">Ko‘rsatma/savol matnini tanlang</span>
+                                    </div>
+                                    {% endif %}
                                     {% endif %}
 
                                     {% for pg in part_groups %}
@@ -2808,12 +2827,67 @@
             refreshFlagUI();
         }
 
+        function selectionTouchesForbiddenControl(sel) {
+            if (!sel || !sel.rangeCount) return true;
+            function forbiddenAncestor(node) {
+                if (!node) return false;
+                const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+                if (!el || !el.closest) return false;
+                return !!el.closest('input, textarea, select, button, [role="button"], label.btn');
+            }
+            return forbiddenAncestor(sel.anchorNode) || forbiddenAncestor(sel.focusNode);
+        }
+
+        function getSelectionRangeInRoot(rootEl) {
+            if (!rootEl) return null;
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount) return null;
+            const range = sel.getRangeAt(0);
+            const root = range.commonAncestorContainer;
+            if (!rootEl.contains(root)) return null;
+            if (selectionTouchesForbiddenControl(sel)) return null;
+            if (sel.toString().trim().length === 0) return null;
+            return range;
+        }
+
+        function applyHighlightToRange(range) {
+            const mark = document.createElement('span');
+            mark.className = 'reading-mark exam-text-highlight';
+            try {
+                range.surroundContents(mark);
+            } catch (e) {
+                const frag = range.extractContents();
+                mark.appendChild(frag);
+                range.insertNode(mark);
+            }
+            window.getSelection().removeAllRanges();
+        }
+
+        function attachHighlightButton(btn, rootEl) {
+            if (!btn || !rootEl) return;
+            btn.addEventListener('mousedown', function(e) { e.preventDefault(); });
+            btn.addEventListener('click', function() {
+                const range = getSelectionRangeInRoot(rootEl);
+                if (!range) {
+                    if (typeof markSaved === 'function') markSaved('Avval matndan tanlang (javob maydoni emas)');
+                    else alert('Avval matndan so\'z yoki qismni tanlang.');
+                    return;
+                }
+                applyHighlightToRange(range);
+                if (typeof markSaved === 'function') markSaved('Ajratish saqlandi');
+            });
+        }
+
         function initReadingTools() {
             const readingPane = document.querySelector('.reading-passages-container') || document.querySelector('.reading-text');
             const notesPanel = document.getElementById('reading-notes-panel');
             const hlBtn = document.getElementById('btn-highlight-reading');
+            const hlQuestionsBtn = document.getElementById('btn-highlight-reading-questions');
             const noteBtn = document.getElementById('btn-note-reading');
-            if (!readingPane || !notesPanel) return;
+            const hlListeningBtn = document.getElementById('btn-highlight-listening');
+
+            const readingQuestionsRoot = document.querySelector('.exam-right-pane.reading-style #exam-take-form');
+            const listeningQuestionsRoot = document.querySelector('.exam-right-pane.listening-style #exam-take-form');
 
             const storageKey = 'reading_notes_test_{{ test.pk }}';
             const getNotes = () => {
@@ -2821,6 +2895,7 @@
             };
             const setNotes = (arr) => localStorage.setItem(storageKey, JSON.stringify(arr));
             const renderNotes = () => {
+                if (!notesPanel) return;
                 const notes = getNotes();
                 if (!notes.length) {
                     notesPanel.innerHTML = '<div class="text-muted small">Hozircha note yo\'q.</div>';
@@ -2831,45 +2906,31 @@
                     '<div class="small text-muted mt-1">' + escapeHtml(n.note) + '</div></div>'
                 ).join('');
             };
-            renderNotes();
-
-            const getSelectionRange = () => {
-                const sel = window.getSelection();
-                if (!sel || !sel.rangeCount) return null;
-                const range = sel.getRangeAt(0);
-                if (!readingPane.contains(range.commonAncestorContainer)) return null;
-                if (sel.toString().trim().length === 0) return null;
-                return range;
-            };
+            if (notesPanel) renderNotes();
 
             function showSelectFirstTip() {
                 if (typeof markSaved === 'function') markSaved('Avval matndan so\'z yoki qismni tanlang');
                 else alert('Avval matndan so\'z yoki qismni tanlang.');
             }
-            if (hlBtn) {
-                hlBtn.addEventListener('mousedown', function(e) { e.preventDefault(); });
-                hlBtn.addEventListener('click', function() {
-                    const range = getSelectionRange();
-                    if (!range) { showSelectFirstTip(); return; }
-                    const mark = document.createElement('span');
-                    mark.className = 'reading-mark';
-                    try {
-                        range.surroundContents(mark);
-                    } catch (e) {
-                        const frag = range.extractContents();
-                        mark.appendChild(frag);
-                        range.insertNode(mark);
-                    }
-                    window.getSelection().removeAllRanges();
-                    markSaved('Highlight saved');
-                });
-            }
-            if (noteBtn) {
+
+            attachHighlightButton(hlBtn, readingPane);
+            attachHighlightButton(hlQuestionsBtn, readingQuestionsRoot);
+            attachHighlightButton(hlListeningBtn, listeningQuestionsRoot);
+
+            if (noteBtn && readingPane && notesPanel) {
                 noteBtn.addEventListener('mousedown', function(e) { e.preventDefault(); });
                 noteBtn.addEventListener('click', function() {
-                    const range = getSelectionRange();
-                    if (!range) { showSelectFirstTip(); return; }
-                    const selectedText = window.getSelection().toString().trim();
+                    const sel = window.getSelection();
+                    if (!readingPane || !sel.rangeCount || !readingPane.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                        showSelectFirstTip();
+                        return;
+                    }
+                    if (selectionTouchesForbiddenControl(sel)) {
+                        showSelectFirstTip();
+                        return;
+                    }
+                    const selectedText = sel.toString().trim();
+                    if (!selectedText) { showSelectFirstTip(); return; }
                     const note = window.prompt('Qisqa note yozing:');
                     if (!note) return;
                     const notes = getNotes();
