@@ -5,6 +5,7 @@ from types import MethodType
 
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db.models import Avg, Count, F, Max, Q
 from django.db.models.functions import TruncDate, TruncMonth
 from django.shortcuts import render
@@ -20,25 +21,43 @@ from ..models import (
     VideoLesson,
 )
 
-ACTIVE_USERS_DEFAULT_DAYS = 365
-ACTIVE_USERS_MAX_LIMIT = 100
+ACTIVE_USERS_DEFAULT_DAYS = 90
+ACTIVE_USERS_MAX_LIMIT = 50
 ACTIVE_USERS_PERIOD_CHOICES = (7, 30, 90, 180, 365)
 
 
-def _active_users_filter_q(since):
-    """Berilgan sanadan keyin har qanday faollik ko'rsatgan foydalanuvchilar."""
-    return (
-        Q(last_login__gte=since)
-        | Q(test_results__completed_at__gte=since)
-        | Q(video_progress__last_watched_at__gte=since)
-        | Q(video_progress__completed_at__gte=since)
-        | Q(activities__created_at__gte=since)
+def _gather_active_user_ids(since):
+    """Katta JOIN o'rniga alohida indekslangan so'rovlar — tezroq."""
+    ids = set(
+        User.objects.filter(last_login__gte=since)
+        .exclude(username__startswith='demo_')
+        .values_list('pk', flat=True)
+    )
+    ids.update(
+        UserTestResult.objects.filter(
+            completed_at__isnull=False,
+            completed_at__gte=since,
+        ).values_list('user_id', flat=True)
+    )
+    ids.update(
+        UserVideoProgress.objects.filter(
+            Q(last_watched_at__gte=since) | Q(completed_at__gte=since)
+        ).values_list('user_id', flat=True)
+    )
+    ids.update(
+        UserActivity.objects.filter(created_at__gte=since).values_list('user_id', flat=True)
+    )
+    if not ids:
+        return []
+    return list(
+        User.objects.filter(pk__in=ids)
+        .exclude(username__startswith='demo_')
+        .values_list('pk', flat=True)
     )
 
 
 def count_active_users(days):
-    since = timezone.now() - timedelta(days=days)
-    return User.objects.filter(_active_users_filter_q(since)).distinct().count()
+    return len(_gather_active_user_ids(timezone.now() - timedelta(days=days)))
 
 
 def parse_active_users_period(request):
@@ -52,21 +71,20 @@ def parse_active_users_period(request):
 
 
 def build_active_users_report(days=ACTIVE_USERS_DEFAULT_DAYS, limit=ACTIVE_USERS_MAX_LIMIT):
-    """
-    Keng qamrovli faol foydalanuvchilar hisoboti:
-    login, test, video va UserActivity bo'yicha.
-    """
+    """Faol foydalanuvchilar — faqat kerakli ID lar bo'yicha, LIMIT bilan."""
     since = timezone.now() - timedelta(days=days)
+    active_ids = _gather_active_user_ids(since)
+    if not active_ids:
+        return []
+
     period_test = Q(test_results__completed_at__gte=since, test_results__completed_at__isnull=False)
-    period_video = Q(
-        video_progress__last_watched_at__gte=since
-    ) | Q(video_progress__completed_at__gte=since)
+    period_video = Q(video_progress__last_watched_at__gte=since) | Q(
+        video_progress__completed_at__gte=since
+    )
     period_activity = Q(activities__created_at__gte=since)
 
-    qs = (
-        User.objects.filter(_active_users_filter_q(since))
-        .exclude(username__startswith='demo_')
-        .distinct()
+    users = list(
+        User.objects.filter(pk__in=active_ids)
         .annotate(
             tests_period=Count('test_results', filter=period_test, distinct=True),
             videos_period=Count('video_progress', filter=period_video, distinct=True),
@@ -76,35 +94,28 @@ def build_active_users_report(days=ACTIVE_USERS_DEFAULT_DAYS, limit=ACTIVE_USERS
             last_video_at=Max('video_progress__last_watched_at'),
             last_activity_log=Max('activities__created_at'),
         )
+        .annotate(
+            activity_score=F('tests_period') + F('videos_period') + F('activities_period'),
+        )
+        .order_by('-activity_score', '-last_login')[:limit]
     )
 
-    users = list(qs)
     for user in users:
         stamps = [user.last_login, user.last_test_at, user.last_video_at, user.last_activity_log]
         user.last_seen = max((d for d in stamps if d), default=None)
-        user.activity_score = (
-            (user.tests_period or 0)
-            + (user.videos_period or 0)
-            + (user.activities_period or 0)
-        )
 
-    def _sort_key(u):
-        seen_ts = u.last_seen.timestamp() if u.last_seen else 0
-        return (u.activity_score, u.tests_period or 0, seen_ts)
-
-    users.sort(key=_sort_key, reverse=True)
-    return users[:limit]
+    return users
 
 
 def build_active_users_monthly_trend(days=365):
-    """Oxirgi N kun uchun oylik faol foydalanuvchilar (faollik jurnali bo'yicha)."""
-    since = timezone.now() - timedelta(days=days)
-    rows = (
+    """Oxirgi 12 oy — faollik jurnali (yengil so'rov)."""
+    since = timezone.now() - timedelta(days=min(days, 365))
+    rows = list(
         UserActivity.objects.filter(created_at__gte=since)
         .annotate(month=TruncMonth('created_at'))
         .values('month')
         .annotate(count=Count('user', distinct=True))
-        .order_by('month')
+        .order_by('month')[:12]
     )
     labels = []
     counts = []
@@ -116,11 +127,17 @@ def build_active_users_monthly_trend(days=365):
 
 
 def build_active_users_summary():
-    """7 / 30 / 90 / 180 / 365 kunlik faol foydalanuvchilar soni."""
-    return [
+    """7/30/90/180/365 — 2 daqiqa kesh (admin index tezligi)."""
+    cache_key = 'core:admin_active_users_summary_v2'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    data = [
         {'days': days, 'count': count_active_users(days)}
         for days in ACTIVE_USERS_PERIOD_CHOICES
     ]
+    cache.set(cache_key, data, 120)
+    return data
 
 
 # Custom Admin Site - Statistikalar bilan
@@ -239,25 +256,22 @@ def custom_admin_index(request):
     period_days = parse_active_users_period(request)
     active_users = build_active_users_report(days=period_days)
     active_users_summary = build_active_users_summary()
-    active_users_total_in_period = count_active_users(period_days)
+    active_users_total_in_period = next(
+        (x['count'] for x in active_users_summary if x['days'] == period_days),
+        count_active_users(period_days),
+    )
     active_month_labels, active_month_counts = build_active_users_monthly_trend(days=min(period_days, 365))
     
-    # Chartlar uchun ma'lumotlar
-    # Test natijalari (o'tgan/o'tmagan)
-    # Har bir test natijasini alohida tekshirish kerak
-    all_results = UserTestResult.objects.filter(
-        completed_at__isnull=False
-    ).select_related('test')
-    passed_tests = sum(1 for r in all_results if r.is_passed())
-    failed_tests = total_test_results - passed_tests
-    
-    # O'rtacha ball
+    passed_tests = UserTestResult.objects.filter(
+        completed_at__isnull=False,
+        percentage__gte=F('test__passing_score'),
+    ).count()
+    failed_tests = max(total_test_results - passed_tests, 0)
+
     avg_score = UserTestResult.objects.filter(
         completed_at__isnull=False
     ).aggregate(avg=Avg('percentage'))['avg'] or 0
-    
-    # Kategoriya bo'yicha statistikalar
-    # Barcha kategoriyalarni olish, hatto testlari bo'lmasa ham
+
     category_test_stats = Category.objects.filter(is_active=True).annotate(
         test_count=Count('tests', filter=Q(tests__is_active=True), distinct=True),
         result_count=Count('tests__results', filter=Q(tests__results__completed_at__isnull=False), distinct=True),
@@ -394,14 +408,17 @@ def custom_index(request, extra_context=None):
     period_days = parse_active_users_period(request)
     active_users = build_active_users_report(days=period_days)
     active_users_summary = build_active_users_summary()
-    active_users_total_in_period = count_active_users(period_days)
+    active_users_total_in_period = next(
+        (x['count'] for x in active_users_summary if x['days'] == period_days),
+        count_active_users(period_days),
+    )
     active_month_labels, active_month_counts = build_active_users_monthly_trend(days=min(period_days, 365))
 
-    # O'tdi/O'tmadi statistikasi
-    all_results = UserTestResult.objects.filter(
-        completed_at__isnull=False
-    ).select_related('test')
-    passed_tests = sum(1 for r in all_results if r.is_passed())
+    # O'tdi/O'tmadi statistikasi (DB da — barcha natijalarni xotiraga yuklamasdan)
+    passed_tests = UserTestResult.objects.filter(
+        completed_at__isnull=False,
+        percentage__gte=F('test__passing_score'),
+    ).count()
     failed_tests = max(total_test_results - passed_tests, 0)
 
     avg_score = UserTestResult.objects.filter(

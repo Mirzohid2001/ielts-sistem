@@ -707,9 +707,9 @@ function scrollToActiveUsersSection() {
     if (!el) return;
     const params = new URLSearchParams(window.location.search);
     if (!params.has('period') && window.location.hash !== '#faol-foydalanuvchilar') return;
-    setTimeout(function() {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 120);
+    if (window.location.hash === '#faol-foydalanuvchilar') {
+        el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fallbackScript.onload = initDashboardCharts;
         document.head.appendChild(fallbackScript);
     }
-    setTimeout(scrollToActiveUsersSection, 280);
+    scrollToActiveUsersSection();
 });
 </script>
 
