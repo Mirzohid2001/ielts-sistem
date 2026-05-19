@@ -5,8 +5,8 @@ from types import MethodType
 
 from django.contrib import admin
 from django.contrib.auth.models import User
-from django.db.models import Avg, Count, F, Q
-from django.db.models.functions import TruncDate
+from django.db.models import Avg, Count, F, Max, Q
+from django.db.models.functions import TruncDate, TruncMonth
 from django.shortcuts import render
 from django.urls import path
 from django.utils import timezone
@@ -19,6 +19,108 @@ from ..models import (
     UserVideoProgress,
     VideoLesson,
 )
+
+ACTIVE_USERS_DEFAULT_DAYS = 365
+ACTIVE_USERS_MAX_LIMIT = 100
+ACTIVE_USERS_PERIOD_CHOICES = (7, 30, 90, 180, 365)
+
+
+def _active_users_filter_q(since):
+    """Berilgan sanadan keyin har qanday faollik ko'rsatgan foydalanuvchilar."""
+    return (
+        Q(last_login__gte=since)
+        | Q(test_results__completed_at__gte=since)
+        | Q(video_progress__last_watched_at__gte=since)
+        | Q(video_progress__completed_at__gte=since)
+        | Q(activities__created_at__gte=since)
+    )
+
+
+def count_active_users(days):
+    since = timezone.now() - timedelta(days=days)
+    return User.objects.filter(_active_users_filter_q(since)).distinct().count()
+
+
+def parse_active_users_period(request):
+    """GET ?period=30 — 7 dan 730 kungacha."""
+    raw = request.GET.get('period', ACTIVE_USERS_DEFAULT_DAYS)
+    try:
+        days = int(raw)
+    except (TypeError, ValueError):
+        days = ACTIVE_USERS_DEFAULT_DAYS
+    return max(7, min(days, 730))
+
+
+def build_active_users_report(days=ACTIVE_USERS_DEFAULT_DAYS, limit=ACTIVE_USERS_MAX_LIMIT):
+    """
+    Keng qamrovli faol foydalanuvchilar hisoboti:
+    login, test, video va UserActivity bo'yicha.
+    """
+    since = timezone.now() - timedelta(days=days)
+    period_test = Q(test_results__completed_at__gte=since, test_results__completed_at__isnull=False)
+    period_video = Q(
+        video_progress__last_watched_at__gte=since
+    ) | Q(video_progress__completed_at__gte=since)
+    period_activity = Q(activities__created_at__gte=since)
+
+    qs = (
+        User.objects.filter(_active_users_filter_q(since))
+        .exclude(username__startswith='demo_')
+        .distinct()
+        .annotate(
+            tests_period=Count('test_results', filter=period_test, distinct=True),
+            videos_period=Count('video_progress', filter=period_video, distinct=True),
+            activities_period=Count('activities', filter=period_activity, distinct=True),
+            avg_score_period=Avg('test_results__percentage', filter=period_test),
+            last_test_at=Max('test_results__completed_at', filter=period_test),
+            last_video_at=Max('video_progress__last_watched_at'),
+            last_activity_log=Max('activities__created_at'),
+        )
+    )
+
+    users = list(qs)
+    for user in users:
+        stamps = [user.last_login, user.last_test_at, user.last_video_at, user.last_activity_log]
+        user.last_seen = max((d for d in stamps if d), default=None)
+        user.activity_score = (
+            (user.tests_period or 0)
+            + (user.videos_period or 0)
+            + (user.activities_period or 0)
+        )
+
+    def _sort_key(u):
+        seen_ts = u.last_seen.timestamp() if u.last_seen else 0
+        return (u.activity_score, u.tests_period or 0, seen_ts)
+
+    users.sort(key=_sort_key, reverse=True)
+    return users[:limit]
+
+
+def build_active_users_monthly_trend(days=365):
+    """Oxirgi N kun uchun oylik faol foydalanuvchilar (faollik jurnali bo'yicha)."""
+    since = timezone.now() - timedelta(days=days)
+    rows = (
+        UserActivity.objects.filter(created_at__gte=since)
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(count=Count('user', distinct=True))
+        .order_by('month')
+    )
+    labels = []
+    counts = []
+    for row in rows:
+        if row['month']:
+            labels.append(row['month'].strftime('%b %Y'))
+            counts.append(row['count'])
+    return labels, counts
+
+
+def build_active_users_summary():
+    """7 / 30 / 90 / 180 / 365 kunlik faol foydalanuvchilar soni."""
+    return [
+        {'days': days, 'count': count_active_users(days)}
+        for days in ACTIVE_USERS_PERIOD_CHOICES
+    ]
 
 
 # Custom Admin Site - Statistikalar bilan
@@ -38,12 +140,9 @@ class CustomAdminSite(admin.AdminSite):
         """Umumiy statistikalar"""
         # Foydalanuvchilar statistikasi
         total_users = User.objects.count()
-        active_users_30d = User.objects.filter(
-            last_login__gte=timezone.now() - timedelta(days=30)
-        ).count()
-        active_users_7d = User.objects.filter(
-            last_login__gte=timezone.now() - timedelta(days=7)
-        ).count()
+        active_users_7d = count_active_users(7)
+        active_users_30d = count_active_users(30)
+        active_users_365d = count_active_users(365)
         
         # Test statistikasi
         total_tests = Test.objects.filter(is_active=True).count()
@@ -98,6 +197,7 @@ class CustomAdminSite(admin.AdminSite):
             'total_users': total_users,
             'active_users_30d': active_users_30d,
             'active_users_7d': active_users_7d,
+            'active_users_365d': active_users_365d,
             'total_tests': total_tests,
             'total_test_results': total_test_results,
             'passed_tests': passed_tests,
@@ -136,13 +236,11 @@ def custom_admin_index(request):
         watched=True
     ).select_related('user', 'video', 'video__category').order_by('-completed_at')[:10]
     
-    # Eng faol foydalanuvchilar (oxirgi 7 kun)
-    active_users = User.objects.filter(
-        last_login__gte=timezone.now() - timedelta(days=7)
-    ).annotate(
-        test_count=Count('test_results', filter=Q(test_results__completed_at__isnull=False)),
-        video_count=Count('video_progress', filter=Q(video_progress__watched=True))
-    ).order_by('-last_login')[:10]
+    period_days = parse_active_users_period(request)
+    active_users = build_active_users_report(days=period_days)
+    active_users_summary = build_active_users_summary()
+    active_users_total_in_period = count_active_users(period_days)
+    active_month_labels, active_month_counts = build_active_users_monthly_trend(days=min(period_days, 365))
     
     # Chartlar uchun ma'lumotlar
     # Test natijalari (o'tgan/o'tmagan)
@@ -175,6 +273,12 @@ def custom_admin_index(request):
         'recent_results': recent_results,
         'recent_video_views': recent_video_views,
         'active_users': active_users,
+        'active_users_period_days': period_days,
+        'active_users_summary_list': active_users_summary,
+        'active_users_total_in_period': active_users_total_in_period,
+        'active_users_period_choices': ACTIVE_USERS_PERIOD_CHOICES,
+        'active_month_labels': active_month_labels,
+        'active_month_counts': active_month_counts,
         'passed_tests': passed_tests,
         'failed_tests': failed_tests,
         'avg_score': round(avg_score, 2),
@@ -287,13 +391,11 @@ def custom_index(request, extra_context=None):
         watched=True
     ).select_related('user', 'video', 'video__category').order_by('-completed_at')[:10]
     
-    # Eng faol foydalanuvchilar (oxirgi 7 kun)
-    active_users = User.objects.filter(
-        last_login__gte=timezone.now() - timedelta(days=7)
-    ).annotate(
-        test_count=Count('test_results', filter=Q(test_results__completed_at__isnull=False)),
-        video_count=Count('video_progress', filter=Q(video_progress__watched=True))
-    ).order_by('-last_login')[:10]
+    period_days = parse_active_users_period(request)
+    active_users = build_active_users_report(days=period_days)
+    active_users_summary = build_active_users_summary()
+    active_users_total_in_period = count_active_users(period_days)
+    active_month_labels, active_month_counts = build_active_users_monthly_trend(days=min(period_days, 365))
 
     # O'tdi/O'tmadi statistikasi
     all_results = UserTestResult.objects.filter(
@@ -338,6 +440,8 @@ def custom_index(request, extra_context=None):
         'category_results': [c['result_count'] or 0 for c in category_test_stats],
         'trend_labels': trend_labels,
         'trend_counts': trend_counts,
+        'active_month_labels': active_month_labels,
+        'active_month_counts': active_month_counts,
     }
     
     extra_context = extra_context or {}
@@ -350,6 +454,10 @@ def custom_index(request, extra_context=None):
         'recent_results': recent_results,
         'recent_video_views': recent_video_views,
         'active_users': active_users,
+        'active_users_period_days': period_days,
+        'active_users_summary_list': active_users_summary,
+        'active_users_total_in_period': active_users_total_in_period,
+        'active_users_period_choices': ACTIVE_USERS_PERIOD_CHOICES,
         'passed_tests': passed_tests,
         'failed_tests': failed_tests,
         'avg_score': round(avg_score, 2),

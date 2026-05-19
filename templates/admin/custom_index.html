@@ -113,6 +113,47 @@
         align-items: center;
         gap: 10px;
     }
+
+    .active-period-tabs .period-tab {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        color: #475569;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+    }
+    .active-period-tabs .period-tab.active,
+    .active-period-tabs .period-tab:hover {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        border-color: transparent;
+    }
+    .active-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 12px;
+    }
+    .active-summary-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        text-align: center;
+    }
+    .active-summary-card.highlight {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102,126,234,.08), rgba(118,75,162,.08));
+    }
+    .active-summary-card .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+    .active-summary-card .value { font-size: 26px; font-weight: 800; color: #1e293b; line-height: 1.2; }
+    .active-summary-card .hint { font-size: 10px; color: #94a3b8; }
+    .chart-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+    #faol-foydalanuvchilar {
+        scroll-margin-top: 88px;
+    }
     
     .chart-container {
         position: relative;
@@ -441,37 +482,81 @@
     </div>
 
     <!-- Faol Foydalanuvchilar -->
-    <div class="dashboard-section">
-        <h2>👥 Faol Foydalanuvchilar (Oxirgi 7 kun)</h2>
-        <div style="overflow-x: auto;">
-            <table class="modern-table">
-                <thead>
-                    <tr>
-                        <th>Foydalanuvchi</th>
-                        <th style="text-align: center;">Ishlangan Testlar</th>
-                        <th style="text-align: center;">Ko'rilgan Videolar</th>
-                        <th style="text-align: center;">Oxirgi Kirish</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in active_users %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'admin:auth_user_change' user.pk %}" style="color: #667eea; text-decoration: none; font-weight: 600;">
-                                {{ user.username }}
-                            </a>
-                        </td>
-                        <td style="text-align: center; font-weight: bold; color: #667eea;">{{ user.test_count|default:0 }}</td>
-                        <td style="text-align: center; font-weight: bold; color: #764ba2;">{{ user.video_count|default:0 }}</td>
-                        <td style="text-align: center; font-size: 12px; color: #666;">{{ user.last_login|date:"d.m.Y H:i"|default:"-" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="empty-state">Hozircha faol foydalanuvchilar yo'q</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="dashboard-section" id="faol-foydalanuvchilar">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h2 class="mb-1" style="margin-bottom:8px;">👥 Faol Foydalanuvchilar</h2>
+                <p class="mb-0" style="font-size: 13px; color: #64748b;">
+                    Login, test, video va faollik jurnali — oxirgi <strong>{{ active_users_period_days }}</strong> kunda
+                    jami <strong>{{ active_users_total_in_period }}</strong> ta (jadval: {{ active_users|length }} ta eng faol).
+                </p>
+            </div>
+            <div class="active-period-tabs d-flex flex-wrap gap-1">
+                {% for d in active_users_period_choices %}
+                <a href="?period={{ d }}#faol-foydalanuvchilar" class="period-tab {% if active_users_period_days == d %}active{% endif %}">{{ d }} kun</a>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="active-summary-grid mb-4">
+            {% for item in active_users_summary_list %}
+            <div class="active-summary-card {% if active_users_period_days == item.days %}highlight{% endif %}">
+                <div class="label">{{ item.days }} kun</div>
+                <div class="value">{{ item.count }}</div>
+                <div class="hint">faol foydalanuvchi</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="row g-3 mb-2">
+            <div class="col-lg-8">
+                <div style="overflow-x: auto;">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Foydalanuvchi</th>
+                                <th style="text-align: center;">Testlar</th>
+                                <th style="text-align: center;">Videolar</th>
+                                <th style="text-align: center;">Faollik</th>
+                                <th style="text-align: center;">O'rt. ball</th>
+                                <th style="text-align: center;">Oxirgi faollik</th>
+                                <th style="text-align: center;">Oxirgi kirish</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in active_users %}
+                            <tr>
+                                <td style="color:#94a3b8;font-size:12px;">{{ forloop.counter }}</td>
+                                <td>
+                                    <a href="{% url 'admin:auth_user_change' user.pk %}" style="color: #667eea; text-decoration: none; font-weight: 600;">{{ user.username }}</a>
+                                    {% if user.is_staff %}<span class="badge bg-secondary ms-1" style="font-size:10px;">staff</span>{% endif %}
+                                </td>
+                                <td style="text-align: center; font-weight: bold; color: #667eea;">{{ user.tests_period|default:0 }}</td>
+                                <td style="text-align: center; font-weight: bold; color: #764ba2;">{{ user.videos_period|default:0 }}</td>
+                                <td style="text-align: center;">
+                                    <span class="badge rounded-pill" style="background:#e0e7ff;color:#4338ca;">{{ user.activities_period|default:0 }}</span>
+                                    <div style="font-size:10px;color:#94a3b8;margin-top:2px;">indeks: {{ user.activity_score }}</div>
+                                </td>
+                                <td style="text-align: center;">
+                                    {% if user.avg_score_period %}<strong>{{ user.avg_score_period|floatformat:1 }}%</strong>{% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td style="text-align: center; font-size: 12px; color: #334155; white-space: nowrap;">{{ user.last_seen|date:"d.m.Y H:i"|default:"-" }}</td>
+                                <td style="text-align: center; font-size: 12px; color: #666;">{{ user.last_login|date:"d.m.Y H:i"|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="8" class="empty-state">Tanlangan davrda faol foydalanuvchilar yo'q</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{% url 'admin:auth_user_changelist' %}" class="link-btn mt-2 d-inline-block">Barcha foydalanuvchilar →</a>
+            </div>
+            <div class="col-lg-4">
+                <div class="chart-card" style="padding:16px;min-height:280px;">
+                    <h3 style="font-size:14px;margin:0 0 12px;font-weight:700;">Oylik faol foydalanuvchilar</h3>
+                    <canvas id="activeUsersMonthlyChart" style="max-height:240px;"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -585,17 +670,58 @@ function initDashboardCharts() {
     } else {
         renderEmptyChartMessage('trendChart', "Oxirgi 14 kunda natija topilmadi");
     }
+
+    // 4) Oylik faol foydalanuvchilar (login)
+    const activeCtx = document.getElementById('activeUsersMonthlyChart');
+    const activeLabels = chartPayload.active_month_labels || [];
+    const activeCounts = chartPayload.active_month_counts || [];
+    const hasActiveMonthly = activeCounts.some(v => v > 0);
+    if (activeCtx && activeLabels.length && hasActiveMonthly) {
+        new Chart(activeCtx, {
+            type: 'bar',
+            data: {
+                labels: activeLabels,
+                datasets: [{
+                    label: 'Faol foydalanuvchilar (oylik)',
+                    data: activeCounts,
+                    backgroundColor: 'rgba(102, 126, 234, .75)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    } else if (activeCtx) {
+        renderEmptyChartMessage('activeUsersMonthlyChart', "Oylik kirish ma'lumotlari yo'q");
+    }
+}
+
+function scrollToActiveUsersSection() {
+    const el = document.getElementById('faol-foydalanuvchilar');
+    if (!el) return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('period') && window.location.hash !== '#faol-foydalanuvchilar') return;
+    setTimeout(function() {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof Chart !== 'undefined') {
         initDashboardCharts();
-        return;
+    } else {
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+        fallbackScript.onload = initDashboardCharts;
+        document.head.appendChild(fallbackScript);
     }
-    const fallbackScript = document.createElement('script');
-    fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
-    fallbackScript.onload = initDashboardCharts;
-    document.head.appendChild(fallbackScript);
+    setTimeout(scrollToActiveUsersSection, 280);
 });
 </script>
 
