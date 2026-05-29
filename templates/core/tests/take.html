@@ -336,6 +336,18 @@
         flex: 1;
         min-height: 0;
     }
+    /* O'ng panel: Ajratish sticky — pane scroll bo'lsa ham tepada qoladi */
+    .exam-questions-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        flex-shrink: 0;
+        background: #fff;
+        padding: .15rem .1rem .55rem;
+        margin-bottom: .35rem;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 4px 10px rgba(255, 255, 255, .95);
+    }
     .reading-questions-scroll {
         flex: 1;
         min-height: 0;
@@ -1733,11 +1745,9 @@
                             <script>window.__MCQ_DUAL_PKS = {{ mcq_dual_question_pks_json|default:"[]"|safe }};</script>
                             <div class="card border-0 shadow-sm exam-questions-card-only d-flex flex-column">
                                 <div class="card-body p-2 d-flex flex-column min-h-0">
-                                    {% if part_groups|length > 1 %}
-                                    <div class="reading-questions-scroll flex-grow-1">
-                                    {% endif %}
                                     {% if test.test_type != 'writing' %}
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 {% if test.test_type == 'listening' %}listening-questions-header listening-questions-header--v2{% endif %}">
+                                    <div class="exam-questions-toolbar">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2 {% if test.test_type == 'listening' %}listening-questions-header listening-questions-header--v2{% endif %}">
                                         <div class="{% if test.test_type == 'listening' %}listening-questions-heading-wrap{% endif %}">
                                             {% if test.test_type == 'listening' %}
                                             <p class="listening-questions-kicker mb-1">Savollar</p>
@@ -1771,6 +1781,7 @@
                                         <span class="text-muted small ms-1 d-none d-md-inline">Ko‘rsatma/savol matnini tanlang</span>
                                     </div>
                                     {% endif %}
+                                    </div>
                                     {% endif %}
 
                                     {% for pg in part_groups %}
@@ -2119,10 +2130,6 @@
                                     </section>
                                     </div>
                                     {% endfor %}
-
-                                    {% if part_groups|length > 1 %}
-                                    </div>
-                                    {% endif %}
                                 </div>
                             </div>
                         </form>
@@ -3090,7 +3097,7 @@
             });
             var liveRegion = document.getElementById('reading-part-announce');
             if (liveRegion) { liveRegion.textContent = 'Part ' + p; setTimeout(function() { liveRegion.textContent = ''; }, 1000); }
-            const rightScroll = document.querySelector('.reading-questions-scroll') || document.querySelector('.exam-right-pane');
+            const rightScroll = document.querySelector('.reading-questions-scroll') || document.querySelector('.exam-right-pane.reading-style') || document.querySelector('.exam-right-pane');
             if (rightScroll) rightScroll.scrollTop = 0;
         }
 
