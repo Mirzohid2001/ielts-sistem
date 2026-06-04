@@ -25,6 +25,19 @@ from .models import (
 )
 from .access import get_user_module_access
 from .context_processors import build_notification_items
+from .test_session_helpers import (
+    build_type_stats,
+    collect_answers_from_post,
+    compute_session_scores,
+    merge_answers_json,
+    filter_questions_by_exam_variant,
+    get_exam_variant,
+    set_exam_variant,
+    clear_exam_variant,
+    needs_scoring_refresh,
+    total_gradable_slots_for_questions,
+    exam_variant_from_answers,
+)
 
 FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 
               'table_completion', 'short_answer')
@@ -34,6 +47,15 @@ MATCHING_TYPES = ('matching_headings', 'matching_features', 'matching_info',
 SUMMARY_BOX_TYPE = 'summary_box'
 MATCHING_SCORE_TYPES = MATCHING_TYPES + (SUMMARY_BOX_TYPE,)
 QUESTION_TYPE_LABELS = dict(Question.QUESTION_TYPES)
+
+
+def question_type_display_label(question_type_code):
+    """Admin/DB dagi «Notes Completion (Listening)» → foydalanuvchida «Notes Completion»."""
+    raw = QUESTION_TYPE_LABELS.get(
+        question_type_code,
+        str(question_type_code).replace('_', ' ').title(),
+    )
+    return re.sub(r'\s*\([^)]*\)', '', raw).strip()
 
 
 @login_required
@@ -1261,8 +1283,11 @@ def test_detail(request, pk):
     if not getattr(test.category, 'show_on_site', True):
         return redirect('core:test_list')
     
-    # Savollar ro'yxati
+    # Savollar ro'yxati (ko'rsatish uchun)
     questions = test.questions.all().order_by('order')
+    exam_variant = get_exam_variant(request, test)
+    session_questions = filter_questions_by_exam_variant(test, exam_variant)
+    variants_count = int(getattr(test, 'variants_to_select', 1) or 1)
     
     # Foydalanuvchi oldingi natijalari
     previous_results = UserTestResult.objects.filter(
@@ -1291,6 +1316,9 @@ def test_detail(request, pk):
     context = {
         'test': test,
         'questions': questions,
+        'session_question_count': len(session_questions),
+        'exam_variant': exam_variant,
+        'variants_count': variants_count,
         'previous_result': previous_result,
         'previous_results': previous_results[:5],  # Oxirgi 5 ta natija
         'attempts_count': attempts_count,
@@ -1314,8 +1342,14 @@ def test_take(request, pk):
         completed_at__isnull=True
     )
     
+    if request.GET.get('exam_variant') is not None:
+        set_exam_variant(request, test, request.GET.get('exam_variant'))
+
+    exam_variant = get_exam_variant(request, test)
+    questions = filter_questions_by_exam_variant(test, exam_variant)
+
     if created:
-        test_result.total_questions = test.total_questions
+        test_result.total_questions = total_gradable_slots_for_questions(questions) or len(questions)
         # Urinish raqamini aniqlash
         previous_attempts = UserTestResult.objects.filter(
             user=request.user,
@@ -1349,102 +1383,33 @@ def test_take(request, pk):
     if test_result.answers_json:
         answers = test_result.answers_json
     
-    # Ko'p variantli: avval variant raqami, keyin tartib
-    if getattr(test, 'variants_to_select', 1) >= 2:
-        questions = list(test.questions.all().order_by(Coalesce(F('variant'), Value(1)), 'order'))
-    else:
-        questions = list(test.questions.all().order_by('order'))
     total_questions = len(questions)
+    total_answer_slots = total_gradable_slots_for_questions(questions)
 
     if total_questions == 0:
         messages.warning(request, "Bu testda hali savollar qo'shilmagan. Admin orqali savollar qo'shing.")
         return redirect('core:test_detail', pk=test.pk)
 
-    # Barcha javoblarni bir POST bilan saqlash
+    # Barcha javoblarni bir POST bilan saqlash (merge — avvalgi javoblar saqlanadi)
     if request.method == 'POST':
-        updated_answers = {}
-        single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
-        fill_types = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer')
-
-        for q in questions:
-            val = ''
-            if q.question_type in single_choice:
-                if int(getattr(q, 'max_choices', 1) or 1) >= 2:
-                    selected = []
-                    opts_json = q.options_json or {}
-                    mcq_opts = opts_json.get('options') or []
-                    if mcq_opts:
-                        letters = [
-                            str(o.get('letter', '')).strip().lower()
-                            for o in mcq_opts
-                            if o.get('letter')
-                        ]
-                    else:
-                        letters = ['a', 'b', 'c', 'd']
-                    for letter in letters:
-                        if letter and request.POST.get(f'answer_{q.pk}_{letter}'):
-                            selected.append(letter)
-                    if selected:
-                        val = json.dumps(sorted(selected))
-                else:
-                    val = (request.POST.get(f'answer_{q.pk}') or '').strip()
-            elif q.question_type in fill_types:
-                expected = _get_fill_blank_count(q)
-                vals = []
-                for i in range(1, expected + 1):
-                    vals.append((request.POST.get(f'answer_{q.pk}_{i}') or '').strip())
-                    #models to play
-                if vals and not any(vals[1:]) and vals[0] and ',' in vals[0]:
-                    vals = [v.strip() for v in vals[0].split(',')]
-                if any(v for v in vals):
-                    val = json.dumps(vals)
-            elif q.question_type == SUMMARY_BOX_TYPE:
-                match_dict = {}
-                n_slots = _summary_box_slot_count(q)
-                for i in range(1, n_slots + 1):
-                    mval = (request.POST.get(f'match_{q.pk}_{i}') or '').strip()
-                    if mval:
-                        match_dict[str(i)] = mval
-                if match_dict:
-                    val = json.dumps(match_dict)
-            elif q.question_type in MATCHING_TYPES:
-                match_dict = {}
-                opts = q.options_json or {}
-                items = opts.get('items', [])
-                if not items:
-                    items = [{'num': i + 1} for i in range(len((q.correct_answer_json or {})))]
-                for idx, it in enumerate(items):
-                    num = str(it.get('num', idx + 1))
-                    mval = (request.POST.get(f'match_{q.pk}_{num}') or '').strip()
-                    if mval:
-                        match_dict[num] = mval
-                if match_dict:
-                    val = json.dumps(match_dict)
-            elif q.question_type == 'list_selection':
-                selected = []
-                for opt in (q.options_json or {}).get('options', []):
-                    letter = str(opt.get('letter', '')).strip()
-                    if letter and request.POST.get(f'list_{q.pk}_{letter}'):
-                        selected.append(letter)
-                if selected:
-                    val = json.dumps(sorted(selected))
-            elif q.question_type == 'essay':
-                val = (request.POST.get(f'answer_{q.pk}') or '').strip()
-            else:
-                val = (request.POST.get(f'answer_{q.pk}') or '').strip()
-
-            if val:
-                updated_answers[str(q.pk)] = val
-
-        test_result.answers_json = updated_answers
+        posted = collect_answers_from_post(request, questions)
+        active_pks = [q.pk for q in questions]
+        answers = merge_answers_json(
+            test_result.answers_json, posted, active_pks, exam_variant=exam_variant
+        )
+        test_result.answers_json = answers
         test_result.save(update_fields=['answers_json'])
-        answers = updated_answers
+
+        is_autosave = request.POST.get('autosave') == '1'
+        if is_autosave:
+            return JsonResponse({
+                'ok': True,
+                'saved_keys': len([k for k, v in posted.items() if v]),
+            })
 
         if request.POST.get('finish_test') == '1':
             with transaction.atomic():
-                total_slots_target = sum(
-                    q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
-                )
+                total_slots_target = total_gradable_slots_for_questions(questions)
                 correct_count = 0
                 for q in questions:
                     user_answer = (answers.get(str(q.pk), '') or '').strip()
@@ -1477,27 +1442,36 @@ def test_take(request, pk):
                             slots_ok, slots_tot = q.score_fill_answer(user_answer)
                             correct_count += slots_ok
                             is_correct = bool(slots_tot and slots_ok >= slots_tot)
+                        elif q.question_type == 'list_selection':
+                            slots_ok, slots_tot = q.score_list_selection(user_answer)
+                            correct_count += slots_ok
+                            is_correct = bool(slots_tot and slots_ok >= slots_tot)
                         else:
                             is_correct = q.check_user_answer(user_answer)
                             if is_correct:
-                                # list_selection: umumiy slotlar soni N bo'lsa, to'liq to'g'ri = N ball
-                                if q.question_type == 'list_selection':
-                                    correct_count += q.gradable_answer_slots()
-                                else:
-                                    correct_count += 1
+                                correct_count += 1
                         UserTestAnswer.objects.update_or_create(
                             test_result=test_result,
                             question=q,
                             defaults={'user_answer': user_answer, 'is_correct': is_correct},
                         )
 
-                test_result.total_questions = total_slots_target or total_questions
-                test_result.correct_answers = correct_count
-                test_result.wrong_answers = max(0, test_result.total_questions - correct_count)
-                test_result.completed_at = timezone.now()
-                test_result.attempt_number = test_result.attempt_number or 1
-                test_result.time_taken = test_result.get_elapsed_time()
-                test_result.calculate_score()
+                session_scores = compute_session_scores(questions, answers)
+                if session_scores['writing_only']:
+                    test_result.total_questions = session_scores['essay_total'] or 1
+                    test_result.correct_answers = session_scores['essays_submitted']
+                    test_result.completed_at = timezone.now()
+                    test_result.attempt_number = test_result.attempt_number or 1
+                    test_result.time_taken = test_result.get_elapsed_time()
+                    test_result.calculate_score(writing_manual=True)
+                else:
+                    test_result.total_questions = total_slots_target or total_questions
+                    test_result.correct_answers = correct_count
+                    test_result.wrong_answers = max(0, test_result.total_questions - correct_count)
+                    test_result.completed_at = timezone.now()
+                    test_result.attempt_number = test_result.attempt_number or 1
+                    test_result.time_taken = test_result.get_elapsed_time()
+                    test_result.calculate_score(writing_manual=False)
                 test_result.refresh_from_db()
 
                 UserActivity.objects.create(
@@ -1516,9 +1490,7 @@ def test_take(request, pk):
 
     answered_questions = [int(q_id) for q_id in answers.keys() if str(q_id).isdigit()]
 
-    total_answer_slots = sum(
-        q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
-    )
+    total_answer_slots = total_gradable_slots_for_questions(questions)
     answered_answer_slots = 0
     for q in questions:
         if q.question_type == 'essay':
@@ -2254,6 +2226,8 @@ def test_take(request, pk):
         'timer_seconds': timer_seconds,
         'elapsed_time': elapsed_time,
         'is_paused': test_result.is_paused,
+        'exam_variant': exam_variant,
+        'variants_count': int(getattr(test, 'variants_to_select', 1) or 1),
         'flashcard_sets': FlashcardSet.objects.filter(user=request.user).order_by('name'),
     }
     if test.test_type == 'listening':
@@ -2343,6 +2317,7 @@ def test_retake(request, pk):
         test=test,
         completed_at__isnull=True
     ).delete()
+    clear_exam_variant(request, test)
     
     # Yangi test boshlash
     if request.headers.get('HX-Request'):
@@ -2380,12 +2355,9 @@ def test_result(request, pk):
                 answers = test_result.answers_json
                 correct = 0
 
-                # Barcha savollarni bir martada olish
-                questions = list(test_result.test.questions.all().order_by('order'))
-                
-                total_slots_target = sum(
-                    q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
-                )
+                exam_variant = get_exam_variant(request, test_result.test)
+                questions = filter_questions_by_exam_variant(test_result.test, exam_variant)
+                total_slots_target = total_gradable_slots_for_questions(questions)
                 for question in questions:
                     user_answer = (answers.get(str(question.pk), '') or '').strip()
                     if question.question_type == 'essay':
@@ -2417,13 +2389,14 @@ def test_result(request, pk):
                             slots_ok, slots_tot = question.score_fill_answer(user_answer)
                             correct += slots_ok
                             is_correct = bool(slots_tot and slots_ok >= slots_tot)
+                        elif question.question_type == 'list_selection':
+                            slots_ok, slots_tot = question.score_list_selection(user_answer)
+                            correct += slots_ok
+                            is_correct = bool(slots_tot and slots_ok >= slots_tot)
                         else:
                             is_correct = question.check_user_answer(user_answer)
                             if is_correct:
-                                if question.question_type == 'list_selection':
-                                    correct += question.gradable_answer_slots()
-                                else:
-                                    correct += 1
+                                correct += 1
                         UserTestAnswer.objects.update_or_create(
                             test_result=test_result,
                             question=question,
@@ -2433,14 +2406,22 @@ def test_result(request, pk):
                             },
                         )
 
-                test_result.total_questions = total_slots_target or len(questions)
-                test_result.correct_answers = correct
-                test_result.wrong_answers = max(0, test_result.total_questions - correct)
-                test_result.completed_at = timezone.now()
-                test_result.attempt_number = test_result.attempt_number or 1
-                # Time tracking - sarflangan vaqtni hisoblash
-                test_result.time_taken = test_result.get_elapsed_time()
-                test_result.calculate_score()
+                session_scores = compute_session_scores(questions, answers)
+                if session_scores['writing_only']:
+                    test_result.total_questions = session_scores['essay_total'] or 1
+                    test_result.correct_answers = session_scores['essays_submitted']
+                    test_result.completed_at = timezone.now()
+                    test_result.attempt_number = test_result.attempt_number or 1
+                    test_result.time_taken = test_result.get_elapsed_time()
+                    test_result.calculate_score(writing_manual=True)
+                else:
+                    test_result.total_questions = total_slots_target or len(questions)
+                    test_result.correct_answers = correct
+                    test_result.wrong_answers = max(0, test_result.total_questions - correct)
+                    test_result.completed_at = timezone.now()
+                    test_result.attempt_number = test_result.attempt_number or 1
+                    test_result.time_taken = test_result.get_elapsed_time()
+                    test_result.calculate_score(writing_manual=False)
                 test_result.save()
                 
                 # Faollik yozish
@@ -2460,6 +2441,10 @@ def test_result(request, pk):
         except Exception as e:
             messages.error(request, f'Xatolik yuz berdi: {str(e)}')
             return redirect('core:test_detail', pk=test_result.test.pk)
+
+    if test_result.completed_at and needs_scoring_refresh(test_result):
+        test_result.recalculate_from_answers()
+        test_result.refresh_from_db()
     
     # Javoblar ro'yxati
     user_answers = {}
@@ -2505,44 +2490,18 @@ def test_result(request, pk):
             'time_diff_abs': time_diff_abs,
         })
     
-    # Performance insights: question type bo'yicha aniqlik
-    question_type_labels = dict(Question.QUESTION_TYPES)
-    type_stats_map = {}
-    all_questions = list(test_result.test.questions.all().order_by('order'))
-    for q in all_questions:
-        q_type = q.question_type or 'unknown'
-        if q_type not in type_stats_map:
-            type_stats_map[q_type] = {
-                'question_type': q_type,
-                'label': question_type_labels.get(q_type, q_type.replace('_', ' ').title()),
-                'total': 0,
-                'answered': 0,
-                'correct': 0.0,
-                'accuracy': 0.0,
-            }
-        type_stats_map[q_type]['total'] += 1
-        ans = user_answers.get(q.id)
-        if ans:
-            type_stats_map[q_type]['answered'] += 1
-            if q.uses_choose_two_letter_scoring():
-                pts, tot = q.score_mcq_choose_two_dual((ans.user_answer or '').strip())
-                if tot:
-                    type_stats_map[q_type]['correct'] += float(pts) / float(tot)
-            elif ans.is_correct:
-                type_stats_map[q_type]['correct'] += 1.0
+    test = test_result.test
+    result_exam_variant = exam_variant_from_answers(test_result.answers_json)
+    insight_questions = filter_questions_by_exam_variant(test, result_exam_variant)
 
-    type_stats = []
-    for item in type_stats_map.values():
-        if item['answered'] > 0:
-            item['accuracy'] = round((item['correct'] / item['answered']) * 100, 1)
-        else:
-            item['accuracy'] = 0.0
-        # CSS width uchun lokalizatsiyasiz, xavfsiz qiymat
-        item['accuracy_width'] = max(0, min(100, int(round(item['accuracy']))))
-        type_stats.append(item)
-    type_stats.sort(key=lambda x: x['accuracy'])
+    type_stats = build_type_stats(
+        insight_questions,
+        test_result.answers_json,
+        user_answers,
+        question_type_display_label,
+    )
 
-    weak_areas = [s for s in type_stats if s['answered'] > 0 and s['accuracy'] < 60][:3]
+    weak_areas = [s for s in type_stats if s['max_points'] > 0 and s['accuracy'] < 60][:3]
     top_strengths = sorted(type_stats, key=lambda x: x['accuracy'], reverse=True)[:3]
 
     seconds_per_question = 0
@@ -2569,14 +2528,15 @@ def test_result(request, pk):
     }
     improvement_tips = [tip_map.get(w['question_type'], "Ushbu savol turida ko'proq amaliy test ishlang.") for w in weak_areas]
 
-    test = test_result.test
-    if getattr(test, 'variants_to_select', 1) >= 2:
-        ordered_questions = list(
-            test.questions.order_by(Coalesce(F('variant'), Value(1)), 'order')
-        )
-    else:
-        ordered_questions = list(test.questions.order_by('order'))
+    ordered_questions = insight_questions
     question_display_num = {q.pk: i + 1 for i, q in enumerate(ordered_questions)}
+
+    session_scores = compute_session_scores(
+        insight_questions,
+        test_result.answers_json,
+        user_answers,
+    )
+    writing_score_pending = session_scores['writing_only']
 
     context = {
         'test_result': test_result,
@@ -2584,6 +2544,9 @@ def test_result(request, pk):
         'ordered_questions': ordered_questions,
         'question_display_num': question_display_num,
         'is_writing_test': test.test_type == 'writing',
+        'writing_score_pending': writing_score_pending,
+        'essays_submitted': session_scores['essays_submitted'],
+        'essay_total': session_scores['essay_total'],
         'can_retake': can_retake,
         'previous_results': previous_results,
         'comparison_data': comparison_data,

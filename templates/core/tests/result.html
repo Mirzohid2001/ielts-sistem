@@ -55,11 +55,15 @@
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <div class="stat-card {% if test_result.is_passed %}stat-card-success{% else %}stat-card-danger{% endif %}">
+                            <div class="stat-card {% if writing_score_pending %}stat-card-info{% elif test_result.is_passed %}stat-card-success{% else %}stat-card-danger{% endif %}">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <p class="text-muted mb-1" style="font-size: 0.875rem;">Foiz</p>
+                                        {% if writing_score_pending %}
+                                        <h3 class="mb-0" style="font-size: 1.35rem; font-weight: 600;">Manual baholash</h3>
+                                        {% else %}
                                         <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{{ test_result.percentage|floatformat:1 }}%</h3>
+                                        {% endif %}
                                     </div>
                                     <i class="fas fa-percent fa-2x text-muted"></i>
                                 </div>
@@ -69,8 +73,8 @@
                             <div class="stat-card stat-card-info">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">To'g'ri javoblar</p>
-                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{{ test_result.correct_answers }}</h3>
+                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">{% if writing_score_pending %}Yuborilgan essay{% else %}To'g'ri javoblar{% endif %}</p>
+                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{% if writing_score_pending %}{{ essays_submitted }}/{{ essay_total }}{% else %}{{ test_result.correct_answers }}{% endif %}</h3>
                                     </div>
                                     <i class="fas fa-check-circle fa-2x text-muted"></i>
                                 </div>
@@ -102,7 +106,12 @@
                     </div>
                     {% endif %}
 
-                    {% if test_result.is_passed %}
+                    {% if writing_score_pending %}
+                    <div class="alert alert-warning border-0" style="border-radius: 12px;">
+                        <i class="fas fa-pen me-2"></i>
+                        <strong>Writing:</strong> essay(lar) yuborildi ({{ essays_submitted }}/{{ essay_total }}). Avtomatik foiz berilmaydi — o‘qituvchi keyin baholaydi.
+                    </div>
+                    {% elif test_result.is_passed %}
                     <div class="alert alert-success border-0" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; box-shadow: var(--shadow-md); border-radius: 12px;">
                         <i class="fas fa-check-circle me-2"></i>
                         <strong>Tebriklar!</strong> Siz testdan muvaffaqiyatli o'tdingiz!
@@ -116,12 +125,6 @@
                 </div>
             </div>
 
-            {% if is_writing_test %}
-            <div class="alert alert-info border-0 mb-4" style="border-radius: 12px;">
-                <i class="fas fa-pen me-2"></i>
-                <strong>Writing (essay):</strong> javoblar avtomatik baholanmaydi. Ko‘rsatilgan ball faqat boshqa (agar bo‘lsa) savollar asosida. O‘qituvchi alohida baholashi mumkin.
-            </div>
-            {% endif %}
 
             <!-- Performance Insights -->
             <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px;">
@@ -159,7 +162,7 @@
                         <div class="mb-2">
                             <div class="d-flex justify-content-between mb-1">
                                 <small>{{ item.label }}</small>
-                                <small><strong>{{ item.accuracy }}%</strong> ({{ item.correct }}/{{ item.answered }})</small>
+                                <small><strong>{{ item.accuracy }}%</strong> ({{ item.correct|floatformat:0 }}/{{ item.max_points|floatformat:0 }} ball, {{ item.answered }}/{{ item.total }} savol)</small>
                             </div>
                             <div class="progress" style="height: 8px;">
                                 <div class="progress-bar {% if item.accuracy >= 80 %}bg-success{% elif item.accuracy >= 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ item.accuracy_width }}%;"></div>

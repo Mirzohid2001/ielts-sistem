@@ -1570,7 +1570,10 @@
                             <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%; background: #111827;">
                             </div>
                         </div>
-                        <div class="mt-2 exam-save-status" id="autosave-status">Auto-save: active</div>
+                        <div class="mt-2 exam-save-status" id="autosave-status">Javoblar serverga avtomatik saqlanadi</div>
+                        {% if variants_count >= 2 %}
+                        <div class="mt-1 small text-muted">Imtihon qog‘ozi: <strong>Variant {{ exam_variant }}</strong></div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -2618,9 +2621,42 @@
             autosaveStatus.style.opacity = '1';
             clearTimeout(window.__saveStatusTimer);
             window.__saveStatusTimer = setTimeout(() => {
-                if (autosaveStatus) autosaveStatus.textContent = 'Auto-save: active';
-            }, 1800);
+                if (autosaveStatus) autosaveStatus.textContent = 'Javoblar serverga avtomatik saqlanadi';
+            }, 2800);
         }
+
+        (function initServerAutosave() {
+            const form = document.getElementById('exam-take-form');
+            if (!form) return;
+            let saveTimer = null;
+            let saving = false;
+            function scheduleSave() {
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(runSave, 2200);
+            }
+            function runSave() {
+                if (saving) return;
+                saving = true;
+                const fd = new FormData(form);
+                fd.set('autosave', '1');
+                const csrf = form.querySelector('[name=csrfmiddlewaretoken]');
+                const headers = {};
+                if (csrf && csrf.value) headers['X-CSRFToken'] = csrf.value;
+                fetch(form.action, { method: 'POST', body: fd, headers: headers, credentials: 'same-origin' })
+                    .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+                    .then(function(r) {
+                        if (r.ok && r.data && r.data.ok) markSaved('Serverga saqlandi');
+                        else markSaved('Saqlash xatosi — qayta uriniladi');
+                    })
+                    .catch(function() { markSaved('Tarmoq xatosi — keyinroq saqlanadi'); })
+                    .finally(function() { saving = false; });
+            }
+            form.addEventListener('input', scheduleSave, { passive: true });
+            form.addEventListener('change', function() {
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(runSave, 600);
+            });
+        })();
 
         // Flashcard helper (selected text -> modal -> save)
         const flashcardSelectionBtn = document.getElementById('flashcard-selection-btn');

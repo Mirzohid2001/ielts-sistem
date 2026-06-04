@@ -141,7 +141,9 @@ class TestAdmin(ImportExportModelAdmin):
                 "<strong>Listening:</strong> Audio fayl + savollar; Part 1–4 odatda 10+10+10+10. "
                 "<strong>Writing:</strong> 2 ta savol (Task 1, 2) — har birida Part = 1 yoki 2; Task 1 rasmlari: «Rasm» yoki qo'shimcha URL ro'yxati. "
                 "<strong>Savol matni bo'sh</strong> qoldirish mumkin (draft), keyin to'ldirib saqlang. "
-                "<strong>2 yoki 3 variant</strong> testda har savol va passage uchun imtihon qog‘ozi varianti (1, 2 yoki 3) tanlang."
+                "<strong>2 yoki 3 variant:</strong> har savol va passage uchun <strong>Variant 1, 2 yoki 3</strong> tanlang. "
+                "Foydalanuvchi test boshlashda <strong>bitta</strong> imtihon qog‘ozini tanlaydi (80 ta savol emas). "
+                "Variant maydoni bo‘sh qoldirilgan savollar barcha qog‘ozlarda chiqadi."
             )
         }),
         ('Parametrlar', {
@@ -187,9 +189,14 @@ class TestAdmin(ImportExportModelAdmin):
     content_summary_display.short_description = "Passage / Savol"
 
     def total_questions_display(self, obj):
-        count = obj.total_questions
-        return format_html('<strong>{}</strong>', count)
-    total_questions_display.short_description = "Savollar"
+        slots = obj.total_questions
+        qn = obj.question_count
+        if not slots and not qn:
+            return format_html('<strong>0</strong>')
+        if slots == qn:
+            return format_html('<strong>{}</strong>', slots)
+        return format_html('<strong>{}</strong> ball <span class="quiet">/ {} yozuv</span>', slots, qn)
+    total_questions_display.short_description = "Ball (slot)"
 
     def passages_display(self, obj):
         if obj.test_type != 'reading':

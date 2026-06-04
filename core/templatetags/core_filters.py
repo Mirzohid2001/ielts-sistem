@@ -232,5 +232,19 @@ def answer_slot_review_state(question, user_answer):
             return 'partial'
         return 'wrong'
 
+    if qt == 'list_selection':
+        user_answer = (user_answer or '').strip()
+        if not user_answer:
+            return 'wrong'
+        try:
+            got, total = question.score_list_selection(user_answer)
+        except Exception:
+            return 'wrong'
+        if total and got >= total:
+            return 'correct'
+        if total and got > 0:
+            return 'partial'
+        return 'wrong'
+
     return ''
 

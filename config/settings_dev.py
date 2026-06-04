@@ -3,7 +3,7 @@ DEBUG = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ielts',
+        'NAME': 'moscow',
         'USER': '',
         'PASSWORD': '',
         'HOST': 'localhost',

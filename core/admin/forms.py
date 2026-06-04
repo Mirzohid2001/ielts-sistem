@@ -62,7 +62,11 @@ class QuestionAdminForm(forms.ModelForm):
     fill_answers = forms.CharField(
         required=False,
         label="To'g'ri javoblar (vergul bilan)",
-        help_text="Har bir bo'sh joy uchun to'g'ri javob; bo'sh joylar vergul bilan. Bitta yacheykada 2 ta so'z talab qilsangiz, ikkalasini bo'shliq bilan yozing — foydalanuvchi ikkalasini ham kiritishi kerak. Masalan: teacher,durability strength,skyscrapers",
+        help_text=(
+            "Har bir bo'sh joy uchun to'g'ri javob; vergul bilan ajrating. "
+            "Sinonim: color|colour yoki centre|center. "
+            "Masalan: teacher,durability strength,skyscrapers"
+        ),
     )
     matching_items = forms.CharField(
         required=False,
@@ -273,7 +277,11 @@ class QuestionAdminForm(forms.ModelForm):
                             lines.append(p)
                     self.fields['sa_prompt_lines'].initial = '\n'.join(lines)
 
-        if inst and inst.question_type in ('matching_headings', 'matching_features', 'matching_info', 'matching_sentences', 'classification'):
+        matching_load_types = (
+            'matching_headings', 'matching_features', 'matching_info',
+            'matching_sentences', 'classification', 'summary_box',
+        )
+        if inst and inst.question_type in matching_load_types:
             items = opts.get('items', [])
             if inst.question_type == 'matching_headings':
                 headings = opts.get('headings', []) or opts.get('options', [])
@@ -288,7 +296,23 @@ class QuestionAdminForm(forms.ModelForm):
                     f"{h.get('letter', '')}|{h.get('text', '')}" for h in headings if isinstance(h, dict)
                 )
             if isinstance(corr, dict):
-                self.fields['matching_correct'].initial = "\n".join(f"{k}:{v}" for k, v in corr.items())
+                def _corr_sort_key(item):
+                    k = str(item[0])
+                    try:
+                        return (0, int(k))
+                    except (TypeError, ValueError):
+                        return (1, k)
+                self.fields['matching_correct'].initial = "\n".join(
+                    f"{k}:{v}" for k, v in sorted(corr.items(), key=_corr_sort_key)
+                )
+
+        single_choice = ('mcq', 'true_false', 'true_false_not_given', 'yes_no_not_given')
+        if inst and inst.question_type in single_choice:
+            mc = int(getattr(inst, 'max_choices', 1) or 1)
+            if mc >= 2 and isinstance(corr, list) and len(corr) >= mc:
+                self.fields['correct_answer'].initial = ','.join(
+                    str(x).strip().lower() for x in corr[:mc]
+                )
 
         if inst and inst.question_type == 'list_selection':
             options = opts.get('options', [])
@@ -423,28 +447,38 @@ class QuestionAdminForm(forms.ModelForm):
             raise forms.ValidationError(
                 "«3 ta javob» tanlash faqat Multiple Choice (MCQ) uchun. Boshqa turlarda 1 yoki 2 tanlang."
             )
-        if q_type in single_choice and max_choices >= 2 and correct_answer:
+        if q_type in single_choice and max_choices >= 2:
             if q_type == 'mcq':
                 allowed_for_multi = set(mcq_allowed_letters) if mcq_allowed_letters else {'a', 'b', 'c', 'd'}
             elif q_type == 'true_false':
                 allowed_for_multi = {'a', 'b'}
             else:
                 allowed_for_multi = {'a', 'b', 'c'}
-            parts = [
-                x.strip().lower()
-                for x in correct_answer.replace(',', ' ').split()
-                if x.strip() and x.strip().lower() in allowed_for_multi
-            ]
+            parts = []
+            if correct_answer:
+                parts = [
+                    x.strip().lower()
+                    for x in correct_answer.replace(',', ' ').split()
+                    if x.strip() and x.strip().lower() in allowed_for_multi
+                ]
             uniq = sorted(set(parts))
+            if len(uniq) < max_choices and getattr(self.instance, 'pk', None):
+                prev = self.instance.correct_answer_json
+                if isinstance(prev, list):
+                    uniq = sorted(set(
+                        str(x).strip().lower()
+                        for x in prev[:max_choices]
+                        if str(x).strip().lower() in allowed_for_multi
+                    ))
             if len(uniq) == max_choices:
                 cleaned['correct_answer_json'] = uniq
                 cleaned['correct_answer'] = cleaned['correct_answer_json'][0]
                 correct_answer = cleaned['correct_answer']
-            elif len(uniq) > max_choices:
-                raise forms.ValidationError(
-                    f"«To'g'ri javob» da aynan {max_choices} ta turli harf bo'lsin (hozir {len(uniq)} ta)."
-                )
-            else:
+            elif correct_answer or has_content:
+                if len(uniq) > max_choices:
+                    raise forms.ValidationError(
+                        f"«To'g'ri javob» da aynan {max_choices} ta turli harf bo'lsin (hozir {len(uniq)} ta)."
+                    )
                 raise forms.ValidationError(
                     f"«Tanlash soni» {max_choices} ta javob. «To'g'ri javob» da {max_choices} ta harf kiriting "
                     f"(masalan: a,c" + (",f" if max_choices == 3 else "") + ")."

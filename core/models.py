@@ -2,7 +2,56 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
+import json
 import re
+import unicodedata
+
+
+def normalize_answer_text(value):
+    """Fill/matching uchun: katta-kichik, bo'shliq, apostrof va oxiridagi tinish belgilar."""
+    if value is None:
+        return ''
+    s = str(value).strip().lower()
+    if not s:
+        return ''
+    s = unicodedata.normalize('NFKC', s)
+    for ch in ('\u2019', '\u2018', '\u2032', '`', '\u00b4'):
+        s = s.replace(ch, "'")
+    s = ' '.join(s.split())
+    while s and s[-1] in '.,;:!?':
+        s = s[:-1].rstrip()
+    return s
+
+
+def correct_answer_variants(correct_text):
+    """Admin: color|colour yoki word1/word2 — har qanday variant qabul qilinadi."""
+    ca_n = normalize_answer_text(correct_text)
+    if not ca_n:
+        return {''}
+    for sep in ('|', '/'):
+        if sep in ca_n:
+            parts = {normalize_answer_text(p) for p in ca_n.split(sep)}
+            return {p for p in parts if p} or {ca_n}
+    return {ca_n}
+
+
+def blank_answers_match(user_text, correct_text):
+    """Bitta bo'sh joy: sinonim (|), ko'p so'z (tartibsiz) va oddiy matn."""
+    ua_n = normalize_answer_text(user_text)
+    variants = correct_answer_variants(correct_text)
+    if not variants or variants == {''}:
+        return not ua_n
+    for ca_n in variants:
+        if not ca_n:
+            if not ua_n:
+                return True
+            continue
+        if ' ' in ca_n or ' ' in ua_n:
+            if set(w for w in ua_n.split() if w) == set(w for w in ca_n.split() if w):
+                return True
+        elif ua_n == ca_n:
+            return True
+    return False
 
 
 class Category(models.Model):
@@ -251,9 +300,19 @@ class Test(models.Model):
         return f"{self.title} ({self.get_test_type_display()})"
 
     @property
-    def total_questions(self):
-        """Jami savollar soni"""
+    def question_count(self):
+        """Admin/statistika: Question yozuvlari soni."""
         return self.questions.count()
+
+    @property
+    def total_questions(self):
+        """Foydalanuvchi UI va natija: baholanadigan javob slotlari (essay dan tashqari)."""
+        slots = sum(
+            q.gradable_answer_slots()
+            for q in self.questions.all()
+            if q.question_type != 'essay'
+        )
+        return slots or self.question_count
 
     def get_absolute_url(self):
         return reverse('core:test_detail', kwargs={'pk': self.pk})
@@ -708,8 +767,7 @@ class Question(models.Model):
             'matching_sentences', 'classification', 'summary_box',
         )
         
-        import json
-        norm = lambda x: (str(x).strip().lower() if x else '')
+        norm = lambda x: normalize_answer_text(x)
         
         def parse_user_json(text):
             if not text:
@@ -730,7 +788,10 @@ class Question(models.Model):
                 return False
             if set(user_data.keys()) != set(str(k) for k in correct.keys()):
                 return False
-            return all(norm(user_data.get(str(k), '')) == norm(v) for k, v in correct.items())
+            return all(
+                blank_answers_match(user_data.get(str(k), ''), v)
+                for k, v in correct.items()
+            )
         
         # List selection - order doesn't matter, check if same set
         if self.question_type == 'list_selection':
@@ -752,25 +813,54 @@ class Question(models.Model):
             return False
         max_w = self.get_max_words_per_blank()
 
-        def blank_match(ua, ca):
-            ua_n = norm(ua)
-            ca_n = norm(ca)
-            if not ca_n:
-                return not ua_n
-            if ' ' in ca_n or ' ' in ua_n:
-                ca_words = set(w for w in ca_n.split() if w)
-                ua_words = set(w for w in ua_n.split() if w)
-                return ca_words == ua_words
-            return ua_n == ca_n
-
         for i, (ua, ca) in enumerate(zip(user_answers, correct_list)):
             slot_mw = self.get_max_words_for_blank_index(i) if self.question_type == 'short_answer' else max_w
             if slot_mw is not None and ua and str(ua).strip():
                 if self.count_answer_words(ua) > slot_mw:
                     return False
-            if not blank_match(ua, ca):
+            if not blank_answers_match(ua, ca):
                 return False
         return True
+
+    def _parse_letter_list(self, user_answer):
+        """JSON yoki ro'yxatdan harflar to'plami."""
+        norm = lambda x: str(x).strip().lower() if x else ''
+        if isinstance(user_answer, list):
+            ua = user_answer
+        elif isinstance(user_answer, str) and user_answer.strip().startswith('['):
+            try:
+                ua = json.loads(user_answer)
+            except (TypeError, json.JSONDecodeError):
+                return set()
+        elif user_answer:
+            ua = [user_answer]
+        else:
+            return set()
+        if not isinstance(ua, list):
+            ua = [ua]
+        return set(norm(x) for x in ua if x)
+
+    def score_list_selection(self, user_answer):
+        """
+        List Selection (Choose N): har bir to'g'ri harf = 1 ball (qisman mumkin).
+        Qaytadi: (togri_son, jami_n).
+        """
+        if self.question_type != 'list_selection':
+            ok = self.check_user_answer(user_answer)
+            return (1, 1) if ok else (0, 1)
+        correct = set(
+            str(x).strip().lower()
+            for x in (self.correct_answer_json or [])
+            if str(x).strip()
+        )
+        if not correct:
+            return (0, 1)
+        total = len(correct)
+        user_set = self._parse_letter_list(user_answer)
+        if len(user_set) > total:
+            return (0, total)
+        got = len(user_set & correct)
+        return (got, total)
 
     def score_fill_answer(self, user_answer):
         """
@@ -794,9 +884,6 @@ class Question(models.Model):
         elif len(correct_list) > total_slots:
             correct_list = correct_list[:total_slots]
         total = len(correct_list)
-
-        import json
-        norm = lambda x: (str(x).strip().lower() if x else '')
 
         def parse_user_json(text):
             if not text:
@@ -822,24 +909,13 @@ class Question(models.Model):
 
         max_w = self.get_max_words_per_blank()
 
-        def blank_match(ua, ca):
-            ua_n = norm(ua)
-            ca_n = norm(ca)
-            if not ca_n:
-                return not ua_n
-            if ' ' in ca_n or ' ' in ua_n:
-                ca_words = set(w for w in ca_n.split() if w)
-                ua_words = set(w for w in ua_n.split() if w)
-                return ca_words == ua_words
-            return ua_n == ca_n
-
         got = 0
         for i, (ua, ca) in enumerate(zip(user_answers, correct_list)):
             slot_mw = self.get_max_words_for_blank_index(i) if self.question_type == 'short_answer' else max_w
             if slot_mw is not None and ua and str(ua).strip():
                 if self.count_answer_words(ua) > slot_mw:
                     continue
-            if blank_match(ua, ca):
+            if blank_answers_match(ua, ca):
                 got += 1
         return (got, total)
 
@@ -858,8 +934,6 @@ class Question(models.Model):
             # matching emas yoki noto'g'ri format — oddiy True/False ga tushiramiz
             return (1 if self.check_user_answer(user_answer) else 0, 1)
 
-        import json
-        norm = lambda x: (str(x).strip().lower() if x else '')
         try:
             if not user_answer:
                 user_map = {}
@@ -872,10 +946,10 @@ class Question(models.Model):
         if not isinstance(user_map, dict):
             user_map = {}
 
-        correct_norm = {str(k): norm(v) for k, v in correct.items()}
+        correct_norm = {str(k): normalize_answer_text(v) for k, v in correct.items()}
         got = 0
         for k, v in correct_norm.items():
-            if norm(user_map.get(str(k))) == v:
+            if blank_answers_match(user_map.get(str(k)), v):
                 got += 1
         return (got, total_slots)
 
@@ -903,29 +977,21 @@ class Question(models.Model):
     def score_multi_letter_choice(self, user_answer):
         """
         Bir nechta harf tanlash (2 yoki 3): qisman ball.
-        Qaytadi: (togri_son, jami_n). Tanlov soni noto‘g‘ri bo‘lsa — (0, n).
+        Qaytadi: (togri_son, jami_n). Ortiqcha/noto'g'ri tanlov ham nolga tushirmaydi.
         """
-        import json
-        norm = lambda x: str(x).strip().lower() if x else ''
         n = int(getattr(self, 'max_choices', 2) or 2)
         n = max(2, min(n, 8))
         c_set = self.multi_letter_correct_set()
         if len(c_set) < n:
             ok = self.check_user_answer(user_answer)
             return (1, 1) if ok else (0, 1)
-        try:
-            if isinstance(user_answer, list):
-                ua = user_answer
-            elif isinstance(user_answer, str) and user_answer.strip().startswith('['):
-                ua = json.loads(user_answer)
-            else:
-                ua = [user_answer] if user_answer else []
-            u_set = set(norm(x) for x in (ua if isinstance(ua, list) else [ua]) if x)
-        except (TypeError, json.JSONDecodeError):
+        u_set = self._parse_letter_list(user_answer)
+        if not u_set:
             return 0, n
-        if len(u_set) != n:
+        if len(u_set) > n:
             return 0, n
-        return len(u_set & c_set), n
+        got = len(u_set & c_set)
+        return min(got, n), n
 
     def score_mcq_choose_two_dual(self, user_answer):
         """Eski API: 2 yoki 3 harf uchun score_multi_letter_choice."""
@@ -1047,70 +1113,87 @@ class UserTestResult(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.test.title} ({self.percentage}%)"
 
-    def calculate_score(self):
+    def calculate_score(self, writing_manual=False):
         """Natijani hisoblash"""
-        # Agar total_questions 0 bo'lsa, test.questions.count() dan olish
-        if self.total_questions == 0:
-            self.total_questions = self.test.total_questions if self.test else 0
-        
+        if self.total_questions == 0 and self.test_id:
+            self.total_questions = self.test.total_questions
+
         total = self.total_questions
         if total == 0:
             self.percentage = 0.0
             self.score = 0
             self.save()
             return
-        
+
         correct = self.correct_answers
         self.score = correct
+        if writing_manual:
+            self.percentage = 0.0
+            self.wrong_answers = max(0, total - correct)
+            self.save()
+            return
+
         self.percentage = round((correct / total) * 100, 2)
-        self.wrong_answers = total - correct
+        self.wrong_answers = max(0, total - correct)
         self.save()
 
     def recalculate_from_answers(self):
-        """Javoblar asosida correct/wrong ni qayta hisoblash (admin baholagach chaqiriladi)"""
+        """Javoblar asosida ballarni qayta hisoblash (admin yoki yangi baholash qoidalari)."""
         if not self.test_id:
             return
-        questions = list(self.test.questions.all())
-        total_slots = sum(
-            q.gradable_answer_slots() for q in questions if q.question_type != 'essay'
+        from core.test_session_helpers import (
+            compute_session_scores,
+            exam_variant_from_answers,
+            filter_questions_by_exam_variant,
+            score_question_points,
+            stamp_answers_meta,
         )
+
+        answers_json = self.answers_json if isinstance(self.answers_json, dict) else {}
+        exam_variant = exam_variant_from_answers(answers_json)
+        questions = filter_questions_by_exam_variant(self.test, exam_variant)
         answers_by_q = {a.question_id: a for a in self.answers.select_related('question')}
-        matching_types = (
-            'matching_headings', 'matching_features', 'matching_info',
-            'matching_sentences', 'classification', 'summary_box',
-        )
-        fill_types = (
-            'fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
-            'table_completion', 'short_answer',
-        )
-        correct_pts = 0
+
+        scores = compute_session_scores(questions, answers_json, answers_by_q)
+        if scores['writing_only']:
+            self.total_questions = scores['essay_total'] or 1
+            self.correct_answers = scores['essays_submitted']
+            self.calculate_score(writing_manual=True)
+        else:
+            self.total_questions = scores['total_slots'] or len(questions)
+            self.correct_answers = scores['correct_pts']
+            self.calculate_score(writing_manual=False)
+
         for q in questions:
             if q.question_type == 'essay':
+                ua = (answers_json.get(str(q.pk), '') or '').strip()
+                if not ua and answers_by_q.get(q.pk):
+                    ua = (answers_by_q[q.pk].user_answer or '').strip()
+                if ua:
+                    UserTestAnswer.objects.update_or_create(
+                        test_result=self,
+                        question=q,
+                        defaults={'user_answer': ua, 'is_correct': False},
+                    )
                 continue
-            ans = answers_by_q.get(q.pk)
-            ua = (ans.user_answer if ans else '') or ''
-            if q.uses_choose_two_letter_scoring():
-                pts, _ = q.score_mcq_choose_two_dual(ua)
-                correct_pts += pts
-            elif q.question_type in matching_types:
-                pts, _ = q.score_matching_answer(ua)
-                correct_pts += pts
-            elif q.question_type in fill_types:
-                pts, _ = q.score_fill_answer(ua)
-                correct_pts += pts
-            elif ua.strip():
-                if q.check_user_answer(ua):
-                    if q.question_type == 'list_selection':
-                        correct_pts += q.gradable_answer_slots()
-                    else:
-                        correct_pts += 1
-        self.total_questions = total_slots or self.total_questions
-        self.correct_answers = correct_pts
-        self.wrong_answers = max(0, self.total_questions - correct_pts)
-        self.score = correct_pts
-        t = self.total_questions
-        self.percentage = round((correct_pts / t) * 100, 2) if t else 0.0
-        self.save()
+            ua = (answers_json.get(str(q.pk), '') or '').strip()
+            if not ua and answers_by_q.get(q.pk):
+                ua = (answers_by_q[q.pk].user_answer or '').strip()
+            pts, tot = score_question_points(q, ua)
+            UserTestAnswer.objects.update_or_create(
+                test_result=self,
+                question=q,
+                defaults={
+                    'user_answer': ua,
+                    'is_correct': bool(tot) and pts >= tot,
+                },
+            )
+
+        self.answers_json = stamp_answers_meta(answers_json, exam_variant)
+        self.save(update_fields=[
+            'total_questions', 'correct_answers', 'wrong_answers',
+            'score', 'percentage', 'answers_json',
+        ])
 
     def is_passed(self):
         """Test o'tildimi?"""
