@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.test import Client
 from django.contrib.auth import get_user_model
@@ -13,6 +14,34 @@ class AccountAccessFlowTests(TestCase):
     def test_user_creation_also_creates_module_access(self):
         user = get_user_model().objects.create_user(username='newuser', password='secret123')
         self.assertTrue(UserModuleAccess.objects.filter(user=user).exists())
+
+    def test_admin_inline_save_new_does_not_duplicate_module_access(self):
+        """Signal + inline: bitta UserModuleAccess bo'lishi kerak (IntegrityError yo'q)."""
+        from django.contrib.admin.sites import AdminSite
+        from accounts.admin import UserModuleAccessInline
+        from core.access import get_user_module_access
+
+        user = get_user_model().objects.create_user(username='inlinetest', password='secret123')
+        get_user_module_access(user)
+        self.assertEqual(UserModuleAccess.objects.filter(user=user).count(), 1)
+
+        inline = UserModuleAccessInline(User, AdminSite())
+        Form = inline.get_formset(None, obj=user).form
+        form = Form(
+            data={
+                'user': user.pk,
+                'can_access_ielts': True,
+                'can_access_sat': False,
+                'can_access_jobs': True,
+            },
+            instance=UserModuleAccess(user=user),
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        inline.save_new(form, commit=True)
+        self.assertEqual(UserModuleAccess.objects.filter(user=user).count(), 1)
+        access = UserModuleAccess.objects.get(user=user)
+        self.assertFalse(access.can_access_sat)
+        self.assertTrue(access.can_access_jobs)
 
     def test_authenticated_user_login_page_redirects_to_module_selector(self):
         user = get_user_model().objects.create_user(username='authuser', password='secret123')

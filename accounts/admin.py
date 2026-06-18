@@ -39,6 +39,21 @@ class UserModuleAccessInline(admin.StackedInline):
     fields = ['can_access_ielts', 'can_access_sat', 'can_access_jobs', 'active_session_key', 'updated_at']
     readonly_fields = ['active_session_key', 'updated_at']
 
+    def save_new(self, form, commit=True):
+        """
+        post_save signal allaqachon UserModuleAccess yaratadi — inline qayta INSERT qilmasin.
+        """
+        obj = form.save(commit=False)
+        access, _ = UserModuleAccess.objects.update_or_create(
+            user=obj.user,
+            defaults={
+                'can_access_ielts': obj.can_access_ielts,
+                'can_access_sat': obj.can_access_sat,
+                'can_access_jobs': obj.can_access_jobs,
+            },
+        )
+        return access
+
 
 @admin.register(UserOTP)
 class UserOTPAdmin(admin.ModelAdmin):
