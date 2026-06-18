@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib import admin
 from django.test import TestCase
 from django.test import Client
 from django.contrib.auth import get_user_model
@@ -15,18 +16,18 @@ class AccountAccessFlowTests(TestCase):
         user = get_user_model().objects.create_user(username='newuser', password='secret123')
         self.assertTrue(UserModuleAccess.objects.filter(user=user).exists())
 
-    def test_admin_inline_save_new_does_not_duplicate_module_access(self):
-        """Signal + inline: bitta UserModuleAccess bo'lishi kerak (IntegrityError yo'q)."""
-        from django.contrib.admin.sites import AdminSite
+    def test_inline_formset_save_new_no_duplicate(self):
+        """Signal + formset.save_new → bitta yozuv (IntegrityError yo'q)."""
         from accounts.admin import UserModuleAccessInline
         from core.access import get_user_module_access
 
-        user = get_user_model().objects.create_user(username='inlinetest', password='secret123')
+        user = get_user_model().objects.create_user(username='formsetuser', password='secret123')
         get_user_module_access(user)
         self.assertEqual(UserModuleAccess.objects.filter(user=user).count(), 1)
 
-        inline = UserModuleAccessInline(User, AdminSite())
-        Form = inline.get_formset(None, obj=user).form
+        FormSet = UserModuleAccessInline(User, admin.site).get_formset(None, obj=user)
+        formset = FormSet(instance=user)
+        Form = formset.form
         form = Form(
             data={
                 'user': user.pk,
@@ -37,11 +38,58 @@ class AccountAccessFlowTests(TestCase):
             instance=UserModuleAccess(user=user),
         )
         self.assertTrue(form.is_valid(), form.errors)
-        inline.save_new(form, commit=True)
+        formset.save_new(form, commit=True)
         self.assertEqual(UserModuleAccess.objects.filter(user=user).count(), 1)
         access = UserModuleAccess.objects.get(user=user)
         self.assertFalse(access.can_access_sat)
         self.assertTrue(access.can_access_jobs)
+
+    def test_admin_add_user_with_module_access_inline(self):
+        """Admin /auth/user/add/ — IntegrityError va new_objects xatosiz."""
+        import re
+
+        admin_user = get_user_model().objects.create_superuser(
+            username='adminadd', email='admin@test.com', password='adminpass',
+        )
+        self.client.force_login(admin_user)
+        add_url = reverse('admin:auth_user_add')
+        get_response = self.client.get(add_url)
+        self.assertEqual(get_response.status_code, 200)
+        html = get_response.content.decode()
+        names = set(re.findall(r'name="([^"]+)"', html))
+
+        inline_data = {}
+        for total_name in sorted(n for n in names if n.endswith('-TOTAL_FORMS')):
+            prefix = total_name.rsplit('-', 1)[0]
+            has_access_fields = f'{prefix}-0-can_access_ielts' in names
+            inline_data[f'{prefix}-TOTAL_FORMS'] = '1' if has_access_fields else '0'
+            inline_data[f'{prefix}-INITIAL_FORMS'] = '0'
+            inline_data[f'{prefix}-MIN_NUM_FORMS'] = '0'
+            inline_data[f'{prefix}-MAX_NUM_FORMS'] = '1000'
+            if has_access_fields:
+                inline_data[f'{prefix}-0-can_access_ielts'] = 'on'
+                inline_data[f'{prefix}-0-can_access_sat'] = 'on'
+                inline_data[f'{prefix}-0-can_access_jobs'] = ''
+
+        response = self.client.post(
+            add_url,
+            {
+                'username': 'newadminuser',
+                'password1': 'ComplexPass123!',
+                'password2': 'ComplexPass123!',
+                'is_active': 'on',
+                'is_staff': 'on',
+                **inline_data,
+            },
+            follow=False,
+        )
+        self.assertEqual(response.status_code, 302, response.content.decode()[:2000])
+        user = get_user_model().objects.get(username='newadminuser')
+        self.assertEqual(UserModuleAccess.objects.filter(user=user).count(), 1)
+        access = UserModuleAccess.objects.get(user=user)
+        self.assertTrue(access.can_access_ielts)
+        self.assertTrue(access.can_access_sat)
+        self.assertFalse(access.can_access_jobs)
 
     def test_authenticated_user_login_page_redirects_to_module_selector(self):
         user = get_user_model().objects.create_user(username='authuser', password='secret123')

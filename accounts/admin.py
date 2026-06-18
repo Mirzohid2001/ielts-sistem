@@ -8,6 +8,19 @@ from .utils import generate_otp_for_user
 from core.models import UserModuleAccess
 
 
+def upsert_user_module_access(user, *, can_access_ielts=True, can_access_sat=True, can_access_jobs=False):
+    """Signal allaqachon yaratgan bo'lsa yangilaydi, aks holda yaratadi (INSERT dublikat emas)."""
+    access, _ = UserModuleAccess.objects.update_or_create(
+        user=user,
+        defaults={
+            'can_access_ielts': can_access_ielts,
+            'can_access_sat': can_access_sat,
+            'can_access_jobs': can_access_jobs,
+        },
+    )
+    return access
+
+
 class UserOTPInline(admin.TabularInline):
     """User admin da OTP kodlarni ko'rsatish"""
     model = UserOTP
@@ -39,20 +52,28 @@ class UserModuleAccessInline(admin.StackedInline):
     fields = ['can_access_ielts', 'can_access_sat', 'can_access_jobs', 'active_session_key', 'updated_at']
     readonly_fields = ['active_session_key', 'updated_at']
 
-    def save_new(self, form, commit=True):
-        """
-        post_save signal allaqachon UserModuleAccess yaratadi — inline qayta INSERT qilmasin.
-        """
-        obj = form.save(commit=False)
-        access, _ = UserModuleAccess.objects.update_or_create(
-            user=obj.user,
-            defaults={
-                'can_access_ielts': obj.can_access_ielts,
-                'can_access_sat': obj.can_access_sat,
-                'can_access_jobs': obj.can_access_jobs,
-            },
-        )
-        return access
+    def get_formset(self, request, obj=None, **kwargs):
+        BaseFormSet = super().get_formset(request, obj, **kwargs)
+
+        class UserModuleAccessFormSet(BaseFormSet):
+            def _save_access(self, form):
+                row = form.save(commit=False)
+                user = row.user if getattr(row, 'user_id', None) else self.instance
+                return upsert_user_module_access(
+                    user,
+                    can_access_ielts=row.can_access_ielts,
+                    can_access_sat=row.can_access_sat,
+                    can_access_jobs=row.can_access_jobs,
+                )
+
+            def save_new(self, form, commit=True):
+                return self._save_access(form)
+
+            def save_existing(self, form, instance, commit=True):
+                return self._save_access(form)
+
+        UserModuleAccessFormSet.__name__ = BaseFormSet.__name__
+        return UserModuleAccessFormSet
 
 
 @admin.register(UserOTP)
