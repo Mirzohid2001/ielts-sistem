@@ -230,8 +230,31 @@ function scrollToTop() {
     });
 }
 
+// Progress bar animation (test cards, natija sahifasi)
+function animateProgressBars() {
+    var bars = document.querySelectorAll('[data-animate-width]');
+    if (!bars.length) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        bars.forEach(function (el) {
+            el.style.width = el.getAttribute('data-animate-width');
+        });
+        return;
+    }
+    bars.forEach(function (el) {
+        var target = el.getAttribute('data-animate-width');
+        el.style.width = '0%';
+        el.style.transition = 'width 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                el.style.width = target;
+            });
+        });
+    });
+}
+
 // Add scroll to top button (only if body exists)
 document.addEventListener('DOMContentLoaded', function() {
+    animateProgressBars();
     if (!document.body) return;
     
     const scrollTopBtn = document.createElement('button');

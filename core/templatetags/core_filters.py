@@ -248,3 +248,104 @@ def answer_slot_review_state(question, user_answer):
 
     return ''
 
+
+@register.filter
+def review_card_state(question, answer):
+    """Review kartochka holati: empty | correct | partial | wrong | pending"""
+    if not answer:
+        return 'empty'
+    ua = getattr(answer, 'user_answer', '') or ''
+    rs = answer_slot_review_state(question, ua)
+    if rs == 'correct':
+        return 'correct'
+    if rs == 'partial':
+        return 'partial'
+    if rs == 'wrong':
+        return 'wrong'
+    if getattr(answer, 'is_correct', False):
+        return 'correct'
+    if getattr(question, 'question_type', None) == 'essay':
+        return 'pending'
+    return 'wrong'
+
+
+def _answer_value_to_parts(value):
+    """Javobni chip/tag ko'rinishida ko'rsatish uchun qismlarga ajratish."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, dict):
+        def _key_sort(k):
+            try:
+                return (0, int(k))
+            except (TypeError, ValueError):
+                return (1, str(k))
+        return [f'{k} → {v}' for k, v in sorted(value.items(), key=lambda x: _key_sort(x[0]))]
+    s = str(value).strip()
+    if not s:
+        return []
+    if s.startswith('[') or s.startswith('{'):
+        try:
+            data = json.loads(s)
+            return _answer_value_to_parts(data)
+        except (json.JSONDecodeError, TypeError):
+            pass
+    if ';' in s and len(s) > 20:
+        parts = [p.strip() for p in s.split(';') if p.strip()]
+        if len(parts) > 1:
+            return parts
+    if ',' in s:
+        parts = [p.strip() for p in s.split(',') if p.strip()]
+        if len(parts) > 1:
+            return parts
+    return [s]
+
+
+@register.filter
+def answer_parts(value):
+    """Javob qismlari ro'yxati (chip UI uchun)."""
+    return _answer_value_to_parts(value)
+
+
+@register.filter
+def correct_answer_parts(question):
+    """To'g'ri javob qismlari (chip UI uchun)."""
+    if not question:
+        return []
+    if getattr(question, 'question_type', None) == 'essay':
+        return []
+    text = question.get_correct_answer_review_text()
+    if not text or text == '—':
+        return []
+    return _answer_value_to_parts(text)
+
+
+@register.filter
+def is_within_days(value, days=7):
+    """Oxirgi N kun ichida yaratilganmi (Yangi badge uchun)."""
+    if not value:
+        return False
+    from datetime import timedelta
+    from django.utils import timezone
+    try:
+        n = int(days)
+    except (TypeError, ValueError):
+        n = 7
+    return value >= timezone.now() - timedelta(days=n)
+
+
+@register.filter
+def duration_format(seconds):
+    """Soniyani mm:ss yoki h:mm:ss ko'rinishida."""
+    try:
+        total = int(seconds or 0)
+    except (TypeError, ValueError):
+        return ''
+    if total <= 0:
+        return ''
+    h, rem = divmod(total, 3600)
+    m, s = divmod(rem, 60)
+    if h:
+        return f'{h}:{m:02d}:{s:02d}'
+    return f'{m}:{s:02d}'

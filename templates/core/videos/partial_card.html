@@ -1,0 +1,53 @@
+{% load core_filters %}
+<article class="video-card video-card--animate" style="--card-i: {{ card_index|default:0 }};">
+    <div class="video-card__accent" aria-hidden="true"></div>
+
+    <a href="{% url 'core:video_detail' video.pk %}" class="video-card__media">
+        {% if video.cover_image %}
+        <img src="{{ video.cover_image.url }}" alt="{{ video.title }}" class="video-card__img" loading="lazy">
+        {% elif video.youtube_thumbnail %}
+        <img src="{{ video.youtube_thumbnail }}" alt="{{ video.title }}" class="video-card__img" loading="lazy">
+        {% else %}
+        <div class="video-card__placeholder">
+            <i class="fas fa-play-circle"></i>
+        </div>
+        {% endif %}
+        <span class="video-card__play"><i class="fas fa-play"></i></span>
+        {% if video.duration %}
+        <span class="video-card__duration">{{ video.duration|duration_format }}</span>
+        {% endif %}
+        {% with progress=user_progress|get_item:video.id %}
+        {% if progress and progress.watched %}
+        <span class="video-card__tag video-card__tag--done"><i class="fas fa-check"></i></span>
+        {% elif progress and progress.watch_percentage > 0 %}
+        <span class="video-card__tag video-card__tag--progress">{{ progress.watch_percentage }}%</span>
+        {% endif %}
+        {% endwith %}
+    </a>
+
+    <div class="video-card-body">
+        <div class="video-card__head">
+            <h5 class="video-card-title">{{ video.title|truncatewords:10 }}</h5>
+            <span class="badge badge-category">{{ video.category.name }}</span>
+        </div>
+
+        {% if video.description %}
+        <p class="video-card-description">{{ video.description|truncatewords:14 }}</p>
+        {% endif %}
+
+        <div class="video-card-meta">
+            {% if video.views_count %}
+            <span class="video-card-meta__item"><i class="fas fa-eye"></i>{{ video.views_count }}</span>
+            {% endif %}
+            {% with progress=user_progress|get_item:video.id %}
+            {% if progress and progress.watched %}
+            <span class="video-card-meta__item video-card-meta__item--done"><i class="fas fa-check-circle"></i>Ko'rilgan</span>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <a href="{% url 'core:video_detail' video.pk %}" class="btn btn-watch">
+            <i class="fas fa-play me-2"></i>Ko'rish
+        </a>
+    </div>
+</article>

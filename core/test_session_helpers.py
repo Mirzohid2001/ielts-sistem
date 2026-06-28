@@ -313,3 +313,258 @@ def total_gradable_slots_for_questions(questions):
         for q in questions
         if q.question_type != 'essay'
     )
+
+
+def _sorted_dict_keys(keys):
+    def _sk(k):
+        try:
+            return (0, int(k))
+        except (TypeError, ValueError):
+            return (1, str(k))
+    return sorted(keys, key=_sk)
+
+
+def _parse_answer_value(user_answer):
+    if user_answer is None:
+        return None
+    if isinstance(user_answer, (list, dict)):
+        return user_answer
+    s = str(user_answer).strip()
+    if not s:
+        return None
+    if s.startswith('[') or s.startswith('{'):
+        try:
+            return json.loads(s)
+        except (json.JSONDecodeError, TypeError):
+            return s
+    return s
+
+
+def _mcq_letter_display(question, letter):
+    opts = {
+        'a': getattr(question, 'option_a', '') or '',
+        'b': getattr(question, 'option_b', '') or '',
+        'c': getattr(question, 'option_c', '') or '',
+        'd': getattr(question, 'option_d', '') or '',
+    }
+    lt = str(letter or '').strip().lower()
+    if not lt:
+        return ''
+    text = opts.get(lt, '')
+    return f"{lt.upper()}) {text}".strip() if text else lt.upper()
+
+
+def _list_selection_letter_display(question, letter):
+    opts = (question.options_json or {}).get('options', [])
+    lt = str(letter).strip().lower()
+    for o in opts:
+        if str(o.get('letter', '')).strip().lower() == lt:
+            txt = o.get('text', '') or ''
+            return f"{str(letter).upper()}) {txt}".strip() if txt else str(letter).upper()
+    return str(letter).upper()
+
+
+def build_review_items(questions, user_answers):
+    """
+    Har bir gradable javob o'rni uchun alohida review qatori.
+    Masalan: 9 ta savol, 18 ta slot → 18 ta review elementi.
+    """
+    from core.models import blank_answers_match
+
+    items = []
+    display_num = 0
+    user_answers = user_answers or {}
+
+    for question in questions:
+        answer = user_answers.get(question.pk)
+        ua = (getattr(answer, 'user_answer', None) or '') if answer else ''
+        qt = question.question_type
+
+        if qt == 'essay':
+            display_num += 1
+            items.append({
+                'display_num': display_num,
+                'question': question,
+                'answer': answer,
+                'slot_label': '',
+                'show_question_text': True,
+                'user_part': ua,
+                'correct_part': '',
+                'state': 'pending' if str(ua).strip() else 'empty',
+            })
+            continue
+
+        n_slots = question.gradable_answer_slots() or 1
+
+        if qt in MATCHING_SCORE_TYPES:
+            correct = question.correct_answer_json if isinstance(question.correct_answer_json, dict) else {}
+            keys = _sorted_dict_keys(list(correct.keys())) if correct else [str(i + 1) for i in range(n_slots)]
+            parsed = _parse_answer_value(ua)
+            user_map = parsed if isinstance(parsed, dict) else {}
+            any_answer = bool(user_map and any(str(v).strip() for v in user_map.values()))
+
+            for i, k in enumerate(keys):
+                display_num += 1
+                sk = str(k)
+                cv = correct.get(k, correct.get(sk, ''))
+                uv = user_map.get(sk, user_map.get(k, ''))
+                up = str(uv).strip()
+                cp = str(cv).strip()
+                if not up:
+                    st = 'empty' if not any_answer else 'wrong'
+                else:
+                    st = 'correct' if blank_answers_match(uv, cv) else 'wrong'
+                items.append({
+                    'display_num': display_num,
+                    'question': question,
+                    'answer': answer,
+                    'slot_label': f'#{sk}',
+                    'show_question_text': i == 0,
+                    'user_part': up,
+                    'correct_part': cp,
+                    'state': st,
+                })
+            continue
+
+        if qt in FILL_TYPES:
+            correct_list = list(question.get_correct_answers_list())
+            while len(correct_list) < n_slots:
+                correct_list.append('')
+            correct_list = correct_list[:n_slots]
+            parsed = _parse_answer_value(ua)
+            if isinstance(parsed, dict):
+                user_list = [parsed.get(str(i + 1), parsed.get(i + 1, '')) for i in range(n_slots)]
+            elif isinstance(parsed, list):
+                user_list = (list(parsed) + [''] * n_slots)[:n_slots]
+            elif parsed is not None and n_slots == 1:
+                user_list = [parsed]
+            else:
+                user_list = [''] * n_slots
+            any_answer = any(str(x).strip() for x in user_list)
+
+            for i in range(n_slots):
+                display_num += 1
+                uv = user_list[i] if i < len(user_list) else ''
+                cv = correct_list[i] if i < len(correct_list) else ''
+                up = str(uv).strip()
+                cp = str(cv).strip()
+                if not up:
+                    st = 'empty' if not any_answer else 'wrong'
+                else:
+                    st = 'correct' if blank_answers_match(uv, cv) else 'wrong'
+                items.append({
+                    'display_num': display_num,
+                    'question': question,
+                    'answer': answer,
+                    'slot_label': f"Bo'sh joy {i + 1}" if n_slots > 1 else '',
+                    'show_question_text': i == 0,
+                    'user_part': up,
+                    'correct_part': cp,
+                    'state': st,
+                })
+            continue
+
+        if qt == 'list_selection':
+            letters = []
+            if isinstance(question.correct_answer_json, list):
+                seen = set()
+                for x in question.correct_answer_json:
+                    lx = str(x).strip().lower()
+                    if lx and lx not in seen:
+                        seen.add(lx)
+                        letters.append(lx)
+            if not letters:
+                letters = ['']
+            user_set = question._parse_letter_list(ua)
+            any_answer = bool(user_set)
+
+            for i, letter in enumerate(letters):
+                display_num += 1
+                cp = _list_selection_letter_display(question, letter)
+                got = letter in user_set
+                up = cp if got else ''
+                if got:
+                    st = 'correct'
+                elif any_answer:
+                    st = 'wrong'
+                else:
+                    st = 'empty'
+                items.append({
+                    'display_num': display_num,
+                    'question': question,
+                    'answer': answer,
+                    'slot_label': f'Variant {letter.upper()}' if len(letters) > 1 else '',
+                    'show_question_text': i == 0,
+                    'user_part': up,
+                    'correct_part': cp,
+                    'state': st,
+                })
+            continue
+
+        if question.uses_choose_two_letter_scoring():
+            n = int(getattr(question, 'max_choices', 2) or 2)
+            c_letters = sorted(question.multi_letter_correct_set())
+            while len(c_letters) < n:
+                c_letters.append('')
+            c_letters = c_letters[:n]
+            user_set = question._parse_letter_list(ua)
+            any_answer = bool(user_set)
+
+            for i, letter in enumerate(c_letters):
+                display_num += 1
+                cp = _mcq_letter_display(question, letter) if letter else ''
+                got = letter and letter in user_set
+                up = cp if got else ''
+                if got:
+                    st = 'correct'
+                elif any_answer:
+                    st = 'wrong'
+                else:
+                    st = 'empty'
+                items.append({
+                    'display_num': display_num,
+                    'question': question,
+                    'answer': answer,
+                    'slot_label': f'Javob {i + 1}' if n > 1 else '',
+                    'show_question_text': i == 0,
+                    'user_part': up,
+                    'correct_part': cp,
+                    'state': st,
+                })
+            continue
+
+        display_num += 1
+        any_answer = bool(str(ua).strip())
+        if not any_answer:
+            st = 'empty'
+        else:
+            try:
+                st = 'correct' if question.check_user_answer(ua) else 'wrong'
+            except Exception:
+                st = 'wrong'
+
+        if qt in SINGLE_CHOICE:
+            up = question.get_user_answer_display(ua) or ''
+            cp = question.get_correct_answer_display_for_review() or ''
+        else:
+            up = str(ua).strip()
+            cp = question.get_correct_answer_review_text()
+        if cp == '—':
+            cp = ''
+
+        items.append({
+            'display_num': display_num,
+            'question': question,
+            'answer': answer,
+            'slot_label': '',
+            'show_question_text': True,
+            'user_part': up,
+            'correct_part': cp,
+            'state': st,
+        })
+
+    question_parent = {q.pk: i + 1 for i, q in enumerate(questions)}
+    for item in items:
+        item['parent_num'] = question_parent.get(item['question'].pk, 0)
+
+    return items

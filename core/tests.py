@@ -260,6 +260,32 @@ class TestTotalQuestionsSlotsTests(TestCase):
         self.assertEqual(exam.total_questions, 2)
 
 
+class BuildReviewItemsTests(TestCase):
+    def test_expands_multi_slot_questions(self):
+        from core.test_session_helpers import build_review_items, total_gradable_slots_for_questions
+
+        category = Category.objects.create(name="R", slug="cat-review")
+        exam = Test.objects.create(
+            title="E", category=category, test_type="reading",
+            reading_passages_json=[], reading_text="",
+        )
+        q1 = Question.objects.create(
+            test=exam, question_type="true_false", order=1,
+            question_text="Q1", correct_answer="true",
+        )
+        q2 = Question.objects.create(
+            test=exam, question_type="matching_headings", order=2,
+            question_text="Match", correct_answer_json={"1": "i", "2": "ii", "3": "iii"},
+        )
+        questions = [q1, q2]
+        self.assertEqual(total_gradable_slots_for_questions(questions), 4)
+        items = build_review_items(questions, {})
+        self.assertEqual(len(items), 4)
+        self.assertEqual([i['display_num'] for i in items], [1, 2, 3, 4])
+        self.assertEqual(items[0]['state'], 'empty')
+        self.assertEqual(items[1]['slot_label'], '#1')
+
+
 class TypeStatsPartialTests(TestCase):
     def test_build_type_stats_uses_slot_points(self):
         from core.test_session_helpers import build_type_stats

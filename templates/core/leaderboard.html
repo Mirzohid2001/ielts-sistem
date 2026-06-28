@@ -3,10 +3,10 @@
 {% block title %}Reyting - IELTS Center{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4 platform-page">
     <div class="row mb-5">
         <div class="col-12">
-            <div class="page-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #fbbf24 100%);">
+            <div class="page-header lb-hero">
                 <div class="container">
                     <div class="d-flex justify-content-between align-items-center flex-wrap">
                         <div class="fade-in-left">
@@ -23,9 +23,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Animated background elements -->
-                <div style="position: absolute; top: -30%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); border-radius: 50%; animation: float 8s ease-in-out infinite; pointer-events: none;"></div>
-                <div style="position: absolute; bottom: -20%; left: -5%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); border-radius: 50%; animation: float 10s ease-in-out infinite reverse; pointer-events: none;"></div>
             </div>
         </div>
     </div>
@@ -34,23 +31,21 @@
     {% if user_position %}
     <div class="row mb-5 fade-in-up">
         <div class="col-12">
-            <div class="card border-0" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: var(--shadow-2xl); border-radius: 28px; position: relative; overflow: hidden;">
-                <div class="card-body p-5">
+            <div class="card border-0 lb-position-card">
+                <div class="card-body p-4 p-md-5">
                     <div class="d-flex justify-content-between align-items-center flex-wrap">
                         <div>
-                            <h5 class="mb-3" style="color: rgba(255,255,255,0.95); font-weight: 700; font-size: 1.25rem;">Sizning pozitsiyangiz</h5>
-                            <p class="mb-0" style="color: rgba(255,255,255,0.9); font-size: 1.125rem;">O'rtacha ball: <strong style="color: white; font-size: 1.5rem; font-weight: 800;">{{ user_avg }}%</strong></p>
+                            <h5 class="mb-2 opacity-90 fw-bold">Sizning pozitsiyangiz</h5>
+                            <p class="mb-0 opacity-90">O'rtacha ball: <strong class="fs-4">{{ user_avg }}%</strong></p>
                         </div>
                         <div class="text-end mt-3 mt-md-0">
-                            <div class="glass" style="border-radius: 20px; padding: 2rem 2.5rem; backdrop-filter: blur(20px); border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-                                <div style="font-size: 0.9375rem; opacity: 0.95; margin-bottom: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Pozitsiya</div>
-                                <h2 class="mb-0" style="color: white; font-weight: 900; font-size: 4rem; text-shadow: 0 4px 20px rgba(0,0,0,0.3);">#{{ user_position }}</h2>
+                            <div class="dashboard-stats-card text-center px-4 py-3">
+                                <div class="dashboard-stats-label">Pozitsiya</div>
+                                <div class="dashboard-stats-value">#{{ user_position }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- Animated background -->
-                <div style="position: absolute; top: -20%; right: -10%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); border-radius: 50%; animation: float 6s ease-in-out infinite; pointer-events: none;"></div>
             </div>
         </div>
     </div>
@@ -59,9 +54,9 @@
     <!-- Leaderboard -->
     <div class="row">
         <div class="col-12">
-            <div class="card" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(30px); border-radius: 28px; box-shadow: var(--shadow-2xl); border: 1px solid rgba(255, 255, 255, 0.5);">
-                <div class="card-header" style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%); border-bottom: 3px solid var(--warning); padding: 2rem; border-radius: 28px 28px 0 0;">
-                    <h5 class="mb-0 gradient-text" style="font-weight: 900; font-size: 1.5rem;">Top 10</h5>
+            <div class="card lb-table-card">
+                <div class="card-header">
+                    <h5 class="mb-0 fw-bold">Top 10</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">

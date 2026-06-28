@@ -1,0 +1,104 @@
+{% load core_filters %}
+<article class="test-card test-card--{{ test.test_type }} test-card--cat-{{ test.category.slug }} test-card--animate hover-lift"
+         style="--card-i: {{ card_index|default:0 }};">
+    <div class="test-card__accent" aria-hidden="true"></div>
+
+    {% if test.created_at|is_within_days:7 %}
+    <span class="test-card__tag test-card__tag--new">Yangi</span>
+    {% elif test.id in completed_test_ids %}
+    <span class="test-card__tag test-card__tag--done"><i class="fas fa-check"></i></span>
+    {% endif %}
+
+    {% with result=user_results|get_item:test.id %}
+    {% if result %}
+    <div class="test-card__score-ring test-card__score-ring--{% if result.is_passed %}pass{% elif result.percentage >= 50 %}mid{% else %}fail{% endif %}">
+        {{ result.percentage|floatformat:0 }}%
+    </div>
+    {% elif test.difficulty == 'easy' %}
+    <span class="test-card__diff test-card__diff--easy">Oson</span>
+    {% elif test.difficulty == 'medium' %}
+    <span class="test-card__diff test-card__diff--medium">O'rta</span>
+    {% elif test.difficulty == 'hard' %}
+    <span class="test-card__diff test-card__diff--hard">Qiyin</span>
+    {% endif %}
+
+    <div class="test-card-body">
+        <div class="test-card-header">
+            <div class="test-card-icon">
+                {% if test.test_type == 'reading' %}
+                <i class="fas fa-book-open"></i>
+                {% elif test.test_type == 'listening' %}
+                <i class="fas fa-headphones"></i>
+                {% elif test.test_type == 'writing' %}
+                <i class="fas fa-pen"></i>
+                {% else %}
+                <i class="fas fa-clipboard-list"></i>
+                {% endif %}
+            </div>
+            <div class="test-card__head">
+                <h5 class="test-card-title">{{ test.title }}</h5>
+                <div class="test-card-badges">
+                    <span class="badge-category">{{ test.category.name }}</span>
+                    <span class="badge-type">{{ test.get_test_type_display }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if test.description %}
+        <p class="test-card-description">{{ test.description|truncatewords:16 }}</p>
+        {% endif %}
+
+        <div class="test-card-meta">
+            <div class="test-card-meta__item test-card-meta__item--diff-{{ test.difficulty }}">
+                {% if test.difficulty == 'easy' %}
+                <i class="fas fa-seedling"></i>Oson
+                {% elif test.difficulty == 'medium' %}
+                <i class="fas fa-signal"></i>O'rta
+                {% elif test.difficulty == 'hard' %}
+                <i class="fas fa-fire"></i>Qiyin
+                {% else %}
+                <i class="fas fa-layer-group"></i>—
+                {% endif %}
+            </div>
+            <div class="test-card-meta__item">
+                <i class="fas fa-list-check"></i>{{ test.total_questions }} javob
+            </div>
+            <div class="test-card-meta__item">
+                {% if test.duration_minutes %}
+                <i class="fas fa-clock"></i>{{ test.duration_minutes }} daq
+                {% else %}
+                <i class="fas fa-infinity"></i>Cheksiz
+                {% endif %}
+            </div>
+        </div>
+
+        {% if result %}
+        <div class="test-card-result test-card-result--{% if result.is_passed %}pass{% else %}fail{% endif %}">
+            <div class="d-flex justify-content-between align-items-center">
+                <small>
+                    {% if result.is_passed %}
+                    <i class="fas fa-check-circle me-1"></i>O'tdingiz
+                    {% else %}
+                    <i class="fas fa-redo me-1"></i>Qayta urinib ko'ring
+                    {% endif %}
+                </small>
+                <strong class="test-card-result-score">{{ result.percentage|floatformat:1 }}%</strong>
+            </div>
+            <div class="test-card-result-progress">
+                <div class="test-card-result-progress-bar" data-animate-width="{{ result.percentage }}%"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'core:test_detail' test.pk %}"
+           class="btn btn-start{% if result %} btn-start--continue{% endif %}">
+            {% if result %}
+            <span>Qayta ishlash</span>
+            {% else %}
+            <span>Boshlash</span>
+            {% endif %}
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    {% endwith %}
+</article>

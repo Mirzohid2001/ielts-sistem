@@ -37,6 +37,7 @@ from .test_session_helpers import (
     needs_scoring_refresh,
     total_gradable_slots_for_questions,
     exam_variant_from_answers,
+    build_review_items,
 )
 
 FILL_TYPES = ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 
@@ -816,12 +817,19 @@ def dashboard(request):
         'current_streak': current_streak,
         'total_bookmarks': Bookmark.objects.filter(user=request.user).count(),
     }
-    
+
+    avg_score = user_stats['average_score'] or 0
+    tests_progress_pct = min(100, int(user_stats['tests_completed'] / total_tests * 100)) if total_tests else 0
+    videos_progress_pct = min(100, int(user_stats['videos_watched'] / total_videos * 100)) if total_videos else 0
+
     context = {
         'categories': categories,
         'total_videos': total_videos,
         'total_tests': total_tests,
         'user_stats': user_stats,
+        'score_deg': round(avg_score * 3.6, 1),
+        'tests_progress_pct': tests_progress_pct,
+        'videos_progress_pct': videos_progress_pct,
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -930,6 +938,13 @@ def video_list(request):
         'sort_by': sort_by,
         'user_progress': user_progress,
         'bookmarked_videos': bookmarked_videos,
+        'total_videos_count': VideoLesson.objects.filter(
+            is_active=True, category__show_on_site=True
+        ).count(),
+        'user_watched_count': (
+            UserVideoProgress.objects.filter(user=request.user, watched=True).count()
+            if request.user.is_authenticated else 0
+        ),
     }
     
     # HTMX request bo'lsa faqat video list qaytarish
@@ -1071,6 +1086,7 @@ def test_list(request):
     # Foydalanuvchi natijalari va bookmarks
     user_results = {}
     bookmarked_tests = set()
+    completed_test_ids = set()
     if request.user.is_authenticated:
         results_qs = UserTestResult.objects.filter(
             user=request.user,
@@ -1078,7 +1094,14 @@ def test_list(request):
         ).select_related('test')
         for result in results_qs:
             user_results[result.test_id] = result
-        
+
+        completed_test_ids = set(
+            UserTestResult.objects.filter(
+                user=request.user,
+                completed_at__isnull=False,
+            ).values_list('test_id', flat=True)
+        )
+
         # Bookmarked tests
         bookmarks = Bookmark.objects.filter(user=request.user, test__in=tests)
         bookmarked_tests = {b.test_id for b in bookmarks}
@@ -1151,13 +1174,13 @@ def test_list(request):
             recommended_query = recommended_query.filter(difficulty=recommended_difficulty).order_by('-created_at')
         
         # Foydalanuvchi ishlagan testlarni olib tashlash
-        completed_test_ids = UserTestResult.objects.filter(
+        completed_for_recommended = UserTestResult.objects.filter(
             user=request.user,
             completed_at__isnull=False
         ).values_list('test_id', flat=True).distinct()
         
         recommended_tests = recommended_query.exclude(
-            id__in=completed_test_ids
+            id__in=completed_for_recommended
         ).exclude(
             id__in=tests.values_list('id', flat=True)
         ).select_related('category')[:6]
@@ -1173,6 +1196,7 @@ def test_list(request):
         'search_query': search_query,
         'sort_by': sort_by,
         'user_results': user_results,
+        'completed_test_ids': completed_test_ids,
         'bookmarked_tests': bookmarked_tests,
         'recommended_tests': recommended_tests,
         'weak_areas': weak_areas,
@@ -2530,6 +2554,23 @@ def test_result(request, pk):
 
     ordered_questions = insight_questions
     question_display_num = {q.pk: i + 1 for i, q in enumerate(ordered_questions)}
+    review_items = build_review_items(insight_questions, user_answers)
+
+    review_counts = {'correct': 0, 'wrong': 0, 'partial': 0, 'empty': 0, 'pending': 0}
+    for ri in review_items:
+        st = ri.get('state', '')
+        if st in review_counts:
+            review_counts[st] += 1
+
+    total_review = max(len(review_items), 1)
+
+    def _donut_deg(n):
+        return round(n / total_review * 360, 2)
+
+    donut_d1 = _donut_deg(review_counts['correct'])
+    donut_d2 = donut_d1 + _donut_deg(review_counts['wrong'])
+    donut_d3 = donut_d2 + _donut_deg(review_counts['partial'])
+    donut_d4 = donut_d3 + _donut_deg(review_counts['empty'])
 
     session_scores = compute_session_scores(
         insight_questions,
@@ -2542,6 +2583,12 @@ def test_result(request, pk):
         'test_result': test_result,
         'user_answers': user_answers,
         'ordered_questions': ordered_questions,
+        'review_items': review_items,
+        'review_counts': review_counts,
+        'donut_d1': donut_d1,
+        'donut_d2': donut_d2,
+        'donut_d3': donut_d3,
+        'donut_d4': donut_d4,
         'question_display_num': question_display_num,
         'is_writing_test': test.test_type == 'writing',
         'writing_score_pending': writing_score_pending,

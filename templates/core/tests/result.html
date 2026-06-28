@@ -1,171 +1,159 @@
 {% extends 'base.html' %}
 {% load core_filters %}
+{% load static %}
 
 {% block title %}Test Natijasi - IELTS Center{% endblock %}
 
 {% block content %}
-<style>
-.review-answer-box { word-break: break-word; overflow-wrap: anywhere; font-size: 0.98rem; line-height: 1.5; }
-.review-q-card { transition: box-shadow .2s ease, transform .2s ease; }
-.review-q-card:hover { box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08) !important; }
-.review-badge-pill { border-radius: 999px !important; font-size: 0.8125rem; letter-spacing: .01em; }
-.review-partial-strip {
-    border-radius: 12px;
-    border: 1px dashed rgba(245, 158, 11, 0.55);
-    background: linear-gradient(135deg, rgba(254, 243, 199, 0.45) 0%, rgba(255, 251, 235, 0.9) 100%);
-    padding: 0.65rem 1rem;
-    font-size: 0.9rem;
-}
-@media (max-width: 767.98px) {
-    .review-answer-box { max-height: 140px; overflow-y: auto; -webkit-overflow-scrolling: touch; font-size: 0.92rem; }
-    .review-question-snippet { max-height: 120px; overflow-y: auto; }
-}
-</style>
-<div class="container mt-4">
+<canvas id="tr-confetti" class="tr-confetti d-none" aria-hidden="true"></canvas>
+<div class="container mt-4 test-flow-page" id="tr-review-root"
+     {% if test_result.is_passed and not writing_score_pending %}data-pass-celebrate="1"{% endif %}>
     <div class="row">
         <div class="col-12 col-md-10 mx-auto">
-            <!-- Natija kartasi -->
-            <div class="card mb-4 border-0 shadow-lg" style="border-radius: 20px;">
-                <div class="card-body text-center p-4">
-                    <h2 class="mb-3" style="font-weight: 700; font-size: 1.75rem; color: var(--gray-900);">{{ test_result.test.title }}</h2>
-                    
+
+            <div class="card tr-summary">
+                <div class="tr-summary__top">
+                    <h2 class="tr-summary__title">{{ test_result.test.title }}</h2>
+
                     {% if test_result.attempt_number > 1 %}
-                    <div class="mb-3">
-                        <span class="badge bg-info" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                    <div class="mb-2">
+                        <span class="badge bg-info">
                             <i class="fas fa-redo me-1"></i>Urinish: {{ test_result.attempt_number }}
                         </span>
                         {% if test_result.completed_at %}
-                        <span class="badge bg-secondary ms-2" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        <span class="badge bg-secondary ms-1">
                             <i class="fas fa-calendar me-1"></i>{{ test_result.completed_at|date:"d.m.Y H:i" }}
                         </span>
                         {% endif %}
                     </div>
                     {% endif %}
-                    
-                    <div class="row mb-4">
-                        <div class="col-12 col-sm-6 col-md-4 mb-3">
-                            <div class="stat-card stat-card-primary">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">Ball</p>
-                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{{ test_result.score }}/{{ test_result.total_questions }}</h3>
+
+                    <div class="tr-summary__score">{{ test_result.score }}<small>/{{ test_result.total_questions }}</small></div>
+
+                    {% if writing_score_pending %}
+                    <span class="tr-summary__pct is-wait">Manual baholash kutilmoqda</span>
+                    {% elif test_result.is_passed %}
+                    <span class="tr-summary__pct is-pass">{{ test_result.percentage|floatformat:1 }}% — o'tdingiz</span>
+                    {% else %}
+                    <span class="tr-summary__pct is-fail">{{ test_result.percentage|floatformat:1 }}% — o'tmadingiz</span>
+                    {% endif %}
+                </div>
+
+                <div class="tr-summary__body">
+                    <div class="tr-summary__layout">
+                        <div class="tr-summary__stats-col">
+                            <div class="tr-summary__stats">
+                                <div class="tr-mini-stat">
+                                    <div class="tr-mini-stat__val">{{ test_result.score }}/{{ test_result.total_questions }}</div>
+                                    <div class="tr-mini-stat__lbl">Ball</div>
+                                </div>
+                                <div class="tr-mini-stat">
+                                    <div class="tr-mini-stat__val">
+                                        {% if writing_score_pending %}—{% else %}{{ test_result.percentage|floatformat:1 }}%{% endif %}
                                     </div>
-                                    <i class="fas fa-star fa-2x text-muted"></i>
+                                    <div class="tr-mini-stat__lbl">Foiz</div>
+                                </div>
+                                <div class="tr-mini-stat">
+                                    <div class="tr-mini-stat__val">
+                                        {% if writing_score_pending %}{{ essays_submitted }}/{{ essay_total }}{% else %}{{ test_result.correct_answers }}{% endif %}
+                                    </div>
+                                    <div class="tr-mini-stat__lbl">{% if writing_score_pending %}Essay{% else %}To'g'ri{% endif %}</div>
+                                </div>
+                            </div>
+
+                            <ul class="tr-donut__legend">
+                                <li><span class="tr-donut__dot tr-donut__dot--ok"></span>To'g'ri <strong>{{ review_counts.correct }}</strong></li>
+                                <li><span class="tr-donut__dot tr-donut__dot--bad"></span>Noto'g'ri <strong>{{ review_counts.wrong }}</strong></li>
+                                <li><span class="tr-donut__dot tr-donut__dot--partial"></span>Qisman <strong>{{ review_counts.partial }}</strong></li>
+                                <li><span class="tr-donut__dot tr-donut__dot--empty"></span>Bo'sh <strong>{{ review_counts.empty }}</strong></li>
+                            </ul>
+                        </div>
+
+                        {% if not writing_score_pending %}
+                        <div class="tr-donut-wrap">
+                            <div class="tr-donut" style="--d1: {{ donut_d1 }}deg; --d2: {{ donut_d2 }}deg; --d3: {{ donut_d3 }}deg; --d4: {{ donut_d4 }}deg;">
+                                <div class="tr-donut__hole">
+                                    <strong>{% if writing_score_pending %}—{% else %}{{ test_result.percentage|floatformat:0 }}%{% endif %}</strong>
+                                    <small>Natija</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="stat-card {% if writing_score_pending %}stat-card-info{% elif test_result.is_passed %}stat-card-success{% else %}stat-card-danger{% endif %}">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">Foiz</p>
-                                        {% if writing_score_pending %}
-                                        <h3 class="mb-0" style="font-size: 1.35rem; font-weight: 600;">Manual baholash</h3>
-                                        {% else %}
-                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{{ test_result.percentage|floatformat:1 }}%</h3>
-                                        {% endif %}
-                                    </div>
-                                    <i class="fas fa-percent fa-2x text-muted"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="stat-card stat-card-info">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <p class="text-muted mb-1" style="font-size: 0.875rem;">{% if writing_score_pending %}Yuborilgan essay{% else %}To'g'ri javoblar{% endif %}</p>
-                                        <h3 class="mb-0" style="font-size: 2rem; font-weight: 600;">{% if writing_score_pending %}{{ essays_submitted }}/{{ essay_total }}{% else %}{{ test_result.correct_answers }}{% endif %}</h3>
-                                    </div>
-                                    <i class="fas fa-check-circle fa-2x text-muted"></i>
-                                </div>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
-                    
+
                     {% if test_result.time_taken %}
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="alert alert-info border-0 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%); border-radius: 12px; padding: 1rem;">
-                                <i class="fas fa-clock me-2" style="color: var(--info); font-size: 1.25rem;"></i>
-                                <span style="font-weight: 600; color: var(--gray-700);">
-                                    Sarflangan vaqt: 
-                                    <strong style="color: var(--info);">
-                                        {% if time_taken_hours %}
-                                            {{ time_taken_hours }} soat 
-                                            {{ time_taken_minutes }} daqiqa
-                                        {% elif time_taken_minutes %}
-                                            {{ time_taken_minutes }} daqiqa 
-                                            {{ time_taken_seconds }} soniya
-                                        {% else %}
-                                            {{ time_taken_seconds }} soniya
-                                        {% endif %}
-                                    </strong>
-                                </span>
-                            </div>
-                        </div>
+                    <div class="tr-time">
+                        <i class="fas fa-clock"></i>
+                        Sarflangan vaqt:
+                        <strong>
+                            {% if time_taken_hours %}
+                                {{ time_taken_hours }} soat {{ time_taken_minutes }} daqiqa
+                            {% elif time_taken_minutes %}
+                                {{ time_taken_minutes }} daqiqa {{ time_taken_seconds }} soniya
+                            {% else %}
+                                {{ time_taken_seconds }} soniya
+                            {% endif %}
+                        </strong>
                     </div>
                     {% endif %}
 
                     {% if writing_score_pending %}
-                    <div class="alert alert-warning border-0" style="border-radius: 12px;">
-                        <i class="fas fa-pen me-2"></i>
-                        <strong>Writing:</strong> essay(lar) yuborildi ({{ essays_submitted }}/{{ essay_total }}). Avtomatik foiz berilmaydi — o‘qituvchi keyin baholaydi.
+                    <div class="tr-verdict tr-verdict--warn">
+                        <i class="fas fa-pen"></i>
+                        <span><strong>Writing:</strong> essay(lar) yuborildi ({{ essays_submitted }}/{{ essay_total }}). Avtomatik foiz berilmaydi — o'qituvchi keyin baholaydi.</span>
                     </div>
                     {% elif test_result.is_passed %}
-                    <div class="alert alert-success border-0" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; box-shadow: var(--shadow-md); border-radius: 12px;">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <strong>Tebriklar!</strong> Siz testdan muvaffaqiyatli o'tdingiz!
+                    <div class="tr-verdict tr-verdict--ok">
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Tebriklar!</strong> Siz testdan muvaffaqiyatli o'tdingiz!</span>
                     </div>
                     {% else %}
-                    <div class="alert alert-danger border-0" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; box-shadow: var(--shadow-md); border-radius: 12px;">
-                        <i class="fas fa-times-circle me-2"></i>
-                        Testdan o'tish uchun kamida {{ test_result.test.passing_score }}% bo'lishi kerak.
+                    <div class="tr-verdict tr-verdict--bad">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Testdan o'tish uchun kamida {{ test_result.test.passing_score }}% bo'lishi kerak.</span>
                     </div>
                     {% endif %}
                 </div>
             </div>
 
-
-            <!-- Performance Insights -->
-            <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px;">
-                <div class="card-header" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%); border-bottom: 2px solid var(--primary); border-radius: 20px 20px 0 0;">
-                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
-                        <i class="fas fa-chart-pie me-2 text-primary"></i>Performance Insights
-                    </h5>
+            <div class="card tr-insights-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie me-2 text-primary"></i>Performance Insights</h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded" style="background: rgba(99, 102, 241, 0.08);">
                                 <small class="text-muted d-block">O'rtacha tezlik</small>
-                                <strong style="font-size: 1.15rem;">{{ seconds_per_question }} soniya / savol</strong>
+                                <strong>{{ seconds_per_question }} soniya / savol</strong>
                             </div>
                         </div>
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded" style="background: rgba(16, 185, 129, 0.08);">
                                 <small class="text-muted d-block">Kuchli tomonlar</small>
-                                <strong style="font-size: 1.15rem;">{{ top_strengths|length }} ta tur</strong>
+                                <strong>{{ top_strengths|length }} ta tur</strong>
                             </div>
                         </div>
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded" style="background: rgba(239, 68, 68, 0.08);">
                                 <small class="text-muted d-block">Yaxshilash kerak</small>
-                                <strong style="font-size: 1.15rem;">{{ weak_areas|length }} ta tur</strong>
+                                <strong>{{ weak_areas|length }} ta tur</strong>
                             </div>
                         </div>
                     </div>
 
                     {% if type_stats %}
                     <div class="mb-3">
-                        <h6 style="font-weight: 700;">Question type bo'yicha aniqlik</h6>
+                        <h6 class="fw-bold mb-3">Question type bo'yicha aniqlik</h6>
                         {% for item in type_stats %}
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>{{ item.label }}</small>
-                                <small><strong>{{ item.accuracy }}%</strong> ({{ item.correct|floatformat:0 }}/{{ item.max_points|floatformat:0 }} ball, {{ item.answered }}/{{ item.total }} savol)</small>
+                        <div class="tr-type-row">
+                            <div class="tr-type-row__head">
+                                <span>{{ item.label }}</span>
+                                <span><strong>{{ item.accuracy }}%</strong> ({{ item.correct|floatformat:0 }}/{{ item.max_points|floatformat:0 }} ball)</span>
                             </div>
                             <div class="progress" style="height: 8px;">
-                                <div class="progress-bar {% if item.accuracy >= 80 %}bg-success{% elif item.accuracy >= 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ item.accuracy_width }}%;"></div>
+                                <div class="progress-bar {% if item.accuracy >= 80 %}bg-success{% elif item.accuracy >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                                     data-animate-width="{{ item.accuracy_width }}%"></div>
                             </div>
                         </div>
                         {% endfor %}
@@ -176,153 +164,169 @@
                     <div class="alert alert-light border mb-0">
                         <strong class="d-block mb-2"><i class="fas fa-lightbulb text-warning me-1"></i>Keyingi urinish uchun aniq tavsiyalar</strong>
                         {% for tip in improvement_tips %}
-                        <div style="font-size: 0.92rem;">- {{ tip }}</div>
+                        <div class="small">- {{ tip }}</div>
                         {% endfor %}
                     </div>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- Javoblar -->
-            <div class="card border-0 shadow-lg" style="border-radius: 20px;">
-                <div class="card-header" style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%); border-bottom: 2px solid var(--primary); border-radius: 20px 20px 0 0;">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
-                            <i class="fas fa-list-check me-2 text-primary"></i>Javoblar (Test Review)
-                        </h5>
-                        <div>
-                            <span class="badge bg-success me-2" style="padding: 0.5rem 1rem;">
-                                <i class="fas fa-check me-1"></i>{{ test_result.correct_answers }} To'g'ri
-                            </span>
-                            <span class="badge bg-danger" style="padding: 0.5rem 1rem;">
-                                <i class="fas fa-times me-1"></i>{{ test_result.wrong_answers }} Noto'g'ri
-                            </span>
-                        </div>
+            <div class="card tr-review">
+                <div class="tr-review__head">
+                    <h5><i class="fas fa-list-check me-2 text-primary"></i>Javoblar (Test Review)</h5>
+                    <div class="tr-review__counts">
+                        <span class="tr-review__count tr-review__count--ok">
+                            <i class="fas fa-check"></i>{{ review_counts.correct }} To'g'ri
+                        </span>
+                        <span class="tr-review__count tr-review__count--bad">
+                            <i class="fas fa-times"></i>{{ review_counts.wrong }} Noto'g'ri
+                        </span>
+                        {% if review_counts.empty %}
+                        <span class="tr-review__count tr-review__count--empty">
+                            <i class="fas fa-minus"></i>{{ review_counts.empty }} Bo'sh
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="card-body p-4">
-                    {% for question in ordered_questions %}
-                    {% with answer=user_answers|get_item:question.id %}
-                    <div class="card mb-4 border-0 shadow-sm review-q-card" 
-                         style="border-left: 4px solid {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}var(--success){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}#f59e0b{% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}var(--danger){% elif answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %} !important; 
-                                background: {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}rgba(16, 185, 129, 0.05){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}rgba(245, 158, 11, 0.08){% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}rgba(239, 68, 68, 0.05){% elif answer and answer.is_correct %}rgba(16, 185, 129, 0.05){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.08){% elif answer %}rgba(239, 68, 68, 0.05){% else %}rgba(107, 114, 128, 0.05){% endif %}; 
-                                border-radius: 16px;">
-                        <div class="card-body p-4">
-                            <!-- Header -->
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div style="width: 48px; height: 48px; background: {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}linear-gradient(135deg, var(--success) 0%, #059669 100%){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}linear-gradient(135deg, var(--danger) 0%, #dc2626 100%){% elif answer and answer.is_correct %}linear-gradient(135deg, var(--success) 0%, #059669 100%){% elif answer and question.question_type == 'essay' %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% elif answer %}linear-gradient(135deg, var(--danger) 0%, #dc2626 100%){% else %}linear-gradient(135deg, var(--gray-400) 0%, var(--gray-500) 100%){% endif %}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; margin-right: 1rem; box-shadow: 0 4px 12px {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}rgba(16, 185, 129, 0.3){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}rgba(245, 158, 11, 0.3){% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}rgba(239, 68, 68, 0.3){% elif answer and answer.is_correct %}rgba(16, 185, 129, 0.3){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.3){% elif answer %}rgba(239, 68, 68, 0.3){% else %}rgba(107, 114, 128, 0.3){% endif %}; font-size: 1.1rem;">
-                                    {{ forloop.counter }}
+
+                <div class="tr-review__toolbar">
+                    <div class="tr-review__filters">
+                        <button type="button" class="tr-review__filter is-active" data-review-filter="all">Barchasi</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="correct">To'g'ri</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="wrong">Noto'g'ri</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="partial">Qisman</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="empty">Bo'sh</button>
+                    </div>
+                    <div class="tr-review__search-wrap">
+                        <i class="fas fa-search"></i>
+                        <input type="search" id="tr-review-search" class="tr-review__search" placeholder="Savol yoki javob bo'yicha qidirish..." autocomplete="off">
+                    </div>
+                    <div class="tr-review__visible">
+                        Ko'rsatilmoqda: <strong id="tr-review-visible-count">{{ review_items|length }}</strong> / {{ review_items|length }}
+                    </div>
+                </div>
+
+                <div class="tr-review__list">
+                    {% for item in review_items %}
+                    {% with question=item.question card_state=item.state %}
+                    <article class="tr-q tr-q--{{ card_state }} tr-q--animate{% if card_state == 'correct' %} tr-q--pulse-once{% endif %}"
+                             style="--rq-i: {{ forloop.counter0 }};"
+                             data-review-state="{{ card_state }}"
+                             data-search-text="javob {{ item.display_num }} {{ question.question_text|striptags }} {{ item.user_part }} {{ item.correct_part }} {{ question.get_question_type_display }}">
+                        <div class="tr-q__bar"></div>
+                        <div class="tr-q__inner">
+                            <div class="tr-q__head">
+                                <div class="tr-q__num">{{ item.display_num }}</div>
+                                <div class="tr-q__meta">
+                                    <strong>
+                                        {% if item.show_question_text %}
+                                        Javob {{ item.display_num }}
+                                        {% else %}
+                                        Savol {{ item.parent_num }} · {{ item.slot_label }}
+                                        {% endif %}
+                                    </strong>
+                                    <span>{{ question.get_question_type_display }}</span>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-2" style="font-weight: 700; font-size: 1.1rem; color: var(--gray-900);">Savol {{ forloop.counter }}</h6>
-                                </div>
-                                {% if answer %}
-                                    {% with rs=question|answer_slot_review_state:answer.user_answer %}
-                                    {% if rs == 'correct' %}
-                                        <span class="badge" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border-radius: 10px; font-weight: 600;">
-                                            <i class="fas fa-check me-1"></i>To'g'ri
-                                        </span>
-                                    {% elif rs == 'partial' %}
-                                        <span class="badge review-badge-pill" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 0.5rem 1rem 0.5rem 0.85rem; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); font-weight: 600;">
-                                            <i class="fas fa-adjust me-1"></i>Qisman to'g'ri{% if question.max_choices >= 2 %} <span class="opacity-90 fw-normal">({{ question|mcq_choose_two_score_label:answer.user_answer }})</span>{% endif %}
-                                        </span>
-                                    {% elif rs == 'wrong' %}
-                                        <span class="badge" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); border-radius: 10px; font-weight: 600;">
-                                            <i class="fas fa-times me-1"></i>Noto'g'ri
-                                        </span>
-                                    {% elif answer.is_correct %}
-                                    <span class="badge" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border-radius: 10px; font-weight: 600;">
+                                <span class="tr-q__badge">
+                                    {% if card_state == 'correct' %}
                                         <i class="fas fa-check me-1"></i>To'g'ri
-                                    </span>
-                                    {% elif question.question_type == 'essay' %}
-                                    <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); border-radius: 10px; font-weight: 600;">
-                                        <i class="fas fa-clock me-1"></i>Tekshirilmoqda
-                                    </span>
-                                    {% else %}
-                                    <span class="badge" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); border-radius: 10px; font-weight: 600;">
+                                    {% elif card_state == 'partial' %}
+                                        <i class="fas fa-adjust me-1"></i>Qisman
+                                    {% elif card_state == 'wrong' %}
                                         <i class="fas fa-times me-1"></i>Noto'g'ri
-                                    </span>
+                                    {% elif card_state == 'pending' %}
+                                        <i class="fas fa-clock me-1"></i>Tekshirilmoqda
+                                    {% else %}
+                                        <i class="fas fa-minus me-1"></i>Javob berilmagan
                                     {% endif %}
-                                    {% endwith %}
-                                {% else %}
-                                <span class="badge bg-secondary" style="padding: 0.625rem 1.25rem; box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3); border-radius: 10px; font-weight: 600;">
-                                    <i class="fas fa-question me-1"></i>Javob berilmagan
                                 </span>
-                                {% endif %}
                             </div>
-                            {% if answer and question|answer_slot_review_state:answer.user_answer == 'partial' and question.max_choices >= 2 %}
-                            <div class="review-partial-strip mb-3 text-dark">
-                                <i class="fas fa-info-circle text-warning me-2"></i>
-                                Belgilangan javoblardan faqat ba'zilari to‘g‘ri: <strong>{{ question|mcq_choose_two_score_label:answer.user_answer }}</strong>. To‘liq ball uchun barcha to‘g‘ri harflarni tanlash kerak.
-                            </div>
+
+                            {% if item.show_question_text %}
+                            <div class="tr-q__text">{{ question.question_text|linebreaks }}</div>
+                            {% elif item.slot_label %}
+                            <div class="tr-q__text tr-q__text--slot">{{ item.slot_label }}</div>
                             {% endif %}
-                            
-                            <!-- Question text -->
-                            <p class="mb-4 review-question-snippet" style="font-size: 1.05rem; line-height: 1.8; color: var(--gray-800); font-weight: 500;">{{ question.question_text|linebreaks }}</p>
-                            
-                            <!-- Answers - Bir xil dizayn -->
-                            <div class="row g-3">
-                                <div class="col-12 col-md-6">
-                                    <div class="card" style="background: {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}rgba(16, 185, 129, 0.1){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}rgba(245, 158, 11, 0.1){% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}rgba(239, 68, 68, 0.1){% elif answer and answer.is_correct %}rgba(16, 185, 129, 0.1){% elif answer and question.question_type == 'essay' %}rgba(245, 158, 11, 0.1){% elif answer %}rgba(239, 68, 68, 0.1){% else %}rgba(107, 114, 128, 0.1){% endif %}; 
-                                                              border: 2px solid {% if answer and question|answer_slot_review_state:answer.user_answer == 'correct' %}var(--success){% elif answer and question|answer_slot_review_state:answer.user_answer == 'partial' %}#f59e0b{% elif answer and question|answer_slot_review_state:answer.user_answer == 'wrong' %}var(--danger){% elif answer and answer.is_correct %}var(--success){% elif answer and question.question_type == 'essay' %}#f59e0b{% elif answer %}var(--danger){% else %}var(--gray-400){% endif %}; 
-                                                              border-radius: 12px; min-height: 80px;">
-                                        <div class="card-body p-3">
-                                            <p class="mb-2" style="font-weight: 700; font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase;">
-                                                <i class="fas fa-user me-1"></i>Sizning javobingiz
-                                            </p>
-                                            {% if answer %}
-                                            <div class="review-answer-box" style="color: {% if question|answer_slot_review_state:answer.user_answer == 'correct' %}var(--success){% elif question|answer_slot_review_state:answer.user_answer == 'partial' %}#b45309{% elif question|answer_slot_review_state:answer.user_answer == 'wrong' %}var(--danger){% elif answer.is_correct %}var(--success){% elif question.question_type == 'essay' %}#b45309{% else %}var(--danger){% endif %}; font-weight: 600;">
-                                                {% if question.question_type == 'mcq' or question.question_type == 'true_false' or question.question_type == 'true_false_not_given' or question.question_type == 'yes_no_not_given' %}
-                                                {{ question|display_user_answer:answer.user_answer }}
-                                                {% else %}
-                                                {{ answer.user_answer|format_user_answer }}
-                                                {% endif %}
-                                            </div>
-                                            {% else %}
-                                            <p class="mb-0 text-muted fst-italic">Javob berilmagan</p>
+
+                            <div class="answer-compare answer-compare--{{ card_state }}">
+                                <div class="answer-compare__panel">
+                                    <div class="answer-pane answer-pane--you">
+                                        <div class="answer-pane__head">
+                                            <span class="answer-pane__icon answer-pane__icon--you"><i class="fas fa-user"></i></span>
+                                            <span>Sizning javobingiz</span>
+                                        </div>
+                                        {% if question.question_type == 'essay' %}
+                                        <div class="answer-essay-wrap">
+                                            <div class="answer-value answer-value--prose answer-essay-wrap__text">{{ item.user_part|format_user_answer|default:"Javob berilmagan" }}</div>
+                                            {% if item.user_part|length > 200 %}
+                                            <button type="button" class="answer-essay-toggle" data-essay-toggle>Ko'proq o'qish</button>
                                             {% endif %}
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <div class="card" style="background: {% if question.question_type == 'essay' %}rgba(245, 158, 11, 0.08){% else %}rgba(16, 185, 129, 0.08){% endif %}; border: 2px solid {% if question.question_type == 'essay' %}#f59e0b{% else %}var(--success){% endif %}; border-radius: 12px; min-height: 80px;">
-                                        <div class="card-body p-3">
-                                            <p class="mb-2" style="font-weight: 700; font-size: 0.8rem; color: var(--gray-600); text-transform: uppercase;">
-                                                <i class="fas fa-check-circle me-1"></i>{% if question.question_type == 'essay' %}Baholash{% else %}To'g'ri javob{% endif %}
-                                            </p>
-                                            <div class="review-answer-box" style="color: {% if question.question_type == 'essay' %}#b45309{% else %}var(--success){% endif %}; font-weight: 600;">
-                                                {% if question.question_type == 'essay' %}
-                                                Avtomatik baholanmaydi — o‘qituvchi tekshiradi.
-                                                {% else %}
-                                                {{ question.get_correct_answer_review_text }}
-                                                {% endif %}
-                                            </div>
+                                        {% elif item.user_part %}
+                                        <div class="answer-value answer-value--you">{{ item.user_part }}</div>
+                                        {% else %}
+                                        <div class="answer-value answer-value--empty">
+                                            <i class="fas fa-minus-circle"></i>Javob berilmagan
                                         </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="answer-compare__verdict answer-compare__verdict--{{ card_state }}" aria-hidden="true">
+                                        {% if card_state == 'correct' %}
+                                        <i class="fas fa-check"></i>
+                                        {% elif card_state == 'wrong' %}
+                                        <i class="fas fa-times"></i>
+                                        {% elif card_state == 'partial' %}
+                                        <i class="fas fa-adjust"></i>
+                                        {% elif card_state == 'pending' %}
+                                        <i class="fas fa-clock"></i>
+                                        {% else %}
+                                        <i class="fas fa-minus"></i>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="answer-pane answer-pane--key">
+                                        <div class="answer-pane__head">
+                                            <span class="answer-pane__icon answer-pane__icon--key"><i class="fas fa-key"></i></span>
+                                            <span>{% if question.question_type == 'essay' %}Baholash{% else %}To'g'ri javob{% endif %}</span>
+                                        </div>
+                                        {% if question.question_type == 'essay' %}
+                                        <div class="answer-value answer-value--pending">
+                                            <i class="fas fa-user-edit"></i>O'qituvchi tekshiradi
+                                        </div>
+                                        {% elif item.correct_part %}
+                                        <div class="answer-value answer-value--key{% if card_state == 'wrong' %} answer-value--key-highlight{% endif %}">{{ item.correct_part }}</div>
+                                        {% else %}
+                                        <div class="answer-value answer-value--empty">—</div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Explanation -->
-                            {% if question.explanation %}
-                            <div class="alert border-0 mt-4 mb-0" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%); border-left: 4px solid var(--info); border-radius: 12px;">
-                                <strong style="color: var(--info); font-weight: 700;">
-                                    <i class="fas fa-lightbulb me-2"></i>Tushuntirish:
-                                </strong> 
-                                <span style="color: var(--gray-700); font-size: 0.95rem; line-height: 1.7;">{{ question.explanation|linebreaks }}</span>
+
+                            {% if item.show_question_text and question.explanation %}
+                            <div class="tr-q__explain">
+                                <i class="fas fa-lightbulb"></i>
+                                <div>
+                                    <strong>Tushuntirish</strong>
+                                    {{ question.explanation|linebreaks }}
+                                </div>
                             </div>
                             {% endif %}
                         </div>
-                    </div>
+                    </article>
                     {% endwith %}
                     {% endfor %}
+                    <div id="tr-review-empty" class="tr-review__empty d-none">
+                        <i class="fas fa-search"></i>
+                        <p>Filter bo'yicha javob topilmadi</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Test Results Comparison -->
             {% if comparison_data %}
             <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px;">
-                <div class="card-header" style="background: linear-gradient(135deg, var(--gray-50) 0%, white 100%); border-bottom: 2px solid var(--info); border-radius: 20px 20px 0 0;">
-                    <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
+                <div class="card-header" style="background: var(--gray-50); border-bottom: 1px solid var(--gray-100);">
+                    <h5 class="mb-0 fw-bold">
                         <i class="fas fa-chart-line me-2 text-info"></i>Oldingi Natijalar bilan Solishtirish
                     </h5>
                 </div>
@@ -331,59 +335,43 @@
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th style="font-weight: 700; color: var(--gray-700);">Urinish</th>
-                                    <th style="font-weight: 700; color: var(--gray-700);">Ball</th>
-                                    <th style="font-weight: 700; color: var(--gray-700);">Foiz</th>
-                                    <th style="font-weight: 700; color: var(--gray-700);">O'zgarish</th>
-                                    <th style="font-weight: 700; color: var(--gray-700);">Sana</th>
+                                    <th>Urinish</th>
+                                    <th>Ball</th>
+                                    <th>Foiz</th>
+                                    <th>O'zgarish</th>
+                                    <th>Sana</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for comp in comparison_data %}
                                 <tr>
-                                    <td>
-                                        <span class="badge bg-secondary" style="padding: 0.5rem 1rem;">
-                                            #{{ comp.result.attempt_number }}
-                                        </span>
-                                    </td>
+                                    <td><span class="badge bg-secondary">#{{ comp.result.attempt_number }}</span></td>
                                     <td>
                                         <strong>{{ comp.result.score }}/{{ comp.result.total_questions }}</strong>
                                         {% if comp.score_diff > 0 %}
-                                        <span class="badge bg-success ms-2">
-                                            <i class="fas fa-arrow-up"></i> +{{ comp.score_diff }}
-                                        </span>
+                                        <span class="badge bg-success ms-1"><i class="fas fa-arrow-up"></i> +{{ comp.score_diff }}</span>
                                         {% elif comp.score_diff < 0 %}
-                                        <span class="badge bg-danger ms-2">
-                                            <i class="fas fa-arrow-down"></i> {{ comp.score_diff }}
-                                        </span>
+                                        <span class="badge bg-danger ms-1"><i class="fas fa-arrow-down"></i> {{ comp.score_diff }}</span>
                                         {% else %}
-                                        <span class="badge bg-secondary ms-2">=</span>
+                                        <span class="badge bg-secondary ms-1">=</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <strong>{{ comp.result.percentage|floatformat:1 }}%</strong>
                                         {% if comp.percentage_diff > 0 %}
-                                        <span class="badge bg-success ms-2">
-                                            <i class="fas fa-arrow-up"></i> +{{ comp.percentage_diff }}%
-                                        </span>
+                                        <span class="badge bg-success ms-1"><i class="fas fa-arrow-up"></i> +{{ comp.percentage_diff }}%</span>
                                         {% elif comp.percentage_diff < 0 %}
-                                        <span class="badge bg-danger ms-2">
-                                            <i class="fas fa-arrow-down"></i> {{ comp.percentage_diff }}%
-                                        </span>
+                                        <span class="badge bg-danger ms-1"><i class="fas fa-arrow-down"></i> {{ comp.percentage_diff }}%</span>
                                         {% else %}
-                                        <span class="badge bg-secondary ms-2">=</span>
+                                        <span class="badge bg-secondary ms-1">=</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if comp.time_diff is not None %}
                                             {% if comp.time_diff < 0 %}
-                                            <span class="text-success">
-                                                <i class="fas fa-arrow-down"></i> {{ comp.time_diff_abs }}s tezroq
-                                            </span>
+                                            <span class="text-success"><i class="fas fa-arrow-down"></i> {{ comp.time_diff_abs }}s tezroq</span>
                                             {% elif comp.time_diff > 0 %}
-                                            <span class="text-danger">
-                                                <i class="fas fa-arrow-up"></i> {{ comp.time_diff }}s sekinroq
-                                            </span>
+                                            <span class="text-danger"><i class="fas fa-arrow-up"></i> {{ comp.time_diff }}s sekinroq</span>
                                             {% else %}
                                             <span class="text-muted">Bir xil</span>
                                             {% endif %}
@@ -391,9 +379,7 @@
                                         <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
-                                    <td>
-                                        <small class="text-muted">{{ comp.result.completed_at|date:"d.m.Y H:i" }}</small>
-                                    </td>
+                                    <td><small class="text-muted">{{ comp.result.completed_at|date:"d.m.Y H:i" }}</small></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -403,34 +389,18 @@
             </div>
             {% endif %}
 
-            <!-- Action buttons -->
-            <div class="text-center mt-4 d-flex gap-3 justify-content-center flex-wrap">
-                <a href="{% url 'core:test_list' %}" 
-                   class="btn btn-primary hover-lift" 
-                   style="min-width: 200px; border-radius: 12px; padding: 0.875rem 1.5rem; font-weight: 600;"
-                   hx-get="{% url 'core:test_list' %}"
-                   hx-target="#main-content"
-                   hx-swap="innerHTML"
-                   hx-push-url="true">
+            <div class="text-center mt-4 tr-actions d-flex gap-3 justify-content-center flex-wrap">
+                <a href="{% url 'core:test_list' %}" class="btn btn-primary hover-lift"
+                   hx-get="{% url 'core:test_list' %}" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
                     <i class="fas fa-arrow-left me-2"></i>Testlar ro'yxatiga qaytish
                 </a>
-                <a href="{% url 'core:profile' %}" 
-                   class="btn btn-outline-primary hover-lift" 
-                   style="min-width: 200px; border-radius: 12px; padding: 0.875rem 1.5rem; font-weight: 600;"
-                   hx-get="{% url 'core:profile' %}"
-                   hx-target="#main-content"
-                   hx-swap="innerHTML"
-                   hx-push-url="true">
+                <a href="{% url 'core:profile' %}" class="btn btn-outline-primary hover-lift"
+                   hx-get="{% url 'core:profile' %}" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
                     <i class="fas fa-user me-2"></i>Profilga o'tish
                 </a>
                 {% if can_retake %}
-                <a href="{% url 'core:test_retake' test_result.test.pk %}" 
-                   class="btn btn-success hover-lift" 
-                   style="min-width: 200px; border-radius: 12px; padding: 0.875rem 1.5rem; font-weight: 600;"
-                   hx-post="{% url 'core:test_retake' test_result.test.pk %}"
-                   hx-target="#main-content"
-                   hx-swap="innerHTML"
-                   hx-push-url="true">
+                <a href="{% url 'core:test_retake' test_result.test.pk %}" class="btn btn-success hover-lift"
+                   hx-post="{% url 'core:test_retake' test_result.test.pk %}" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
                     <i class="fas fa-redo me-2"></i>Qayta ishlash
                 </a>
                 {% endif %}
@@ -438,4 +408,11 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.body.setAttribute('data-show-confetti', document.querySelector('[data-pass-celebrate]') ? '1' : '0');
+</script>
+<script src="{% static 'js/result-review.js' %}?v={{ STATIC_ASSET_VERSION }}"></script>
 {% endblock %}
