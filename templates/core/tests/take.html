@@ -336,8 +336,9 @@
         flex: 1;
         min-height: 0;
     }
-    /* O'ng panel: Ajratish sticky — pane scroll bo'lsa ham tepada qoladi */
-    .exam-questions-toolbar {
+    /* O'ng panel: Ajratish sticky — Reading va Listening (pane ichida scroll) */
+    .exam-right-pane.reading-style .exam-questions-toolbar,
+    .exam-right-pane.listening-style .exam-questions-toolbar {
         position: sticky;
         top: 0;
         z-index: 25;
@@ -347,6 +348,12 @@
         margin-bottom: .35rem;
         border-bottom: 1px solid #e5e7eb;
         box-shadow: 0 4px 10px rgba(255, 255, 255, .95);
+    }
+    .exam-questions-toolbar {
+        flex-shrink: 0;
+        background: #fff;
+        padding: .15rem .1rem .55rem;
+        margin-bottom: .35rem;
     }
     .reading-questions-scroll {
         flex: 1;
@@ -1104,10 +1111,11 @@
         border-radius: 14px !important;
         box-shadow: 0 4px 24px rgba(15, 23, 42, .06) !important;
         border: 1px solid #eef2f7 !important;
-        overflow: hidden;
+        overflow: visible;
     }
     .listening-style .exam-questions-card-only > .card-body {
         padding: 1.1rem 1.15rem 1.25rem !important;
+        overflow: visible;
     }
     .listening-style .part-section .part-q-card {
         border-radius: 10px;
@@ -1271,12 +1279,11 @@
     .exam-split-layout.listening-layout .listening-listen-from-here:hover {
         text-decoration: underline;
     }
-    /* Listening: Engnovate — bitta ustun: avval audio, keyin savollar (split emas) */
+    /* Listening: audio yuqorida, savollar paneli Reading kabi sticky + ichki scroll */
     .exam-split-layout.listening-layout { flex-direction: column !important; align-items: stretch; }
     .exam-split-layout.listening-layout .exam-listening-wrap { max-width: 900px; margin: 0 auto; width: 100%; }
     .exam-split-layout.listening-layout .exam-split-divider { display: none !important; }
-    .exam-split-layout.listening-layout .exam-left-pane,
-    .exam-split-layout.listening-layout .exam-right-pane.listening-style {
+    .exam-split-layout.listening-layout .exam-left-pane {
         flex: none !important;
         width: 100% !important;
         min-width: 0;
@@ -1288,12 +1295,59 @@
         padding: .25rem 0;
     }
     .exam-split-layout.listening-layout .exam-right-pane.listening-style {
-        background: #fff !important;
-        padding: .5rem .1rem;
-    }
-    .exam-split-layout.listening-layout #question-container {
+        flex: none !important;
+        width: 100% !important;
         max-width: 900px;
         margin: 0 auto;
+        min-width: 0;
+        position: static !important;
+        align-self: stretch;
+        max-height: none !important;
+        overflow: visible !important;
+        background: #fff !important;
+        border: 1px solid #d4d4d8 !important;
+        border-radius: 0;
+        padding: .5rem;
+    }
+    .exam-split-layout.listening-layout #question-container {
+        max-width: 100%;
+        margin: 0;
+    }
+    .exam-split-layout.listening-layout #exam-take-form {
+        display: block;
+    }
+    .exam-split-layout.listening-layout .exam-questions-card-only {
+        flex: none;
+        min-height: 0;
+        height: auto !important;
+    }
+    .exam-split-layout.listening-layout .exam-questions-card-only > .card-body {
+        overflow: visible;
+    }
+    .exam-split-layout.listening-layout .reading-questions-scroll {
+        flex: none;
+        max-height: calc(100vh - 240px);
+        min-height: 240px;
+        overflow-y: auto;
+        overscroll-behavior: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 1.25rem;
+    }
+    .exam-split-layout.listening-layout .exam-questions-toolbar {
+        position: sticky;
+        top: 52px;
+        z-index: 25;
+        flex-shrink: 0;
+        background: #fff;
+    }
+    body.exam-mode .exam-split-layout.listening-layout .exam-right-pane.listening-style {
+        max-height: none;
+    }
+    body.exam-mode .exam-split-layout.listening-layout .exam-questions-toolbar {
+        top: 8px;
+    }
+    body.exam-mode .exam-split-layout.listening-layout .reading-questions-scroll {
+        max-height: calc(100vh - 120px);
     }
     /* Writing: Engnovate — chapda topshiriq + diagram/rasmlar, o'ngda javob (split) */
     .exam-split-layout.writing-layout { align-items: stretch; }
@@ -1417,6 +1471,17 @@
         .exam-split-layout { flex-direction: column; }
         .exam-part-tabs { grid-template-columns: repeat(2, 1fr); }
         .exam-right-pane { position: static; max-height: none; overflow: visible; }
+        .exam-split-layout.listening-layout .exam-right-pane.listening-style {
+            position: static;
+            max-height: none;
+            overflow: visible;
+        }
+        .exam-split-layout.listening-layout .reading-questions-scroll {
+            max-height: min(65vh, calc(100vh - 200px));
+        }
+        .exam-split-layout.listening-layout .exam-questions-toolbar {
+            top: 48px;
+        }
         .exam-split-layout.writing-layout .exam-left-pane,
         .exam-split-layout.writing-layout .exam-right-pane.writing-style {
             position: static;
@@ -1560,14 +1625,14 @@
                     <div>
                         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                             <span style="color: #374151; font-size: .9rem;">
-                                Question <strong style="color: #111827;">{{ question_number }}</strong> / <strong style="color: #111827;">{{ total_questions }}</strong>
+                                Javob <strong id="exam-top-answered" style="color: #111827;">{{ answered_answer_slots }}</strong> / <strong id="exam-top-total" style="color: #111827;">{{ total_answer_slots }}</strong>
                             </span>
-                            <span style="background: #f3f4f6; border-radius: 6px; padding: .25rem .5rem; font-weight: 600; font-size: .85rem; white-space: nowrap; border: 1px solid #e5e7eb;">
+                            <span id="exam-top-progress-pct" style="background: #f3f4f6; border-radius: 6px; padding: .25rem .5rem; font-weight: 600; font-size: .85rem; white-space: nowrap; border: 1px solid #e5e7eb;">
                                 {{ progress_percentage }}%
                             </span>
                         </div>
                         <div class="progress" style="height: 7px; background: #e5e7eb;">
-                            <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%; background: #111827;">
+                            <div class="progress-bar" id="exam-top-progress-bar" role="progressbar" style="width: {{ progress_percentage }}%; background: #111827; transition: width 0.35s ease;">
                             </div>
                         </div>
                         <div class="mt-2 exam-save-status" id="autosave-status">Javoblar serverga avtomatik saqlanadi</div>
@@ -1777,7 +1842,7 @@
                                     </div>
                                     {% endif %}
                                     {% if test.test_type == 'listening' %}
-                                    <div class="reading-tools listening-highlight-tools mb-2" aria-label="Listening savollar matnini ajratish">
+                                    <div class="reading-tools reading-tools--questions-pane mb-2" aria-label="Listening savollar matnini ajratish">
                                         <button type="button" class="btn btn-sm btn-outline-warning" id="btn-highlight-listening" title="Tanlangan matnni sariq bilan ajratish">
                                             <i class="fas fa-highlighter me-1"></i>Ajratish
                                         </button>
@@ -1787,6 +1852,7 @@
                                     </div>
                                     {% endif %}
 
+                                    <div class="reading-questions-scroll">
                                     {% for pg in part_groups %}
                                     <div class="reading-part-pane {% if part_groups|length > 1 %}{% if forloop.first %}active{% endif %}{% else %}active{% endif %}" id="reading-part-pane-{{ pg.part_number }}" data-part-number="{{ pg.part_number }}" role="tabpanel" aria-labelledby="tab-part-{{ pg.part_number }}" {% if part_groups|length > 1 and not forloop.first %}hidden{% endif %}>
                                     <section class="part-section" id="{{ pg.slug }}" data-part-section="{{ pg.part_number }}" aria-label="{{ pg.title }}: savollar {{ pg.range_label }}">
@@ -2133,6 +2199,7 @@
                                     </section>
                                     </div>
                                     {% endfor %}
+                                    </div>
                                 </div>
                             </div>
                         </form>
@@ -3133,7 +3200,10 @@
             });
             var liveRegion = document.getElementById('reading-part-announce');
             if (liveRegion) { liveRegion.textContent = 'Part ' + p; setTimeout(function() { liveRegion.textContent = ''; }, 1000); }
-            const rightScroll = document.querySelector('.reading-questions-scroll') || document.querySelector('.exam-right-pane.reading-style') || document.querySelector('.exam-right-pane');
+            const rightScroll = document.querySelector('.reading-questions-scroll')
+                || document.querySelector('.exam-right-pane.reading-style')
+                || document.querySelector('.exam-right-pane.listening-style')
+                || document.querySelector('.exam-right-pane');
             if (rightScroll) rightScroll.scrollTop = 0;
         }
 
@@ -3248,10 +3318,25 @@
             const answeredBadge = document.getElementById('answered-badge');
             const totalBlanks = answeredBadge ? parseInt(answeredBadge.getAttribute('data-total-blanks') || '0', 10) : 0;
 
+            function updateTopProgress(answered, total) {
+                var pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+                var ansEl = document.getElementById('exam-top-answered');
+                var totEl = document.getElementById('exam-top-total');
+                var pctEl = document.getElementById('exam-top-progress-pct');
+                var barEl = document.getElementById('exam-top-progress-bar');
+                if (ansEl) ansEl.textContent = answered;
+                if (totEl) totEl.textContent = total;
+                if (pctEl) pctEl.textContent = pct + '%';
+                if (barEl) {
+                    barEl.style.width = pct + '%';
+                    barEl.setAttribute('aria-valuenow', String(pct));
+                }
+            }
+
             function updateAnsweredBadge() {
-                if (!answeredBadge) return;
+                if (!answeredBadge) return 0;
                 const total = parseInt(answeredBadge.getAttribute('data-total-questions') || answeredBadge.getAttribute('data-total-blanks') || '0', 10);
-                if (total <= 0) return;
+                if (total <= 0) return 0;
                 const form = document.querySelector('#question-container form');
                 const dualPks = new Set(window.__MCQ_DUAL_PKS || []);
                 let answered = 0;
@@ -3262,21 +3347,32 @@
                         const n = form.querySelectorAll('.mcq-multi-checkbox[data-question-pk="' + pk + '"]:checked').length;
                         answered += Math.min(n, maxPick);
                     });
+                    form.querySelectorAll('input[data-blank-id]').forEach(function(inp) {
+                        if ((inp.value || '').trim()) answered++;
+                    });
+                    form.querySelectorAll('select[name^="match_"]').forEach(function(sel) {
+                        if ((sel.value || '').trim()) answered++;
+                    });
                     const other = new Set();
+                    const blankQuestionPks = new Set();
+                    form.querySelectorAll('input[data-blank-id]').forEach(function(inp) {
+                        const pk = inp.getAttribute('data-question-pk');
+                        if (pk) blankQuestionPks.add(pk);
+                    });
+                    const matchQuestionPks = new Set();
+                    form.querySelectorAll('select[name^="match_"]').forEach(function(sel) {
+                        const m = sel.name.match(/match_(\d+)/);
+                        if (m) matchQuestionPks.add(m[1]);
+                    });
                     form.querySelectorAll('input[type="radio"]:checked').forEach(function(inp) {
                         const m = inp.name.match(/^answer_(\d+)$/);
-                        if (m && !dualPks.has(parseInt(m[1], 10))) other.add(m[1]);
+                        if (m && !dualPks.has(parseInt(m[1], 10)) && !blankQuestionPks.has(m[1]) && !matchQuestionPks.has(m[1])) other.add(m[1]);
                     });
                     form.querySelectorAll('input[type="text"][name^="answer_"], input[name^="answer_"][type="text"], textarea[name^="answer_"]').forEach(function(inp) {
                         if ((inp.value || '').trim() === '') return;
+                        if (inp.hasAttribute('data-blank-id')) return;
                         const m = inp.name.match(/answer_(\d+)/);
-                        if (m && !dualPks.has(parseInt(m[1], 10))) other.add(m[1]);
-                    });
-                    form.querySelectorAll('select[name^="match_"]').forEach(function(sel) {
-                        if ((sel.value || '').trim()) {
-                            const m = sel.name.match(/match_(\d+)/);
-                            if (m && !dualPks.has(parseInt(m[1], 10))) other.add(m[1]);
-                        }
+                        if (m && !dualPks.has(parseInt(m[1], 10)) && !blankQuestionPks.has(m[1]) && !matchQuestionPks.has(m[1])) other.add(m[1]);
                     });
                     form.querySelectorAll('input[type="checkbox"][name^="list_"]:checked').forEach(function(inp) {
                         const m = inp.name.match(/^list_(\d+)_/);
@@ -3284,7 +3380,10 @@
                     });
                     answered += other.size;
                 }
+                answered = Math.min(answered, total);
                 answeredBadge.textContent = answered + '/' + total + ' answered';
+                updateTopProgress(answered, total);
+                return answered;
             }
 
             blankInputs.forEach(function(input) {
