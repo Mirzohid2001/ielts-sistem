@@ -195,9 +195,9 @@
                     </div>
 
                     {% if row.obj.video_file %}
-                    <div class="ratio ratio-16x9">
-                        <video controls preload="metadata" class="w-100 sat-video-player" data-id="{{ row.obj.pk }}" data-resume-seconds="{% if row.progress %}{{ row.progress.last_position_seconds|default:0 }}{% else %}0{% endif %}">
-                            <source src="{{ row.obj.video_file.url }}">
+                    <div class="ratio ratio-16x9 protected-video-shell">
+                        <video controls preload="metadata" class="w-100 protected-video" data-protected="1" controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback data-id="{{ row.obj.pk }}" data-resume-seconds="{% if row.progress %}{{ row.progress.last_position_seconds|default:0 }}{% else %}0{% endif %}">
+                            <source src="{% url 'sat:sat_video_stream' row.obj.pk %}">
                         </video>
                     </div>
                     {% elif row.obj.youtube_id %}
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function () {
             this.disabled = true;
             const id = this.dataset.id;
             const input = document.querySelector('.sat-progress-input[data-id="' + id + '"]');
-            const video = document.querySelector('.sat-video-player[data-id="' + id + '"]');
+            const video = document.querySelector('.protected-video[data-id="' + id + '"]');
             const fd = new FormData();
             fd.append('progress', input ? input.value : 0);
             if (video) {
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Uploaded video bo'lsa: oxirgi sekunddan davom etish + avtomatik saqlash.
-    document.querySelectorAll('.sat-video-player').forEach((video) => {
+    document.querySelectorAll('.protected-video[data-id]').forEach((video) => {
         const id = video.dataset.id;
         const resumeSec = parseInt(video.dataset.resumeSeconds || '0', 10);
         let resumeApplied = false;

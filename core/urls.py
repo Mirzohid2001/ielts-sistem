@@ -8,6 +8,7 @@ urlpatterns = [
     path('ielts/', views.dashboard, name='dashboard'),
     path('videos/', views.video_list, name='video_list'),
     path('videos/<int:pk>/', views.video_detail, name='video_detail'),
+    path('videos/<int:pk>/stream/', views.video_stream, name='video_stream'),
     path('tests/', views.test_list, name='test_list'),
     path('tests/collection/<str:test_type>/', views.test_collection_by_type, name='test_collection_by_type'),
     path('tests/<int:pk>/', views.test_detail, name='test_detail'),

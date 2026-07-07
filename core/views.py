@@ -24,6 +24,7 @@ from .models import (
     SATResource, SATResourceProgress, SATResourceBookmark, SATResourceNote,
 )
 from .access import get_user_module_access
+from .media_streaming import stream_protected_media
 from .context_processors import build_notification_items
 from .test_session_helpers import (
     build_type_stats,
@@ -218,6 +219,24 @@ def sat_pdf_stream(request, pk):
     response['Pragma'] = 'no-cache'
     response['X-Content-Type-Options'] = 'nosniff'
     return response
+
+
+@login_required
+def video_stream(request, pk):
+    """Video dars oqimi — faqat login qilgan foydalanuvchi, yuklab olishsiz."""
+    video = get_object_or_404(VideoLesson, pk=pk, is_active=True)
+    if not video.video_file:
+        return HttpResponse("Video topilmadi.", status=404)
+    return stream_protected_media(request, video.video_file)
+
+
+@login_required
+def sat_video_stream(request, pk):
+    """SAT video oqimi — faqat login qilgan foydalanuvchi, yuklab olishsiz."""
+    resource = get_object_or_404(SATResource, pk=pk, is_active=True)
+    if not resource.video_file:
+        return HttpResponse("Video topilmadi.", status=404)
+    return stream_protected_media(request, resource.video_file)
 
 
 @login_required

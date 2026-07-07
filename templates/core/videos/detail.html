@@ -59,17 +59,21 @@
                     <div class="ratio ratio-16x9" style="position: relative; background: #000; min-height: 400px;">
                         {% if video.video_file %}
                         <!-- Yuklangan video fayl (admin orqali) -->
-                        <div id="video-container-{{ video.pk }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                        <div id="video-container-{{ video.pk }}" class="protected-video-shell" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
                             <video
                                 id="html5-video-{{ video.pk }}"
-                                class="w-100 h-100"
+                                class="w-100 h-100 protected-video"
                                 style="object-fit: contain;"
                                 controls
+                                controlsList="nodownload noremoteplayback"
+                                disablePictureInPicture
+                                disableRemotePlayback
                                 playsinline
                                 preload="metadata"
+                                data-protected="1"
                                 data-video-pk="{{ video.pk }}"
-                                src="{{ video.video_file.url }}">
-                                Brauzeringiz video formatini qo‘llamaydi. <a href="{{ video.video_file.url }}" download>Videoni yuklab olish</a>.
+                                src="{% url 'core:video_stream' video.pk %}">
+                                Brauzeringiz video formatini qo‘llamaydi.
                             </video>
                         </div>
                         <script>

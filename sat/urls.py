@@ -15,5 +15,6 @@ urlpatterns = [
     path('resource/<int:pk>/note/add/', views.sat_add_note, name='sat_add_note'),
     path('resource/<int:pk>/pdf/', views.sat_pdf_viewer, name='sat_pdf_viewer'),
     path('resource/<int:pk>/pdf/stream/', views.sat_pdf_stream, name='sat_pdf_stream'),
+    path('resource/<int:pk>/video/stream/', views.sat_video_stream, name='sat_video_stream'),
     path('note/<int:note_id>/delete/', views.sat_delete_note, name='sat_delete_note'),
 ]
