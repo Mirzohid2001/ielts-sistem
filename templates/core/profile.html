@@ -268,13 +268,21 @@
                     <h5 class="mb-0 gradient-text" style="font-weight: 900; font-size: 1.5rem;">
                         <i class="fas fa-chart-bar me-2"></i>Test natijalari
                     </h5>
-                    {% if test_results %}
+                    {% if test_results_page and test_results_page.paginator.count %}
                     <a href="{% url 'core:export_results' %}" class="btn btn-outline-primary hover-lift" style="font-weight: 700; border-radius: 12px; padding: 0.625rem 1.25rem;">
                         <i class="fas fa-download me-1"></i>Export (CSV)
                     </a>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
+                    {% if test_results_page and test_results_page.paginator.count %}
+                    <div class="profile-table-meta">
+                        Jami <strong>{{ test_results_page.paginator.count }}</strong> ta natija
+                        {% if test_results_page.paginator.num_pages > 1 %}
+                        · Sahifa {{ test_results_page.number }}/{{ test_results_page.paginator.num_pages }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     <div class="table-responsive">
                         <table class="table profile-table mb-0">
                             <thead>
@@ -288,7 +296,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for result in test_results %}
+                                {% for result in test_results_page %}
                                 <tr>
                                     <td>
                                         <a href="{% url 'core:test_result' result.pk %}" style="font-weight: 700; color: var(--gray-900); text-decoration: none;">{{ result.test.title|truncatewords:8 }}</a>
@@ -324,6 +332,35 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if test_results_page and test_results_page.paginator.num_pages > 1 %}
+                    <nav class="profile-table-pagination" aria-label="Test natijalari sahifalari">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if test_results_page.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% url 'core:profile_section' 'ielts' %}?page={{ test_results_page.previous_page_number }}" aria-label="Oldingi sahifa">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% for num in test_results_page.paginator.page_range %}
+                                {% if num == test_results_page.number %}
+                                <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+                                {% elif num >= test_results_page.number|add:'-2' and num <= test_results_page.number|add:'2' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{% url 'core:profile_section' 'ielts' %}?page={{ num }}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            {% if test_results_page.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% url 'core:profile_section' 'ielts' %}?page={{ test_results_page.next_page_number }}" aria-label="Keyingi sahifa">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -384,6 +421,80 @@
             </div>
         </div>
     </div>
+
+    {% if writing_progress and writing_progress.has_data %}
+    <div class="row mb-5 mt-4 stagger-item">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg wp-card">
+                <div class="card-header bg-white border-0 pb-0">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                        <div>
+                            <h5 class="mb-1 fw-bold"><i class="fas fa-pen-fancy me-2 text-success"></i>Writing progress</h5>
+                            <p class="text-muted small mb-0">AI training band · rasmiy IELTS emas</p>
+                        </div>
+                        <div class="wp-stats">
+                            <div class="wp-stat">
+                                <span>O'rtacha</span>
+                                <strong>{{ writing_progress.avg_band|floatformat:1 }}</strong>
+                            </div>
+                            <div class="wp-stat">
+                                <span>Oxirgi</span>
+                                <strong>{{ writing_progress.latest_band|floatformat:1 }}</strong>
+                            </div>
+                            {% if writing_progress.trend is not None %}
+                            <div class="wp-stat wp-stat--trend {% if writing_progress.trend > 0 %}wp-stat--up{% elif writing_progress.trend < 0 %}wp-stat--down{% endif %}">
+                                <span>Trend</span>
+                                <strong>{% if writing_progress.trend > 0 %}+{% endif %}{{ writing_progress.trend|floatformat:1 }}</strong>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body pt-3">
+                    {% if writing_progress.chart_points %}
+                    <div class="wp-chart" role="img" aria-label="Writing band grafigi">
+                        {% for point in writing_progress.chart_points %}
+                        <div class="wp-chart__col" title="{{ point.test_title }} — {{ point.task_label }}: Band {{ point.band|floatformat:1 }}">
+                            <div class="wp-chart__value">{{ point.band|floatformat:1 }}</div>
+                            <div class="wp-chart__bar-wrap">
+                                <div class="wp-chart__bar" style="height: {{ point.height_pct }}%;"></div>
+                            </div>
+                            <div class="wp-chart__label">{{ point.date_label }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="row g-3 mt-2">
+                        {% if writing_progress.weakest %}
+                        <div class="col-12 col-md-5">
+                            <div class="wp-focus">
+                                <span class="wp-focus__kicker">Eng zaif mezon</span>
+                                <strong>{{ writing_progress.weakest.label }}</strong>
+                                <span class="text-muted">o'rtacha {{ writing_progress.weakest.avg|floatformat:1 }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-12 {% if writing_progress.weakest %}col-md-7{% endif %}">
+                            <div class="wp-recent">
+                                <span class="wp-focus__kicker">Oxirgi essaylar</span>
+                                <ul class="wp-recent__list mb-0">
+                                {% for essay in writing_progress.recent_essays %}
+                                    <li>
+                                        <a href="{% url 'core:test_result' essay.result_id %}">{{ essay.test_title|truncatewords:6 }}</a>
+                                        <span class="text-muted">{{ essay.task_label }} · {{ essay.date_label }}</span>
+                                        <strong>Band {{ essay.band|floatformat:1 }}</strong>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     {% elif active_section == 'sat' %}
     <div class="row mb-4">
         <div class="col-12 col-lg-3 col-md-6 mb-3">

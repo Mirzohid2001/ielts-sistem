@@ -1441,6 +1441,25 @@
         color: #6b7280;
         letter-spacing: -0.01em;
     }
+    .writing-coach {
+        margin-top: 0.5rem;
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: #115e59;
+        display: none;
+    }
+    .writing-coach.is-visible { display: block; }
+    .writing-coach strong { color: #0f766e; }
+    .writing-coach--warn {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+    }
+    .writing-coach--warn strong { color: #b45309; }
     .writing-image-carousel { position: relative; display: flex; align-items: center; gap: .5rem; }
     .writing-image-carousel .writing-img-slides { flex: 1; position: relative; min-height: 120px; }
     .writing-image-carousel .writing-img-slide { display: none; }
@@ -2186,8 +2205,9 @@
                                                 {# Image to Text — chap panelda (topshiriq/rasmdan keyin); bu yerda faqat javob #}
                                                 <p class="small text-muted d-lg-none mb-2"><i class="fas fa-info-circle me-1"></i>Task and diagram are on the left.</p>
                                                 <label class="form-label small fw-semibold text-secondary mb-1 d-none d-lg-block" for="answer-{{ q.pk }}">{{ pg.title }} — answer</label>
-                                                <textarea id="answer-{{ q.pk }}" class="form-control writing-answer-ta" rows="12" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target spellcheck="false" autocomplete="off">{{ item.current_answer }}</textarea>
+                                                <textarea id="answer-{{ q.pk }}" class="form-control writing-answer-ta" rows="12" name="answer_{{ q.pk }}" placeholder="Enter your {{ pg.title|lower }} answer..." data-word-count-target data-writing-coach data-question-id="{{ q.pk }}" data-min-words="{% if q.options_json.part == 1 or q.options_json.part == '1' %}150{% else %}250{% endif %}" data-task-type="{% if q.options_json.part == 1 or q.options_json.part == '1' %}task1{% else %}task2{% endif %}" spellcheck="false" autocomplete="off">{{ item.current_answer }}</textarea>
                                                 <div class="mt-1 small text-muted"><span class="word-count-label">Word count: <strong id="wc-{{ q.pk }}">0</strong></span></div>
+                                                <div class="writing-coach" id="coach-{{ q.pk }}" role="status" aria-live="polite"></div>
                                                 {% else %}
                                                 <textarea class="form-control" rows="4" name="answer_{{ q.pk }}">{{ item.current_answer }}</textarea>
                                                 {% endif %}
@@ -3693,11 +3713,78 @@
                     const text = (ta.value || '').trim();
                     const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
                     wcEl.textContent = words;
+                    if (ta.hasAttribute('data-writing-coach')) {
+                        updateWritingCoach(ta, words);
+                    }
                 };
                 ta.addEventListener('input', update);
                 update();
             });
         }
+
+        function updateWritingCoach(ta, words) {
+            const id = ta.getAttribute('data-question-id') || ta.name.replace(/[^0-9]/g, '');
+            const coachEl = document.getElementById('coach-' + id);
+            if (!coachEl) return;
+
+            const minWords = parseInt(ta.getAttribute('data-min-words') || '250', 10);
+            const taskType = ta.getAttribute('data-task-type') || 'task2';
+            const text = (ta.value || '').trim();
+            const lower = text.toLowerCase();
+            const hints = [];
+
+            if (!text) {
+                coachEl.classList.remove('is-visible', 'writing-coach--warn');
+                coachEl.innerHTML = '';
+                return;
+            }
+
+            if (words < minWords) {
+                hints.push('<strong>' + (minWords - words) + ' so\'z</strong> yetishmayapti (min ' + minWords + ').');
+            } else if (words >= minWords && words < minWords + 20) {
+                hints.push('So\'z soni yetarli — endi tuzilma va aniqilikka e\'tibor bering.');
+            }
+
+            const paragraphs = text.split(/\n\s*\n/).filter(function(p) { return p.trim(); }).length;
+            if (paragraphs < 2 && words > 40) {
+                hints.push('Kamida <strong>2 paragraf</strong> bo\'lishi kerak (bo\'sh qator bilan ajrating).');
+            }
+
+            if (taskType === 'task1') {
+                const overviewWords = ['overall', 'in general', 'generally', 'main trend', 'main feature'];
+                if (words > 30 && !overviewWords.some(function(w) { return lower.includes(w); })) {
+                    hints.push('Task 1: <strong>overview</strong> gapini qo\'shing (Overall, / In general, ...).');
+                }
+                const compareWords = ['compared to', 'whereas', 'while', 'higher than', 'lower than', 'similar'];
+                if (words > 80 && !compareWords.some(function(w) { return lower.includes(w); })) {
+                    hints.push('Trendlarni <strong>taqqoslang</strong> (while, whereas, compared to).');
+                }
+            } else {
+                const stanceWords = ['in my opinion', 'i believe', 'i think', 'agree', 'disagree', 'view', 'stance'];
+                if (words > 40 && !stanceWords.some(function(w) { return lower.includes(w); })) {
+                    hints.push('Task 2: aniq <strong>pozitsiya</strong> bering (In my opinion, / I believe that ...).');
+                }
+                const linkWords = ['however', 'furthermore', 'moreover', 'in addition', 'on the other hand', 'therefore'];
+                if (words > 120 && !linkWords.some(function(w) { return lower.includes(w); })) {
+                    hints.push('Paragraflarni <strong>bog\'lovchi</strong> so\'zlar bilan ulang (However, Furthermore, ...).');
+                }
+                const conclusionWords = ['in conclusion', 'to sum up', 'in summary', 'to conclude'];
+                if (words > minWords && !conclusionWords.some(function(w) { return lower.includes(w); })) {
+                    hints.push('Yakuniy paragrafda <strong>xulosa</strong> bering (In conclusion, ...).');
+                }
+            }
+
+            if (!hints.length) {
+                coachEl.classList.remove('is-visible', 'writing-coach--warn');
+                coachEl.innerHTML = '';
+                return;
+            }
+
+            coachEl.innerHTML = '<i class="fas fa-lightbulb me-1"></i> ' + hints.slice(0, 2).join(' ');
+            coachEl.classList.add('is-visible');
+            coachEl.classList.toggle('writing-coach--warn', words < minWords);
+        }
+
         initWordCount();
 
         document.body.addEventListener('click', function(e) {

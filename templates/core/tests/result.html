@@ -7,7 +7,9 @@
 {% block content %}
 <canvas id="tr-confetti" class="tr-confetti d-none" aria-hidden="true"></canvas>
 <div class="container mt-4 test-flow-page" id="tr-review-root"
-     {% if test_result.is_passed and not writing_score_pending %}data-pass-celebrate="1"{% endif %}>
+     {% if test_result.is_passed and not writing_score_pending %}data-pass-celebrate="1"{% endif %}
+     {% if is_writing_test %}data-writing-test="1" data-status-url="{% url 'core:writing_feedback_status' test_result.pk %}?fragments=1" data-regen-url="{% url 'core:regenerate_writing_feedback' test_result.pk %}" data-flashcards-url-pattern="{% url 'core:save_feedback_flashcards' 0 %}" data-chat-url-pattern="{% url 'core:writing_coach_chat' 0 %}" data-feedback-pending="{% if writing_feedback_pending %}1{% else %}0{% endif %}"{% endif %}>
+    <div id="tr-toast-stack" class="tr-toast-stack" aria-live="polite" aria-atomic="true"></div>
     <div class="row">
         <div class="col-12 col-md-10 mx-auto">
 
@@ -31,7 +33,7 @@
                     <div class="tr-summary__score">{{ test_result.score }}<small>/{{ test_result.total_questions }}</small></div>
 
                     {% if writing_score_pending %}
-                    <span class="tr-summary__pct is-wait">Manual baholash kutilmoqda</span>
+                    <span class="tr-summary__pct is-wait">Writing feedback tayyorlanmoqda</span>
                     {% elif test_result.is_passed %}
                     <span class="tr-summary__pct is-pass">{{ test_result.percentage|floatformat:1 }}% — o'tdingiz</span>
                     {% else %}
@@ -100,7 +102,7 @@
                     {% if writing_score_pending %}
                     <div class="tr-verdict tr-verdict--warn">
                         <i class="fas fa-pen"></i>
-                        <span><strong>Writing:</strong> essay(lar) yuborildi ({{ essays_submitted }}/{{ essay_total }}). Avtomatik foiz berilmaydi — o'qituvchi keyin baholaydi.</span>
+                        <span><strong>Writing:</strong> essay(lar) yuborildi ({{ essays_submitted }}/{{ essay_total }}). AI tavsiya ko'rsatiladi, rasmiy foiz esa avtomatik berilmaydi.</span>
                     </div>
                     {% elif test_result.is_passed %}
                     <div class="tr-verdict tr-verdict--ok">
@@ -256,12 +258,29 @@
                                             <span>Sizning javobingiz</span>
                                         </div>
                                         {% if question.question_type == 'essay' %}
+                                        {% if item.answer %}
+                                        {% with feedback=writing_feedback_by_answer_id|get_item:item.answer.id %}
                                         <div class="answer-essay-wrap">
-                                            <div class="answer-value answer-value--prose answer-essay-wrap__text">{{ item.user_part|format_user_answer|default:"Javob berilmagan" }}</div>
+                                            <div id="wf-essay-{{ item.answer.id }}">
+                                                {% include 'core/tests/partials/essay_highlight.html' with essay_text=item.user_part feedback=feedback %}
+                                            </div>
                                             {% if item.user_part|length > 200 %}
                                             <button type="button" class="answer-essay-toggle" data-essay-toggle>Ko'proq o'qish</button>
                                             {% endif %}
                                         </div>
+                                        {% endwith %}
+                                        {% elif item.user_part %}
+                                        <div class="answer-essay-wrap">
+                                            <div class="answer-value answer-value--prose answer-essay-wrap__text">{{ item.user_part|format_user_answer }}</div>
+                                            {% if item.user_part|length > 200 %}
+                                            <button type="button" class="answer-essay-toggle" data-essay-toggle>Ko'proq o'qish</button>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <div class="answer-value answer-value--empty">
+                                            <i class="fas fa-minus-circle"></i>Javob berilmagan
+                                        </div>
+                                        {% endif %}
                                         {% elif item.user_part %}
                                         <div class="answer-value answer-value--you">{{ item.user_part }}</div>
                                         {% else %}
@@ -291,9 +310,30 @@
                                             <span>{% if question.question_type == 'essay' %}Baholash{% else %}To'g'ri javob{% endif %}</span>
                                         </div>
                                         {% if question.question_type == 'essay' %}
-                                        <div class="answer-value answer-value--pending">
-                                            <i class="fas fa-user-edit"></i>O'qituvchi tekshiradi
+                                        {% if item.answer %}
+                                        {% with feedback=writing_feedback_by_answer_id|get_item:item.answer.id %}
+                                            {% if feedback and feedback.status == 'completed' %}
+                                            <div class="answer-value answer-value--pending">
+                                                <i class="fas fa-robot"></i>AI tavsiya tayyor
+                                                {% if feedback.estimated_band %}
+                                                <span class="d-block mt-1 small text-muted">Taxminiy band: {{ feedback.estimated_band|floatformat:1 }}</span>
+                                                {% endif %}
+                                            </div>
+                                            {% elif feedback and feedback.status == 'failed' %}
+                                            <div class="answer-value answer-value--empty">
+                                                <i class="fas fa-triangle-exclamation"></i>AI feedback vaqtincha olinmadi
+                                            </div>
+                                            {% else %}
+                                            <div class="answer-value answer-value--pending">
+                                                <i class="fas fa-user-edit"></i>AI/teacher feedback tayyorlanmoqda
+                                            </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                        {% else %}
+                                        <div class="answer-value answer-value--empty">
+                                            <i class="fas fa-minus-circle"></i>Essay javobi topilmadi
                                         </div>
+                                        {% endif %}
                                         {% elif item.correct_part %}
                                         <div class="answer-value answer-value--key{% if card_state == 'wrong' %} answer-value--key-highlight{% endif %}">{{ item.correct_part }}</div>
                                         {% else %}
@@ -311,6 +351,14 @@
                                     {{ question.explanation|linebreaks }}
                                 </div>
                             </div>
+                            {% endif %}
+
+                            {% if question.question_type == 'essay' and item.answer %}
+                            {% with feedback=writing_feedback_by_answer_id|get_item:item.answer.id %}
+                            <div id="wf-feedback-{{ item.answer.id }}">
+                                {% include 'core/tests/partials/essay_ai_feedback.html' with feedback=feedback comparison=writing_comparison_by_answer_id|get_item:item.answer.id essay_text=item.user_part show_regenerate=True feedback_regenerate_remaining=feedback_regenerate_remaining coach_chat_remaining=coach_chat_remaining test_result_pk=test_result.pk %}
+                            </div>
+                            {% endwith %}
                             {% endif %}
                         </div>
                     </article>
@@ -414,5 +462,439 @@
 <script>
 document.body.setAttribute('data-show-confetti', document.querySelector('[data-pass-celebrate]') ? '1' : '0');
 </script>
+{% if is_writing_test %}
+<script>
+(function () {
+  const root = document.getElementById('tr-review-root');
+  if (!root || root.dataset.writingTest !== '1') return;
+
+  const statusUrl = root.dataset.statusUrl;
+  const regenUrl = root.dataset.regenUrl;
+  let tries = 0;
+  const maxTries = 60;
+
+  function getCsrfToken() {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  function showTrToast(message, type) {
+    const stack = document.getElementById('tr-toast-stack');
+    if (!stack || !message) return;
+    const toast = document.createElement('div');
+    toast.className = 'tr-toast tr-toast--' + (type || 'info');
+    toast.textContent = message;
+    stack.appendChild(toast);
+    requestAnimationFrame(function () { toast.classList.add('is-visible'); });
+    setTimeout(function () {
+      toast.classList.remove('is-visible');
+      setTimeout(function () { toast.remove(); }, 300);
+    }, 4200);
+  }
+
+  function escapeHtml(text) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatCoachReply(text) {
+    let safe = escapeHtml(text || '');
+    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/\n/g, '<br>');
+    return safe;
+  }
+
+  let hlPopoverEl = null;
+
+  function closeHlPopover() {
+    if (hlPopoverEl) {
+      hlPopoverEl.remove();
+      hlPopoverEl = null;
+    }
+  }
+
+  function openHlPopover(mark) {
+    closeHlPopover();
+    const corrected = mark.getAttribute('data-corrected') || '';
+    const original = mark.getAttribute('data-original') || mark.textContent || '';
+    const why = mark.getAttribute('data-why') || '';
+    const type = mark.getAttribute('data-type') || '';
+    const rect = mark.getBoundingClientRect();
+
+    hlPopoverEl = document.createElement('div');
+    hlPopoverEl.className = 'tr-ai-hl-popover';
+    hlPopoverEl.innerHTML =
+      '<button type="button" class="tr-ai-hl-popover__close" aria-label="Yopish">&times;</button>' +
+      (type ? '<span class="tr-ai-hl-popover__type">' + escapeHtml(type) + '</span>' : '') +
+      '<p class="tr-ai-hl-popover__was"><span>Was</span>' + escapeHtml(original) + '</p>' +
+      '<p class="tr-ai-hl-popover__better"><span>Better</span>' + escapeHtml(corrected) + '</p>' +
+      (why ? '<p class="tr-ai-hl-popover__why">' + escapeHtml(why) + '</p>' : '') +
+      '<button type="button" class="tr-ai-hl-popover__chat" data-hl-ask-chat>Chatda so\'rash</button>';
+
+    document.body.appendChild(hlPopoverEl);
+    const popRect = hlPopoverEl.getBoundingClientRect();
+    let top = rect.bottom + window.scrollY + 8;
+    let left = rect.left + window.scrollX;
+    if (left + popRect.width > window.innerWidth - 12) {
+      left = window.innerWidth - popRect.width - 12;
+    }
+    if (top + popRect.height > window.scrollY + window.innerHeight - 12) {
+      top = rect.top + window.scrollY - popRect.height - 8;
+    }
+    hlPopoverEl.style.top = top + 'px';
+    hlPopoverEl.style.left = Math.max(8, left) + 'px';
+
+    hlPopoverEl.querySelector('.tr-ai-hl-popover__close').addEventListener('click', closeHlPopover);
+    const chatBtn = hlPopoverEl.querySelector('[data-hl-ask-chat]');
+    if (chatBtn) {
+      chatBtn.addEventListener('click', function () {
+        const essayWrap = mark.closest('.answer-essay-wrap, .answer-review-item, [id^="wf-essay-"]');
+        const feedbackWrap = essayWrap
+          ? essayWrap.parentElement && essayWrap.parentElement.querySelector('[id^="wf-feedback-"]')
+          : null;
+        const coachPanel = feedbackWrap
+          ? feedbackWrap.querySelector('[data-writing-coach]')
+          : document.querySelector('[data-writing-coach]');
+        if (coachPanel) {
+          const prompt = 'Bu gapni qanday yaxshilayman? Was: «' + original + '» → Better: «' + corrected + '»';
+          coachPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          sendCoachMessage(coachPanel, prompt);
+        }
+        closeHlPopover();
+      });
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    if (hlPopoverEl && !e.target.closest('.tr-ai-hl-popover') && !e.target.closest('.tr-ai-hl')) {
+      closeHlPopover();
+    }
+  });
+
+  function bindHighlightClicks(scope) {
+    (scope || document).querySelectorAll('.tr-ai-hl[data-corrected]').forEach(function (mark) {
+      if (mark.dataset.bound === '1') return;
+      mark.dataset.bound = '1';
+      mark.setAttribute('role', 'button');
+      mark.setAttribute('tabindex', '0');
+      mark.addEventListener('click', function (e) {
+        e.stopPropagation();
+        openHlPopover(mark);
+      });
+      mark.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          mark.click();
+        }
+      });
+    });
+  }
+
+  function applyFragments(fragments) {
+    Object.keys(fragments || {}).forEach(function (answerId) {
+      const parts = fragments[answerId];
+      const essayEl = document.getElementById('wf-essay-' + answerId);
+      const feedbackEl = document.getElementById('wf-feedback-' + answerId);
+      if (essayEl && parts.essay_html) {
+        essayEl.innerHTML = parts.essay_html;
+        bindHighlightClicks(essayEl);
+      }
+        if (feedbackEl && parts.feedback_html) {
+        feedbackEl.innerHTML = parts.feedback_html;
+        bindRegenerateButtons(feedbackEl);
+        bindFlashcardButtons(feedbackEl);
+        bindCoachChat(feedbackEl);
+      }
+    });
+  }
+
+  function showPendingPanels() {
+    document.querySelectorAll('[id^="wf-feedback-"]').forEach(function (el) {
+      el.innerHTML = '<div class="tr-ai tr-ai--state mt-3"><div class="tr-ai__state-icon"><i class="fas fa-spinner fa-spin"></i></div><div><strong>AI feedback yangilanmoqda</strong><p>Bir necha soniya kuting.</p></div></div>';
+    });
+  }
+
+  function poll() {
+    if (!statusUrl || tries++ >= maxTries) return;
+    fetch(statusUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.completed && data.fragments) {
+          applyFragments(data.fragments);
+          const firstFeedback = document.querySelector('[id^="wf-feedback-"] .tr-ai');
+          if (firstFeedback) {
+            firstFeedback.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          showTrToast('AI feedback tayyor!', 'success');
+          return;
+        }
+        if (data.pending) {
+          setTimeout(poll, 3000);
+        }
+      })
+      .catch(function () { setTimeout(poll, 3000); });
+  }
+
+  function startPolling() {
+    tries = 0;
+    setTimeout(poll, 2000);
+  }
+
+  function flashcardsUrl(feedbackId) {
+    const pattern = root.dataset.flashcardsUrlPattern || '';
+    return pattern.replace('/0/', '/' + feedbackId + '/').replace('/0/flashcards/', '/' + feedbackId + '/flashcards/');
+  }
+
+  function chatUrl(feedbackId) {
+    const pattern = root.dataset.chatUrlPattern || '';
+    return pattern.replace('/0/', '/' + feedbackId + '/').replace('/0/chat/', '/' + feedbackId + '/chat/');
+  }
+
+  const coachHistories = {};
+  const coachSending = {};
+
+  function updateCoachRemaining(count) {
+    document.querySelectorAll('[data-coach-remaining]').forEach(function (el) {
+      el.textContent = String(count);
+    });
+    document.querySelectorAll('[data-writing-coach]').forEach(function (panel) {
+      panel.setAttribute('data-coach-limit', String(count));
+      setCoachPanelEnabled(panel, count > 0);
+    });
+  }
+
+  function setCoachPanelEnabled(panel, enabled) {
+    const input = panel.querySelector('.tr-ai-chat__input');
+    const sendBtn = panel.querySelector('[data-coach-send]');
+    const chips = panel.querySelectorAll('[data-coach-prompt]');
+    panel.classList.toggle('tr-ai-chat--disabled', !enabled);
+    if (input) input.disabled = !enabled;
+    if (sendBtn) sendBtn.disabled = !enabled;
+    chips.forEach(function (chip) { chip.disabled = !enabled; });
+    let note = panel.querySelector('.tr-ai-chat__limit-note');
+    if (!enabled) {
+      if (!note) {
+        note = document.createElement('p');
+        note.className = 'tr-ai-chat__limit-note';
+        note.textContent = 'Kunlik limit tugadi. Ertaga qayta urinib ko\'ring.';
+        panel.appendChild(note);
+      }
+      const hint = panel.querySelector('.tr-ai-chat__hint');
+      if (hint) hint.remove();
+    } else if (note) {
+      note.remove();
+    }
+  }
+
+  function appendCoachMessage(messagesEl, role, text, html) {
+    const bubble = document.createElement('div');
+    bubble.className = 'tr-ai-chat__msg tr-ai-chat__msg--' + role;
+    if (html) {
+      bubble.innerHTML = html;
+    } else {
+      bubble.textContent = text;
+    }
+    messagesEl.appendChild(bubble);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return bubble;
+  }
+
+  function showTypingIndicator(messagesEl) {
+    const el = document.createElement('div');
+    el.className = 'tr-ai-chat__msg tr-ai-chat__msg--typing';
+    el.setAttribute('data-coach-typing', '1');
+    el.innerHTML = '<span></span><span></span><span></span>';
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return el;
+  }
+
+  function sendCoachMessage(panel, message) {
+    const feedbackId = panel.getAttribute('data-feedback-id');
+    const messagesEl = panel.querySelector('[data-coach-messages]');
+    const input = panel.querySelector('.tr-ai-chat__input');
+    const sendBtn = panel.querySelector('[data-coach-send]');
+    const text = (message || '').trim();
+    const limit = parseInt(panel.getAttribute('data-coach-limit') || '0', 10);
+    if (!feedbackId || !messagesEl || !text || coachSending[feedbackId]) return;
+    if (limit <= 0) {
+      showTrToast('Kunlik chat limiti tugadi.', 'warn');
+      return;
+    }
+
+    if (!coachHistories[feedbackId]) coachHistories[feedbackId] = [];
+    appendCoachMessage(messagesEl, 'user', text);
+    if (input) input.value = '';
+    coachSending[feedbackId] = true;
+    if (sendBtn) sendBtn.disabled = true;
+    panel.querySelectorAll('[data-coach-prompt]').forEach(function (chip) { chip.disabled = true; });
+    const typingEl = showTypingIndicator(messagesEl);
+
+    fetch(chatUrl(feedbackId), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken(),
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        message: text,
+        history: coachHistories[feedbackId],
+      }),
+    })
+      .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
+      .then(function (res) {
+        if (typingEl) typingEl.remove();
+        if (!res.data.ok) {
+          appendCoachMessage(messagesEl, 'error', res.data.error || 'Xatolik yuz berdi');
+          if (res.status === 429 && typeof res.data.remaining === 'number') {
+            updateCoachRemaining(res.data.remaining);
+          }
+          return;
+        }
+        appendCoachMessage(messagesEl, 'assistant', '', formatCoachReply(res.data.reply || ''));
+        coachHistories[feedbackId].push({ role: 'user', content: text });
+        coachHistories[feedbackId].push({ role: 'assistant', content: res.data.reply || '' });
+        if (coachHistories[feedbackId].length > 12) {
+          coachHistories[feedbackId] = coachHistories[feedbackId].slice(-12);
+        }
+        if (typeof res.data.remaining === 'number') {
+          updateCoachRemaining(res.data.remaining);
+        }
+      })
+      .catch(function () {
+        if (typingEl) typingEl.remove();
+        appendCoachMessage(messagesEl, 'error', 'Tarmoq xatosi. Qayta urinib ko\'ring.');
+      })
+      .finally(function () {
+        coachSending[feedbackId] = false;
+        const remaining = parseInt(panel.getAttribute('data-coach-limit') || '1', 10);
+        if (sendBtn) sendBtn.disabled = remaining <= 0;
+        panel.querySelectorAll('[data-coach-prompt]').forEach(function (chip) {
+          chip.disabled = remaining <= 0;
+        });
+        if (input && remaining > 0) input.focus();
+      });
+  }
+
+  function bindCoachChat(scope) {
+    (scope || document).querySelectorAll('[data-writing-coach]').forEach(function (panel) {
+      if (panel.dataset.bound === '1') return;
+      panel.dataset.bound = '1';
+
+      const limit = parseInt(panel.getAttribute('data-coach-limit') || '0', 10);
+      setCoachPanelEnabled(panel, limit > 0);
+
+      panel.querySelectorAll('[data-coach-prompt]').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          const prompt = chip.getAttribute('data-coach-prompt') || '';
+          sendCoachMessage(panel, prompt);
+        });
+      });
+
+      const form = panel.querySelector('[data-coach-form]');
+      const input = panel.querySelector('.tr-ai-chat__input');
+      if (form) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          sendCoachMessage(panel, input ? input.value : '');
+        });
+      }
+      if (input) {
+        input.addEventListener('keydown', function (e) {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            sendCoachMessage(panel, input.value);
+          }
+        });
+      }
+    });
+  }
+
+  function bindFlashcardButtons(scope) {
+    (scope || document).querySelectorAll('[data-save-vocab-flashcards]').forEach(function (btn) {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', function () {
+        const feedbackId = btn.getAttribute('data-feedback-id');
+        if (!feedbackId) return;
+        btn.disabled = true;
+        fetch(flashcardsUrl(feedbackId), {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          credentials: 'same-origin',
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.ok) {
+              btn.classList.add('is-saved');
+              const label = btn.querySelector('span') || btn;
+              if (data.created > 0) {
+                btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> ' + data.created + ' ta saqlandi';
+              } else {
+                btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> Allaqachon saqlangan';
+              }
+              showTrToast(data.message || 'Flashcardga saqlandi', 'success');
+            } else {
+              showTrToast(data.error || 'Xatolik', 'error');
+              btn.disabled = false;
+            }
+          })
+          .catch(function () { showTrToast('Tarmoq xatosi.', 'error'); btn.disabled = false; });
+      });
+    });
+  }
+
+  function bindRegenerateButtons(scope) {
+    (scope || document).querySelectorAll('[data-regen-feedback]').forEach(function (btn) {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', function () {
+        if (!regenUrl || btn.disabled) return;
+        btn.disabled = true;
+        fetch(regenUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          credentials: 'same-origin',
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) {
+              showTrToast(data.error || 'Xatolik yuz berdi', 'error');
+              btn.disabled = false;
+              return;
+            }
+            showTrToast('Feedback yangilanmoqda…', 'info');
+            showPendingPanels();
+            startPolling();
+          })
+          .catch(function () {
+            showTrToast('Tarmoq xatosi. Qayta urinib ko\'ring.', 'error');
+            btn.disabled = false;
+          });
+      });
+    });
+  }
+
+  bindHighlightClicks(document);
+  bindRegenerateButtons(document);
+  bindFlashcardButtons(document);
+  bindCoachChat(document);
+  if (root.dataset.feedbackPending === '1') {
+    startPolling();
+  }
+})();
+</script>
+{% endif %}
 <script src="{% static 'js/result-review.js' %}?v={{ STATIC_ASSET_VERSION }}"></script>
 {% endblock %}

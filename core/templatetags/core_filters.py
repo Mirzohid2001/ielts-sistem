@@ -4,7 +4,65 @@ from django.utils.safestring import mark_safe
 import json
 import re
 
+from core.services.essay_highlight import build_highlighted_essay_html
+
 register = template.Library()
+
+
+@register.filter
+def highlight_essay_corrections(essay_text, feedback):
+    """Essay matnida AI xatolar va tuzatishlarni belgilash."""
+    if not essay_text:
+        return ''
+    corrections = []
+    errors = []
+    if feedback is not None:
+        corrections = getattr(feedback, 'sentence_corrections', None) or []
+        errors = getattr(feedback, 'writing_errors', None) or []
+    return mark_safe(build_highlighted_essay_html(essay_text, corrections, errors))
+
+
+@register.filter
+def writing_error_stats(feedback):
+    """Feedback writing_errors uchun statistika."""
+    from core.services.essay_highlight import build_writing_error_stats
+    errors = getattr(feedback, 'writing_errors', None) or [] if feedback else []
+    return build_writing_error_stats(errors)
+
+
+@register.filter
+def error_type_label(key):
+    """Xato turi uchun o'qilishi oson label."""
+    from core.services.essay_highlight import ERROR_TYPE_LABELS
+    labels = {
+        **ERROR_TYPE_LABELS,
+        'vocabulary': 'Lexical',
+        'task': 'Task',
+        'coherence': 'Coherence',
+        'tone': 'Tone',
+    }
+    return labels.get(str(key), str(key).replace('_', ' ').title())
+
+
+@register.filter
+def criteria_label(key):
+    """IELTS mezon kalitini qisqa labelga aylantirish."""
+    labels = {
+        'task_achievement': 'Task',
+        'coherence_cohesion': 'Coherence',
+        'lexical_resource': 'Lexical',
+        'grammar_range_accuracy': 'Grammar',
+    }
+    return labels.get(str(key), str(key).replace('_', ' ').title())
+
+
+@register.filter
+def coach_panel_context(feedback):
+    """AI chat coach paneli uchun task va tez savollar."""
+    if feedback is None:
+        return {}
+    from core.services.writing_chat_coach import build_coach_panel_context
+    return build_coach_panel_context(feedback)
 
 
 @register.filter

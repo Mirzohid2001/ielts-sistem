@@ -6,6 +6,8 @@ import json
 import re
 import unicodedata
 
+_RESULT_RECALC_GUARD = set()
+
 
 def normalize_answer_text(value):
     """Fill/matching uchun: katta-kichik, bo'shliq, apostrof va oxiridagi tinish belgilar."""
@@ -1149,51 +1151,55 @@ class UserTestResult(models.Model):
             stamp_answers_meta,
         )
 
-        answers_json = self.answers_json if isinstance(self.answers_json, dict) else {}
-        exam_variant = exam_variant_from_answers(answers_json)
-        questions = filter_questions_by_exam_variant(self.test, exam_variant)
-        answers_by_q = {a.question_id: a for a in self.answers.select_related('question')}
+        _RESULT_RECALC_GUARD.add(self.pk)
+        try:
+            answers_json = self.answers_json if isinstance(self.answers_json, dict) else {}
+            exam_variant = exam_variant_from_answers(answers_json)
+            questions = filter_questions_by_exam_variant(self.test, exam_variant)
+            answers_by_q = {a.question_id: a for a in self.answers.select_related('question')}
 
-        scores = compute_session_scores(questions, answers_json, answers_by_q)
-        if scores['writing_only']:
-            self.total_questions = scores['essay_total'] or 1
-            self.correct_answers = scores['essays_submitted']
-            self.calculate_score(writing_manual=True)
-        else:
-            self.total_questions = scores['total_slots'] or len(questions)
-            self.correct_answers = scores['correct_pts']
-            self.calculate_score(writing_manual=False)
+            scores = compute_session_scores(questions, answers_json, answers_by_q)
+            if scores['writing_only']:
+                self.total_questions = scores['essay_total'] or 1
+                self.correct_answers = scores['essays_submitted']
+                self.calculate_score(writing_manual=True)
+            else:
+                self.total_questions = scores['total_slots'] or len(questions)
+                self.correct_answers = scores['correct_pts']
+                self.calculate_score(writing_manual=False)
 
-        for q in questions:
-            if q.question_type == 'essay':
+            for q in questions:
+                if q.question_type == 'essay':
+                    ua = (answers_json.get(str(q.pk), '') or '').strip()
+                    if not ua and answers_by_q.get(q.pk):
+                        ua = (answers_by_q[q.pk].user_answer or '').strip()
+                    if ua:
+                        UserTestAnswer.objects.update_or_create(
+                            test_result=self,
+                            question=q,
+                            defaults={'user_answer': ua, 'is_correct': False},
+                        )
+                    continue
                 ua = (answers_json.get(str(q.pk), '') or '').strip()
                 if not ua and answers_by_q.get(q.pk):
                     ua = (answers_by_q[q.pk].user_answer or '').strip()
-                if ua:
-                    UserTestAnswer.objects.update_or_create(
-                        test_result=self,
-                        question=q,
-                        defaults={'user_answer': ua, 'is_correct': False},
-                    )
-                continue
-            ua = (answers_json.get(str(q.pk), '') or '').strip()
-            if not ua and answers_by_q.get(q.pk):
-                ua = (answers_by_q[q.pk].user_answer or '').strip()
-            pts, tot = score_question_points(q, ua)
-            UserTestAnswer.objects.update_or_create(
-                test_result=self,
-                question=q,
-                defaults={
-                    'user_answer': ua,
-                    'is_correct': bool(tot) and pts >= tot,
-                },
-            )
+                pts, tot = score_question_points(q, ua)
+                UserTestAnswer.objects.update_or_create(
+                    test_result=self,
+                    question=q,
+                    defaults={
+                        'user_answer': ua,
+                        'is_correct': bool(tot) and pts >= tot,
+                    },
+                )
 
-        self.answers_json = stamp_answers_meta(answers_json, exam_variant)
-        self.save(update_fields=[
-            'total_questions', 'correct_answers', 'wrong_answers',
-            'score', 'percentage', 'answers_json',
-        ])
+            self.answers_json = stamp_answers_meta(answers_json, exam_variant)
+            self.save(update_fields=[
+                'total_questions', 'correct_answers', 'wrong_answers',
+                'score', 'percentage', 'answers_json',
+            ])
+        finally:
+            _RESULT_RECALC_GUARD.discard(self.pk)
 
     def is_passed(self):
         """Test o'tildimi?"""
@@ -1266,6 +1272,131 @@ class UserTestAnswer(models.Model):
         self.is_correct = self.question.check_user_answer(self.user_answer)
         self.save(update_fields=['is_correct'])
         return self.is_correct
+
+
+class AIWritingFeedback(models.Model):
+    """Writing essay uchun AI feedback."""
+    STATUS_PENDING = 'pending'
+    STATUS_COMPLETED = 'completed'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Kutilmoqda'),
+        (STATUS_COMPLETED, 'Tayyor'),
+        (STATUS_FAILED, 'Xatolik'),
+    ]
+
+    test_result = models.ForeignKey(
+        UserTestResult,
+        on_delete=models.CASCADE,
+        related_name='ai_writing_feedback',
+        verbose_name="Test natijasi",
+    )
+    test_answer = models.OneToOneField(
+        UserTestAnswer,
+        on_delete=models.CASCADE,
+        related_name='ai_feedback',
+        verbose_name="Essay javobi",
+    )
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name='ai_writing_feedback',
+        verbose_name="Savol",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        verbose_name="Holat",
+    )
+    provider_name = models.CharField(max_length=50, blank=True, verbose_name="Provider")
+    model_name = models.CharField(max_length=100, blank=True, verbose_name="Model")
+    estimated_band = models.FloatField(null=True, blank=True, verbose_name="Taxminiy band")
+    task_achievement = models.FloatField(null=True, blank=True, verbose_name="Task Achievement")
+    coherence_cohesion = models.FloatField(null=True, blank=True, verbose_name="Coherence & Cohesion")
+    lexical_resource = models.FloatField(null=True, blank=True, verbose_name="Lexical Resource")
+    grammar_range_accuracy = models.FloatField(null=True, blank=True, verbose_name="Grammar Range & Accuracy")
+    strengths = models.JSONField(default=list, blank=True, verbose_name="Kuchli tomonlar")
+    improvements = models.JSONField(default=list, blank=True, verbose_name="Yaxshilash kerak")
+    next_steps = models.JSONField(default=list, blank=True, verbose_name="Keyingi qadamlar")
+    vocabulary_upgrades = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="So'z almashtirishlar",
+        help_text="[{from, to, why}] — oddiy so'z → ball oshiradigan variant",
+    )
+    sentence_corrections = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Gap/frazani tuzatishlar",
+        help_text="[{original, corrected, type, why}] — essaydan olingan aniq tuzatish",
+    )
+    writing_errors = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Aniq xatolar",
+        help_text="[{wrong, correct, type, why}] — grammatika, imlo va boshqa aniq xatolar",
+    )
+    rewrite_suggestion = models.TextField(blank=True, verbose_name="Yaxshiroq yondashuv")
+    summary = models.TextField(blank=True, verbose_name="Qisqa xulosa")
+    raw_response_json = models.JSONField(default=dict, blank=True, verbose_name="Raw response")
+    error_message = models.TextField(blank=True, verbose_name="Xatolik")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqt")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan vaqt")
+
+    class Meta:
+        verbose_name = "AI Writing Feedback"
+        verbose_name_plural = "AI Writing Feedback"
+        ordering = ['-updated_at', '-created_at']
+        indexes = [
+            models.Index(fields=['test_result', 'status']),
+            models.Index(fields=['question', 'status']),
+        ]
+
+    def __str__(self):
+        return f"{self.test_result.user.username} - {self.question} - {self.status}"
+
+    def mark_failed(self, message, *, provider_name='', model_name='', raw_response=None):
+        self.status = self.STATUS_FAILED
+        self.error_message = (message or '')[:5000]
+        if provider_name:
+            self.provider_name = provider_name
+        if model_name:
+            self.model_name = model_name
+        if raw_response is not None:
+            self.raw_response_json = raw_response
+        self.save(update_fields=[
+            'status', 'error_message', 'provider_name', 'model_name',
+            'raw_response_json', 'updated_at',
+        ])
+
+    def apply_completed_feedback(self, payload):
+        self.status = self.STATUS_COMPLETED
+        self.provider_name = payload.get('provider_name', '') or ''
+        self.model_name = payload.get('model_name', '') or ''
+        self.estimated_band = payload.get('estimated_band')
+        self.task_achievement = payload.get('task_achievement')
+        self.coherence_cohesion = payload.get('coherence_cohesion')
+        self.lexical_resource = payload.get('lexical_resource')
+        self.grammar_range_accuracy = payload.get('grammar_range_accuracy')
+        self.strengths = payload.get('strengths') or []
+        self.improvements = payload.get('improvements') or []
+        self.next_steps = payload.get('next_steps') or []
+        self.vocabulary_upgrades = payload.get('vocabulary_upgrades') or []
+        self.sentence_corrections = payload.get('sentence_corrections') or []
+        self.writing_errors = payload.get('writing_errors') or []
+        self.rewrite_suggestion = payload.get('rewrite_suggestion', '') or ''
+        self.summary = payload.get('summary', '') or ''
+        self.raw_response_json = payload.get('raw_response_json') or {}
+        self.error_message = ''
+        self.save(update_fields=[
+            'status', 'provider_name', 'model_name', 'estimated_band',
+            'task_achievement', 'coherence_cohesion', 'lexical_resource',
+            'grammar_range_accuracy', 'strengths', 'improvements',
+            'next_steps', 'vocabulary_upgrades', 'sentence_corrections', 'writing_errors',
+            'rewrite_suggestion', 'summary', 'raw_response_json',
+            'error_message', 'updated_at',
+        ])
 
 
 class UserVideoProgress(models.Model):
@@ -1801,5 +1932,7 @@ def recalc_result_on_answer_save(sender, instance, created, **kwargs):
     """UserTestAnswerAdmin orqali is_correct o'zgartirilganda natijani yangilash"""
     if created:
         return  # finish_test da view o'zi hisoblaydi
+    if instance.test_result_id in _RESULT_RECALC_GUARD:
+        return
     if instance.test_result_id:
         instance.test_result.recalculate_from_answers()

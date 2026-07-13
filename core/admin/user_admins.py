@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 
 from ..models import (
+    AIWritingFeedback,
     AdminAnnouncement,
     Bookmark,
     Flashcard,
@@ -29,6 +30,19 @@ class UserTestAnswerInline(admin.TabularInline):
     readonly_fields = ['question', 'user_answer', 'answered_at']
     can_delete = False
     # is_correct – tahrirlash mumkin (essay baholash uchun). O'zgartirsangiz "Qayta hisoblash" actionini ishlating.
+
+
+class AIWritingFeedbackInline(admin.StackedInline):
+    model = AIWritingFeedback
+    extra = 0
+    can_delete = False
+    readonly_fields = [
+        'status', 'provider_name', 'model_name', 'estimated_band',
+        'task_achievement', 'coherence_cohesion', 'lexical_resource',
+        'grammar_range_accuracy', 'summary', 'strengths', 'improvements',
+        'next_steps', 'vocabulary_upgrades', 'sentence_corrections', 'writing_errors', 'rewrite_suggestion', 'raw_response_json',
+        'error_message', 'created_at', 'updated_at',
+    ]
 
 
 # UserTestResult Admin - Yaxshilangan
@@ -90,6 +104,7 @@ class UserTestAnswerAdmin(admin.ModelAdmin):
     autocomplete_fields = ['test_result', 'question']
     ordering = ['-answered_at']
     list_per_page = 50
+    inlines = [AIWritingFeedbackInline]
 
     def question_type_display(self, obj):
         return obj.question.get_question_type_display() if obj.question_id else '-'
@@ -101,6 +116,23 @@ class UserTestAnswerAdmin(admin.ModelAdmin):
         return (t + '...') if len(obj.user_answer or '') > 60 else t
 
     user_answer_short.short_description = "Javob"
+
+
+@admin.register(AIWritingFeedback)
+class AIWritingFeedbackAdmin(admin.ModelAdmin):
+    list_display = ['test_result', 'question', 'status', 'estimated_band', 'provider_name', 'updated_at']
+    list_filter = ['status', 'provider_name', 'updated_at', 'question__test__test_type']
+    search_fields = ['test_result__user__username', 'question__question_text', 'summary', 'error_message']
+    readonly_fields = [
+        'test_result', 'test_answer', 'question', 'provider_name', 'model_name',
+        'estimated_band', 'task_achievement', 'coherence_cohesion',
+        'lexical_resource', 'grammar_range_accuracy', 'summary', 'strengths',
+        'improvements', 'next_steps', 'vocabulary_upgrades', 'sentence_corrections',
+        'rewrite_suggestion', 'raw_response_json', 'error_message', 'created_at', 'updated_at',
+    ]
+    autocomplete_fields = ['test_result', 'test_answer', 'question']
+    ordering = ['-updated_at']
+
 
 
 # UserVideoProgress Admin - Yaxshilangan

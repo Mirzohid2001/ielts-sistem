@@ -22,9 +22,25 @@ from .models import (
     Bookmark, StudyStreak, VideoNote, VideoRating,
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard,
     SATResource, SATResourceProgress, SATResourceBookmark, SATResourceNote,
+    AIWritingFeedback,
 )
 from .access import get_user_module_access
 from .media_streaming import stream_protected_media
+from .services.ai_writing_feedback import (
+    ensure_writing_feedback_for_result,
+    prepare_writing_feedback_placeholders,
+    schedule_writing_feedback_generation,
+    load_writing_feedback_for_result,
+)
+from .services.writing_progress import build_writing_progress_summary
+from .services.writing_chat_coach import coach_chat_remaining
+from .writing_result_context import (
+    build_writing_comparison_maps,
+    render_writing_feedback_fragments,
+    sync_essay_answers_from_json,
+    feedback_regenerate_remaining,
+    record_feedback_regenerate,
+)
 from .context_processors import build_notification_items
 from .test_session_helpers import (
     build_type_stats,
@@ -1526,6 +1542,10 @@ def test_take(request, pk):
                 )
                 StudyStreak.update_streak(request.user)
 
+            if session_scores['writing_only']:
+                prepare_writing_feedback_placeholders(test_result)
+                schedule_writing_feedback_generation(test_result.pk)
+
             return redirect('core:test_result', pk=test_result.pk)
         else:
             messages.success(request, "Javoblar saqlandi.")
@@ -2370,6 +2390,166 @@ def test_retake(request, pk):
 
 
 @login_required
+def writing_feedback_status(request, pk):
+    """AI writing feedback holati — natija sahifasida fon generatsiyasi uchun."""
+    test_result = get_object_or_404(UserTestResult, pk=pk, user=request.user)
+    if test_result.test.test_type != 'writing':
+        return JsonResponse({'pending': False, 'completed': True, 'failed': False})
+
+    items = load_writing_feedback_for_result(test_result)
+    pending = any(item.status == AIWritingFeedback.STATUS_PENDING for item in items)
+    failed = any(item.status == AIWritingFeedback.STATUS_FAILED for item in items)
+    completed = bool(items) and all(
+        item.status == AIWritingFeedback.STATUS_COMPLETED for item in items
+    )
+
+    payload = {
+        'pending': pending,
+        'completed': completed,
+        'failed': failed and not pending,
+    }
+
+    if request.GET.get('fragments') == '1' and completed:
+        from core.test_session_helpers import build_review_items, filter_questions_by_exam_variant, exam_variant_from_answers
+
+        writing_feedback_by_answer_id = {
+            item.test_answer_id: item
+            for item in items
+            if item.test_answer_id
+        }
+        user_answers = {answer.question_id: answer for answer in test_result.answers.all()}
+        result_exam_variant = exam_variant_from_answers(test_result.answers_json)
+        insight_questions = filter_questions_by_exam_variant(test_result.test, result_exam_variant)
+        review_items = build_review_items(insight_questions, user_answers)
+        comparison_by_answer_id, _ = build_writing_comparison_maps(test_result, request.user, items)
+        payload['fragments'] = render_writing_feedback_fragments(
+            review_items,
+            writing_feedback_by_answer_id,
+            comparison_by_answer_id,
+            test_result=test_result,
+            user=request.user,
+        )
+
+    return JsonResponse(payload)
+
+
+@login_required
+@require_POST
+def regenerate_writing_feedback(request, pk):
+    """AI writing feedbackni qayta generatsiya qilish (kunlik limit bilan)."""
+    test_result = get_object_or_404(UserTestResult, pk=pk, user=request.user)
+    if test_result.test.test_type != 'writing':
+        return JsonResponse({'ok': False, 'error': 'Faqat writing testlari uchun.'}, status=400)
+
+    remaining = feedback_regenerate_remaining(request.user)
+    if remaining <= 0:
+        return JsonResponse(
+            {'ok': False, 'error': 'Kunlik limit tugadi (3 marta). Ertaga qayta urinib ko\'ring.'},
+            status=429,
+        )
+
+    sync_essay_answers_from_json(test_result)
+    record_feedback_regenerate(request.user)
+    schedule_writing_feedback_generation(test_result.pk, force=True)
+    return JsonResponse({'ok': True, 'pending': True, 'remaining': remaining - 1})
+
+
+@login_required
+@require_POST
+def save_feedback_flashcards(request, pk):
+    """AI vocabulary_upgrades dan flashcard yaratish."""
+    feedback = get_object_or_404(
+        AIWritingFeedback.objects.select_related('test_result', 'test_result__test', 'question'),
+        pk=pk,
+        test_result__user=request.user,
+    )
+    if feedback.status != AIWritingFeedback.STATUS_COMPLETED:
+        return JsonResponse({'ok': False, 'error': 'Feedback hali tayyor emas.'}, status=400)
+
+    from core.services.writing_flashcards import create_flashcards_from_feedback
+
+    result = create_flashcards_from_feedback(request.user, feedback)
+    if not result['created'] and not (feedback.vocabulary_upgrades or []):
+        return JsonResponse({'ok': False, 'error': 'Saqlash uchun so\'z topilmadi.'}, status=400)
+
+    return JsonResponse({
+        'ok': True,
+        'created': result['created'],
+        'skipped': result['skipped'],
+        'set_id': result['set_id'],
+        'set_name': result['set_name'],
+        'message': (
+            f"{result['created']} ta so'z «{result['set_name']}» to'plamiga saqlandi."
+            if result['created']
+            else 'Yangi so\'z qo\'shilmadi (barchasi allaqachon saqlangan).'
+        ),
+    })
+
+
+@login_required
+@require_POST
+def writing_coach_chat(request, pk):
+    """AI chat coach — essay va feedback bo'yicha savolga javob."""
+    feedback = get_object_or_404(
+        AIWritingFeedback.objects.select_related(
+            'test_result', 'test_result__test', 'question', 'test_answer',
+        ),
+        pk=pk,
+        test_result__user=request.user,
+    )
+    if feedback.status != AIWritingFeedback.STATUS_COMPLETED:
+        return JsonResponse({'ok': False, 'error': 'Feedback tayyor bo\'lgach chat ishlaydi.'}, status=400)
+
+    from core.services.writing_chat_coach import (
+        answer_writing_coach_question,
+        coach_chat_remaining,
+        record_coach_chat,
+    )
+
+    remaining = coach_chat_remaining(request.user)
+    if remaining <= 0:
+        return JsonResponse(
+            {
+                'ok': False,
+                'error': 'Kunlik chat limiti tugadi (25 ta). Ertaga qayta urinib ko\'ring.',
+                'remaining': 0,
+            },
+            status=429,
+        )
+
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+    message = (body.get('message') or request.POST.get('message') or '').strip()
+    history = body.get('history') if isinstance(body.get('history'), list) else []
+
+    essay_text = ''
+    if feedback.test_answer_id:
+        essay_text = (feedback.test_answer.user_answer or '').strip()
+    if not essay_text:
+        essay_text = (feedback.test_result.answers_json or {}).get(str(feedback.question_id), '') or ''
+
+    try:
+        result = answer_writing_coach_question(
+            feedback=feedback,
+            essay_text=essay_text,
+            message=message,
+            history=history,
+        )
+    except ValueError as exc:
+        return JsonResponse({'ok': False, 'error': str(exc)}, status=400)
+
+    record_coach_chat(request.user)
+    return JsonResponse({
+        'ok': True,
+        'reply': result['reply'],
+        'provider': result.get('provider', ''),
+        'remaining': remaining - 1,
+    })
+
+
+@login_required
 def test_result(request, pk):
     """Test natijasi"""
     test_result = get_object_or_404(
@@ -2481,6 +2661,9 @@ def test_result(request, pk):
                 )
                 # Study streak yangilash
                 StudyStreak.update_streak(request.user)
+                if session_scores['writing_only']:
+                    prepare_writing_feedback_placeholders(test_result)
+                    schedule_writing_feedback_generation(test_result.pk)
         except Exception as e:
             messages.error(request, f'Xatolik yuz berdi: {str(e)}')
             return redirect('core:test_detail', pk=test_result.test.pk)
@@ -2488,11 +2671,35 @@ def test_result(request, pk):
     if test_result.completed_at and needs_scoring_refresh(test_result):
         test_result.recalculate_from_answers()
         test_result.refresh_from_db()
+
+    if test_result.test.test_type == 'writing':
+        sync_essay_answers_from_json(test_result)
     
     # Javoblar ro'yxati
     user_answers = {}
     for answer in test_result.answers.all():
         user_answers[answer.question_id] = answer
+
+    writing_feedback_items = (
+        ensure_writing_feedback_for_result(test_result)
+        if test_result.test.test_type == 'writing'
+        else []
+    )
+    writing_feedback_by_answer_id = {
+        item.test_answer_id: item
+        for item in writing_feedback_items
+        if item.test_answer_id
+    }
+    writing_feedback_pending = any(
+        item.status == AIWritingFeedback.STATUS_PENDING
+        for item in writing_feedback_items
+    )
+
+    writing_comparison_by_answer_id, writing_overall_comparison = build_writing_comparison_maps(
+        test_result,
+        request.user,
+        writing_feedback_items,
+    )
     
     # Vaqtni formatlash
     time_taken_hours = None
@@ -2624,6 +2831,20 @@ def test_result(request, pk):
         'top_strengths': top_strengths,
         'seconds_per_question': seconds_per_question,
         'improvement_tips': improvement_tips,
+        'writing_feedback_by_answer_id': writing_feedback_by_answer_id,
+        'writing_feedback_pending': writing_feedback_pending,
+        'writing_comparison_by_answer_id': writing_comparison_by_answer_id,
+        'writing_overall_comparison': writing_overall_comparison,
+        'feedback_regenerate_remaining': (
+            feedback_regenerate_remaining(request.user)
+            if test_result.test.test_type == 'writing'
+            else 0
+        ),
+        'coach_chat_remaining': (
+            coach_chat_remaining(request.user)
+            if test_result.test.test_type == 'writing'
+            else 0
+        ),
     }
     return render(request, 'core/tests/result.html', context)
 
@@ -2717,10 +2938,19 @@ def profile(request, section=None):
         'available': False,
         'label': "Tez orada",
     }
+
+    writing_progress = build_writing_progress_summary(request.user) if active_section == 'ielts' else None
+
+    test_results_page = None
+    if active_section == 'ielts':
+        page_number = request.GET.get('page', 1)
+        test_results_paginator = Paginator(test_results, 10)
+        test_results_page = test_results_paginator.get_page(page_number)
     
     context = {
         'active_section': active_section,
         'test_results': test_results,
+        'test_results_page': test_results_page,
         'video_progress': video_progress,
         'bookmarks': bookmarks,
         'recent_streaks': recent_streaks,
@@ -2731,6 +2961,7 @@ def profile(request, section=None):
         'sat_stats': sat_stats,
         'sat_recent_progress': sat_recent_progress,
         'jobs_stats': jobs_stats,
+        'writing_progress': writing_progress,
     }
     return render(request, 'core/profile.html', context)
 
