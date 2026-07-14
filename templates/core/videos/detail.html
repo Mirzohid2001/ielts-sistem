@@ -69,10 +69,10 @@
                                 disablePictureInPicture
                                 disableRemotePlayback
                                 playsinline
-                                preload="metadata"
+                                preload="auto"
                                 data-protected="1"
                                 data-video-pk="{{ video.pk }}"
-                                src="{% url 'core:video_stream' video.pk %}">
+                                src="{% if video_playback_url %}{{ video_playback_url }}{% else %}{% url 'core:video_stream' video.pk %}{% endif %}">
                                 Brauzeringiz video formatini qo‘llamaydi.
                             </video>
                         </div>

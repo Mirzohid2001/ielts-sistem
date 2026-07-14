@@ -196,8 +196,8 @@
 
                     {% if row.obj.video_file %}
                     <div class="ratio ratio-16x9 protected-video-shell">
-                        <video controls preload="metadata" class="w-100 protected-video" data-protected="1" controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback data-id="{{ row.obj.pk }}" data-resume-seconds="{% if row.progress %}{{ row.progress.last_position_seconds|default:0 }}{% else %}0{% endif %}">
-                            <source src="{% url 'sat:sat_video_stream' row.obj.pk %}">
+                        <video controls preload="auto" class="w-100 protected-video" data-protected="1" controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback data-id="{{ row.obj.pk }}" data-resume-seconds="{% if row.progress %}{{ row.progress.last_position_seconds|default:0 }}{% else %}0{% endif %}">
+                            <source src="{% if row.playback_url %}{{ row.playback_url }}{% else %}{% url 'sat:sat_video_stream' row.obj.pk %}{% endif %}">
                         </video>
                     </div>
                     {% elif row.obj.youtube_id %}

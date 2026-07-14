@@ -25,7 +25,7 @@ from .models import (
     AIWritingFeedback,
 )
 from .access import get_user_module_access
-from .media_streaming import serve_protected_media
+from .media_streaming import get_direct_media_url, serve_protected_media
 from .services.ai_writing_feedback import (
     ensure_writing_feedback_for_result,
     prepare_writing_feedback_placeholders,
@@ -182,8 +182,15 @@ def sat_subject(request, subject):
 
     enriched_items = []
     for x in items:
+        playback_url = ''
+        if x.video_file:
+            try:
+                playback_url = get_direct_media_url(x.video_file)
+            except Exception:
+                playback_url = ''
         enriched_items.append({
             'obj': x,
+            'playback_url': playback_url,
             'progress': progress_map.get(x.pk),
             'bookmark_video': bookmark_map.get((x.pk, SATResourceBookmark.TYPE_VIDEO)),
             'bookmark_pdf': bookmark_map.get((x.pk, SATResourceBookmark.TYPE_PDF)),
@@ -1062,8 +1069,16 @@ def video_detail(request, pk):
         videos=video
     ).values_list('id', flat=True)
     
+    video_playback_url = ''
+    if video.video_file:
+        try:
+            video_playback_url = get_direct_media_url(video.video_file)
+        except Exception:
+            video_playback_url = ''
+
     context = {
         'video': video,
+        'video_playback_url': video_playback_url,
         'progress': progress,
         'related_videos': related_videos,
         'video_notes': video_notes,
