@@ -89,6 +89,16 @@ class LocalStorageStreamTests(SimpleTestCase):
 
 
 class GetDirectMediaUrlTests(SimpleTestCase):
+    @override_settings(VIDEO_USE_PRESIGNED_URLS=False)
+    def test_default_uses_public_admin_style_url(self):
+        field = MagicMock()
+        field.name = 'videos/2026/03/grammar_1_dars.mp4'
+        field.url = (
+            'https://eu2.contabostorage.com/bucket:ielts/videos/2026/03/grammar_1_dars.mp4'
+        )
+        self.assertEqual(get_direct_media_url(field), field.url)
+        field.storage.connection.meta.client.generate_presigned_url.assert_not_called()
+
     @override_settings(VIDEO_USE_PRESIGNED_URLS=True, VIDEO_PRESIGNED_URL_EXPIRY=3600)
     def test_presign_failure_falls_back_to_public_url(self):
         field = MagicMock()

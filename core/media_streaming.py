@@ -27,15 +27,20 @@ def _is_remote_storage(file_field):
 
 
 def get_direct_media_url(file_field):
-    """Time-limited signed URL or public object URL for direct browser streaming."""
-    expire_seconds = getattr(settings, 'VIDEO_PRESIGNED_URL_EXPIRY', 7200)
-    use_presigned = getattr(settings, 'VIDEO_USE_PRESIGNED_URLS', True)
+    """
+    Direct Contabo/S3 URL for the browser — same style as Django admin file link.
+
+    Default: public object URL (fast, cacheable). Optional: short-lived signed URL
+    when VIDEO_USE_PRESIGNED_URLS=1 (private buckets).
+    """
+    use_presigned = getattr(settings, 'VIDEO_USE_PRESIGNED_URLS', False)
     storage = file_field.storage
 
     if use_presigned and hasattr(storage, 'connection'):
         try:
             client = storage.connection.meta.client
             bucket = storage.bucket_name
+            expire_seconds = getattr(settings, 'VIDEO_PRESIGNED_URL_EXPIRY', 7200)
             return client.generate_presigned_url(
                 'get_object',
                 Params={'Bucket': bucket, 'Key': file_field.name},

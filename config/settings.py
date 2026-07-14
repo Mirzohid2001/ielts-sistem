@@ -185,10 +185,11 @@ AWS_QUERYSTRING_AUTH = False
 
 MEDIA_URL = 'https://eu2.contabostorage.com/02d832178b204df09a76be02aefe96ec:ielts/'
 
-# Video streaming: redirect authenticated users to S3 (direct Range/seeking).
-# Set VIDEO_STREAM_DIRECT=0 to proxy through Django (slow for large files).
+# Video streaming: use the same public Contabo URL as in Django admin (fast).
+# VIDEO_STREAM_DIRECT=0 → proxy through Django (slow).
+# VIDEO_USE_PRESIGNED_URLS=1 → signed URLs (only if bucket is private).
 VIDEO_STREAM_DIRECT = os.environ.get('VIDEO_STREAM_DIRECT', '1') not in ('0', 'false', 'False')
-VIDEO_USE_PRESIGNED_URLS = os.environ.get('VIDEO_USE_PRESIGNED_URLS', '1') not in ('0', 'false', 'False')
+VIDEO_USE_PRESIGNED_URLS = os.environ.get('VIDEO_USE_PRESIGNED_URLS', '0') not in ('0', 'false', 'False')
 VIDEO_PRESIGNED_URL_EXPIRY = int(os.environ.get('VIDEO_PRESIGNED_URL_EXPIRY', '7200'))
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
