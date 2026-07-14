@@ -1,6 +1,8 @@
 import mimetypes
 
-from django.http import FileResponse, Http404, HttpResponse
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 
 
 def _guess_content_type(filename):
@@ -17,8 +19,72 @@ def _guess_content_type(filename):
     return 'application/octet-stream'
 
 
+def _is_remote_storage(file_field):
+    storage = file_field.storage
+    if isinstance(storage, FileSystemStorage):
+        return False
+    return hasattr(storage, 'bucket_name') or hasattr(storage, 'connection')
+
+
+def get_direct_media_url(file_field):
+    """Time-limited signed URL or public object URL for direct browser streaming."""
+    expire_seconds = getattr(settings, 'VIDEO_PRESIGNED_URL_EXPIRY', 7200)
+    use_presigned = getattr(settings, 'VIDEO_USE_PRESIGNED_URLS', True)
+    storage = file_field.storage
+
+    if use_presigned and hasattr(storage, 'connection'):
+        try:
+            client = storage.connection.meta.client
+            bucket = storage.bucket_name
+            return client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': bucket, 'Key': file_field.name},
+                ExpiresIn=expire_seconds,
+            )
+        except Exception:
+            pass
+
+    return file_field.url
+
+
+def serve_protected_media(request, file_field):
+    """
+    Login-required media access.
+
+    Remote storage (S3): redirect so the browser streams directly from the bucket
+    with native Range support — avoids proxying gigabytes through Gunicorn.
+    Local storage: stream through Django with HTTP Range support.
+    """
+    if not file_field:
+        raise Http404
+
+    if getattr(settings, 'VIDEO_STREAM_DIRECT', True) and _is_remote_storage(file_field):
+        url = get_direct_media_url(file_field)
+        response = HttpResponse(status=307)
+        response['Location'] = url
+        response['Cache-Control'] = 'private, no-store'
+        return response
+
+    return stream_protected_media(request, file_field)
+
+
+def _range_iterator(file_field, start, length, chunk_size=256 * 1024):
+    file_field.open('rb')
+    try:
+        file_field.seek(start)
+        remaining = length
+        while remaining > 0:
+            data = file_field.read(min(chunk_size, remaining))
+            if not data:
+                break
+            remaining -= len(data)
+            yield data
+    finally:
+        file_field.close()
+
+
 def stream_protected_media(request, file_field):
-    """Login-required media stream with HTTP Range support (video seeking)."""
+    """Local/fallback media stream with HTTP Range support (video seeking)."""
     if not file_field:
         raise Http404
 
@@ -41,19 +107,16 @@ def stream_protected_media(request, file_field):
             return response
 
         length = end - start + 1
-        file_field.open('rb')
-        try:
-            file_field.seek(start)
-            data = file_field.read(length)
-        finally:
-            file_field.close()
-
-        response = HttpResponse(data, status=206, content_type=content_type)
+        response = StreamingHttpResponse(
+            _range_iterator(file_field, start, length),
+            status=206,
+            content_type=content_type,
+        )
         response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
         response['Content-Length'] = str(length)
     else:
-        file_field.open('rb')
-        response = FileResponse(file_field, content_type=content_type)
+        file_handle = file_field.open('rb')
+        response = FileResponse(file_handle, content_type=content_type)
         response['Content-Length'] = str(file_size)
 
     response['Accept-Ranges'] = 'bytes'

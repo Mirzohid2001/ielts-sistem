@@ -25,7 +25,7 @@ from .models import (
     AIWritingFeedback,
 )
 from .access import get_user_module_access
-from .media_streaming import stream_protected_media
+from .media_streaming import serve_protected_media
 from .services.ai_writing_feedback import (
     ensure_writing_feedback_for_result,
     prepare_writing_feedback_placeholders,
@@ -244,7 +244,7 @@ def video_stream(request, pk):
     video = get_object_or_404(VideoLesson, pk=pk, is_active=True)
     if not video.video_file:
         return HttpResponse("Video topilmadi.", status=404)
-    return stream_protected_media(request, video.video_file)
+    return serve_protected_media(request, video.video_file)
 
 
 @login_required
@@ -253,7 +253,7 @@ def sat_video_stream(request, pk):
     resource = get_object_or_404(SATResource, pk=pk, is_active=True)
     if not resource.video_file:
         return HttpResponse("Video topilmadi.", status=404)
-    return stream_protected_media(request, resource.video_file)
+    return serve_protected_media(request, resource.video_file)
 
 
 @login_required
