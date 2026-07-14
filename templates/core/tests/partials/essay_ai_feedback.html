@@ -261,6 +261,11 @@
     <div>
         <strong>AI feedback tayyorlanmoqda</strong>
         <p>Essay saqlangan. Natija avtomatik yangilanadi.</p>
+        {% if show_regenerate and test_result_pk %}
+        <button type="button" class="tr-ai__regen-btn mt-2" data-regen-feedback data-result-id="{{ test_result_pk }}">
+            <i class="fas fa-rotate" aria-hidden="true"></i> Hali tayyor emasmi? Qayta urinish
+        </button>
+        {% endif %}
     </div>
 </div>
 {% elif feedback and feedback.status == 'failed' %}

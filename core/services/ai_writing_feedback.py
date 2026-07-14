@@ -490,7 +490,10 @@ def _feedback_needs_refresh(feedback, *, force=False, essay_text=''):
     return False
 
 
-_GENERATION_IN_FLIGHT = set()
+# result_id -> monotonic start time. TTL clears zombie locks when worker/thread dies.
+_GENERATION_IN_FLIGHT = {}
+_GENERATION_LOCK_TTL_SEC = 180  # 3 daqiqa — undan keyin qayta urinish mumkin
+_STALE_PENDING_SEC = 120  # 2 daqiqa pending qolsa — qayta ishga tushirish
 
 
 def _essay_answers_for_result(test_result):
@@ -523,6 +526,22 @@ def writing_feedback_needs_generation(test_result, *, force=False):
         except AIWritingFeedback.DoesNotExist:
             return True
         if _feedback_needs_refresh(feedback, force=force, essay_text=essay_text):
+            return True
+    return False
+
+
+def writing_feedback_is_stale_pending(test_result, *, stale_after_sec=_STALE_PENDING_SEC):
+    """Pending holatda uzoq qolib ketgan feedbackni aniqlash (o'lik fon thread)."""
+    from django.utils import timezone
+
+    now = timezone.now()
+    for item in load_writing_feedback_for_result(test_result):
+        if item.status != AIWritingFeedback.STATUS_PENDING:
+            continue
+        stamp = item.updated_at or item.created_at
+        if not stamp:
+            return True
+        if (now - stamp).total_seconds() >= stale_after_sec:
             return True
     return False
 
@@ -571,12 +590,22 @@ def load_writing_feedback_for_result(test_result):
     )
 
 
+def _generation_lock_held(key):
+    started = _GENERATION_IN_FLIGHT.get(key)
+    if started is None:
+        return False
+    if (time.monotonic() - started) > _GENERATION_LOCK_TTL_SEC:
+        _GENERATION_IN_FLIGHT.pop(key, None)
+        return False
+    return True
+
+
 def schedule_writing_feedback_generation(test_result_id, *, force=False):
     key = int(test_result_id)
-    if key in _GENERATION_IN_FLIGHT:
-        return
+    if _generation_lock_held(key):
+        return False
 
-    _GENERATION_IN_FLIGHT.add(key)
+    _GENERATION_IN_FLIGHT[key] = time.monotonic()
 
     def _run():
         try:
@@ -584,25 +613,33 @@ def schedule_writing_feedback_generation(test_result_id, *, force=False):
 
             test_result = UserTestResult.objects.select_related('test').get(pk=test_result_id)
             generate_writing_feedback_for_result(test_result, force=force)
+        except Exception:
+            # Thread o'lishi mumkin — status failed/pending qoladi; stale recovery qayta urinadi.
+            raise
         finally:
-            _GENERATION_IN_FLIGHT.discard(key)
+            _GENERATION_IN_FLIGHT.pop(key, None)
             connection.close()
 
     def _start():
-        threading.Thread(target=_run, daemon=True).start()
+        threading.Thread(target=_run, daemon=True, name=f'wf-gen-{key}').start()
 
     try:
         transaction.on_commit(_start)
     except Exception:
         _start()
+    return True
 
 
 def ensure_writing_feedback_for_result(test_result, *, force=False, sync=False):
     prepare_writing_feedback_placeholders(test_result)
-    if sync or force:
+    if sync:
         return generate_writing_feedback_for_result(test_result, force=force)
-    if writing_feedback_needs_generation(test_result, force=force):
-        schedule_writing_feedback_generation(test_result.pk, force=force)
+
+    needs = writing_feedback_needs_generation(test_result, force=force)
+    stale = writing_feedback_is_stale_pending(test_result)
+    if needs or stale:
+        # Stale pending = fon thread o'lib ketgan (gunicorn worker recycle). Qayta ishga tushirish.
+        schedule_writing_feedback_generation(test_result.pk, force=force or stale)
     return load_writing_feedback_for_result(test_result)
 
 

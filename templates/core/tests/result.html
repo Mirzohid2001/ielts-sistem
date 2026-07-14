@@ -619,7 +619,11 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
 
   function poll() {
     if (!statusUrl || tries++ >= maxTries) return;
-    fetch(statusUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+    var fetchUrl = statusUrl;
+    if (tries > 1 && tries % 8 === 0) {
+      fetchUrl += (statusUrl.indexOf('?') >= 0 ? '&' : '?') + 'retry=1';
+    }
+    fetch(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (data.completed && data.fragments) {
@@ -631,8 +635,13 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
           showTrToast('AI feedback tayyor!', 'success');
           return;
         }
+        if (data.failed) {
+          showTrToast('AI feedback olinmadi. Qayta urinish tugmasini bosing.', 'warn');
+          if (tries < 3) setTimeout(function () { window.location.reload(); }, 800);
+          return;
+        }
         if (data.pending) {
-          setTimeout(poll, 3000);
+          setTimeout(poll, data.stale ? 4000 : 3000);
         }
       })
       .catch(function () { setTimeout(poll, 3000); });

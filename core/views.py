@@ -31,6 +31,7 @@ from .services.ai_writing_feedback import (
     prepare_writing_feedback_placeholders,
     schedule_writing_feedback_generation,
     load_writing_feedback_for_result,
+    writing_feedback_is_stale_pending,
 )
 from .services.writing_progress import build_writing_progress_summary
 from .services.writing_chat_coach import coach_chat_remaining
@@ -2396,7 +2397,18 @@ def writing_feedback_status(request, pk):
     if test_result.test.test_type != 'writing':
         return JsonResponse({'pending': False, 'completed': True, 'failed': False})
 
+    # Pending uzoq qolib ketgan bo'lsa (fon thread o'lgan) — qayta ishga tushirish
     items = load_writing_feedback_for_result(test_result)
+    if writing_feedback_is_stale_pending(test_result) or (
+        items and all(item.status == AIWritingFeedback.STATUS_PENDING for item in items)
+        and request.GET.get('retry') == '1'
+    ):
+        schedule_writing_feedback_generation(test_result.pk, force=True)
+        items = load_writing_feedback_for_result(test_result)
+    elif not items:
+        ensure_writing_feedback_for_result(test_result)
+        items = load_writing_feedback_for_result(test_result)
+
     pending = any(item.status == AIWritingFeedback.STATUS_PENDING for item in items)
     failed = any(item.status == AIWritingFeedback.STATUS_FAILED for item in items)
     completed = bool(items) and all(
@@ -2407,6 +2419,7 @@ def writing_feedback_status(request, pk):
         'pending': pending,
         'completed': completed,
         'failed': failed and not pending,
+        'stale': writing_feedback_is_stale_pending(test_result) if pending else False,
     }
 
     if request.GET.get('fragments') == '1' and completed:
@@ -2441,17 +2454,26 @@ def regenerate_writing_feedback(request, pk):
     if test_result.test.test_type != 'writing':
         return JsonResponse({'ok': False, 'error': 'Faqat writing testlari uchun.'}, status=400)
 
-    remaining = feedback_regenerate_remaining(request.user)
-    if remaining <= 0:
-        return JsonResponse(
-            {'ok': False, 'error': 'Kunlik limit tugadi (3 marta). Ertaga qayta urinib ko\'ring.'},
-            status=429,
-        )
-
     sync_essay_answers_from_json(test_result)
-    record_feedback_regenerate(request.user)
+    items = load_writing_feedback_for_result(test_result)
+    is_recovery = (
+        not items
+        or any(item.status in (AIWritingFeedback.STATUS_PENDING, AIWritingFeedback.STATUS_FAILED) for item in items)
+        or writing_feedback_is_stale_pending(test_result)
+    )
+
+    remaining = feedback_regenerate_remaining(request.user)
+    if not is_recovery:
+        if remaining <= 0:
+            return JsonResponse(
+                {'ok': False, 'error': 'Kunlik limit tugadi (3 marta). Ertaga qayta urinib ko\'ring.'},
+                status=429,
+            )
+        record_feedback_regenerate(request.user)
+        remaining = remaining - 1
+
     schedule_writing_feedback_generation(test_result.pk, force=True)
-    return JsonResponse({'ok': True, 'pending': True, 'remaining': remaining - 1})
+    return JsonResponse({'ok': True, 'pending': True, 'remaining': remaining, 'recovery': is_recovery})
 
 
 @login_required
