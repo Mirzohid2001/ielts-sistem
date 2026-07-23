@@ -969,6 +969,9 @@ class WritingProgressTests(TestCase):
         self.assertIn('fragments', data)
         self.assertIn(str(a1.pk), data['fragments'])
         mock_schedule.assert_called()
+        # force=False — tayyor feedbackni qayta yozmaslik
+        _args, kwargs = mock_schedule.call_args
+        self.assertFalse(kwargs.get('force', True))
 
 
 class WritingFeedbackEnhancementTests(TestCase):

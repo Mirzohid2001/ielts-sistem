@@ -273,11 +273,11 @@
     <div class="tr-ai__state-icon tr-ai__state-icon--warn"><i class="fas fa-exclamation-triangle"></i></div>
     <div>
         <strong>AI feedback vaqtincha olinmadi</strong>
-        <p>Essay saqlangan. Keyinroq sahifani yangilab ko'ring.</p>
+        <p>Essay saqlangan. «Qayta urinish» ni bosing — feedback qayta yaratiladi.</p>
     </div>
-    {% if show_regenerate and feedback_regenerate_remaining > 0 and test_result_pk %}
+    {% if show_regenerate and test_result_pk %}
     <button type="button" class="tr-ai__regen-btn mt-2" data-regen-feedback data-result-id="{{ test_result_pk }}">
-        <i class="fas fa-rotate" aria-hidden="true"></i> Qayta urinish ({{ feedback_regenerate_remaining }})
+        <i class="fas fa-rotate" aria-hidden="true"></i> Qayta urinish{% if feedback_regenerate_remaining %} ({{ feedback_regenerate_remaining }}){% endif %}
     </button>
     {% endif %}
 </div>

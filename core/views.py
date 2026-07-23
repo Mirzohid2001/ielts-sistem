@@ -2417,14 +2417,15 @@ def writing_feedback_status(request, pk):
     any_pending = any(item.status == AIWritingFeedback.STATUS_PENDING for item in items)
     stale = writing_feedback_is_stale_pending(test_result)
 
-    # Failed yoki stale pending — avtomatik qayta urinish (polling to'xtamasligi uchun).
+    # Failed yoki stale pending — avtomatik qayta urinish.
+    # force=False: faqat failed/pending yangilanadi, tayyor feedbacklar saqlanadi.
     should_retry = (
         stale
         or (any_failed and not any_pending)
         or (any_pending and request.GET.get('retry') == '1')
     )
     if should_retry:
-        schedule_writing_feedback_generation(test_result.pk, force=True)
+        schedule_writing_feedback_generation(test_result.pk, force=False)
         items = load_writing_feedback_for_result(test_result)
     elif not items:
         ensure_writing_feedback_for_result(test_result)

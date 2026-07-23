@@ -562,7 +562,8 @@ def generate_writing_feedback_for_result(test_result, *, force=False):
             continue
         feedback.question = answer.question
         feedback.status = AIWritingFeedback.STATUS_PENDING
-        feedback.save(update_fields=['question', 'status', 'updated_at'])
+        feedback.error_message = ''
+        feedback.save(update_fields=['question', 'status', 'error_message', 'updated_at'])
         try:
             payload = generate_writing_feedback(
                 test=test_result.test,
@@ -576,7 +577,29 @@ def generate_writing_feedback_for_result(test_result, *, force=False):
                 payload['raw_response_json'] = raw
             feedback.apply_completed_feedback(payload)
         except Exception as exc:
-            feedback.mark_failed(str(exc))
+            # Oxirgi imkoniyat: local heuristic — hech qachon bo'sh failed qoldirmaslikka harakat.
+            try:
+                fallback = _generate_local_feedback(
+                    test=test_result.test,
+                    question=answer.question,
+                    essay_text=essay_text,
+                )
+                fallback = _enrich_feedback_payload(
+                    fallback,
+                    test=test_result.test,
+                    question=answer.question,
+                    essay_text=essay_text,
+                )
+                fallback['provider_name'] = 'local'
+                fallback['model_name'] = 'heuristic-recovery'
+                raw = fallback.get('raw_response_json') if isinstance(fallback.get('raw_response_json'), dict) else {}
+                raw['engine_version'] = FEEDBACK_ENGINE_VERSION
+                raw['essay_fingerprint'] = _essay_fingerprint(essay_text)
+                raw['recovery_error'] = str(exc)[:500]
+                fallback['raw_response_json'] = raw
+                feedback.apply_completed_feedback(fallback)
+            except Exception as recovery_exc:
+                feedback.mark_failed(f'{exc} | recovery: {recovery_exc}')
         generated.append(feedback)
     return generated
 
@@ -603,7 +626,11 @@ def _generation_lock_held(key):
 def schedule_writing_feedback_generation(test_result_id, *, force=False):
     key = int(test_result_id)
     if _generation_lock_held(key):
-        return False
+        if force:
+            # Foydalanuvchi "Qayta urinish" bosganda eski lockni yengib o'tish
+            _GENERATION_IN_FLIGHT.pop(key, None)
+        else:
+            return False
 
     _GENERATION_IN_FLIGHT[key] = time.monotonic()
 
@@ -1635,14 +1662,17 @@ def _enrich_feedback_payload(feedback, *, test, question, essay_text):
 
     from core.services.writing_error_detection import merge_writing_errors
 
-    feedback['writing_errors'] = merge_writing_errors(
-        essay_text,
-        ai_errors=feedback.get('writing_errors'),
-        sentence_corrections=sentence_corrections,
-        vocabulary_upgrades=vocab_upgrades,
-        heuristic_limit=15,
-        total_limit=16,
-    )
+    try:
+        feedback['writing_errors'] = merge_writing_errors(
+            essay_text,
+            ai_errors=feedback.get('writing_errors'),
+            sentence_corrections=sentence_corrections,
+            vocabulary_upgrades=vocab_upgrades,
+            heuristic_limit=15,
+            total_limit=16,
+        )
+    except Exception:
+        feedback['writing_errors'] = list(feedback.get('writing_errors') or [])[:16]
     feedback['rewrite_suggestion'] = rewrite[:4000]
     raw = feedback.get('raw_response_json')
     if isinstance(raw, dict):
