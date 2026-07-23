@@ -471,7 +471,8 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
   const statusUrl = root.dataset.statusUrl;
   const regenUrl = root.dataset.regenUrl;
   let tries = 0;
-  const maxTries = 60;
+  const maxTries = 90;
+  let failureToastShown = false;
 
   function getCsrfToken() {
     const match = document.cookie.match(/csrftoken=([^;]+)/);
@@ -618,7 +619,13 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
   }
 
   function poll() {
-    if (!statusUrl || tries++ >= maxTries) return;
+    if (!statusUrl || tries++ >= maxTries) {
+      if (!failureToastShown) {
+        failureToastShown = true;
+        showTrToast('AI feedback hali tayyor emas. Qayta urinish tugmasini bosing yoki sahifani yangilang.', 'warn');
+      }
+      return;
+    }
     var fetchUrl = statusUrl;
     if (tries > 1 && tries % 8 === 0) {
       fetchUrl += (statusUrl.indexOf('?') >= 0 ? '&' : '?') + 'retry=1';
@@ -626,29 +633,41 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
     fetch(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (data.completed && data.fragments) {
+        // Qisman yoki to'liq tayyor fragmentlarni darhol ko'rsatamiz.
+        if (data.fragments) {
           applyFragments(data.fragments);
-          const firstFeedback = document.querySelector('[id^="wf-feedback-"] .tr-ai');
+        }
+        if (data.completed) {
+          const firstFeedback = document.querySelector('[id^="wf-feedback-"] .tr-ai:not(.tr-ai--state)');
           if (firstFeedback) {
             firstFeedback.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
           showTrToast('AI feedback tayyor!', 'success');
           return;
         }
-        if (data.failed) {
-          showTrToast('AI feedback olinmadi. Qayta urinish tugmasini bosing.', 'warn');
-          if (tries < 3) setTimeout(function () { window.location.reload(); }, 800);
+        // Faqat hammasi failed bo'lganda to'xtaymiz; bitta fail pollingni o'ldirmasligi kerak.
+        if (data.failed && !data.pending && !data.partial) {
+          if (!failureToastShown) {
+            failureToastShown = true;
+            showTrToast('AI feedback olinmadi. Avtomatik qayta urinilmoqda…', 'warn');
+          }
+          // Backend status endpoint failedlarni qayta schedule qiladi — pollingni davom ettiramiz.
+          setTimeout(poll, 5000);
           return;
         }
-        if (data.pending) {
+        if (data.pending || data.partial) {
           setTimeout(poll, data.stale ? 4000 : 3000);
+          return;
         }
+        // Holat noaniq — yana urinib ko'ramiz.
+        setTimeout(poll, 3000);
       })
       .catch(function () { setTimeout(poll, 3000); });
   }
 
   function startPolling() {
     tries = 0;
+    failureToastShown = false;
     setTimeout(poll, 2000);
   }
 

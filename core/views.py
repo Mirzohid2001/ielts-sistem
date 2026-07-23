@@ -2412,32 +2412,46 @@ def writing_feedback_status(request, pk):
     if test_result.test.test_type != 'writing':
         return JsonResponse({'pending': False, 'completed': True, 'failed': False})
 
-    # Pending uzoq qolib ketgan bo'lsa (fon thread o'lgan) — qayta ishga tushirish
     items = load_writing_feedback_for_result(test_result)
-    if writing_feedback_is_stale_pending(test_result) or (
-        items and all(item.status == AIWritingFeedback.STATUS_PENDING for item in items)
-        and request.GET.get('retry') == '1'
-    ):
+    any_failed = any(item.status == AIWritingFeedback.STATUS_FAILED for item in items)
+    any_pending = any(item.status == AIWritingFeedback.STATUS_PENDING for item in items)
+    stale = writing_feedback_is_stale_pending(test_result)
+
+    # Failed yoki stale pending — avtomatik qayta urinish (polling to'xtamasligi uchun).
+    should_retry = (
+        stale
+        or (any_failed and not any_pending)
+        or (any_pending and request.GET.get('retry') == '1')
+    )
+    if should_retry:
         schedule_writing_feedback_generation(test_result.pk, force=True)
         items = load_writing_feedback_for_result(test_result)
     elif not items:
         ensure_writing_feedback_for_result(test_result)
         items = load_writing_feedback_for_result(test_result)
 
-    pending = any(item.status == AIWritingFeedback.STATUS_PENDING for item in items)
-    failed = any(item.status == AIWritingFeedback.STATUS_FAILED for item in items)
-    completed = bool(items) and all(
-        item.status == AIWritingFeedback.STATUS_COMPLETED for item in items
+    statuses = [item.status for item in items]
+    any_failed = AIWritingFeedback.STATUS_FAILED in statuses
+    any_pending = AIWritingFeedback.STATUS_PENDING in statuses
+    any_completed = AIWritingFeedback.STATUS_COMPLETED in statuses
+    all_completed = bool(items) and all(
+        s == AIWritingFeedback.STATUS_COMPLETED for s in statuses
+    )
+    # Faqat hammasi failed bo'lsa terminal; bitta fail + bitta ready → partial, davom etamiz.
+    terminal_failed = bool(items) and all(
+        s == AIWritingFeedback.STATUS_FAILED for s in statuses
     )
 
     payload = {
-        'pending': pending,
-        'completed': completed,
-        'failed': failed and not pending,
-        'stale': writing_feedback_is_stale_pending(test_result) if pending else False,
+        'pending': any_pending or (any_failed and not all_completed and not terminal_failed),
+        'completed': all_completed,
+        'failed': terminal_failed,
+        'partial': any_completed and not all_completed,
+        'stale': writing_feedback_is_stale_pending(test_result) if any_pending else False,
     }
 
-    if request.GET.get('fragments') == '1' and completed:
+    # Qisman tayyor feedbacklarni ham UI ga beramiz.
+    if request.GET.get('fragments') == '1' and any_completed:
         from core.test_session_helpers import build_review_items, filter_questions_by_exam_variant, exam_variant_from_answers
 
         writing_feedback_by_answer_id = {
@@ -2728,7 +2742,10 @@ def test_result(request, pk):
         if item.test_answer_id
     }
     writing_feedback_pending = any(
-        item.status == AIWritingFeedback.STATUS_PENDING
+        item.status in (
+            AIWritingFeedback.STATUS_PENDING,
+            AIWritingFeedback.STATUS_FAILED,
+        )
         for item in writing_feedback_items
     )
 

@@ -911,6 +911,65 @@ class WritingProgressTests(TestCase):
         self.assertIn(answer_id, data['fragments'])
         self.assertIn('tr-ai', data['fragments'][answer_id]['feedback_html'])
 
+    def test_writing_feedback_status_partial_not_terminal_failed(self):
+        """Bitta essay failed, boshqasi completed → toast uchun failed=false, fragments bor."""
+        from unittest.mock import patch
+
+        q2 = Question.objects.create(
+            test=self.exam,
+            question_type="essay",
+            order=2,
+            question_text="Discuss tourism.",
+            options_json={"part": "2"},
+        )
+        result = UserTestResult.objects.create(
+            user=self.user,
+            test=self.exam,
+            answers_json={
+                str(self.question.pk): "Task one essay text here.",
+                str(q2.pk): "Task two essay text here about tourism.",
+            },
+            completed_at=timezone.now(),
+            total_questions=2,
+            correct_answers=0,
+        )
+        a1 = UserTestAnswer.objects.create(
+            test_result=result, question=self.question, user_answer="Task one essay text here.",
+        )
+        a2 = UserTestAnswer.objects.create(
+            test_result=result, question=q2, user_answer="Task two essay text here about tourism.",
+        )
+        AIWritingFeedback.objects.create(
+            test_result=result,
+            test_answer=a1,
+            question=self.question,
+            status=AIWritingFeedback.STATUS_COMPLETED,
+            estimated_band=6.0,
+            summary="ok",
+        )
+        AIWritingFeedback.objects.create(
+            test_result=result,
+            test_answer=a2,
+            question=q2,
+            status=AIWritingFeedback.STATUS_FAILED,
+            summary="timeout",
+        )
+
+        self.client.login(username="wpuser", password="pass12345")
+        with patch('core.views.schedule_writing_feedback_generation') as mock_schedule:
+            response = self.client.get(
+                reverse('core:writing_feedback_status', args=[result.pk]),
+                {'fragments': '1'},
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data['failed'])
+        self.assertTrue(data['partial'])
+        self.assertTrue(data['pending'])
+        self.assertIn('fragments', data)
+        self.assertIn(str(a1.pk), data['fragments'])
+        mock_schedule.assert_called()
+
 
 class WritingFeedbackEnhancementTests(TestCase):
     def setUp(self):
