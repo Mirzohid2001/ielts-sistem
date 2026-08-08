@@ -1,0 +1,46 @@
+{% if explanation and explanation.status == 'completed' %}
+<div class="tr-rl-ai">
+    <div class="tr-rl-ai__head">
+        <i class="fas fa-robot" aria-hidden="true"></i>
+        <strong>AI tushuntirish</strong>
+        {% if show_regen and explanation.pk %}
+        <button type="button" class="tr-rl-ai__regen" data-rl-regen="{{ explanation.pk }}" title="Qayta generatsiya">
+            <i class="fas fa-rotate" aria-hidden="true"></i>
+        </button>
+        {% endif %}
+    </div>
+    {% if explanation.explanation %}
+    <p class="tr-rl-ai__text">{{ explanation.explanation }}</p>
+    {% endif %}
+    {% if explanation.evidence_quote %}
+    <blockquote class="tr-rl-ai__quote">«{{ explanation.evidence_quote }}»</blockquote>
+    {% endif %}
+    {% if explanation.why_wrong %}
+    <p class="tr-rl-ai__why"><span>Nega xato:</span> {{ explanation.why_wrong }}</p>
+    {% endif %}
+    {% if explanation.trap %}
+    <p class="tr-rl-ai__trap"><span>Tuzoq:</span> {{ explanation.trap }}</p>
+    {% endif %}
+    {% if explanation.tip %}
+    <p class="tr-rl-ai__tip"><i class="fas fa-lightbulb" aria-hidden="true"></i> {{ explanation.tip }}</p>
+    {% endif %}
+</div>
+{% elif explanation and explanation.status == 'failed' %}
+<div class="tr-rl-ai tr-rl-ai--failed">
+    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+    <div class="flex-grow-1">
+        <strong>AI tushuntirish vaqtincha olinmadi</strong>
+        <p class="mb-2 mt-1">Qayta urinib ko‘ring.</p>
+        {% if show_regen and explanation.pk %}
+        <button type="button" class="btn btn-sm btn-outline-warning" data-rl-regen="{{ explanation.pk }}">
+            <i class="fas fa-rotate me-1"></i>Qayta generatsiya
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="tr-rl-ai tr-rl-ai--pending">
+    <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+    <span>AI tushuntirish tayyorlanmoqda…</span>
+</div>
+{% endif %}

@@ -1399,6 +1399,154 @@ class AIWritingFeedback(models.Model):
         ])
 
 
+class AIAnswerExplanation(models.Model):
+    """Reading/Listening noto'g'ri javob uchun AI tushuntirish."""
+    STATUS_PENDING = 'pending'
+    STATUS_COMPLETED = 'completed'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Kutilmoqda'),
+        (STATUS_COMPLETED, 'Tayyor'),
+        (STATUS_FAILED, 'Xatolik'),
+    ]
+
+    test_result = models.ForeignKey(
+        UserTestResult,
+        on_delete=models.CASCADE,
+        related_name='ai_answer_explanations',
+        verbose_name="Test natijasi",
+    )
+    test_answer = models.ForeignKey(
+        UserTestAnswer,
+        on_delete=models.CASCADE,
+        related_name='ai_explanations',
+        null=True,
+        blank=True,
+        verbose_name="Javob",
+    )
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name='ai_answer_explanations',
+        verbose_name="Savol",
+    )
+    slot_key = models.CharField(max_length=80, verbose_name="Slot kaliti")
+    display_num = models.PositiveIntegerField(default=0, verbose_name="Ko'rsatish raqami")
+    user_part = models.CharField(max_length=500, blank=True, verbose_name="Foydalanuvchi javobi")
+    correct_part = models.CharField(max_length=500, blank=True, verbose_name="To'g'ri javob")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        verbose_name="Holat",
+    )
+    provider_name = models.CharField(max_length=50, blank=True)
+    model_name = models.CharField(max_length=100, blank=True)
+    explanation = models.TextField(blank=True, verbose_name="Tushuntirish")
+    why_wrong = models.TextField(blank=True, verbose_name="Nega xato")
+    tip = models.TextField(blank=True, verbose_name="Maslahat")
+    evidence_quote = models.CharField(max_length=400, blank=True, verbose_name="Dalil iqtibos")
+    trap = models.CharField(max_length=500, blank=True, verbose_name="Tuzoq / distractor")
+    raw_response_json = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "AI Answer Explanation"
+        verbose_name_plural = "AI Answer Explanations"
+        ordering = ['display_num', 'id']
+        unique_together = [('test_result', 'slot_key')]
+        indexes = [
+            models.Index(fields=['test_result', 'status']),
+        ]
+
+    def __str__(self):
+        return f"#{self.display_num} {self.status} ({self.test_result_id})"
+
+    def mark_failed(self, message):
+        self.status = self.STATUS_FAILED
+        self.error_message = (message or '')[:5000]
+        self.save(update_fields=['status', 'error_message', 'updated_at'])
+
+    def apply_completed(self, payload):
+        self.status = self.STATUS_COMPLETED
+        self.provider_name = payload.get('provider_name', '') or ''
+        self.model_name = payload.get('model_name', '') or ''
+        self.explanation = (payload.get('explanation') or '')[:4000]
+        self.why_wrong = (payload.get('why_wrong') or '')[:2000]
+        self.tip = (payload.get('tip') or '')[:2000]
+        self.evidence_quote = (payload.get('evidence_quote') or '')[:400]
+        self.trap = (payload.get('trap') or '')[:500]
+        self.raw_response_json = payload.get('raw_response_json') or {}
+        self.error_message = ''
+        self.save(update_fields=[
+            'status', 'provider_name', 'model_name', 'explanation',
+            'why_wrong', 'tip', 'evidence_quote', 'trap',
+            'raw_response_json', 'error_message', 'updated_at',
+        ])
+
+
+class AITestInsight(models.Model):
+    """Reading/Listening natijasi uchun umumiy AI xulosa."""
+    STATUS_PENDING = 'pending'
+    STATUS_COMPLETED = 'completed'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Kutilmoqda'),
+        (STATUS_COMPLETED, 'Tayyor'),
+        (STATUS_FAILED, 'Xatolik'),
+    ]
+
+    test_result = models.OneToOneField(
+        UserTestResult,
+        on_delete=models.CASCADE,
+        related_name='ai_test_insight',
+        verbose_name="Test natijasi",
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    provider_name = models.CharField(max_length=50, blank=True)
+    model_name = models.CharField(max_length=100, blank=True)
+    summary = models.TextField(blank=True, verbose_name="Umumiy xulosa")
+    weak_types = models.JSONField(default=list, blank=True, verbose_name="Zaif savol turlari")
+    strengths = models.JSONField(default=list, blank=True, verbose_name="Kuchli tomonlar")
+    next_steps = models.JSONField(default=list, blank=True, verbose_name="Keyingi qadamlar")
+    focus_tip = models.TextField(blank=True, verbose_name="Asosiy maslahat")
+    raw_response_json = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "AI Test Insight"
+        verbose_name_plural = "AI Test Insights"
+
+    def __str__(self):
+        return f"Insight {self.test_result_id} ({self.status})"
+
+    def mark_failed(self, message):
+        self.status = self.STATUS_FAILED
+        self.error_message = (message or '')[:5000]
+        self.save(update_fields=['status', 'error_message', 'updated_at'])
+
+    def apply_completed(self, payload):
+        self.status = self.STATUS_COMPLETED
+        self.provider_name = payload.get('provider_name', '') or ''
+        self.model_name = payload.get('model_name', '') or ''
+        self.summary = (payload.get('summary') or '')[:3000]
+        self.weak_types = payload.get('weak_types') or []
+        self.strengths = payload.get('strengths') or []
+        self.next_steps = payload.get('next_steps') or []
+        self.focus_tip = (payload.get('focus_tip') or '')[:1500]
+        self.raw_response_json = payload.get('raw_response_json') or {}
+        self.error_message = ''
+        self.save(update_fields=[
+            'status', 'provider_name', 'model_name', 'summary', 'weak_types',
+            'strengths', 'next_steps', 'focus_tip', 'raw_response_json',
+            'error_message', 'updated_at',
+        ])
+
+
 class UserVideoProgress(models.Model):
     """Foydalanuvchi video progress"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='video_progress', verbose_name="Foydalanuvchi")

@@ -807,10 +807,13 @@
         font-size: .9rem; font-weight: 700; color: #111827;
         padding: 0; background: transparent; margin-right: 4px;
     }
-    .dock-part-wrap.dock-active .dock-part-summary { display: none; }
-    .dock-part-wrap.dock-active .dock-part-expanded { display: flex; }
-    .dock-part-wrap:not(.dock-active) .dock-part-summary { display: inline-block; }
-    .dock-part-wrap:not(.dock-active) .dock-part-expanded { display: none; }
+    /* Part raqamlari doim ochiq — faqat faol part qalinroq border (dock-active) */
+    .dock-part-wrap .dock-part-summary { display: none !important; }
+    .dock-part-wrap .dock-part-expanded { display: flex !important; }
+    .dock-part-wrap.dock-active .dock-part-summary { display: none !important; }
+    .dock-part-wrap.dock-active .dock-part-expanded { display: flex !important; }
+    .dock-part-wrap:not(.dock-active) .dock-part-summary { display: none !important; }
+    .dock-part-wrap:not(.dock-active) .dock-part-expanded { display: flex !important; }
     /* Chap panel Reading — Engnovate uslubi */
     .reading-left-engnovate .reading-part-title-left { font-size: 1.1rem; font-weight: 700; color: #111827; }
     .reading-left-engnovate .reading-passage-title-left { font-size: 1.05rem; font-weight: 700; color: #111827; margin-top: 1rem; }
@@ -2054,7 +2057,7 @@
                                                            value="{{ f.value }}"
                                                            autocomplete="off"
                                                            {% if f.slot_max_words %}data-max-words="{{ f.slot_max_words }}" title="Max {{ f.slot_max_words }} word(s)"{% endif %}
-                                                           data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}">
+                                                           data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}" data-global-num="{{ f.global_num|default:f.num }}">
                                                     {% if item.fill_mixed_word_limits and f.slot_max_words %}
                                                     <span class="small text-muted flex-shrink-0">≤{{ f.slot_max_words }} {% if f.slot_max_words == 1 %}word{% else %}words{% endif %}</span>
                                                     {% endif %}
@@ -2078,7 +2081,7 @@
                                                     {% if p.type == 'input' %}
                                                     <span class="inline-blank-wrap">
                                                         <span class="inline-blank-num">{{ p.global_num|default:p.num }}</span>
-                                                        <input type="text" class="inline-blank-input" name="answer_{{ q.pk }}_{{ p.num }}" value="{{ p.value }}" maxlength="120" placeholder="" title="Max {{ item.fill_max_words|default:'—' }} word(s)" data-blank-id="blank-{{ q.pk }}-{{ p.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ p.num }}" {% if item.fill_max_words %}data-max-words="{{ item.fill_max_words }}"{% endif %}>
+                                                        <input type="text" class="inline-blank-input" name="answer_{{ q.pk }}_{{ p.num }}" value="{{ p.value }}" maxlength="120" placeholder="" title="Max {{ item.fill_max_words|default:'—' }} word(s)" data-blank-id="blank-{{ q.pk }}-{{ p.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ p.num }}" data-global-num="{{ p.global_num|default:p.num }}" {% if item.fill_max_words %}data-max-words="{{ item.fill_max_words }}"{% endif %}>
                                                     </span>
                                                     {% endif %}
                                                     {% endfor %}
@@ -2093,7 +2096,7 @@
                                                         <input type="text" class="form-control"
                                                                name="answer_{{ q.pk }}_{{ f.num }}"
                                                                value="{{ f.value }}"
-                                                               data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}" {% if item.fill_max_words %}data-max-words="{{ item.fill_max_words }}"{% endif %}>
+                                                               data-blank-id="blank-{{ q.pk }}-{{ f.num }}" data-question-pk="{{ q.pk }}" data-blank-num="{{ f.num }}" data-global-num="{{ f.global_num|default:f.num }}" {% if item.fill_max_words %}data-max-words="{{ item.fill_max_words }}"{% endif %}>
                                                         </div>
                                                     </div>
                                                     {% empty %}
@@ -2136,7 +2139,7 @@
                                                 <div class="d-flex gap-2 mb-0 matching-statement-row flex-wrap">
                                                     <span class="question-num-box flex-shrink-0">{{ mf.global_num|default:mf.num }}</span>
                                                     <span class="flex-grow-1" style="min-width: 200px;">{{ mf.label }}</span>
-                                                    <select class="form-select flex-shrink-0" name="match_{{ q.pk }}_{{ mf.num }}" aria-label="Javob {{ mf.global_num|default:mf.num }}" data-matching-select>
+                                                    <select class="form-select flex-shrink-0" name="match_{{ q.pk }}_{{ mf.num }}" aria-label="Javob {{ mf.global_num|default:mf.num }}" data-matching-select data-global-num="{{ mf.global_num|default:mf.num }}">
                                                         <option value="">—</option>
                                                         {% for op in mf.options %}
                                                         {% if q.question_type == 'matching_headings' %}
@@ -2176,7 +2179,7 @@
                                                     {% if p.type == 'select' %}
                                                     <span class="inline-blank-wrap summary-box-blank-wrap">
                                                         <span class="inline-blank-num">{{ p.global_num|default:p.num }}</span>
-                                                        <select class="form-select form-select-sm summary-box-select" name="match_{{ q.pk }}_{{ p.num }}" aria-label="Javob {{ p.global_num|default:p.num }}" data-matching-select>
+                                                        <select class="form-select form-select-sm summary-box-select" name="match_{{ q.pk }}_{{ p.num }}" aria-label="Javob {{ p.global_num|default:p.num }}" data-matching-select data-global-num="{{ p.global_num|default:p.num }}">
                                                             <option value="">—</option>
                                                             {% for op in p.options %}
                                                             <option value="{{ op.letter|lower }}" {% if p.value|lower == op.letter|lower %}selected{% endif %}>{{ op.letter|upper }}</option>
@@ -3183,7 +3186,18 @@
         }
 
         function getPartNumberForQuestionOrder(order) {
+            var btn = document.querySelector('.q-num-btn[data-order="' + String(order) + '"]');
+            if (btn) {
+                var wrap = btn.closest('[data-part-number]');
+                if (wrap) return wrap.getAttribute('data-part-number');
+            }
             var card = document.getElementById('question-' + order);
+            if (!card) {
+                // Multi-slot: kartalar id si birinchi raqam (masalan 11), order 12 bo'lishi mumkin
+                btn = document.querySelector('.q-num-btn[data-order="' + String(order) + '"]');
+                var qid = btn && btn.getAttribute('data-question-id');
+                card = qid ? document.getElementById(qid) : null;
+            }
             if (!card) return null;
             var pane = card.closest('.reading-part-pane');
             return pane ? pane.getAttribute('data-part-number') : null;
@@ -3308,34 +3322,141 @@
 
             qNumBtns.forEach(function(btn) {
                 btn.addEventListener('click', function() {
-                    const blankId = this.getAttribute('data-blank-id');
-                    const questionId = this.getAttribute('data-question-id');
                     const order = this.getAttribute('data-order');
                     var partButtons = btn.closest('.part-q-buttons');
                     var partNum = partButtons && partButtons.getAttribute('data-part-number');
                     if (!partNum && order && typeof getPartNumberForQuestionOrder === 'function')
                         partNum = getPartNumberForQuestionOrder(parseInt(order, 10));
                     if (partNum && typeof switchReadingPart === 'function') switchReadingPart(partNum);
-                    if (blankId) {
-                        const input = document.querySelector('input[data-blank-id="' + blankId + '"]');
-                        if (input) {
-                            setTimeout(function() {
-                                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                input.focus();
-                            }, 80);
-                        }
-                    } else if (questionId) {
-                        setTimeout(function() {
-                            const el = document.getElementById(questionId);
+                    window.__activeQSlot = order ? String(order) : null;
+                    setTimeout(function() {
+                        var target = typeof findControlForSlotOrder === 'function'
+                            ? findControlForSlotOrder(order)
+                            : null;
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            try { target.focus({ preventScroll: true }); } catch (err) { try { target.focus(); } catch (e2) {} }
+                        } else {
+                            var questionId = btn.getAttribute('data-question-id');
+                            var el = questionId ? document.getElementById(questionId) : null;
                             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 80);
-                    }
+                        }
+                        if (updateQNumActiveFn) updateQNumActiveFn();
+                    }, 80);
                 });
             });
 
             let updateQNumActiveFn;
-            const blankInputs = Array.from(document.querySelectorAll('input[data-blank-id]'));
+
+            function findControlForSlotOrder(order) {
+                if (order == null || order === '') return null;
+                var o = String(order);
+                var byGlobal = document.querySelector(
+                    '#exam-take-form [data-global-num="' + o + '"], #question-container [data-global-num="' + o + '"]'
+                );
+                if (byGlobal) return byGlobal;
+                var btn = document.querySelector('.q-num-btn[data-order="' + o + '"]');
+                if (!btn) return null;
+                var blankId = btn.getAttribute('data-blank-id');
+                if (blankId) {
+                    var blankInp = document.querySelector('input[data-blank-id="' + blankId + '"]');
+                    if (blankInp) return blankInp;
+                }
+                var qid = btn.getAttribute('data-question-id');
+                var card = qid ? document.getElementById(qid) : null;
+                if (!card) return null;
+                var rows = card.querySelectorAll(
+                    '.matching-statement-row, .short-answer-standalone-row, .inline-blank-wrap, .summary-box-blank-wrap, .col-12.col-md-6'
+                );
+                for (var i = 0; i < rows.length; i++) {
+                    var nb = rows[i].querySelector('.question-num-box, .inline-blank-num');
+                    if (nb && String(nb.textContent || '').trim() === o) {
+                        var ctrl = rows[i].querySelector('input, select, textarea');
+                        if (ctrl) return ctrl;
+                    }
+                }
+                return card.querySelector('input:not([type="hidden"]), select, textarea');
+            }
+
+            function resolveActiveOrderFromElement(el) {
+                if (!el || el === document.body || el === document.documentElement) return null;
+                var node = el;
+                if (node.tagName === 'LABEL') {
+                    var forId = node.getAttribute('for');
+                    var nested = node.querySelector('input, select, textarea');
+                    node = nested || (forId ? document.getElementById(forId) : node);
+                }
+                if (!node || !node.getAttribute) return null;
+                var g = node.getAttribute('data-global-num');
+                if (g) return String(g);
+                var bid = node.getAttribute('data-blank-id');
+                if (bid) {
+                    var b = document.querySelector('.q-num-btn[data-blank-id="' + bid + '"]');
+                    if (b) return String(b.getAttribute('data-order') || '');
+                }
+                var row = node.closest
+                    ? node.closest('.matching-statement-row, .short-answer-standalone-row, .inline-blank-wrap, .summary-box-blank-wrap')
+                    : null;
+                if (row) {
+                    var numEl = row.querySelector('.question-num-box, .inline-blank-num');
+                    if (numEl) {
+                        var t = String(numEl.textContent || '').trim();
+                        if (t) return t;
+                    }
+                }
+                var card = node.closest ? node.closest('.part-q-card') : null;
+                if (!card) return null;
+                var first = card.getAttribute('data-first-order');
+                return first ? String(first) : null;
+            }
+
+            function setActiveQNum(order) {
+                var o = order != null && order !== '' ? String(order) : null;
+                window.__activeQSlot = o;
+                qNumBtns.forEach(function(btn) {
+                    btn.classList.toggle('active', !!(o && String(btn.getAttribute('data-order')) === o));
+                });
+                var sorted = qNumBtns
+                    .map(function(b) { return parseInt(b.getAttribute('data-order'), 10); })
+                    .filter(function(n) { return !isNaN(n); })
+                    .sort(function(a, b) { return a - b; });
+                var uniq = [];
+                sorted.forEach(function(n) { if (uniq.indexOf(n) < 0) uniq.push(n); });
+                var idx = o ? uniq.indexOf(parseInt(o, 10)) : -1;
+                if (navPrev) navPrev.classList.toggle('active', idx > 0);
+                if (navNext) navNext.classList.toggle('active', idx >= 0 && idx < uniq.length - 1);
+            }
+
+            function getVisibleSlotOrder() {
+                var ae = document.activeElement;
+                var fromFocus = resolveActiveOrderFromElement(ae);
+                if (fromFocus) return fromFocus;
+                if (window.__activeQSlot) return window.__activeQSlot;
+                var best = null, bestDist = Infinity;
+                var anchorY = window.innerHeight * 0.35;
+                qNumBtns.forEach(function(btn) {
+                    var order = btn.getAttribute('data-order');
+                    if (!order) return;
+                    var ctrl = findControlForSlotOrder(order);
+                    var el = ctrl;
+                    if (!el) {
+                        var qid = btn.getAttribute('data-question-id');
+                        el = qid ? document.getElementById(qid) : null;
+                    }
+                    if (!el) return;
+                    var r = el.getBoundingClientRect();
+                    if (r.width === 0 && r.height === 0) return;
+                    var dist = Math.abs(r.top - anchorY);
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        best = order;
+                    }
+                });
+                return best;
+            }
+
             const answeredBadge = document.getElementById('answered-badge');
+            const blankInputs = Array.from(document.querySelectorAll('input[data-blank-id]'));
             const totalBlanks = answeredBadge ? parseInt(answeredBadge.getAttribute('data-total-blanks') || '0', 10) : 0;
 
             function updateTopProgress(answered, total) {
@@ -3419,178 +3540,54 @@
             if (mainForm) {
                 mainForm.addEventListener('change', updateAnsweredBadge);
                 mainForm.addEventListener('input', updateAnsweredBadge);
+                mainForm.addEventListener('focusin', function(e) {
+                    var ord = resolveActiveOrderFromElement(e.target);
+                    if (ord) setActiveQNum(ord);
+                });
+                mainForm.addEventListener('change', function(e) {
+                    var ord = resolveActiveOrderFromElement(e.target);
+                    if (ord) setActiveQNum(ord);
+                });
             }
             window.__updateAnsweredBadge = updateAnsweredBadge;
+            window.findControlForSlotOrder = findControlForSlotOrder;
 
             function getVisibleQuestionOrder() {
-                const activePane = document.querySelector('.reading-part-pane.active');
-                const cards = activePane
-                    ? Array.from(activePane.querySelectorAll('.part-q-card'))
-                    : Array.from(document.querySelectorAll('.part-q-card'));
-                const anchor = window.innerHeight * 0.3;
-                let best = null, bestDist = Infinity;
-                cards.forEach(function(c) {
-                    const r = c.getBoundingClientRect();
-                    const dist = Math.abs(r.top - anchor);
-                    if (dist < bestDist) { bestDist = dist; best = c; }
-                });
-                return best ? parseInt(best.getAttribute('data-first-order') || (best.id || '').replace(/^question-/, ''), 10) || 1 : (activePane ? 1 : 1);
+                var slot = getVisibleSlotOrder();
+                return slot ? parseInt(slot, 10) || 1 : 1;
             }
 
             function updateQNumActive() {
-                const visibleRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
-                const visibleBtns = visibleRow ? visibleRow.querySelectorAll('.q-num-btn') : qNumBtns;
-                const activeBtns = visibleRow ? Array.from(visibleBtns) : qNumBtns;
-                const focusedBlank = document.querySelector('input[data-blank-id]:focus');
-                const part1BlankBtns = activeBtns.filter(function(b) { return b.getAttribute('data-blank-id'); });
-                if (focusedBlank && part1BlankBtns.length) {
-                    const bid = focusedBlank.getAttribute('data-blank-id');
-                    qNumBtns.forEach(function(btn) {
-                        var inVisible = !visibleRow || visibleRow.contains(btn);
-                        btn.classList.toggle('active', inVisible && btn.getAttribute('data-blank-id') === bid);
-                    });
-                    const idx = part1BlankBtns.findIndex(function(b) { return b.getAttribute('data-blank-id') === bid; });
-                    const activePartPaneBlank = document.querySelector('.reading-part-pane.active');
-                    const curPartBlank = activePartPaneBlank ? activePartPaneBlank.getAttribute('data-part-number') : null;
-                    var canPrevB = idx > 0 || (idx === 0 && curPartBlank && getPrevPartNum(curPartBlank));
-                    var canNextB = (idx >= 0 && idx < part1BlankBtns.length - 1) || (idx === part1BlankBtns.length - 1 && curPartBlank && getNextPartNum(curPartBlank));
-                    if (navPrev) navPrev.classList.toggle('active', canPrevB);
-                    if (navNext) navNext.classList.toggle('active', canNextB);
-                } else {
-                    const current = getVisibleQuestionOrder();
-                    const curAnchor = String(current);
-                    qNumBtns.forEach(function(btn) {
-                        var inVisible = !visibleRow || visibleRow.contains(btn);
-                        const qId = btn.getAttribute('data-question-id');
-                        const anchor = btn.getAttribute('data-card-anchor') || String(parseInt(btn.getAttribute('data-order'), 10));
-                        btn.classList.toggle('active', inVisible && qId && anchor === curAnchor);
-                    });
-                    const questionBtns = activeBtns.filter(function(b) { return b.getAttribute('data-question-id'); });
-                    const anchors = [];
-                    questionBtns.forEach(function(b) {
-                        var a = b.getAttribute('data-card-anchor');
-                        if (a && anchors.indexOf(a) < 0) anchors.push(a);
-                    });
-                    anchors.sort(function(x, y) { return parseInt(x, 10) - parseInt(y, 10); });
-                    const idx = anchors.indexOf(curAnchor);
-                    const activePartPaneQ = document.querySelector('.reading-part-pane.active');
-                    const curPartQ = activePartPaneQ ? activePartPaneQ.getAttribute('data-part-number') : null;
-                    var canPrevQ = idx > 0 || (idx === 0 && curPartQ && getPrevPartNum(curPartQ));
-                    var canNextQ = (idx >= 0 && idx < anchors.length - 1) || (idx === anchors.length - 1 && curPartQ && getNextPartNum(curPartQ));
-                    if (navPrev) navPrev.classList.toggle('active', canPrevQ);
-                    if (navNext) navNext.classList.toggle('active', canNextQ);
-                }
+                setActiveQNum(getVisibleSlotOrder());
             }
             updateQNumActiveFn = updateQNumActive;
 
-            if (navPrev) navPrev.addEventListener('click', function() {
-                const focusedBlank = document.querySelector('input[data-blank-id]:focus');
-                const activePartRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
-                const part1Btns = activePartRow ? Array.from(activePartRow.querySelectorAll('.q-num-btn[data-blank-id]')) : Array.from(document.querySelectorAll('.part-q-buttons .q-num-btn[data-blank-id]'));
-                if (focusedBlank && part1Btns.length) {
-                    const bid = focusedBlank.getAttribute('data-blank-id');
-                    const idx = part1Btns.findIndex(function(b) { return b.getAttribute('data-blank-id') === bid; });
-                    const prevBtn = idx > 0 ? part1Btns[idx - 1] : null;
-                    if (prevBtn) {
-                        const prevId = prevBtn.getAttribute('data-blank-id');
-                        const prevInput = document.querySelector('input[data-blank-id="' + prevId + '"]');
-                        if (prevInput) { prevInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); prevInput.focus(); }
-                    }
-                } else {
-                    const current = getVisibleQuestionOrder();
-                    const activeRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
-                    const qBtns = activeRow ? Array.from(activeRow.querySelectorAll('.q-num-btn[data-question-id]')) : Array.from(document.querySelectorAll('.q-num-btn[data-question-id]'));
-                    const anchors = [];
-                    qBtns.forEach(function(b) {
-                        var a = b.getAttribute('data-card-anchor');
-                        if (a && anchors.indexOf(a) < 0) anchors.push(a);
-                    });
-                    anchors.sort(function(x, y) { return parseInt(x, 10) - parseInt(y, 10); });
-                    const idx = anchors.indexOf(String(current));
-                    const prevAnchor = idx > 0 ? anchors[idx - 1] : null;
-                    const prevCard = prevAnchor ? document.querySelector('.part-q-card[data-first-order="' + prevAnchor + '"]') : null;
-                    if (prevCard) {
-                        var prevOrder = parseInt(prevAnchor, 10);
-                        var part = typeof getPartNumberForQuestionOrder === 'function' ? getPartNumberForQuestionOrder(prevOrder) : null;
-                        var activePart = document.querySelector('.reading-part-pane.active');
-                        var curPart = activePart ? activePart.getAttribute('data-part-number') : null;
-                        if (part && curPart !== String(part) && typeof switchReadingPart === 'function') switchReadingPart(part);
-                        setTimeout(function() {
-                            var el = document.getElementById('question-' + prevOrder);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, part && curPart !== String(part) ? 120 : 0);
-                    } else if (idx === 0 && typeof switchReadingPart === 'function') {
-                        var activePartEl = document.querySelector('.reading-part-pane.active');
-                        var curPartNum = activePartEl ? activePartEl.getAttribute('data-part-number') : (activeRow ? activeRow.getAttribute('data-part-number') : null);
-                        var prevPart = getPrevPartNum(curPartNum);
-                        if (prevPart) {
-                            var lastA = getLastQuestionAnchorInPart(prevPart);
-                            if (lastA) {
-                                switchReadingPart(String(prevPart));
-                                setTimeout(function() {
-                                    var el = document.getElementById('question-' + lastA);
-                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    if (typeof updateQNumActiveFn === 'function') updateQNumActiveFn();
-                                }, 120);
-                            }
-                        }
+            function clickAdjacentQNum(delta) {
+                var orders = [];
+                qNumBtns.forEach(function(b) {
+                    var n = parseInt(b.getAttribute('data-order'), 10);
+                    if (!isNaN(n) && orders.indexOf(n) < 0) orders.push(n);
+                });
+                orders.sort(function(a, b) { return a - b; });
+                if (!orders.length) return;
+                var cur = parseInt(getVisibleSlotOrder(), 10);
+                if (isNaN(cur)) cur = orders[0];
+                var idx = orders.indexOf(cur);
+                if (idx < 0) {
+                    idx = 0;
+                    for (var i = 0; i < orders.length; i++) {
+                        if (orders[i] >= cur) { idx = i; break; }
+                        idx = i;
                     }
                 }
-            });
-            if (navNext) navNext.addEventListener('click', function() {
-                const focusedBlank = document.querySelector('input[data-blank-id]:focus');
-                const activePartRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
-                const part1Btns = activePartRow ? Array.from(activePartRow.querySelectorAll('.q-num-btn[data-blank-id]')) : Array.from(document.querySelectorAll('.part-q-buttons .q-num-btn[data-blank-id]'));
-                if (focusedBlank && part1Btns.length) {
-                    const bid = focusedBlank.getAttribute('data-blank-id');
-                    const idx = part1Btns.findIndex(function(b) { return b.getAttribute('data-blank-id') === bid; });
-                    const nextBtn = idx >= 0 && idx < part1Btns.length - 1 ? part1Btns[idx + 1] : null;
-                    if (nextBtn) {
-                        const nextId = nextBtn.getAttribute('data-blank-id');
-                        const nextInput = document.querySelector('input[data-blank-id="' + nextId + '"]');
-                        if (nextInput) { nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); nextInput.focus(); }
-                    }
-                } else {
-                    const current = getVisibleQuestionOrder();
-                    const activeRow = document.querySelector('.exam-bottom-dock .dock-part-wrap.dock-active') || document.querySelector('.exam-bottom-dock .part-q-buttons[data-part-number]:not(.dock-part-hidden)');
-                    const qBtns = activeRow ? Array.from(activeRow.querySelectorAll('.q-num-btn[data-question-id]')) : Array.from(document.querySelectorAll('.q-num-btn[data-question-id]'));
-                    const anchors = [];
-                    qBtns.forEach(function(b) {
-                        var a = b.getAttribute('data-card-anchor');
-                        if (a && anchors.indexOf(a) < 0) anchors.push(a);
-                    });
-                    anchors.sort(function(x, y) { return parseInt(x, 10) - parseInt(y, 10); });
-                    const idx = anchors.indexOf(String(current));
-                    const nextAnchor = idx >= 0 && idx < anchors.length - 1 ? anchors[idx + 1] : null;
-                    const nextCard = nextAnchor ? document.querySelector('.part-q-card[data-first-order="' + nextAnchor + '"]') : null;
-                    if (nextCard) {
-                        var nextOrder = parseInt(nextAnchor, 10);
-                        var part = typeof getPartNumberForQuestionOrder === 'function' ? getPartNumberForQuestionOrder(nextOrder) : null;
-                        var activePart = document.querySelector('.reading-part-pane.active');
-                        var curPart = activePart ? activePart.getAttribute('data-part-number') : null;
-                        if (part && curPart !== String(part) && typeof switchReadingPart === 'function') switchReadingPart(part);
-                        setTimeout(function() {
-                            var el = document.getElementById('question-' + nextOrder);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, part && curPart !== String(part) ? 120 : 0);
-                    } else if (idx >= 0 && idx === anchors.length - 1 && typeof switchReadingPart === 'function') {
-                        var activePartEl2 = document.querySelector('.reading-part-pane.active');
-                        var curPartNum2 = activePartEl2 ? activePartEl2.getAttribute('data-part-number') : (activeRow ? activeRow.getAttribute('data-part-number') : null);
-                        var nextPart = getNextPartNum(curPartNum2);
-                        if (nextPart) {
-                            var firstA = getFirstQuestionAnchorInPart(nextPart);
-                            if (firstA) {
-                                switchReadingPart(String(nextPart));
-                                setTimeout(function() {
-                                    var el = document.getElementById('question-' + firstA);
-                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    if (typeof updateQNumActiveFn === 'function') updateQNumActiveFn();
-                                }, 120);
-                            }
-                        }
-                    }
-                }
-            });
+                var nextIdx = idx + delta;
+                if (nextIdx < 0 || nextIdx >= orders.length) return;
+                var nextOrder = String(orders[nextIdx]);
+                var nextBtn = document.querySelector('.q-num-btn[data-order="' + nextOrder + '"]');
+                if (nextBtn) nextBtn.click();
+            }
+            if (navPrev) navPrev.addEventListener('click', function() { clickAdjacentQNum(-1); });
+            if (navNext) navNext.addEventListener('click', function() { clickAdjacentQNum(1); });
 
             const rightPane = document.querySelector('.exam-right-pane');
             const scrollTarget = rightPane || window;
@@ -3830,33 +3827,16 @@
         });
 
         function countUnansweredQuestions() {
-            const form = document.querySelector('#question-container form');
-            if (!form) return 0;
+            // Badge bilan bir xil: slotlar (blank/match/MCQ), question ID emas.
+            // Oldin faqat answer_* / match_* IDlar sanardi — fill-in blanklar e'tiborsiz
+            // qolib, 20/21 answered bo'lsa ham "12 ta javobsiz" chiqardi.
             const totalEl = document.getElementById('answered-badge');
             const total = totalEl ? parseInt(totalEl.getAttribute('data-total-questions') || totalEl.getAttribute('data-total-blanks') || '0', 10) : 0;
             if (total <= 0) return 0;
-            const answeredIds = new Set();
-            form.querySelectorAll('input[type="radio"]:checked').forEach(function(inp) {
-                const m = inp.name.match(/answer_(\d+)/);
-                if (m) answeredIds.add(m[1]);
-            });
-            form.querySelectorAll('input[type="text"][name^="answer_"], input[name^="answer_"][type="text"], textarea[name^="answer_"]').forEach(function(inp) {
-                if ((inp.value || '').trim() === '') return;
-                const m = inp.name.match(/answer_(\d+)/);
-                if (m) answeredIds.add(m[1]);
-            });
-            form.querySelectorAll('select[name^="match_"]').forEach(function(sel) {
-                if ((sel.value || '').trim()) {
-                    const m = sel.name.match(/match_(\d+)/);
-                    if (m) answeredIds.add(m[1]);
-                }
-            });
-            // List selection (multiple checkbox) — kamida 1 ta tanlangan bo'lsa savol answered hisoblanadi
-            form.querySelectorAll('input[type="checkbox"][name^="list_"]:checked').forEach(function(cb) {
-                const m = cb.name.match(/list_(\d+)_/);
-                if (m) answeredIds.add(m[1]);
-            });
-            return Math.max(0, total - answeredIds.size);
+            const answered = (typeof window.__updateAnsweredBadge === 'function')
+                ? (window.__updateAnsweredBadge() || 0)
+                : 0;
+            return Math.max(0, total - answered);
         }
 
         function initSubmitConfirm() {

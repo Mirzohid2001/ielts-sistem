@@ -10,19 +10,20 @@ from django.db.models import Value
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
-from django.db import transaction
+from django.db import transaction, connection
 from django.views.decorators.http import require_POST
 from datetime import timedelta, datetime
 from calendar import monthrange
 import json
 import re
+import threading
 from .models import (
     Category, VideoLesson, Test, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
     Bookmark, StudyStreak, VideoNote, VideoRating,
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard,
     SATResource, SATResourceProgress, SATResourceBookmark, SATResourceNote,
-    AIWritingFeedback,
+    AIWritingFeedback, AIAnswerExplanation, AITestInsight,
 )
 from .access import get_user_module_access
 from .media_streaming import get_direct_media_url, serve_protected_media
@@ -32,6 +33,24 @@ from .services.ai_writing_feedback import (
     schedule_writing_feedback_generation,
     load_writing_feedback_for_result,
     writing_feedback_is_stale_pending,
+)
+from .services.ai_rl_explanation import (
+    collect_wrong_review_items,
+    ensure_answer_explanations_for_result,
+    ensure_insight_placeholder,
+    explanation_slot_key,
+    explanations_by_slot_key,
+    explanations_is_stale_pending,
+    explanations_pending,
+    generate_test_insight,
+    load_answer_explanations,
+    load_test_insight,
+    prepare_answer_explanation_placeholders,
+    render_explanation_fragments,
+    render_insight_html,
+    schedule_answer_explanations,
+    schedule_single_explanation,
+    supports_answer_explanations,
 )
 from .services.writing_progress import build_writing_progress_summary
 from .services.writing_chat_coach import coach_chat_remaining
@@ -509,7 +528,8 @@ def _listening_flat_dock_buttons(question_cards):
                 out.append({
                     'num': gn,
                     'question_id': f'question-{first}',
-                    'card_anchor': str(first),
+                    # Har bir global raqam alohida — dockda faqat joriy slot active bo'lishi uchun
+                    'card_anchor': str(gn),
                     'is_blank': False,
                 })
         elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
@@ -518,7 +538,7 @@ def _listening_flat_dock_buttons(question_cards):
                 out.append({
                     'num': gn,
                     'question_id': f'question-{first}',
-                    'card_anchor': str(first),
+                    'card_anchor': str(gn),
                     'is_blank': False,
                 })
         elif card.get('mcq_dual_slots'):
@@ -527,7 +547,7 @@ def _listening_flat_dock_buttons(question_cards):
                 out.append({
                     'num': num,
                     'question_id': f'question-{do}',
-                    'card_anchor': str(do),
+                    'card_anchor': str(num),
                     'is_blank': False,
                 })
         else:
@@ -1561,6 +1581,9 @@ def test_take(request, pk):
             if session_scores['writing_only']:
                 prepare_writing_feedback_placeholders(test_result)
                 schedule_writing_feedback_generation(test_result.pk)
+            elif supports_answer_explanations(test):
+                prepare_answer_explanation_placeholders(test_result)
+                schedule_answer_explanations(test_result.pk)
 
             return redirect('core:test_result', pk=test_result.pk)
         else:
@@ -2114,7 +2137,7 @@ def test_take(request, pk):
                             blank_buttons.append({
                                 'num': gn,
                                 'question_id': f'question-{first}',
-                                'card_anchor': str(first),
+                                'card_anchor': str(gn),
                                 'is_blank': False,
                             })
                     elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
@@ -2123,7 +2146,7 @@ def test_take(request, pk):
                             blank_buttons.append({
                                 'num': gn,
                                 'question_id': f'question-{first}',
-                                'card_anchor': str(first),
+                                'card_anchor': str(gn),
                                 'is_blank': False,
                             })
                     elif card.get('mcq_dual_slots'):
@@ -2132,7 +2155,7 @@ def test_take(request, pk):
                             blank_buttons.append({
                                 'num': num,
                                 'question_id': f'question-{do}',
-                                'card_anchor': str(do),
+                                'card_anchor': str(num),
                                 'is_blank': False,
                             })
                     else:
@@ -2150,19 +2173,19 @@ def test_take(request, pk):
                 if card.get('fill_multi_slots') and card.get('fill_global_nums'):
                     first = card['fill_global_nums'][0]
                     for gn in card['fill_global_nums']:
-                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
+                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(gn), 'is_blank': False})
                 elif card.get('matching_multi_slots') and card.get('matching_global_nums'):
                     first = card['matching_global_nums'][0]
                     for gn in card['matching_global_nums']:
-                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
+                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(gn), 'is_blank': False})
                 elif card.get('summary_box_multi_slots') and card.get('summary_box_global_nums'):
                     first = card['summary_box_global_nums'][0]
                     for gn in card['summary_box_global_nums']:
-                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(first), 'is_blank': False})
+                        blank_buttons.append({'num': gn, 'question_id': f'question-{first}', 'card_anchor': str(gn), 'is_blank': False})
                 elif card.get('mcq_dual_slots'):
                     end = card.get('mcq_slot_end') or card.get('display_order_2') or (do + 1)
                     for num in range(do, int(end) + 1):
-                        blank_buttons.append({'num': num, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
+                        blank_buttons.append({'num': num, 'question_id': f'question-{do}', 'card_anchor': str(num), 'is_blank': False})
                 else:
                     blank_buttons.append({'num': do, 'question_id': f'question-{do}', 'card_anchor': str(do), 'is_blank': False})
         pg['blank_buttons'] = blank_buttons
@@ -2507,6 +2530,123 @@ def regenerate_writing_feedback(request, pk):
 
 
 @login_required
+def answer_explanation_status(request, pk):
+    """Reading/Listening AI tushuntirish holati."""
+    test_result = get_object_or_404(UserTestResult, pk=pk, user=request.user)
+    if not supports_answer_explanations(test_result.test):
+        return JsonResponse({'pending': False, 'completed': True, 'failed': False, 'fragments': {}})
+
+    items = load_answer_explanations(test_result)
+    insight = load_test_insight(test_result)
+    if insight is None:
+        insight = ensure_insight_placeholder(test_result)
+
+    any_failed = any(i.status == AIAnswerExplanation.STATUS_FAILED for i in items)
+    any_pending = any(i.status == AIAnswerExplanation.STATUS_PENDING for i in items)
+    insight_needs = insight.status in (
+        AITestInsight.STATUS_PENDING,
+        AITestInsight.STATUS_FAILED,
+    ) or not (insight.summary or '').strip()
+    stale = explanations_is_stale_pending(test_result)
+
+    # Insight/card ishlamay qolgan bo'lsa — qayta ishga tushirish
+    if (
+        stale
+        or (any_failed and not any_pending)
+        or insight_needs
+        or request.GET.get('retry') == '1'
+        or not items
+    ):
+        ensure_answer_explanations_for_result(test_result)
+        items = load_answer_explanations(test_result)
+        insight = load_test_insight(test_result) or ensure_insight_placeholder(test_result)
+
+    # Faqat "active" completed (orphanlar ham completed bo'ladi)
+    statuses = [i.status for i in items]
+    any_failed = AIAnswerExplanation.STATUS_FAILED in statuses
+    any_pending = AIAnswerExplanation.STATUS_PENDING in statuses
+    any_completed = AIAnswerExplanation.STATUS_COMPLETED in statuses
+    all_cards_done = bool(items) and not any_pending and not any_failed
+    # items yo'q + wrong yo'q → cards done
+    if not items and not collect_wrong_review_items(test_result):
+        all_cards_done = True
+    terminal_failed = bool(items) and all(s == AIAnswerExplanation.STATUS_FAILED for s in statuses)
+
+    insight_pending = insight.status in (
+        AITestInsight.STATUS_PENDING,
+        AITestInsight.STATUS_FAILED,
+    ) or not (insight.summary or '').strip()
+    insight_done = (
+        insight.status == AITestInsight.STATUS_COMPLETED
+        and bool((insight.summary or '').strip())
+    )
+
+    payload = {
+        'pending': any_pending or insight_pending or (any_failed and not all_cards_done),
+        # Insight None hech qachon completed emas
+        'completed': all_cards_done and insight_done,
+        'failed': terminal_failed and not insight_pending and not any_pending,
+        'partial': (any_completed and any_pending) or (insight_done and any_pending),
+        'stale': stale,
+    }
+    if request.GET.get('fragments') == '1':
+        if items:
+            payload['fragments'] = render_explanation_fragments(items, request=request)
+        payload['insight_html'] = render_insight_html(insight, request=request)
+    return JsonResponse(payload)
+
+
+@login_required
+@require_POST
+def regenerate_answer_explanation(request, pk):
+    """Bitta AI tushuntirishni qayta yaratish (faqat shu slot)."""
+    obj = get_object_or_404(
+        AIAnswerExplanation.objects.select_related('test_result', 'test_result__test', 'question'),
+        pk=pk,
+        test_result__user=request.user,
+    )
+    if not supports_answer_explanations(obj.test_result.test):
+        return JsonResponse({'ok': False, 'error': 'Faqat reading/listening.'}, status=400)
+
+    obj.status = AIAnswerExplanation.STATUS_PENDING
+    obj.save(update_fields=['status', 'updated_at'])
+    schedule_single_explanation(obj.pk)
+    return JsonResponse({'ok': True, 'pending': True, 'slot_key': obj.slot_key})
+
+
+@login_required
+@require_POST
+def regenerate_rl_insight(request, pk):
+    """Reading/Listening umumiy AI xulosani fonida qayta yaratish."""
+    test_result = get_object_or_404(UserTestResult, pk=pk, user=request.user)
+    if not supports_answer_explanations(test_result.test):
+        return JsonResponse({'ok': False, 'error': 'Faqat reading/listening.'}, status=400)
+
+    insight = ensure_insight_placeholder(test_result)
+    insight.status = AITestInsight.STATUS_PENDING
+    insight.summary = ''
+    insight.save(update_fields=['status', 'summary', 'updated_at'])
+
+    def _run():
+        try:
+            generate_test_insight(test_result, force=True)
+        finally:
+            connection.close()
+
+    try:
+        transaction.on_commit(lambda: threading.Thread(target=_run, daemon=True).start())
+    except Exception:
+        threading.Thread(target=_run, daemon=True).start()
+
+    return JsonResponse({
+        'ok': True,
+        'pending': True,
+        'status': insight.status,
+        'insight_html': render_insight_html(insight, request=request),
+    })
+
+
+@login_required
 @require_POST
 def save_feedback_flashcards(request, pk):
     """AI vocabulary_upgrades dan flashcard yaratish."""
@@ -2716,6 +2856,9 @@ def test_result(request, pk):
                 if session_scores['writing_only']:
                     prepare_writing_feedback_placeholders(test_result)
                     schedule_writing_feedback_generation(test_result.pk)
+                elif supports_answer_explanations(test_result.test):
+                    prepare_answer_explanation_placeholders(test_result)
+                    schedule_answer_explanations(test_result.pk)
         except Exception as e:
             messages.error(request, f'Xatolik yuz berdi: {str(e)}')
             return redirect('core:test_detail', pk=test_result.test.pk)
@@ -2755,6 +2898,16 @@ def test_result(request, pk):
         request.user,
         writing_feedback_items,
     )
+
+    ai_explain_items = []
+    ai_explain_by_key = {}
+    ai_explain_pending = False
+    ai_test_insight = None
+    if supports_answer_explanations(test_result.test):
+        ai_explain_items = ensure_answer_explanations_for_result(test_result)
+        ai_explain_by_key = explanations_by_slot_key(ai_explain_items)
+        ai_test_insight = load_test_insight(test_result) or ensure_insight_placeholder(test_result)
+        ai_explain_pending = explanations_pending(ai_explain_items, ai_test_insight)
     
     # Vaqtni formatlash
     time_taken_hours = None
@@ -2836,6 +2989,8 @@ def test_result(request, pk):
     ordered_questions = insight_questions
     question_display_num = {q.pk: i + 1 for i, q in enumerate(ordered_questions)}
     review_items = build_review_items(insight_questions, user_answers)
+    for ri in review_items:
+        ri['explanation_key'] = explanation_slot_key(ri)
 
     review_counts = {'correct': 0, 'wrong': 0, 'partial': 0, 'empty': 0, 'pending': 0}
     for ri in review_items:
@@ -2890,6 +3045,10 @@ def test_result(request, pk):
         'writing_feedback_pending': writing_feedback_pending,
         'writing_comparison_by_answer_id': writing_comparison_by_answer_id,
         'writing_overall_comparison': writing_overall_comparison,
+        'ai_explain_by_key': ai_explain_by_key,
+        'ai_explain_pending': ai_explain_pending,
+        'ai_test_insight': ai_test_insight,
+        'is_rl_test': supports_answer_explanations(test_result.test),
         'feedback_regenerate_remaining': (
             feedback_regenerate_remaining(request.user)
             if test_result.test.test_type == 'writing'

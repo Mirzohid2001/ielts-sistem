@@ -8,7 +8,9 @@
 <canvas id="tr-confetti" class="tr-confetti d-none" aria-hidden="true"></canvas>
 <div class="container mt-4 test-flow-page" id="tr-review-root"
      {% if test_result.is_passed and not writing_score_pending %}data-pass-celebrate="1"{% endif %}
-     {% if is_writing_test %}data-writing-test="1" data-status-url="{% url 'core:writing_feedback_status' test_result.pk %}?fragments=1" data-regen-url="{% url 'core:regenerate_writing_feedback' test_result.pk %}" data-flashcards-url-pattern="{% url 'core:save_feedback_flashcards' 0 %}" data-chat-url-pattern="{% url 'core:writing_coach_chat' 0 %}" data-feedback-pending="{% if writing_feedback_pending %}1{% else %}0{% endif %}"{% endif %}>
+     {% if is_writing_test %}data-writing-test="1" data-status-url="{% url 'core:writing_feedback_status' test_result.pk %}?fragments=1" data-regen-url="{% url 'core:regenerate_writing_feedback' test_result.pk %}" data-flashcards-url-pattern="{% url 'core:save_feedback_flashcards' 0 %}" data-chat-url-pattern="{% url 'core:writing_coach_chat' 0 %}" data-feedback-pending="{% if writing_feedback_pending %}1{% else %}0{% endif %}"{% endif %}
+     {% if is_rl_test %}data-rl-test="1" data-rl-status-url="{% url 'core:answer_explanation_status' test_result.pk %}?fragments=1" data-rl-regen-url="{% url 'core:regenerate_answer_explanation' 0 %}" data-rl-insight-regen-url="{% url 'core:regenerate_rl_insight' test_result.pk %}" data-rl-pending="{% if ai_explain_pending %}1{% else %}0{% endif %}"{% endif %}>
+    {% csrf_token %}
     <div id="tr-toast-stack" class="tr-toast-stack" aria-live="polite" aria-atomic="true"></div>
     <div class="row">
         <div class="col-12 col-md-10 mx-auto">
@@ -172,6 +174,19 @@
                     {% endif %}
                 </div>
             </div>
+
+            {% if is_rl_test %}
+            <div id="tr-rl-insight-host" class="mb-4">
+                {% if ai_test_insight %}
+                {% include 'core/tests/partials/rl_ai_insight.html' with insight=ai_test_insight %}
+                {% else %}
+                <section class="tr-rl-insight tr-rl-insight--pending" id="tr-rl-insight">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Umumiy AI tahlil tayyorlanmoqda…</span>
+                </section>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <div class="card tr-review">
                 <div class="tr-review__head">
@@ -351,6 +366,14 @@
                                     {{ question.explanation|linebreaks }}
                                 </div>
                             </div>
+                            {% endif %}
+
+                            {% if is_rl_test and card_state == 'wrong' %}
+                            {% with expl=ai_explain_by_key|get_item:item.explanation_key %}
+                            <div class="tr-rl-ai-wrap" data-rl-slot="{{ item.explanation_key }}">
+                                {% include 'core/tests/partials/answer_ai_explanation.html' with explanation=expl show_regen=True %}
+                            </div>
+                            {% endwith %}
                             {% endif %}
 
                             {% if question.question_type == 'essay' and item.answer %}
@@ -920,6 +943,162 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
   bindCoachChat(document);
   if (root.dataset.feedbackPending === '1') {
     startPolling();
+  }
+})();
+</script>
+{% endif %}
+{% if is_rl_test %}
+<script>
+(function () {
+  const root = document.getElementById('tr-review-root');
+  if (!root || root.dataset.rlTest !== '1') return;
+  const statusUrl = root.dataset.rlStatusUrl;
+  const regenPattern = root.dataset.rlRegenUrl || '';
+  const insightRegenUrl = root.dataset.rlInsightRegenUrl || '';
+  let tries = 0;
+  const maxTries = 90;
+  let doneToastShown = false;
+
+  function getCsrfToken() {
+    const input = document.querySelector('#tr-review-root [name=csrfmiddlewaretoken]');
+    if (input && input.value) return input.value;
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  function applyRlFragments(fragments) {
+    const nodes = document.querySelectorAll('[data-rl-slot]');
+    Object.keys(fragments || {}).forEach(function (slotKey) {
+      nodes.forEach(function (el) {
+        if (el.getAttribute('data-rl-slot') === slotKey) {
+          el.innerHTML = fragments[slotKey];
+        }
+      });
+    });
+    bindRlRegen(document);
+  }
+
+  function applyInsight(html) {
+    const host = document.getElementById('tr-rl-insight-host');
+    if (host && html) {
+      host.innerHTML = html;
+      bindRlRegen(host);
+    }
+  }
+
+  function hasPendingUi() {
+    return !!document.querySelector('.tr-rl-ai--pending, .tr-rl-ai--failed, .tr-rl-insight--pending, .tr-rl-insight--failed');
+  }
+
+  function pollRl() {
+    if (!statusUrl || tries++ >= maxTries) return;
+    var fetchUrl = statusUrl;
+    if (tries > 1 && tries % 8 === 0) {
+      fetchUrl += (statusUrl.indexOf('?') >= 0 ? '&' : '?') + 'retry=1';
+    }
+    fetch(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.fragments) applyRlFragments(data.fragments);
+        if (data.insight_html) applyInsight(data.insight_html);
+        if (data.completed) {
+          if (!doneToastShown && ((data.fragments && Object.keys(data.fragments).length) || data.insight_html)) {
+            doneToastShown = true;
+            const toast = document.getElementById('tr-toast-stack');
+            if (toast) {
+              const t = document.createElement('div');
+              t.className = 'tr-toast tr-toast--success is-visible';
+              t.textContent = 'AI tahlil tayyor!';
+              toast.appendChild(t);
+              setTimeout(function () { t.remove(); }, 3500);
+            }
+          }
+          return;
+        }
+        if (data.pending || data.partial || data.failed || hasPendingUi()) {
+          setTimeout(pollRl, data.stale ? 4000 : 2800);
+        }
+      })
+      .catch(function () { setTimeout(pollRl, 3000); });
+  }
+
+  function startRlPolling() {
+    tries = 0;
+    doneToastShown = false;
+    setTimeout(pollRl, 800);
+  }
+
+  function regenUrlFor(id) {
+    return (regenPattern || '').replace('/0/', '/' + id + '/');
+  }
+
+  function bindRlRegen(scope) {
+    (scope || document).querySelectorAll('[data-rl-regen]').forEach(function (btn) {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', function () {
+        const id = btn.getAttribute('data-rl-regen');
+        const url = regenUrlFor(id);
+        if (!url || btn.disabled) return;
+        btn.disabled = true;
+        const wrap = btn.closest('[data-rl-slot]');
+        if (wrap) {
+          wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--pending"><i class="fas fa-spinner fa-spin"></i><span>Qayta generatsiya…</span></div>';
+        }
+        fetch(url, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin',
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) {
+              if (wrap) {
+                wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--failed"><i class="fas fa-triangle-exclamation"></i><span>Qayta generatsiya xato. Yangilang.</span></div>';
+              }
+              btn.disabled = false;
+              return;
+            }
+            startRlPolling();
+          })
+          .catch(function () {
+            if (wrap) {
+              wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--failed"><i class="fas fa-triangle-exclamation"></i><span>Tarmoq xatosi.</span></div>';
+            }
+            btn.disabled = false;
+          });
+      });
+    });
+
+    (scope || document).querySelectorAll('[data-rl-regen-insight]').forEach(function (btn) {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', function () {
+        if (!insightRegenUrl || btn.disabled) return;
+        btn.disabled = true;
+        const host = document.getElementById('tr-rl-insight-host');
+        if (host) {
+          host.innerHTML = '<section class="tr-rl-insight tr-rl-insight--pending"><i class="fas fa-spinner fa-spin"></i><span>Xulosa yangilanmoqda…</span></section>';
+        }
+        fetch(insightRegenUrl, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin',
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.insight_html) applyInsight(data.insight_html);
+            else startRlPolling();
+            btn.disabled = false;
+          })
+          .catch(function () { btn.disabled = false; startRlPolling(); });
+      });
+    });
+  }
+
+  bindRlRegen(document);
+  if (root.dataset.rlPending === '1' || hasPendingUi()) {
+    startRlPolling();
   }
 })();
 </script>
