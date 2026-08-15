@@ -9,6 +9,22 @@ from core.services.essay_highlight import build_highlighted_essay_html
 register = template.Library()
 
 
+@register.simple_tag(takes_context=True)
+def ai_t(context, uz, ru):
+    """AI UI matni: natija tiliga qarab o'zbekcha yoki ruscha."""
+    lang = str(context.get('ai_lang') or '').strip().lower()
+    if not lang:
+        for key in ('test_result', 'feedback', 'explanation', 'insight'):
+            obj = context.get(key)
+            if obj is None:
+                continue
+            tr = obj if key == 'test_result' else getattr(obj, 'test_result', None)
+            lang = str(getattr(tr, 'ai_language', '') or '').strip().lower()
+            if lang:
+                break
+    return ru if lang == 'ru' else uz
+
+
 @register.filter
 def highlight_essay_corrections(essay_text, feedback):
     """Essay matnida AI xatolar va tuzatishlarni belgilash."""

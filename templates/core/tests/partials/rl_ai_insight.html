@@ -1,11 +1,12 @@
+{% load core_filters %}
 {% if insight and insight.status == 'completed' %}
 <section class="tr-rl-insight" id="tr-rl-insight">
     <div class="tr-rl-insight__head">
         <div>
             <span class="tr-rl-insight__badge"><i class="fas fa-brain"></i> AI coach</span>
-            <h3 class="tr-rl-insight__title">Umumiy tahlil</h3>
+            <h3 class="tr-rl-insight__title">{% ai_t "Umumiy tahlil" "Общий разбор" %}</h3>
         </div>
-        <button type="button" class="tr-rl-ai__regen" data-rl-regen-insight="1" title="Xulosani yangilash">
+        <button type="button" class="tr-rl-ai__regen" data-rl-regen-insight="1" title="{% ai_t 'Xulosani yangilash' 'Обновить вывод' %}">
             <i class="fas fa-rotate" aria-hidden="true"></i>
         </button>
     </div>
@@ -18,7 +19,7 @@
     <div class="tr-rl-insight__grid">
         {% if insight.weak_types %}
         <div>
-            <h4>Zaif tomonlar</h4>
+            <h4>{% ai_t "Zaif tomonlar" "Слабые стороны" %}</h4>
             <ul>
                 {% for w in insight.weak_types %}
                 <li>
@@ -32,7 +33,7 @@
         {% endif %}
         {% if insight.strengths %}
         <div>
-            <h4>Kuchli tomonlar</h4>
+            <h4>{% ai_t "Kuchli tomonlar" "Сильные стороны" %}</h4>
             <ul>
                 {% for s in insight.strengths %}<li>{{ s }}</li>{% endfor %}
             </ul>
@@ -40,7 +41,7 @@
         {% endif %}
         {% if insight.next_steps %}
         <div>
-            <h4>Keyingi qadamlar</h4>
+            <h4>{% ai_t "Keyingi qadamlar" "Следующие шаги" %}</h4>
             <ol>
                 {% for s in insight.next_steps %}<li>{{ s }}</li>{% endfor %}
             </ol>
@@ -51,13 +52,13 @@
 {% elif insight and insight.status == 'pending' %}
 <section class="tr-rl-insight tr-rl-insight--pending" id="tr-rl-insight">
     <i class="fas fa-spinner fa-spin"></i>
-    <span>Umumiy AI tahlil tayyorlanmoqda…</span>
+    <span>{% ai_t "Umumiy AI tahlil tayyorlanmoqda…" "Общий AI-разбор готовится…" %}</span>
 </section>
 {% elif insight and insight.status == 'failed' %}
 <section class="tr-rl-insight tr-rl-insight--failed" id="tr-rl-insight">
     <div>
-        <strong>Umumiy tahlil olinmadi</strong>
-        <button type="button" class="btn btn-sm btn-outline-warning ms-2" data-rl-regen-insight="1">Qayta</button>
+        <strong>{% ai_t "Umumiy tahlil olinmadi" "Общий разбор не получен" %}</strong>
+        <button type="button" class="btn btn-sm btn-outline-warning ms-2" data-rl-regen-insight="1">{% ai_t "Qayta" "Ещё раз" %}</button>
     </div>
 </section>
 {% endif %}

@@ -1102,6 +1102,12 @@ class UserTestResult(models.Model):
     # Timer uchun
     timer_started_at = models.DateTimeField(null=True, blank=True, verbose_name="Timer boshlangan vaqt")
     timer_seconds_left = models.IntegerField(null=True, blank=True, verbose_name="Timer qolgan vaqt (soniya)")
+    ai_language = models.CharField(
+        max_length=8,
+        default='uz',
+        verbose_name="AI tili",
+        help_text="uz = o'zbekcha, ru = ruscha",
+    )
 
     class Meta:
         verbose_name = "Test Natijasi"

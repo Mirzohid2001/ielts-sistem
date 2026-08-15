@@ -13,6 +13,7 @@ from django.db import connection, transaction
 from django.template.loader import render_to_string
 
 from core.models import AIAnswerExplanation, AITestInsight
+from core.services.ai_language import language_for_result, language_still_matches, learner_language_rules, normalize_ai_lang, t
 from core.test_session_helpers import build_review_items
 
 MAX_EXPLANATIONS_PER_RESULT = 25
@@ -31,7 +32,19 @@ GEMINI_MODEL_FALLBACKS = (
 
 
 def supports_answer_explanations(test) -> bool:
-    return getattr(test, 'test_type', '') in ('reading', 'listening')
+    """Reading/Listening va essay bo'lmagan mixed writing testlar."""
+    test_type = getattr(test, 'test_type', '') or ''
+    if test_type in ('reading', 'listening'):
+        return True
+    if test_type != 'writing':
+        return False
+    questions = getattr(test, 'questions', None)
+    if questions is None or not hasattr(questions, 'exclude'):
+        return False
+    try:
+        return questions.exclude(question_type='essay').exists()
+    except Exception:
+        return False
 
 
 def explanation_slot_key(item) -> str:
@@ -141,7 +154,7 @@ def _local_explanation(item, *, skill='reading') -> dict:
         'trap': trap,
         'provider_name': 'local',
         'model_name': 'heuristic-rl-v2',
-        'raw_response_json': {'provider': 'local'},
+        'raw_response_json': {'provider': 'local', 'ai_language': 'uz'},
     }
 
 
@@ -205,20 +218,22 @@ def _call_gemini_json(prompt: str, *, model: str) -> dict:
     return parsed
 
 
-def _build_prompt(item, *, skill, passage_excerpt='') -> str:
+def _build_prompt(item, *, skill, passage_excerpt='', lang='uz') -> str:
     q = item['question']
     options = _options_blurb(q)
     user = (item.get('user_part') or '').strip() or '(no answer)'
     correct = (item.get('correct_part') or '').strip() or '—'
-    return f"""You are an expert IELTS {skill} tutor. Explain ONE wrong student answer in Uzbek (Latin script).
+    return f"""You are an expert IELTS {skill} tutor. Explain ONE wrong student answer.
+
+{learner_language_rules(lang)}
 
 Return ONLY JSON:
 {{
-  "explanation": "3-5 jumla: to'g'ri javob nima, qayerdan keladi, qisqa mini-dars",
-  "why_wrong": "1-3 jumla: foydalanuvchi javobi / tuzoq nega noto'g'ri",
-  "tip": "1 amaliy maslahat (keyingi test uchun)",
-  "evidence_quote": "matndan/savoldan qisqa iqtibos (max 15 so'z) yoki bo'sh",
-  "trap": "bu savolda odatiy distractor/tuzoq (1 jumla)"
+  "explanation": "3-5 sentences: correct answer, where it comes from, a short mini-lesson",
+  "why_wrong": "1-3 sentences: why the student answer / trap is wrong",
+  "tip": "1 practical tip for the next test",
+  "evidence_quote": "short quote from passage/question (max 15 words) or empty",
+  "trap": "typical distractor/trap for this item (1 sentence)"
 }}
 
 Skill: {skill}
@@ -236,12 +251,52 @@ Rules:
 - Be specific to THIS item; no generic filler.
 - Prefer quoting a short evidence cue from the passage when available.
 - Mention the trap (paraphrase / absolute word / opposite meaning) if relevant.
-- Keep Uzbek clear for B1–B2 students.
 """
 
 
-def generate_explanation_for_item(item, *, test) -> dict:
+def _localize_rl_explanation(payload, item, *, skill, lang='uz'):
+    lang = normalize_ai_lang(lang)
+    raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
+    raw['ai_language'] = lang
+    payload['raw_response_json'] = raw
+    if lang != 'ru':
+        return payload
+    return _local_explanation_ru(item, skill=skill, base=payload)
+
+
+def _local_explanation_ru(item, *, skill='reading', base=None):
+    payload = dict(base or {})
+    user = (item.get('user_part') or '').strip()
+    correct = (item.get('correct_part') or '').strip() or '—'
+    user_disp = user if user else '(нет ответа)'
+    qtype = getattr(item['question'], 'question_type', '') or 'question'
+    payload['explanation'] = (
+        f"Правильный ответ: «{correct}». Ваш ответ: «{user_disp}». "
+        f"В задании {qtype.replace('_', ' ')} сверяйте ключ с текстом/аудио — "
+        "важно совпадение смысла, а не похожих слов."
+    )
+    payload['why_wrong'] = (
+        f"«{user_disp}» неверно, потому что ключ — «{correct}». "
+        "Возможно, синоним или дистрактор показались доказательством."
+    )
+    payload['tip'] = (
+        'На Listening записывайте ключевые слова сразу; не ведитесь на дистракторы.'
+        if skill == 'listening'
+        else 'Найдите точное доказательство в тексте, а не похожее слово.'
+    )
+    if user and correct and user.lower() != correct.lower():
+        payload['trap'] = f"«{user_disp}» часто дистрактор — не выбирайте без подтверждения в тексте."
+    elif not user:
+        payload['trap'] = "Пустой ответ тоже теряет балл — даже при сомнении напишите лучшую догадку."
+    raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
+    raw['ai_language'] = 'ru'
+    payload['raw_response_json'] = raw
+    return payload
+
+
+def generate_explanation_for_item(item, *, test, lang='uz') -> dict:
     skill = getattr(test, 'test_type', 'reading') or 'reading'
+    lang = normalize_ai_lang(lang)
     provider = getattr(
         settings,
         'AI_WRITING_FEEDBACK_PROVIDER',
@@ -254,13 +309,14 @@ def generate_explanation_for_item(item, *, test) -> dict:
     ).strip()
 
     if provider in ('', 'local', 'heuristic', 'fallback'):
-        return _local_explanation(item, skill=skill)
+        payload = _local_explanation(item, skill=skill)
+        return _localize_rl_explanation(payload, item, skill=skill, lang=lang)
 
     passage = ''
     if skill == 'reading':
         passage = _passage_excerpt_for_question(test, item['question'])
 
-    prompt = _build_prompt(item, skill=skill, passage_excerpt=passage)
+    prompt = _build_prompt(item, skill=skill, passage_excerpt=passage, lang=lang)
     if provider == 'gemini':
         errors = []
         for model in _gemini_model_chain(model_name):
@@ -274,19 +330,26 @@ def generate_explanation_for_item(item, *, test) -> dict:
                     'trap': (data.get('trap') or '').strip()[:500],
                     'provider_name': 'gemini',
                     'model_name': model,
-                    'raw_response_json': data.get('_raw') or data,
+                    'raw_response_json': {
+                        **(data.get('_raw') or data if isinstance(data.get('_raw') or data, dict) else {}),
+                        'ai_language': lang,
+                    },
                 }
             except Exception as exc:
                 errors.append(str(exc)[:200])
                 continue
-        fallback = _local_explanation(item, skill=skill)
+        fallback = _localize_rl_explanation(
+            _local_explanation(item, skill=skill), item, skill=skill, lang=lang,
+        )
         fallback['raw_response_json'] = {
             **(fallback.get('raw_response_json') or {}),
             'gemini_errors': errors,
         }
         return fallback
 
-    return _local_explanation(item, skill=skill)
+    return _localize_rl_explanation(
+        _local_explanation(item, skill=skill), item, skill=skill, lang=lang,
+    )
 
 
 def collect_wrong_review_items(test_result, *, user_answers=None, limit=MAX_EXPLANATIONS_PER_RESULT):
@@ -399,18 +462,34 @@ def generate_single_explanation(explanation_obj, *, force=True):
     explanation_obj.save(update_fields=[
         'status', 'user_part', 'correct_part', 'display_num', 'test_answer', 'updated_at',
     ])
+    lang = language_for_result(test_result)
     try:
-        payload = generate_explanation_for_item(item, test=test_result.test)
+        payload = generate_explanation_for_item(
+            item, test=test_result.test, lang=lang,
+        )
         if not (payload.get('explanation') or '').strip():
-            payload = _local_explanation(item, skill=test_result.test.test_type)
-        explanation_obj.apply_completed(payload)
+            payload = _localize_rl_explanation(
+                _local_explanation(item, skill=test_result.test.test_type),
+                item,
+                skill=test_result.test.test_type,
+                lang=lang,
+            )
+        if language_still_matches(test_result, lang):
+            explanation_obj.apply_completed(payload)
     except Exception as exc:
         try:
-            explanation_obj.apply_completed(
-                _local_explanation(item, skill=test_result.test.test_type)
-            )
+            if language_still_matches(test_result, lang):
+                explanation_obj.apply_completed(
+                    _localize_rl_explanation(
+                        _local_explanation(item, skill=test_result.test.test_type),
+                        item,
+                        skill=test_result.test.test_type,
+                        lang=lang,
+                    )
+                )
         except Exception:
-            explanation_obj.mark_failed(str(exc))
+            if language_still_matches(test_result, lang):
+                explanation_obj.mark_failed(str(exc))
     return explanation_obj
 
 
@@ -476,16 +555,32 @@ def generate_answer_explanations_for_result(test_result, *, force=False, only_sl
         obj.save(update_fields=[
             'status', 'user_part', 'correct_part', 'display_num', 'test_answer', 'updated_at',
         ])
+        lang = language_for_result(test_result)
         try:
-            payload = generate_explanation_for_item(item, test=test_result.test)
+            payload = generate_explanation_for_item(
+                item, test=test_result.test, lang=lang,
+            )
             if not (payload.get('explanation') or '').strip():
-                payload = _local_explanation(item, skill=test_result.test.test_type)
-            obj.apply_completed(payload)
+                payload = _localize_rl_explanation(
+                    _local_explanation(item, skill=test_result.test.test_type),
+                    item,
+                    skill=test_result.test.test_type,
+                    lang=lang,
+                )
+            if language_still_matches(test_result, lang):
+                obj.apply_completed(payload)
         except Exception as exc:
             try:
-                obj.apply_completed(_local_explanation(item, skill=test_result.test.test_type))
+                if language_still_matches(test_result, lang):
+                    obj.apply_completed(_localize_rl_explanation(
+                        _local_explanation(item, skill=test_result.test.test_type),
+                        item,
+                        skill=test_result.test.test_type,
+                        lang=lang,
+                    ))
             except Exception:
-                obj.mark_failed(str(exc))
+                if language_still_matches(test_result, lang):
+                    obj.mark_failed(str(exc))
         results.append(obj)
 
     # Umumiy skill xulosa (single-slot regen emas)
@@ -509,9 +604,11 @@ def _generation_lock_held(key) -> bool:
 
 def schedule_answer_explanations(test_result_id, *, force=False):
     key = int(test_result_id)
-    # Ishlayotgan workerni o'chirmaymiz — parallel Gemini batch oldini olish
     if _generation_lock_held(key):
-        return False
+        if force:
+            _GENERATION_IN_FLIGHT.pop(key, None)
+        else:
+            return False
 
     _GENERATION_IN_FLIGHT[key] = time.monotonic()
 
@@ -575,7 +672,11 @@ def render_explanation_fragments(items, *, request=None):
     for obj in items:
         fragments[obj.slot_key] = render_to_string(
             'core/tests/partials/answer_ai_explanation.html',
-            {'explanation': obj, 'show_regen': True},
+            {
+                'explanation': obj,
+                'show_regen': True,
+                'ai_lang': language_for_result(getattr(obj, 'test_result', None)),
+            },
             request=request,
         )
     return fragments
@@ -597,7 +698,7 @@ def _type_label(qtype: str) -> str:
     return labels.get(qtype, (qtype or 'other').replace('_', ' '))
 
 
-def _local_insight(test_result, wrong_items) -> dict:
+def _local_insight(test_result, wrong_items, lang='uz') -> dict:
     skill = test_result.test.test_type
     counts = {}
     for it in wrong_items:
@@ -605,37 +706,42 @@ def _local_insight(test_result, wrong_items) -> dict:
         counts[qt] = counts.get(qt, 0) + 1
     ranked = sorted(counts.items(), key=lambda x: (-x[1], x[0]))
     weak = [{
-        'type': t,
-        'label': _type_label(t),
+        'type': qtype,
+        'label': _type_label(qtype),
         'count': c,
-        'note': f'{c} ta xato — bu turda ko‘proq mashq qiling.',
-    } for t, c in ranked[:5]]
+        'note': t(lang, f'{c} ta xato — bu turda ko‘proq mashq qiling.', f'{c} ошибок — потренируйте этот тип заданий.'),
+    } for qtype, c in ranked[:5]]
     pct = float(getattr(test_result, 'percentage', 0) or 0)
     strengths = []
     if pct >= 70:
-        strengths.append('Umumiy natija yaxshi — endi aniq zaif turlar ustida ishlang.')
+        strengths.append(t(lang, 'Umumiy natija yaxshi — endi aniq zaif turlar ustida ishlang.', 'Общий результат хороший — теперь работайте над слабыми типами.'))
     elif pct >= 40:
-        strengths.append('Baza bor; xatolarni tahlil qilib ballni tez oshirishingiz mumkin.')
+        strengths.append(t(lang, 'Baza bor; xatolarni tahlil qilib ballni tez oshirishingiz mumkin.', 'База есть; разбор ошибок быстро поднимет балл.'))
     else:
-        strengths.append('Hozir asosiy strategiyani mustahkamlash vaqti.')
+        strengths.append(t(lang, 'Hozir asosiy strategiyani mustahkamlash vaqti.', 'Сейчас время закрепить базовую стратегию.'))
     if not wrong_items:
-        strengths = ['Barcha javoblar to‘g‘ri — ajoyib!']
+        strengths = [t(lang, 'Barcha javoblar to‘g‘ri — ajoyib!', 'Все ответы верны — отлично!')]
         weak = []
     next_steps = [
-        'Har bir AI tushuntirishdagi «tuzoq»ni eslab qoling.',
-        'Zaif tur bo‘yicha 2–3 ta qo‘shimcha test ishlang.',
-        'Keyword + synonym jadvalini o‘zingiz yozib boring.',
+        t(lang, 'Har bir AI tushuntirishdagi «tuzoq»ni eslab qoling.', 'Запомните «ловушку» из каждого AI-разбора.'),
+        t(lang, 'Zaif tur bo‘yicha 2–3 ta qo‘shimcha test ishlang.', 'Сделайте ещё 2–3 теста по слабому типу.'),
+        t(lang, 'Keyword + synonym jadvalini o‘zingiz yozib boring.', 'Составьте свою таблицу keyword + synonym.'),
     ]
     if skill == 'listening':
-        next_steps[0] = 'Listeningda distractor eshitilganda darhol chiqarib tashlashni mashq qiling.'
-    summary = (
-        f"{skill.title()} natijangiz: {pct:.0f}%. "
-        f"Jami {len(wrong_items)} ta tahlil qilingan xato. "
-        + (f"Eng zaif: {_type_label(ranked[0][0])}." if ranked else 'Xato yo‘q.')
+        next_steps[0] = t(lang, 'Listeningda distractor eshitilganda darhol chiqarib tashlashni mashq qiling.', 'На Listening сразу отсекайте дистрактор, как только его услышали.')
+    summary = t(
+        lang,
+        f"{skill.title()} natijangiz: {pct:.0f}%. Jami {len(wrong_items)} ta tahlil qilingan xato. "
+        + (f"Eng zaif: {_type_label(ranked[0][0])}." if ranked else 'Xato yo‘q.'),
+        f"Результат {skill.title()}: {pct:.0f}%. Разобрано ошибок: {len(wrong_items)}. "
+        + (f"Самый слабый тип: {_type_label(ranked[0][0])}." if ranked else 'Ошибок нет.'),
     )
-    focus = (
+    focus = t(
+        lang,
         f"Keyingi 3 kunda asosan «{_type_label(ranked[0][0])}» ustida ishlang."
-        if ranked else 'Keyingi testda tezlikni saqlab, diqqatni chalg‘itmang.'
+        if ranked else 'Keyingi testda tezlikni saqlab, diqqatni chalg‘itmang.',
+        f"В ближайшие 3 дня работайте в основном над «{_type_label(ranked[0][0])}»."
+        if ranked else 'На следующем тесте держите темп и не теряйте концентрацию.',
     )
     return {
         'summary': summary,
@@ -645,11 +751,11 @@ def _local_insight(test_result, wrong_items) -> dict:
         'focus_tip': focus,
         'provider_name': 'local',
         'model_name': 'heuristic-insight-v1',
-        'raw_response_json': {'provider': 'local', 'wrong_counts': counts},
+        'raw_response_json': {'provider': 'local', 'wrong_counts': counts, 'ai_language': lang},
     }
 
 
-def _build_insight_prompt(test_result, wrong_items) -> str:
+def _build_insight_prompt(test_result, wrong_items, lang='uz') -> str:
     skill = test_result.test.test_type
     lines = []
     for it in wrong_items[:15]:
@@ -658,15 +764,17 @@ def _build_insight_prompt(test_result, wrong_items) -> str:
             f"- #{it.get('display_num')} type={q.question_type} "
             f"user={it.get('user_part') or '—'} correct={it.get('correct_part') or '—'}"
         )
-    return f"""You are an IELTS {skill} coach. Summarize this student's result in Uzbek (Latin).
+    return f"""You are an IELTS {skill} coach. Summarize this student's result.
+
+{learner_language_rules(lang)}
 
 Return ONLY JSON:
 {{
-  "summary": "3-5 jumla umumiy xulosa",
-  "weak_types": [{{"type":"mcq","label":"Multiple Choice","count":3,"note":"qisqa izoh"}}],
-  "strengths": ["1-3 kuchli tomon"],
-  "next_steps": ["3-5 amaliy qadam"],
-  "focus_tip": "1 asosiy e'tibor nuqtasi"
+  "summary": "3-5 sentences overall summary",
+  "weak_types": [{{"type":"mcq","label":"Multiple Choice","count":3,"note":"short note"}}],
+  "strengths": ["1-3 strengths"],
+  "next_steps": ["3-5 practical steps"],
+  "focus_tip": "1 main focus point"
 }}
 
 Score: {getattr(test_result, 'percentage', 0)}%
@@ -704,9 +812,11 @@ def generate_test_insight(test_result, *, wrong_items=None, force=False) -> AITe
         os.environ.get('AI_WRITING_FEEDBACK_MODEL', 'gemini-2.5-flash'),
     ).strip()
 
+    lang = language_for_result(test_result)
+
     try:
         if provider == 'gemini':
-            prompt = _build_insight_prompt(test_result, wrong_items)
+            prompt = _build_insight_prompt(test_result, wrong_items, lang=lang)
             last_err = None
             for model in _gemini_model_chain(model_name):
                 try:
@@ -722,29 +832,37 @@ def generate_test_insight(test_result, *, wrong_items=None, force=False) -> AITe
                         'focus_tip': (data.get('focus_tip') or '').strip(),
                         'provider_name': 'gemini',
                         'model_name': model,
-                        'raw_response_json': data.get('_raw') or data,
+                        'raw_response_json': {
+                            **(data.get('_raw') or data if isinstance(data.get('_raw') or data, dict) else {}),
+                            'ai_language': lang,
+                        },
                     }
                     if not payload['summary']:
                         raise ValueError('empty summary')
-                    insight.apply_completed(payload)
+                    if language_still_matches(test_result, lang):
+                        insight.apply_completed(payload)
                     return insight
                 except Exception as exc:
                     last_err = exc
                     continue
-            payload = _local_insight(test_result, wrong_items)
+            payload = _local_insight(test_result, wrong_items, lang=lang)
             payload['raw_response_json'] = {
                 **(payload.get('raw_response_json') or {}),
                 'gemini_error': str(last_err)[:300] if last_err else '',
             }
-            insight.apply_completed(payload)
+            if language_still_matches(test_result, lang):
+                insight.apply_completed(payload)
             return insight
-        insight.apply_completed(_local_insight(test_result, wrong_items))
+        if language_still_matches(test_result, lang):
+            insight.apply_completed(_local_insight(test_result, wrong_items, lang=lang))
         return insight
     except Exception as exc:
         try:
-            insight.apply_completed(_local_insight(test_result, wrong_items))
+            if language_still_matches(test_result, lang):
+                insight.apply_completed(_local_insight(test_result, wrong_items, lang=lang))
         except Exception:
-            insight.mark_failed(str(exc))
+            if language_still_matches(test_result, lang):
+                insight.mark_failed(str(exc))
         return insight
 
 
@@ -758,6 +876,9 @@ def load_test_insight(test_result):
 def render_insight_html(insight, *, request=None):
     return render_to_string(
         'core/tests/partials/rl_ai_insight.html',
-        {'insight': insight},
+        {
+            'insight': insight,
+            'ai_lang': language_for_result(getattr(insight, 'test_result', None)),
+        },
         request=request,
     )

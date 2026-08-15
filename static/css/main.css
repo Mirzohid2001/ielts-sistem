@@ -2386,6 +2386,42 @@ footer p {
 .tr-summary__pct.is-fail { background: #fee2e2; color: #b91c1c; }
 .tr-summary__pct.is-wait { background: #ffedd5; color: #c2410c; }
 
+.ai-lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.18rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #fff;
+    vertical-align: middle;
+}
+.ai-lang-toggle__label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b7280;
+    padding: 0 0.35rem 0 0.5rem;
+}
+.ai-lang-toggle__btn {
+    border: 0;
+    background: transparent;
+    color: #4b5563;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    cursor: pointer;
+    line-height: 1.2;
+}
+.ai-lang-toggle__btn:hover { color: #111827; }
+.ai-lang-toggle__btn.is-active {
+    background: #111827;
+    color: #fff;
+}
+.ai-lang-toggle__btn:disabled { opacity: 0.6; cursor: wait; }
+
 .tr-summary__body {
     padding: 1.25rem 1.5rem 1.5rem;
 }

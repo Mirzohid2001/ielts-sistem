@@ -12,6 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from core.services.ai_writing_feedback import _gemini_model_chain, _task_meta
+from core.services.ai_language import language_for_result, learner_language_rules, t
 
 COACH_CHAT_DAILY_LIMIT = 25
 MAX_HISTORY_TURNS = 6
@@ -32,6 +33,7 @@ def build_coach_panel_context(feedback):
 
     question = feedback.question
     meta = _task_meta(question) if question else {}
+    lang = language_for_result(getattr(feedback, 'test_result', None))
     task_type = meta.get('task_type', 'task2')
     task_label = meta.get('task_label', 'Writing')
 
@@ -43,23 +45,42 @@ def build_coach_panel_context(feedback):
     weakest = min(scored, key=lambda item: item['value']) if scored else None
 
     prompts = [
-        {'label': 'Eng katta muammo', 'text': 'Eng katta muammo nimada?'},
-        {'label': 'Band oshirish', 'text': 'Bandimni qanday oshirsam bo\'ladi?'},
+        {
+            'label': t(lang, 'Eng katta muammo', 'Главная проблема'),
+            'text': t(lang, 'Eng katta muammo nimada?', 'В чём главная проблема?'),
+        },
+        {
+            'label': t(lang, 'Band oshirish', 'Поднять балл'),
+            'text': t(lang, "Bandimni qanday oshirsam bo'ladi?", 'Как повысить балл?'),
+        },
     ]
     if weakest:
         prompts.append({
             'label': weakest['label'],
-            'text': (
-                f"{weakest['label']} mezonini qanday yaxshilayman? "
-                f"(hozirgi ball: {weakest['value']})"
+            'text': t(
+                lang,
+                f"{weakest['label']} mezonini qanday yaxshilayman? (hozirgi ball: {weakest['value']})",
+                f"Как улучшить критерий {weakest['label']}? (сейчас: {weakest['value']})",
             ),
         })
     if task_type == 'task1':
-        prompts.append({'label': 'Overview', 'text': 'Overview qanday yoziladi va misol bering?'})
-        prompts.append({'label': 'Taqqoslash', 'text': 'Diagramdagi asosiy trendlarni qanday taqqoslayman?'})
+        prompts.append({
+            'label': 'Overview',
+            'text': t(lang, 'Overview qanday yoziladi va misol bering?', 'Как писать overview? Приведите пример.'),
+        })
+        prompts.append({
+            'label': t(lang, 'Taqqoslash', 'Сравнение'),
+            'text': t(lang, 'Diagramdagi asosiy trendlarni qanday taqqoslayman?', 'Как сравнить главные тренды на диаграмме?'),
+        })
     else:
-        prompts.append({'label': 'Pozitsiya', 'text': 'Pozitsiyani qanday aniqroq bildirsam?'})
-        prompts.append({'label': 'Body paragraf', 'text': 'Body paragraf strukturasini qanday yozaman?'})
+        prompts.append({
+            'label': t(lang, 'Pozitsiya', 'Позиция'),
+            'text': t(lang, 'Pozitsiyani qanday aniqroq bildirsam?', 'Как яснее выразить позицию?'),
+        })
+        prompts.append({
+            'label': t(lang, 'Body paragraf', 'Body-абзац'),
+            'text': t(lang, 'Body paragraf strukturasini qanday yozaman?', 'Как строить body-абзац?'),
+        })
 
     return {
         'task_label': task_label,
@@ -124,13 +145,13 @@ def build_coach_context(*, feedback, essay_text):
     }
 
 
-def _local_coach_reply(message, context):
+def _local_coach_reply(message, context, lang='uz'):
     lower = message.lower()
     essay_snip = (context.get('essay_text') or '').strip()[:120]
     band = context.get('estimated_band')
-    band_txt = f"Taxminiy band: {band}." if band is not None else ''
+    band_txt = t(lang, f"Taxminiy band: {band}." if band is not None else '', f"Ориентировочный балл: {band}." if band is not None else '')
 
-    if any(w in lower for w in ('band', 'ball', 'score')):
+    if any(w in lower for w in ('band', 'ball', 'score', 'балл')):
         weak = []
         for key, label in (
             ('task_achievement', 'Task'),
@@ -141,55 +162,91 @@ def _local_coach_reply(message, context):
             val = context.get(key)
             if val is not None and val <= 5.5:
                 weak.append(label)
-        tip = f"Avval {', '.join(weak)} ustida ishlang." if weak else "Har bir paragrafda bitta asosiy fikr + misol yozing."
-        return f"{band_txt} {tip} Keyingi urinishda overview/pozitsiyani aniqroq qiling."
+        tip = (
+            t(lang, f"Avval {', '.join(weak)} ustida ishlang.", f"Сначала работайте над {', '.join(weak)}.")
+            if weak else t(lang, "Har bir paragrafda bitta asosiy fikr + misol yozing.", "В каждом абзаце одна главная идея + пример.")
+        )
+        return t(
+            lang,
+            f"{band_txt} {tip} Keyingi urinishda overview/pozitsiyani aniqroq qiling.",
+            f"{band_txt} {tip} В следующей попытке сделайте overview/позицию яснее.",
+        )
 
-    if any(w in lower for w in ('gap', 'sentence', 'jumla', 'tuzat')):
+    if any(w in lower for w in ('gap', 'sentence', 'jumla', 'tuzat', 'предложен', 'исправ')):
         corr = (context.get('sentence_corrections') or [])
         if corr:
             c = corr[0]
-            return (
-                f"Misol tuzatish: «{c.get('original', '')}» → «{c.get('corrected', '')}». "
-                f"Sabab: {c.get('why', 'academic tone')}"
+            return t(
+                lang,
+                f"Misol tuzatish: «{c.get('original', '')}» → «{c.get('corrected', '')}». Sabab: {c.get('why', 'academic tone')}",
+                f"Пример правки: «{c.get('original', '')}» → «{c.get('corrected', '')}». Почему: {c.get('why', 'academic tone')}",
             )
-        return "Essaydan bitta aniq gapni tanlang va uni academic strukturaga o'zgartiring: subject + verb + object + detail."
+        return t(
+            lang,
+            "Essaydan bitta aniq gapni tanlang va uni academic strukturaga o'zgartiring: subject + verb + object + detail.",
+            "Выберите одно предложение из эссе и перестройте его академически: subject + verb + object + detail.",
+        )
 
-    if any(w in lower for w in ('so\'z', 'vocab', 'lexical', 'vocabulary')):
+    if any(w in lower for w in ('so\'z', 'vocab', 'lexical', 'vocabulary', 'слов')):
         ups = context.get('vocabulary_upgrades') or []
         if ups:
             u = ups[0]
-            return f"«{u.get('from')}» o'rniga «{u.get('to')}» ishlating. {u.get('why', '')}"
-        return "Oddiy so'zlarni academic sinonimlarga almashtiring: good→significant, a lot of→numerous, think→argue."
+            return t(
+                lang,
+                f"«{u.get('from')}» o'rniga «{u.get('to')}» ishlating. {u.get('why', '')}",
+                f"Вместо «{u.get('from')}» используйте «{u.get('to')}». {u.get('why', '')}",
+            )
+        return t(
+            lang,
+            "Oddiy so'zlarni academic sinonimlarga almashtiring: good→significant, a lot of→numerous, think→argue.",
+            "Замените простые слова академическими синонимами: good→significant, a lot of→numerous, think→argue.",
+        )
 
-    if any(w in lower for w in ('overview', 'umumiy', 'trend', 'diagram', 'chart', 'graph')):
-        return (
+    if any(w in lower for w in ('overview', 'umumiy', 'trend', 'diagram', 'chart', 'graph', 'обзор')):
+        return t(
+            lang,
             "Task 1 overview uchun: 1) Umumiy trend (oshdi/kamaydi), 2) Eng katta farq, "
             "3) Hech qanday raqam bermasdan. Misol: «Overall, X increased steadily while Y remained stable.» "
-            "Keyin body paragraflarda raqamlar bilan tafsilot bering."
+            "Keyin body paragraflarda raqamlar bilan tafsilot bering.",
+            "Overview для Task 1: 1) общий тренд (вырос/снизился), 2) самый большой контраст, "
+            "3) без цифр. Пример: «Overall, X increased steadily while Y remained stable.» "
+            "Цифры дайте уже в body-параграфах.",
         )
 
-    if any(w in lower for w in ('pozitsiya', 'opinion', 'stance', 'fikr', 'body')):
-        return (
+    if any(w in lower for w in ('pozitsiya', 'opinion', 'stance', 'fikr', 'body', 'позиц', 'мнение')):
+        return t(
+            lang,
             "Task 2 struktura: Intro (background + aniq thesis), 2 ta body (har biri bitta idea + misol), "
-            "Conclusion (pozitsiyani qayta tasdiqlash). Har body: topic sentence → explanation → example."
+            "Conclusion (pozitsiyani qayta tasdiqlash). Har body: topic sentence → explanation → example.",
+            "Структура Task 2: Intro (фон + чёткий thesis), 2 body (идея + пример), "
+            "Conclusion (повтор позиции). Каждый body: topic sentence → explanation → example.",
         )
 
-    if any(w in lower for w in ('muammo', 'problem', 'xato', 'error', 'improve')):
+    if any(w in lower for w in ('muammo', 'problem', 'xato', 'error', 'improve', 'ошиб', 'проблем')):
         improvements = context.get('improvements') or []
         if improvements:
-            extra = improvements[1] if len(improvements) > 1 else 'bitta paragrafni qayta yozing.'
-            return f"Asosiy muammo: {improvements[0]}. Keyingi qadam: {extra}"
+            extra = improvements[1] if len(improvements) > 1 else t(lang, "bitta paragrafni qayta yozing.", "перепишите один абзац.")
+            return t(
+                lang,
+                f"Asosiy muammo: {improvements[0]}. Keyingi qadam: {extra}",
+                f"Главная проблема: {improvements[0]}. Следующий шаг: {extra}",
+            )
         weak = []
         for key, label in CRITERIA_FIELDS:
             val = context.get(key)
             if val is not None and val <= 6.0:
                 weak.append(f"{label} ({val})")
         if weak:
-            return f"Avval shu mezonlarga e'tibor bering: {', '.join(weak)}."
+            return t(
+                lang,
+                f"Avval shu mezonlarga e'tibor bering: {', '.join(weak)}.",
+                f"Сначала обратите внимание на эти критерии: {', '.join(weak)}.",
+            )
 
-    return (
-        f"{band_txt} Essayingiz haqida aniqroq so'rang (masalan: overview, paragraf, yoki bitta gap). "
-        f"Matn boshlanishi: «{essay_snip}…»"
+    return t(
+        lang,
+        f"{band_txt} Essayingiz haqida aniqroq so'rang (masalan: overview, paragraf, yoki bitta gap). Matn boshlanishi: «{essay_snip}…»",
+        f"{band_txt} Спросите конкретнее про эссе (overview, абзац или одно предложение). Начало текста: «{essay_snip}…»",
     )
 
 
@@ -241,10 +298,14 @@ def _call_gemini_chat(system_prompt, user_payload, *, model_name=''):
     raise ValueError("Gemini model topilmadi")
 
 
-def answer_writing_coach_question(*, feedback, essay_text, message, history=None):
+def answer_writing_coach_question(*, feedback, essay_text, message, history=None, lang=None):
     message = (message or '').strip()[:MAX_MESSAGE_LEN]
     if not message:
         raise ValueError("Savol bo'sh bo'lmasligi kerak")
+
+    if lang is None:
+        lang = language_for_result(getattr(feedback, 'test_result', None))
+    rules = learner_language_rules(lang)
 
     context = build_coach_context(feedback=feedback, essay_text=essay_text)
     history_clean = _normalize_history(history or [])
@@ -256,10 +317,10 @@ def answer_writing_coach_question(*, feedback, essay_text, message, history=None
     ).strip().lower()
 
     if provider == 'gemini' and os.environ.get('GEMINI_API_KEY', '').strip():
-        system = """You are a friendly IELTS Writing coach for Uzbek learners.
+        system = f"""You are a friendly IELTS Writing coach for learners.
 
 Rules:
-- Reply in clear Uzbek (Latin). English only for example phrases, corrections, or vocabulary.
+- {rules}
 - Use THIS essay and feedback context only — do not give generic advice.
 - Be specific: quote learner phrases when helpful.
 - Keep answers concise (3–6 short paragraphs or bullets max).
@@ -272,15 +333,18 @@ Rules:
             'user_question': message,
         }
         model_name = getattr(settings, 'AI_WRITING_FEEDBACK_MODEL', '') or os.environ.get('AI_WRITING_FEEDBACK_MODEL', '')
-        reply, model = _call_gemini_chat(system, payload, model_name=model_name)
-        return {
-            'reply': reply,
-            'provider': 'gemini',
-            'model': model,
-        }
+        try:
+            reply, model = _call_gemini_chat(system, payload, model_name=model_name)
+            return {
+                'reply': reply,
+                'provider': 'gemini',
+                'model': model,
+            }
+        except Exception:
+            pass
 
     return {
-        'reply': _local_coach_reply(message, context),
+        'reply': _local_coach_reply(message, context, lang=lang),
         'provider': 'local',
         'model': 'coach-heuristic',
     }

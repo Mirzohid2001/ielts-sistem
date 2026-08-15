@@ -52,6 +52,12 @@ from .services.ai_rl_explanation import (
     schedule_single_explanation,
     supports_answer_explanations,
 )
+from .services.ai_language import (
+    attach_ai_lang_cookie,
+    get_ai_language,
+    language_for_result,
+    persist_ai_language,
+)
 from .services.writing_progress import build_writing_progress_summary
 from .services.writing_chat_coach import coach_chat_remaining
 from .writing_result_context import (
@@ -1472,6 +1478,8 @@ def test_take(request, pk):
         # Agar test to'xtatilgan bo'lsa, davom ettirish
         if test_result.is_paused:
             test_result.resume_test()
+
+    persist_ai_language(request, test_result)
     
     # Javoblar
     answers = {}
@@ -1494,6 +1502,7 @@ def test_take(request, pk):
         )
         test_result.answers_json = answers
         test_result.save(update_fields=['answers_json'])
+        persist_ai_language(request, test_result)
 
         is_autosave = request.POST.get('autosave') == '1'
         if is_autosave:
@@ -1578,10 +1587,10 @@ def test_take(request, pk):
                 )
                 StudyStreak.update_streak(request.user)
 
-            if session_scores['writing_only']:
+            if session_scores.get('essay_total', 0) > 0:
                 prepare_writing_feedback_placeholders(test_result)
                 schedule_writing_feedback_generation(test_result.pk)
-            elif supports_answer_explanations(test):
+            if supports_answer_explanations(test):
                 prepare_answer_explanation_placeholders(test_result)
                 schedule_answer_explanations(test_result.pk)
 
@@ -2331,11 +2340,15 @@ def test_take(request, pk):
         'exam_variant': exam_variant,
         'variants_count': int(getattr(test, 'variants_to_select', 1) or 1),
         'flashcard_sets': FlashcardSet.objects.filter(user=request.user).order_by('name'),
+        'ai_lang': get_ai_language(request, test_result),
+        'show_ai_lang_toggle': test.test_type in ('writing', 'reading', 'listening'),
     }
     if test.test_type == 'listening':
         context['listening_parts_overview'] = listening_parts_overview
 
-    return render(request, 'core/tests/take.html', context)
+    response = render(request, 'core/tests/take.html', context)
+    attach_ai_lang_cookie(response, context['ai_lang'])
+    return response
 
 
 @login_required
@@ -2646,6 +2659,56 @@ def regenerate_rl_insight(request, pk):
     })
 
 
+def _mark_ai_outputs_pending(test_result):
+    """Til almashtirishda reload pending shell ko'rsin, polling ishga tushsin."""
+    if test_result.test.test_type == 'writing':
+        AIWritingFeedback.objects.filter(test_result=test_result).update(
+            status=AIWritingFeedback.STATUS_PENDING,
+            error_message='',
+        )
+    if supports_answer_explanations(test_result.test):
+        AIAnswerExplanation.objects.filter(test_result=test_result).exclude(
+            error_message='orphan-skipped',
+        ).update(status=AIAnswerExplanation.STATUS_PENDING)
+        AITestInsight.objects.filter(test_result=test_result).update(
+            status=AITestInsight.STATUS_PENDING,
+            summary='',
+        )
+
+
+@login_required
+@require_POST
+def set_ai_feedback_language(request, pk):
+    """Natija sahifasida AI tili: o'zbekcha yoki ruscha."""
+    test_result = get_object_or_404(UserTestResult, pk=pk, user=request.user)
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+    previous = language_for_result(test_result)
+    lang = persist_ai_language(
+        request,
+        test_result,
+        lang=body.get('ai_lang') or request.POST.get('ai_lang'),
+    )
+    changed = previous != lang
+    if changed:
+        _mark_ai_outputs_pending(test_result)
+        if test_result.test.test_type == 'writing':
+            schedule_writing_feedback_generation(test_result.pk, force=True)
+        if supports_answer_explanations(test_result.test):
+            schedule_answer_explanations(test_result.pk, force=True)
+
+    response = JsonResponse({
+        'ok': True,
+        'lang': lang,
+        'changed': changed,
+        'pending': changed,
+    })
+    attach_ai_lang_cookie(response, lang)
+    return response
+
+
 @login_required
 @require_POST
 def save_feedback_flashcards(request, pk):
@@ -2728,6 +2791,7 @@ def writing_coach_chat(request, pk):
             essay_text=essay_text,
             message=message,
             history=history,
+            lang=language_for_result(feedback.test_result),
         )
     except ValueError as exc:
         return JsonResponse({'ok': False, 'error': str(exc)}, status=400)
@@ -2853,10 +2917,11 @@ def test_result(request, pk):
                 )
                 # Study streak yangilash
                 StudyStreak.update_streak(request.user)
-                if session_scores['writing_only']:
+                persist_ai_language(request, test_result)
+                if session_scores.get('essay_total', 0) > 0:
                     prepare_writing_feedback_placeholders(test_result)
                     schedule_writing_feedback_generation(test_result.pk)
-                elif supports_answer_explanations(test_result.test):
+                if supports_answer_explanations(test_result.test):
                     prepare_answer_explanation_placeholders(test_result)
                     schedule_answer_explanations(test_result.pk)
         except Exception as e:
@@ -3059,6 +3124,7 @@ def test_result(request, pk):
             if test_result.test.test_type == 'writing'
             else 0
         ),
+        'ai_lang': language_for_result(test_result),
     }
     return render(request, 'core/tests/result.html', context)
 

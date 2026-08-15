@@ -1,0 +1,11 @@
+<div class="ai-lang-toggle" role="group" aria-label="AI tili">
+    <span class="ai-lang-toggle__label">AI</span>
+    <button type="button"
+            class="ai-lang-toggle__btn{% if ai_lang != 'ru' %} is-active{% endif %}"
+            data-ai-lang="uz"
+            aria-pressed="{% if ai_lang != 'ru' %}true{% else %}false{% endif %}">O'zbekcha</button>
+    <button type="button"
+            class="ai-lang-toggle__btn{% if ai_lang == 'ru' %} is-active{% endif %}"
+            data-ai-lang="ru"
+            aria-pressed="{% if ai_lang == 'ru' %}true{% else %}false{% endif %}">Русский</button>
+</div>

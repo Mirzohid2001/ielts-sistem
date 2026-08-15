@@ -1,10 +1,11 @@
+{% load core_filters %}
 {% if explanation and explanation.status == 'completed' %}
 <div class="tr-rl-ai">
     <div class="tr-rl-ai__head">
         <i class="fas fa-robot" aria-hidden="true"></i>
-        <strong>AI tushuntirish</strong>
+        <strong>{% ai_t "AI tushuntirish" "AI-разбор" %}</strong>
         {% if show_regen and explanation.pk %}
-        <button type="button" class="tr-rl-ai__regen" data-rl-regen="{{ explanation.pk }}" title="Qayta generatsiya">
+        <button type="button" class="tr-rl-ai__regen" data-rl-regen="{{ explanation.pk }}" title="{% ai_t 'Qayta generatsiya' 'Сгенерировать снова' %}">
             <i class="fas fa-rotate" aria-hidden="true"></i>
         </button>
         {% endif %}
@@ -16,10 +17,10 @@
     <blockquote class="tr-rl-ai__quote">«{{ explanation.evidence_quote }}»</blockquote>
     {% endif %}
     {% if explanation.why_wrong %}
-    <p class="tr-rl-ai__why"><span>Nega xato:</span> {{ explanation.why_wrong }}</p>
+    <p class="tr-rl-ai__why"><span>{% ai_t "Nega xato:" "Почему ошибка:" %}</span> {{ explanation.why_wrong }}</p>
     {% endif %}
     {% if explanation.trap %}
-    <p class="tr-rl-ai__trap"><span>Tuzoq:</span> {{ explanation.trap }}</p>
+    <p class="tr-rl-ai__trap"><span>{% ai_t "Tuzoq:" "Ловушка:" %}</span> {{ explanation.trap }}</p>
     {% endif %}
     {% if explanation.tip %}
     <p class="tr-rl-ai__tip"><i class="fas fa-lightbulb" aria-hidden="true"></i> {{ explanation.tip }}</p>
@@ -29,11 +30,11 @@
 <div class="tr-rl-ai tr-rl-ai--failed">
     <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
     <div class="flex-grow-1">
-        <strong>AI tushuntirish vaqtincha olinmadi</strong>
-        <p class="mb-2 mt-1">Qayta urinib ko‘ring.</p>
+        <strong>{% ai_t "AI tushuntirish vaqtincha olinmadi" "AI-разбор временно недоступен" %}</strong>
+        <p class="mb-2 mt-1">{% ai_t "Qayta urinib ko‘ring." "Попробуйте ещё раз." %}</p>
         {% if show_regen and explanation.pk %}
         <button type="button" class="btn btn-sm btn-outline-warning" data-rl-regen="{{ explanation.pk }}">
-            <i class="fas fa-rotate me-1"></i>Qayta generatsiya
+            <i class="fas fa-rotate me-1"></i>{% ai_t "Qayta generatsiya" "Сгенерировать снова" %}
         </button>
         {% endif %}
     </div>
@@ -41,6 +42,6 @@
 {% else %}
 <div class="tr-rl-ai tr-rl-ai--pending">
     <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-    <span>AI tushuntirish tayyorlanmoqda…</span>
+    <span>{% ai_t "AI tushuntirish tayyorlanmoqda…" "AI-разбор готовится…" %}</span>
 </div>
 {% endif %}

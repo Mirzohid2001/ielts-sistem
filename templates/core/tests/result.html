@@ -8,6 +8,8 @@
 <canvas id="tr-confetti" class="tr-confetti d-none" aria-hidden="true"></canvas>
 <div class="container mt-4 test-flow-page" id="tr-review-root"
      {% if test_result.is_passed and not writing_score_pending %}data-pass-celebrate="1"{% endif %}
+     data-ai-lang="{{ ai_lang|default:'uz' }}"
+     {% if is_writing_test or is_rl_test %}data-ai-lang-url="{% url 'core:set_ai_feedback_language' test_result.pk %}"{% endif %}
      {% if is_writing_test %}data-writing-test="1" data-status-url="{% url 'core:writing_feedback_status' test_result.pk %}?fragments=1" data-regen-url="{% url 'core:regenerate_writing_feedback' test_result.pk %}" data-flashcards-url-pattern="{% url 'core:save_feedback_flashcards' 0 %}" data-chat-url-pattern="{% url 'core:writing_coach_chat' 0 %}" data-feedback-pending="{% if writing_feedback_pending %}1{% else %}0{% endif %}"{% endif %}
      {% if is_rl_test %}data-rl-test="1" data-rl-status-url="{% url 'core:answer_explanation_status' test_result.pk %}?fragments=1" data-rl-regen-url="{% url 'core:regenerate_answer_explanation' 0 %}" data-rl-insight-regen-url="{% url 'core:regenerate_rl_insight' test_result.pk %}" data-rl-pending="{% if ai_explain_pending %}1{% else %}0{% endif %}"{% endif %}>
     {% csrf_token %}
@@ -18,6 +20,9 @@
             <div class="card tr-summary">
                 <div class="tr-summary__top">
                     <h2 class="tr-summary__title">{{ test_result.test.title }}</h2>
+                    {% if is_writing_test or is_rl_test %}
+                    <div class="mb-2">{% include 'core/tests/partials/ai_lang_toggle.html' %}</div>
+                    {% endif %}
 
                     {% if test_result.attempt_number > 1 %}
                     <div class="mb-2">
@@ -484,6 +489,42 @@
 {% block extra_js %}
 <script>
 document.body.setAttribute('data-show-confetti', document.querySelector('[data-pass-celebrate]') ? '1' : '0');
+(function () {
+  const root = document.getElementById('tr-review-root');
+  if (!root) return;
+  const url = root.dataset.aiLangUrl;
+  const current = root.dataset.aiLang || 'uz';
+  if (!url) return;
+  function csrf() {
+    const input = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (input && input.value) return input.value;
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+  root.querySelectorAll('[data-ai-lang]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const lang = btn.getAttribute('data-ai-lang');
+      if (!lang || lang === current || btn.disabled) return;
+      root.querySelectorAll('[data-ai-lang]').forEach(function (b) { b.disabled = true; });
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf(),
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ ai_lang: lang }),
+      }).then(function (res) {
+        if (!res.ok) throw new Error('lang');
+        return res.json();
+      }).then(function () {
+        window.location.reload();
+      }).catch(function () {
+        root.querySelectorAll('[data-ai-lang]').forEach(function (b) { b.disabled = false; });
+      });
+    });
+  });
+})();
 </script>
 {% if is_writing_test %}
 <script>

@@ -24,6 +24,7 @@ urlpatterns = [
     path('answer-explanations/<int:pk>/regenerate/', views.regenerate_answer_explanation, name='regenerate_answer_explanation'),
     path('test-results/<int:pk>/rl-insight/regenerate/', views.regenerate_rl_insight, name='regenerate_rl_insight'),
     path('test-results/<int:pk>/regenerate-writing-feedback/', views.regenerate_writing_feedback, name='regenerate_writing_feedback'),
+    path('test-results/<int:pk>/ai-lang/', views.set_ai_feedback_language, name='set_ai_feedback_language'),
     path('writing-feedback/<int:pk>/flashcards/', views.save_feedback_flashcards, name='save_feedback_flashcards'),
     path('writing-feedback/<int:pk>/chat/', views.writing_coach_chat, name='writing_coach_chat'),
     path('profile/', views.profile, name='profile'),

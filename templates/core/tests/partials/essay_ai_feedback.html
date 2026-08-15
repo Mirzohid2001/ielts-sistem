@@ -60,13 +60,13 @@
         <div class="tr-ai__split">
             {% if feedback.strengths %}
             <div class="tr-ai__box tr-ai__box--good">
-                <h3><i class="fas fa-check-circle" aria-hidden="true"></i> Nima yaxshi</h3>
+                <h3><i class="fas fa-check-circle" aria-hidden="true"></i> {% ai_t "Nima yaxshi" "Что хорошо" %}</h3>
                 <ul>{% for point in feedback.strengths %}<li>{{ point }}</li>{% endfor %}</ul>
             </div>
             {% endif %}
             {% if feedback.improvements %}
             <div class="tr-ai__box tr-ai__box--warn">
-                <h3><i class="fas fa-arrow-up" aria-hidden="true"></i> Yaxshilash</h3>
+                <h3><i class="fas fa-arrow-up" aria-hidden="true"></i> {% ai_t "Yaxshilash" "Что улучшить" %}</h3>
                 <ul>{% for point in feedback.improvements %}<li>{{ point }}</li>{% endfor %}</ul>
             </div>
             {% endif %}
@@ -77,21 +77,21 @@
             {% if feedback.writing_errors %}
             <details class="tr-ai__acc" open>
                 <summary class="tr-ai__acc-head">
-                    <span><i class="fas fa-spell-check" aria-hidden="true"></i> Aniq xatolar</span>
+                    <span><i class="fas fa-spell-check" aria-hidden="true"></i> {% ai_t "Aniq xatolar" "Конкретные ошибки" %}</span>
                     <span class="tr-ai__acc-count">{{ err_stats.total }}</span>
                     <i class="fas fa-chevron-down tr-ai__acc-chevron" aria-hidden="true"></i>
                 </summary>
                 <div class="tr-ai__acc-body">
-                    <p class="tr-ai__panel-lead">Essaydagi qizil belgilar — grammatika va imlo. Ustiga bosing.</p>
+                    <p class="tr-ai__panel-lead">{% ai_t "Essaydagi qizil belgilar — grammatika va imlo. Ustiga bosing." "Красные пометки в эссе — грамматика и орфография. Нажмите на них." %}</p>
                     {% if err_stats.total %}
                     <div class="tr-ai__error-stats" role="group" aria-label="Xatolar statistikasi">
                         <div class="tr-ai__error-stats-summary">
-                            <div class="tr-ai__error-stat-chip tr-ai__error-stat-chip--grammar"><span>Grammatika</span><strong>{{ err_stats.grammar_count }}</strong></div>
-                            <div class="tr-ai__error-stat-chip tr-ai__error-stat-chip--spelling"><span>Imlo</span><strong>{{ err_stats.spelling_count }}</strong></div>
-                            {% if err_stats.other_count %}<div class="tr-ai__error-stat-chip tr-ai__error-stat-chip--other"><span>Boshqa</span><strong>{{ err_stats.other_count }}</strong></div>{% endif %}
+                            <div class="tr-ai__error-stat-chip tr-ai__error-stat-chip--grammar"><span>{% ai_t "Grammatika" "Грамматика" %}</span><strong>{{ err_stats.grammar_count }}</strong></div>
+                            <div class="tr-ai__error-stat-chip tr-ai__error-stat-chip--spelling"><span>{% ai_t "Imlo" "Орфография" %}</span><strong>{{ err_stats.spelling_count }}</strong></div>
+                            {% if err_stats.other_count %}<div class="tr-ai__error-stat-chip tr-ai__error-stat-chip--other"><span>{% ai_t "Boshqa" "Другое" %}</span><strong>{{ err_stats.other_count }}</strong></div>{% endif %}
                         </div>
                         {% if err_stats.top_type_label %}
-                        <p class="tr-ai__error-stats-focus">Eng ko'p: <strong>{{ err_stats.top_type_label }}</strong></p>
+                        <p class="tr-ai__error-stats-focus">{% ai_t "Eng ko'p:" "Чаще всего:" %} <strong>{{ err_stats.top_type_label }}</strong></p>
                         {% endif %}
                         <div class="tr-ai__error-stats-bars">
                         {% for item in err_stats.by_type %}
@@ -125,12 +125,12 @@
             {% if feedback.sentence_corrections %}
             <details class="tr-ai__acc" open>
                 <summary class="tr-ai__acc-head">
-                    <span><i class="fas fa-pen" aria-hidden="true"></i> Gap tuzatishlari</span>
+                    <span><i class="fas fa-pen" aria-hidden="true"></i> {% ai_t "Gap tuzatishlari" "Правки предложений" %}</span>
                     <span class="tr-ai__acc-count">{{ feedback.sentence_corrections|length }}</span>
                     <i class="fas fa-chevron-down tr-ai__acc-chevron" aria-hidden="true"></i>
                 </summary>
                 <div class="tr-ai__acc-body">
-                    <p class="tr-ai__panel-lead">Sariq belgilar — gapni yaxshilash takliflari.</p>
+                    <p class="tr-ai__panel-lead">{% ai_t "Sariq belgilar — gapni yaxshilash takliflari." "Жёлтые пометки — предложения, как улучшить фразу." %}</p>
                     <div class="tr-ai__fixes">
                     {% for corr in feedback.sentence_corrections %}
                         <article class="tr-ai__fix">
@@ -150,7 +150,7 @@
             {% if feedback.vocabulary_upgrades %}
             <details class="tr-ai__acc" open>
                 <summary class="tr-ai__acc-head">
-                    <span><i class="fas fa-book" aria-hidden="true"></i> So'z almashtirish</span>
+                    <span><i class="fas fa-book" aria-hidden="true"></i> {% ai_t "So'z almashtirish" "Замена слов" %}</span>
                     <span class="tr-ai__acc-count">{{ feedback.vocabulary_upgrades|length }}</span>
                     <i class="fas fa-chevron-down tr-ai__acc-chevron" aria-hidden="true"></i>
                 </summary>
@@ -169,7 +169,7 @@
                     </div>
                     {% if feedback.pk %}
                     <button type="button" class="tr-ai__flashcard-btn" data-save-vocab-flashcards data-feedback-id="{{ feedback.pk }}">
-                        <i class="fas fa-layer-group" aria-hidden="true"></i> Flashcardga saqlash
+                        <i class="fas fa-layer-group" aria-hidden="true"></i> {% ai_t "Flashcardga saqlash" "Сохранить в flashcards" %}
                     </button>
                     {% endif %}
                 </div>
@@ -179,7 +179,7 @@
             {% if feedback.next_steps %}
             <details class="tr-ai__acc">
                 <summary class="tr-ai__acc-head">
-                    <span><i class="fas fa-list-ol" aria-hidden="true"></i> Keyingi qadamlar</span>
+                    <span><i class="fas fa-list-ol" aria-hidden="true"></i> {% ai_t "Keyingi qadamlar" "Следующие шаги" %}</span>
                     <span class="tr-ai__acc-count">{{ feedback.next_steps|length }}</span>
                     <i class="fas fa-chevron-down tr-ai__acc-chevron" aria-hidden="true"></i>
                 </summary>
@@ -196,7 +196,7 @@
             {% if feedback.rewrite_suggestion %}
             <details class="tr-ai__acc">
                 <summary class="tr-ai__acc-head">
-                    <span><i class="fas fa-file-alt" aria-hidden="true"></i> Qanday yozsangiz yaxshi bo'ladi</span>
+                    <span><i class="fas fa-file-alt" aria-hidden="true"></i> {% ai_t "Qanday yozsangiz yaxshi bo'ladi" "Как лучше написать" %}</span>
                     <i class="fas fa-chevron-down tr-ai__acc-chevron" aria-hidden="true"></i>
                 </summary>
                 <div class="tr-ai__acc-body tr-ai__more-body">{{ feedback.rewrite_suggestion|linebreaksbr }}</div>
@@ -213,7 +213,7 @@
                 <div class="tr-ai__acc-body">
                     <section class="tr-ai-chat{% if coach_chat_remaining <= 0 %} tr-ai-chat--disabled{% endif %}" data-writing-coach data-feedback-id="{{ feedback.pk }}" data-coach-limit="{{ coach_chat_remaining|default:0 }}" data-task-type="{{ panel.task_type|default:'task2' }}" aria-label="AI chat coach">
                         {% if panel.weakest_criterion %}
-                        <p class="tr-ai-chat__focus">Fokus: <strong>{{ panel.weakest_criterion.label }}</strong> ({{ panel.weakest_criterion.value }})</p>
+                        <p class="tr-ai-chat__focus">{% ai_t "Fokus:" "Фокус:" %} <strong>{{ panel.weakest_criterion.label }}</strong> ({{ panel.weakest_criterion.value }})</p>
                         {% endif %}
                         <div class="tr-ai-chat__quick">
                         {% for prompt in panel.coach_quick_prompts %}
@@ -222,19 +222,19 @@
                         </div>
                         <div class="tr-ai-chat__messages" data-coach-messages role="log" aria-live="polite">
                             <div class="tr-ai-chat__msg tr-ai-chat__msg--assistant tr-ai-chat__msg--welcome">
-                                Salom! {{ panel.task_label|default:"Writing" }} bo'yicha savol bering.
+                                {% ai_t "Salom!" "Здравствуйте!" %} {{ panel.task_label|default:"Writing" }} {% ai_t "bo'yicha savol bering." "— задайте вопрос." %}
                                 {% if feedback.estimated_band %}Band: <strong>{{ feedback.estimated_band|floatformat:1 }}</strong>.{% endif %}
                             </div>
                         </div>
                         <form class="tr-ai-chat__form" data-coach-form>
                             <label class="visually-hidden" for="coach-input-{{ feedback.pk }}">Savol</label>
-                            <textarea id="coach-input-{{ feedback.pk }}" class="tr-ai-chat__input" rows="2" maxlength="800" placeholder="Savolingizni yozing…"{% if coach_chat_remaining <= 0 %} disabled{% endif %}></textarea>
+                            <textarea id="coach-input-{{ feedback.pk }}" class="tr-ai-chat__input" rows="2" maxlength="800" placeholder="{% ai_t 'Savolingizni yozing…' 'Напишите вопрос…' %}"{% if coach_chat_remaining <= 0 %} disabled{% endif %}></textarea>
                             <button type="submit" class="tr-ai-chat__send" data-coach-send{% if coach_chat_remaining <= 0 %} disabled{% endif %}>
                                 <i class="fas fa-paper-plane" aria-hidden="true"></i>
                             </button>
                         </form>
                         {% if coach_chat_remaining <= 0 %}
-                        <p class="tr-ai-chat__limit-note">Kunlik limit tugadi.</p>
+                        <p class="tr-ai-chat__limit-note">{% ai_t "Kunlik limit tugadi." "Дневной лимит закончился." %}</p>
                         {% else %}
                         <p class="tr-ai-chat__hint">Ctrl+Enter — yuborish</p>
                         {% endif %}
@@ -248,7 +248,7 @@
     {% if show_regenerate and feedback_regenerate_remaining > 0 and test_result_pk %}
     <footer class="tr-ai__foot">
         <button type="button" class="tr-ai__regen-btn" data-regen-feedback data-result-id="{{ test_result_pk }}">
-            <i class="fas fa-rotate" aria-hidden="true"></i> Feedbackni yangilash ({{ feedback_regenerate_remaining }})
+            <i class="fas fa-rotate" aria-hidden="true"></i> {% ai_t "Feedbackni yangilash" "Обновить feedback" %} ({{ feedback_regenerate_remaining }})
         </button>
     </footer>
     {% endif %}
@@ -259,11 +259,11 @@
 <div class="tr-ai tr-ai--state mt-3">
     <div class="tr-ai__state-icon"><i class="fas fa-spinner fa-spin"></i></div>
     <div>
-        <strong>AI feedback tayyorlanmoqda</strong>
-        <p>Essay saqlangan. Natija avtomatik yangilanadi.</p>
+        <strong>{% ai_t "AI feedback tayyorlanmoqda" "AI feedback готовится" %}</strong>
+        <p>{% ai_t "Essay saqlangan. Natija avtomatik yangilanadi." "Эссе сохранено. Результат обновится автоматически." %}</p>
         {% if show_regenerate and test_result_pk %}
         <button type="button" class="tr-ai__regen-btn mt-2" data-regen-feedback data-result-id="{{ test_result_pk }}">
-            <i class="fas fa-rotate" aria-hidden="true"></i> Hali tayyor emasmi? Qayta urinish
+            <i class="fas fa-rotate" aria-hidden="true"></i> {% ai_t "Hali tayyor emasmi? Qayta urinish" "Ещё не готово? Повторить" %}
         </button>
         {% endif %}
     </div>
@@ -272,12 +272,12 @@
 <div class="tr-ai tr-ai--state mt-3">
     <div class="tr-ai__state-icon tr-ai__state-icon--warn"><i class="fas fa-exclamation-triangle"></i></div>
     <div>
-        <strong>AI feedback vaqtincha olinmadi</strong>
-        <p>Essay saqlangan. «Qayta urinish» ni bosing — feedback qayta yaratiladi.</p>
+        <strong>{% ai_t "AI feedback vaqtincha olinmadi" "AI feedback временно недоступен" %}</strong>
+        <p>{% ai_t "Essay saqlangan. «Qayta urinish» ni bosing — feedback qayta yaratiladi." "Эссе сохранено. Нажмите «Повторить» — feedback будет создан заново." %}</p>
     </div>
     {% if show_regenerate and test_result_pk %}
     <button type="button" class="tr-ai__regen-btn mt-2" data-regen-feedback data-result-id="{{ test_result_pk }}">
-        <i class="fas fa-rotate" aria-hidden="true"></i> Qayta urinish{% if feedback_regenerate_remaining %} ({{ feedback_regenerate_remaining }}){% endif %}
+        <i class="fas fa-rotate" aria-hidden="true"></i> {% ai_t "Qayta urinish" "Повторить" %}{% if feedback_regenerate_remaining %} ({{ feedback_regenerate_remaining }}){% endif %}
     </button>
     {% endif %}
 </div>

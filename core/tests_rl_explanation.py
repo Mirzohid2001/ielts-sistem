@@ -82,6 +82,39 @@ class RLExplanationIntegrationTests(TestCase):
             is_correct=False,
         )
 
+    def test_mixed_writing_test_supports_explanations(self):
+        mixed = Test.objects.create(
+            title='Mixed Writing',
+            category=self.category,
+            test_type='writing',
+            reading_passages_json=[],
+            reading_text='',
+        )
+        Question.objects.create(
+            test=mixed,
+            question_type='mcq',
+            order=1,
+            question_text='Pick one',
+            option_a='A',
+            option_b='B',
+            correct_answer='a',
+        )
+        self.assertTrue(supports_answer_explanations(mixed))
+        essay_only = Test.objects.create(
+            title='Essay only',
+            category=self.category,
+            test_type='writing',
+            reading_passages_json=[],
+            reading_text='',
+        )
+        Question.objects.create(
+            test=essay_only,
+            question_type='essay',
+            order=1,
+            question_text='Discuss both views.',
+        )
+        self.assertFalse(supports_answer_explanations(essay_only))
+
     def test_prepare_placeholders_for_wrong(self):
         created = prepare_answer_explanation_placeholders(self.result)
         self.assertEqual(len(created), 1)

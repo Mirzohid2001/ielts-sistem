@@ -390,3 +390,113 @@ def merge_writing_errors(
     _extend(errors_from_vocabulary_upgrades(vocabulary_upgrades, essay, limit=5))
 
     return merged[:total_limit]
+
+
+_ERROR_WHY_RU = {
+    "People ko'plikda s qo'shilmaydi": "People во множественном числе без -s",
+    'Information sanalmaydi': 'Information неисчисляемое',
+    'Advice sanalmaydi': 'Advice неисчисляемое',
+    'Equipment sanalmaydi': 'Equipment неисчисляемое',
+    'Furniture sanalmaydi': 'Furniture неисчисляемое',
+    'Child → children': 'Child → children',
+    'Man → men': 'Man → men',
+    'Woman → women': 'Woman → women',
+    "don't — apostrof kerak": "don't — нужен апостроф",
+    "can't — apostrof kerak": "can't — нужен апостроф",
+    "won't — apostrof kerak": "won't — нужен апостроф",
+    "doesn't — apostrof kerak": "doesn't — нужен апостроф",
+    "didn't — apostrof kerak": "didn't — нужен апостроф",
+    "isn't — apostrof kerak": "isn't — нужен апостроф",
+    "aren't — apostrof kerak": "aren't — нужен апостроф",
+    "wasn't — apostrof kerak": "wasn't — нужен апостроф",
+    "weren't — apostrof kerak": "weren't — нужен апостроф",
+    "hasn't — apostrof kerak": "hasn't — нужен апостроф",
+    "haven't — apostrof kerak": "haven't — нужен апостроф",
+    "couldn't — apostrof kerak": "couldn't — нужен апостроф",
+    "wouldn't — apostrof kerak": "wouldn't — нужен апостроф",
+    "shouldn't — apostrof kerak": "shouldn't — нужен апостроф",
+    "I'm — katta I": "I'm — заглавная I",
+    "I've — katta I": "I've — заглавная I",
+    "that's — apostrof kerak": "that's — нужен апостроф",
+    "it's (it is) vs its (egalik)": "it's (it is) vs its (притяжательное)",
+    "Ikki so'z: a lot": 'Два слова: a lot',
+    'every time — ikki so\'z': 'every time — два слова',
+    'in spite of — ikki so\'z': 'in spite of — два слова',
+    'receive — i before e': 'receive — i before e',
+    'occurred — ikki r': 'occurred — две r',
+    "environment — n qo'shiladi": 'environment — добавляется n',
+    "government — n qo'shiladi": 'government — добавляется n',
+    'definitely': 'definitely',
+    'separate': 'separate',
+    'occasion': 'occasion',
+    'which': 'which',
+    "their / there / they're": "their / there / they're",
+    'the': 'the',
+    'until — bitta l': 'until — одна l',
+    'useful — bitta l': 'useful — одна l',
+    'believe — ie': 'believe — ie',
+    'accommodate — ikki m': 'accommodate — две m',
+    "argument — e yo'q": 'argument — без e',
+    'Ikki comparative birga ishlatilmaydi': 'Две comparative формы вместе не ставят',
+    'unique — very kerak emas': 'unique — very не нужен',
+    'Sanaladigan uchun fewer ishlating': 'Для исчисляемых используйте fewer',
+    'number of — sanaladigan otlar uchun': 'number of — для исчисляемых',
+    'depend on': 'depend on',
+    'discuss — about kerak emas': 'discuss — about не нужен',
+    'return back — ortiqcha': 'return back — лишнее',
+    'because of that reason — ortiqcha': 'because of that reason — лишнее',
+    'there is — joy uchun there': 'there is — для места there',
+    'there are — joy uchun there': 'there are — для места there',
+    'on the other hand': 'on the other hand',
+    'compared to': 'compared to',
+    'as well as — than emas': 'as well as — не than',
+    'go home — to kerak emas': 'go home — to не нужен',
+    'at/on the weekend': 'at/on the weekend',
+    'in conclusion': 'in conclusion',
+    'according to': 'according to',
+    'Bu otlar oldidan a/an ishlatilmaydi': 'Перед этими существительными a/an не ставят',
+    "a/an tanlovi noto'g'ri bo'lishi mumkin": 'Возможно неверный выбор a/an',
+    "Ko'plik ot + are": 'Множественное существительное + are',
+    'Yakka ot + is': 'Единственное существительное + is',
+    'they/we/you + are': 'they/we/you + are',
+    'he/she/it + is': 'he/she/it + is',
+    'many/several bilan there are': 'с many/several — there are',
+    "Ko'plik ot bilan are": 'С множественным существительным — are',
+    'Yakka ot bilan is': 'С единственным существительным — is',
+    'many/several + there are': 'many/several + there are',
+    'information — artiklsiz': 'information — без артикля',
+    'advice — artiklsiz': 'advice — без артикля',
+    'equipment — artiklsiz': 'equipment — без артикля',
+    'furniture — artiklsiz': 'furniture — без артикля',
+    'news — artiklsiz': 'news — без артикля',
+    'research — artiklsiz ya da "a piece of research"': 'research — без артикля или "a piece of research"',
+    'knowledge — artiklsiz': 'knowledge — без артикля',
+    'evidence — artiklsiz yoki "a piece of evidence"': 'evidence — без артикля или "a piece of evidence"',
+    'Gap tuzatish': 'Правка предложения',
+    "Academic so'z tanlovi": 'Академический выбор слова',
+}
+
+
+def localize_writing_errors(errors, lang='uz') -> list[dict[str, str]]:
+    """Heuristic why-matnlarni ruscha qilish; Gemini matni odatda allaqachon to'g'ri tilda."""
+    from core.services.ai_language import LANG_RU, normalize_ai_lang
+
+    if normalize_ai_lang(lang) != LANG_RU:
+        return list(errors or [])
+    out = []
+    for item in errors or []:
+        if not isinstance(item, dict):
+            continue
+        row = dict(item)
+        why = (row.get('why') or '').strip()
+        if why in _ERROR_WHY_RU:
+            row['why'] = _ERROR_WHY_RU[why]
+        wrong = (row.get('wrong') or '')
+        correct = (row.get('correct') or '')
+        if wrong in ("(qo'shish kerak)", '(qo\'shish kerak)'):
+            row['wrong'] = '(добавить)'
+        if correct in ("(o'chirish)", '(o\'chirish)'):
+            row['correct'] = '(удалить)'
+        out.append(row)
+    return out
+

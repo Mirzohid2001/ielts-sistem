@@ -3,6 +3,7 @@
 from django.template.loader import render_to_string
 
 from core.models import AIWritingFeedback, UserTestAnswer, UserTestResult
+from core.services.ai_language import language_for_result
 from core.services.ai_writing_feedback import load_writing_feedback_for_result
 from core.services.essay_highlight import build_writing_feedback_comparison
 from core.services.writing_chat_coach import build_coach_panel_context, coach_chat_remaining
@@ -131,6 +132,7 @@ def render_writing_feedback_fragments(
             'feedback_regenerate_remaining': regen_remaining,
             'coach_chat_remaining': chat_remaining,
             'test_result_pk': test_result.pk if test_result else None,
+            'ai_lang': language_for_result(test_result) if test_result else 'uz',
         }
         if feedback:
             ctx.update(build_coach_panel_context(feedback))

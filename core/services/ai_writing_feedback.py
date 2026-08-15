@@ -15,6 +15,7 @@ from django.db import transaction
 from django.conf import settings
 
 from core.models import AIWritingFeedback, UserTestAnswer
+from core.services.ai_language import LANG_RU, language_for_result, language_still_matches, learner_language_rules, normalize_ai_lang, t
 
 FEEDBACK_ENGINE_VERSION = 9
 
@@ -55,7 +56,7 @@ def _task_meta(question):
     }
 
 
-def build_writing_feedback_prompt(*, test, question, essay_text, has_diagram=False):
+def build_writing_feedback_prompt(*, test, question, essay_text, has_diagram=False, lang='uz'):
     meta = _task_meta(question)
     topic = _extract_topic_hint(question)
     word_count = _word_count(essay_text)
@@ -98,7 +99,9 @@ Ball past bo'lishi mumkin, LEKIN feedback boy mini-dars bo'lishi SHART.
 - rewrite_suggestion: 4-5 paragraf ENGLISH fill-in template (Thesis / Body1 / Body2 / Conclusion)
 - summary: 3-4 gap, mavzu + birinchi qadam aniq"""
 
-    system = f"""You are a senior IELTS Writing examiner + personal writing coach for Uzbek learners.
+    system = f"""You are a senior IELTS Writing examiner + personal writing coach.
+
+{learner_language_rules(lang)}
 
 Your feedback must feel UNIQUE to THIS essay — quote the learner's exact phrases.
 Never give template-only advice that could fit any essay.
@@ -107,7 +110,7 @@ GOAL: Raise the learner's band with concrete before→after corrections from THE
 
 HARD RULES:
 1) Return ONLY valid JSON (no markdown fences).
-2) Learner-facing text = clear Uzbek (Latin). Criterion keys stay English.
+2) Learner-facing text follows LEARNER-FACING LANGUAGE above. Criterion keys stay English.
    sentence_corrections.original/corrected and vocabulary_upgrades from/to = English.
 3) Always mention topic «{topic}» and quote learner text («{opening}») in summary.
 4) Minimum counts:
@@ -122,19 +125,17 @@ HARD RULES:
    - original = exact phrase/sentence from learner (or if empty/nonsense: what they wrote)
    - corrected = improved academic version for THIS topic
    - type = one of: grammar | vocabulary | task | coherence | tone
-   - why = short Uzbek explanation
-8) writing_errors — ANIQ xatolar (essay ichidagi noto'g'ri qismlar):
-   - wrong = aynan essaydagi noto'g'ri so'z yoki qisqa fraza (1–6 so'z), COPY-PASTE from essay_text
-   - correct = to'g'ri variant
+   - why = short explanation in the learner language
+8) writing_errors — exact mistakes in the essay:
+   - wrong = exact wrong word/short phrase (1–6 words), COPY-PASTE from essay_text
+   - correct = correct form
    - type = grammar | spelling | punctuation | article | tense | preposition | subject_verb | word_choice | plural | capitalization
-   - why = qisqa o'zbek tushuntirish (qoida)
-   - Minimum 8 ta (150+ so'z essay); kamida 3 ta grammar, 2 ta spelling
-   - Scan checklist: articles (a/an/the), subject-verb agreement, apostrophes (don't), uncountable nouns, prepositions, common misspellings, plural -s, capitalization of I
+   - why = short rule explanation in the learner language
+   - Minimum 8 (150+ word essay); at least 3 grammar, 2 spelling
    - NEVER invent errors not present in essay — if unsure, skip
-   - Prefer WORD-level errors over full-sentence (wrong="peoples" not whole sentence)
 9) If issue_hint != "ok": still give rich coaching + starter corrections for the real topic.
-10) rewrite_suggestion = fill-in paragraph plan for THIS topic (English starters OK).
-11) Never reply with only "yozing" / generic empty coaching.
+10) rewrite_suggestion = fill-in paragraph plan for THIS topic (English starters OK + short learner-language note).
+11) Never reply with only generic empty coaching.
 
 {rubric}
 
@@ -142,7 +143,7 @@ HARD RULES:
 
 JSON schema:
 {{
-  "summary": "3-4 gap: holat + muammo + essay iqtibosi + birinchi qadam",
+  "summary": "{t(lang, '3-4 gap: holat + muammo + essay iqtibosi + birinchi qadam', '3-4 предложения: ситуация + проблема + цитата из эссе + первый шаг')}",
   "estimated_band": number,
   "task_achievement": number,
   "coherence_cohesion": number,
@@ -152,14 +153,14 @@ JSON schema:
   "improvements": ["...", "...", "...", "..."],
   "next_steps": ["...", "...", "...", "..."],
   "vocabulary_upgrades": [
-    {{"from": "good", "to": "significant / substantial", "why": "academic tone kuchayadi"}}
+    {{"from": "good", "to": "significant / substantial", "why": "{t(lang, 'academic tone kuchayadi', 'усиливает academic tone')}"}}
   ],
   "sentence_corrections": [
     {{
       "original": "I think cities are very good",
       "corrected": "In my view, urban living offers substantial advantages",
       "type": "vocabulary",
-      "why": "Stance va lexis band-friendly"
+      "why": "{t(lang, 'Stance va lexis band-friendly', 'Stance и лексика ближе к band')}"
     }}
   ],
   "writing_errors": [
@@ -167,16 +168,16 @@ JSON schema:
       "wrong": "peoples",
       "correct": "people",
       "type": "grammar",
-      "why": "People odatda plural; s qo'shilmaydi"
+      "why": "{t(lang, "People odatda plural; s qo'shilmaydi", 'People обычно plural; -s не добавляют')}"
     }},
     {{
       "wrong": "a informations",
       "correct": "information",
       "type": "grammar",
-      "why": "Information sanalmaydi (uncountable)"
+      "why": "{t(lang, 'Information sanalmaydi (uncountable)', 'Information неисчисляемое (uncountable)')}"
     }}
   ],
-  "rewrite_suggestion": "Paragraf-ready ENGLISH template + qisqa o'zbek izoh"
+  "rewrite_suggestion": "{t(lang, "Paragraf-ready ENGLISH template + qisqa o'zbek izoh", 'Готовый ENGLISH шаблон абзаца + короткий комментарий на русском')}"
 }}"""
 
     content = {
@@ -412,49 +413,51 @@ def normalize_feedback_payload(payload):
     return normalized
 
 
-def generate_writing_feedback(*, test, question, essay_text):
+def generate_writing_feedback(*, test, question, essay_text, lang='uz'):
     provider = getattr(settings, 'AI_WRITING_FEEDBACK_PROVIDER', os.environ.get('AI_WRITING_FEEDBACK_PROVIDER', 'local')).strip().lower()
     model_name = getattr(settings, 'AI_WRITING_FEEDBACK_MODEL', os.environ.get('AI_WRITING_FEEDBACK_MODEL', '')).strip()
     image_parts = _load_question_image_parts(question)
     has_diagram = bool(image_parts)
     if provider in ('', 'local', 'heuristic', 'fallback'):
-        feedback = _generate_local_feedback(test=test, question=question, essay_text=essay_text)
-        feedback = _enrich_feedback_payload(feedback, test=test, question=question, essay_text=essay_text)
+        feedback = _generate_local_feedback(test=test, question=question, essay_text=essay_text, lang=lang)
+        feedback = _enrich_feedback_payload(feedback, test=test, question=question, essay_text=essay_text, lang=lang)
         feedback['provider_name'] = 'local'
         feedback['model_name'] = model_name or 'heuristic-v7'
         raw = feedback.get('raw_response_json') if isinstance(feedback.get('raw_response_json'), dict) else {}
         raw['vision_used'] = False
         raw['diagram_available'] = has_diagram
+        raw['ai_language'] = lang
         feedback['raw_response_json'] = raw
         return feedback
     if provider == 'openai':
         prompt = build_writing_feedback_prompt(
-            test=test, question=question, essay_text=essay_text, has_diagram=has_diagram,
+            test=test, question=question, essay_text=essay_text, has_diagram=has_diagram, lang=lang,
         )
         feedback = _call_openai_compatible(prompt, model_name=model_name)
-        feedback = _enrich_feedback_payload(feedback, test=test, question=question, essay_text=essay_text)
+        feedback = _enrich_feedback_payload(feedback, test=test, question=question, essay_text=essay_text, lang=lang)
         feedback['provider_name'] = 'openai'
         feedback['model_name'] = model_name or os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
         return feedback
     if provider == 'gemini':
         prompt = build_writing_feedback_prompt(
-            test=test, question=question, essay_text=essay_text, has_diagram=has_diagram,
+            test=test, question=question, essay_text=essay_text, has_diagram=has_diagram, lang=lang,
         )
         try:
             feedback, used_model = _call_gemini_with_fallback(
                 prompt, model_name=model_name, image_parts=image_parts,
             )
-            feedback = _enrich_feedback_payload(feedback, test=test, question=question, essay_text=essay_text)
+            feedback = _enrich_feedback_payload(feedback, test=test, question=question, essay_text=essay_text, lang=lang)
             feedback['provider_name'] = 'gemini'
             feedback['model_name'] = used_model
             raw = feedback.get('raw_response_json') if isinstance(feedback.get('raw_response_json'), dict) else {}
             raw['vision_used'] = bool(image_parts)
             raw['diagram_available'] = has_diagram
+            raw['ai_language'] = lang
             feedback['raw_response_json'] = raw
             return feedback
         except Exception as exc:
-            fallback = _generate_local_feedback(test=test, question=question, essay_text=essay_text)
-            fallback = _enrich_feedback_payload(fallback, test=test, question=question, essay_text=essay_text)
+            fallback = _generate_local_feedback(test=test, question=question, essay_text=essay_text, lang=lang)
+            fallback = _enrich_feedback_payload(fallback, test=test, question=question, essay_text=essay_text, lang=lang)
             fallback['provider_name'] = 'local'
             fallback['model_name'] = 'heuristic-fallback-v7'
             fallback['raw_response_json'] = {
@@ -462,6 +465,7 @@ def generate_writing_feedback(*, test, question, essay_text):
                 'gemini_error': str(exc)[:500],
                 'vision_used': False,
                 'diagram_available': has_diagram,
+                'ai_language': lang,
             }
             return fallback
     raise ValueError(f"Unsupported AI_WRITING_FEEDBACK_PROVIDER: {provider}")
@@ -549,6 +553,7 @@ def writing_feedback_is_stale_pending(test_result, *, stale_after_sec=_STALE_PEN
 def generate_writing_feedback_for_result(test_result, *, force=False):
     generated = []
     for answer in _essay_answers_for_result(test_result):
+        lang = language_for_result(test_result)
         essay_text = (answer.user_answer or '').strip()
         if not essay_text:
             continue
@@ -569,12 +574,16 @@ def generate_writing_feedback_for_result(test_result, *, force=False):
                 test=test_result.test,
                 question=answer.question,
                 essay_text=essay_text,
+                lang=lang,
             )
             raw = payload.get('raw_response_json') or {}
             if isinstance(raw, dict):
                 raw['engine_version'] = FEEDBACK_ENGINE_VERSION
                 raw['essay_fingerprint'] = _essay_fingerprint(essay_text)
                 payload['raw_response_json'] = raw
+            if not language_still_matches(test_result, lang):
+                generated.append(feedback)
+                continue
             feedback.apply_completed_feedback(payload)
         except Exception as exc:
             # Oxirgi imkoniyat: local heuristic — hech qachon bo'sh failed qoldirmaslikka harakat.
@@ -583,12 +592,14 @@ def generate_writing_feedback_for_result(test_result, *, force=False):
                     test=test_result.test,
                     question=answer.question,
                     essay_text=essay_text,
+                    lang=lang,
                 )
                 fallback = _enrich_feedback_payload(
                     fallback,
                     test=test_result.test,
                     question=answer.question,
                     essay_text=essay_text,
+                    lang=lang,
                 )
                 fallback['provider_name'] = 'local'
                 fallback['model_name'] = 'heuristic-recovery'
@@ -597,9 +608,11 @@ def generate_writing_feedback_for_result(test_result, *, force=False):
                 raw['essay_fingerprint'] = _essay_fingerprint(essay_text)
                 raw['recovery_error'] = str(exc)[:500]
                 fallback['raw_response_json'] = raw
-                feedback.apply_completed_feedback(fallback)
+                if language_still_matches(test_result, lang):
+                    feedback.apply_completed_feedback(fallback)
             except Exception as recovery_exc:
-                feedback.mark_failed(f'{exc} | recovery: {recovery_exc}')
+                if language_still_matches(test_result, lang):
+                    feedback.mark_failed(f'{exc} | recovery: {recovery_exc}')
         generated.append(feedback)
     return generated
 
@@ -1369,7 +1382,7 @@ def _build_sentence_corrections(*, essay_text, meta, question, issue='ok', limit
     return uniq
 
 
-def _generate_issue_feedback(*, issue, meta, question, essay_text, word_count, eng_ratio):
+def _generate_issue_feedback(*, issue, meta, question, essay_text, word_count, eng_ratio, lang='uz'):
     topic = _extract_topic_hint(question)
     quote = _pick_quote(essay_text) or '—'
     min_words = meta['min_words']
@@ -1565,10 +1578,11 @@ def _generate_issue_feedback(*, issue, meta, question, essay_text, word_count, e
             'topic_hint': topic[:200],
             'starter_pack': pack,
         },
+        lang=lang,
     )
 
 
-def _enrich_feedback_payload(feedback, *, test, question, essay_text):
+def _enrich_feedback_payload(feedback, *, test, question, essay_text, lang='uz'):
     """Ensure even weak AI outputs become rich mini-lessons."""
     meta = _task_meta(question)
     issue = _classify_essay_issue(essay_text, question, meta=meta)
@@ -1583,23 +1597,24 @@ def _enrich_feedback_payload(feedback, *, test, question, essay_text):
 
     if len(strengths) < 2:
         strengths.extend([
-            "Yozishga urinish bor — bu o'rganishning birinchi belgisi.",
-            f"Mavzu aniq: «{topic[:90]}». Endi struktura bilan to'ldiring.",
+            t(lang, "Yozishga urinish bor — bu o'rganishning birinchi belgisi.", "Есть попытка написать — это уже первый шаг."),
+            t(lang, f"Mavzu aniq: «{topic[:90]}». Endi struktura bilan to'ldiring.", f"Тема ясна: «{topic[:90]}». Теперь заполните структуру."),
         ])
     if len(improvements) < 4:
         improvements.extend([
-            f"«{quote}» o'rniga/ustiga mavzu bo'yicha batafsil gaplar yozing.",
-            f"Kamida {meta['min_words']} so'zga yetkazing (hozir {word_count}).",
-            "Introduction + 2 body + conclusion formatini ushlang.",
-            f"Foydali iboralar: {', '.join((pack.get('useful_vocab') or [])[:5])}.",
+            t(lang, f"«{quote}» o'rniga/ustiga mavzu bo'yicha batafsil gaplar yozing.", f"Вместо/поверх «{quote}» напишите развёрнутые предложения по теме."),
+            t(lang, f"Kamida {meta['min_words']} so'zga yetkazing (hozir {word_count}).", f"Доведите до минимум {meta['min_words']} слов (сейчас {word_count})."),
+            t(lang, "Introduction + 2 body + conclusion formatini ushlang.", "Держите формат: introduction + 2 body + conclusion."),
+            t(lang, f"Foydali iboralar: {', '.join((pack.get('useful_vocab') or [])[:5])}.", f"Полезные фразы: {', '.join((pack.get('useful_vocab') or [])[:5])}."),
         ])
     if len(next_steps) < 4:
         starters = pack.get('starter_sentences') or []
+        starter0 = starters[0] if starters else 'The essay discusses...'
         next_steps.extend([
-            "Avval 4 punktli outline yozing.",
-            f"Starter bilan boshlang: {starters[0] if starters else 'The essay discusses...'}",
-            "Har bodyga bitta misol qo'shing.",
-            f"15 daqiqada rewrite qilib, {meta['min_words']}+ so'zga yetkazing.",
+            t(lang, "Avval 4 punktli outline yozing.", "Сначала напишите план из 4 пунктов."),
+            t(lang, f"Starter bilan boshlang: {starter0}", f"Начните со starter: {starter0}"),
+            t(lang, "Har bodyga bitta misol qo'shing.", "В каждый body добавьте один пример."),
+            t(lang, f"15 daqiqada rewrite qilib, {meta['min_words']}+ so'zga yetkazing.", f"За 15 минут перепишите и доведите до {meta['min_words']}+ слов."),
         ])
 
     vocab_upgrades = list(feedback.get('vocabulary_upgrades') or [])
@@ -1648,9 +1663,12 @@ def _enrich_feedback_payload(feedback, *, test, question, essay_text):
 
     summary = (feedback.get('summary') or '').strip()
     if len(summary) < 80:
-        summary = (
+        summary = t(
+            lang,
             f"{meta['task_label']} feedback: matn («{quote}») hali to'liq emas. "
-            f"Mavzu — «{topic}». Pastdagi template va next steps bilan qayta yozing."
+            f"Mavzu — «{topic}». Pastdagi template va next steps bilan qayta yozing.",
+            f"{meta['task_label']}: текст («{quote}») ещё неполный. "
+            f"Тема — «{topic}». Перепишите по шаблону и next steps ниже.",
         )
 
     feedback['summary'] = summary[:2000]
@@ -1660,19 +1678,25 @@ def _enrich_feedback_payload(feedback, *, test, question, essay_text):
     feedback['vocabulary_upgrades'] = vocab_upgrades[:8]
     feedback['sentence_corrections'] = sentence_corrections[:6]
 
-    from core.services.writing_error_detection import merge_writing_errors
+    from core.services.writing_error_detection import localize_writing_errors, merge_writing_errors
 
     try:
-        feedback['writing_errors'] = merge_writing_errors(
-            essay_text,
-            ai_errors=feedback.get('writing_errors'),
-            sentence_corrections=sentence_corrections,
-            vocabulary_upgrades=vocab_upgrades,
-            heuristic_limit=15,
-            total_limit=16,
+        feedback['writing_errors'] = localize_writing_errors(
+            merge_writing_errors(
+                essay_text,
+                ai_errors=feedback.get('writing_errors'),
+                sentence_corrections=sentence_corrections,
+                vocabulary_upgrades=vocab_upgrades,
+                heuristic_limit=15,
+                total_limit=16,
+            ),
+            lang,
         )
     except Exception:
-        feedback['writing_errors'] = list(feedback.get('writing_errors') or [])[:16]
+        feedback['writing_errors'] = localize_writing_errors(
+            list(feedback.get('writing_errors') or [])[:16],
+            lang,
+        )
     feedback['rewrite_suggestion'] = rewrite[:4000]
     raw = feedback.get('raw_response_json')
     if isinstance(raw, dict):
@@ -1682,7 +1706,7 @@ def _enrich_feedback_payload(feedback, *, test, question, essay_text):
     return feedback
 
 
-def _generate_local_feedback(*, test, question, essay_text):
+def _generate_local_feedback(*, test, question, essay_text, lang='uz'):
     meta = _task_meta(question)
     task1 = meta['task_type'] == 'task1'
     min_words = meta['min_words']
@@ -1707,6 +1731,7 @@ def _generate_local_feedback(*, test, question, essay_text):
             essay_text=essay_text,
             word_count=word_count,
             eng_ratio=eng_ratio,
+            lang=lang,
         )
 
     linker_list = [
@@ -1878,6 +1903,7 @@ def _generate_local_feedback(*, test, question, essay_text):
         criterion_values=criterion_values,
         vocabulary_upgrades=vocab_upgrades,
         sentence_corrections=sentence_corrections,
+        lang=lang,
         extra={
             'issue_type': 'ok',
             'english_ratio': round(eng_ratio, 2),
@@ -1908,9 +1934,37 @@ def _finalize_local_feedback(
     meta, essay_text, word_count, estimated_band, summary,
     *, strengths, improvements, next_steps, rewrite_suggestion,
     criterion_values=None, vocabulary_upgrades=None, sentence_corrections=None, extra=None,
+    lang='uz',
 ):
     criterion_values = criterion_values or {}
-    return normalize_feedback_payload({
+    lang = normalize_ai_lang(lang)
+    if lang == LANG_RU:
+        topic = (extra or {}).get('topic_hint') or meta.get('task_label') or 'task'
+        summary = (
+            f"{meta['task_label']}: ориентировочный балл {estimated_band}. "
+            f"Тема — {str(topic)[:90]}. Это тренировочный разбор, не официальный IELTS."
+        )
+        strengths = [
+            'Есть попытка ответить на задание.',
+            'Текст можно усилить более академичной лексикой и примерами.',
+        ]
+        improvements = [
+            'Сформулируйте более ясную позицию или overview.',
+            'Добавьте конкретные примеры и сравнения.',
+            'Проверьте грамматику, артикли и согласование.',
+            'Используйте более точную академическую лексику.',
+        ]
+        next_steps = [
+            'Напишите 4-абзацный план: intro / body1 / body2 / conclusion.',
+            'Сделайте self-check: overview, примеры, linking words.',
+            'Замените 5 простых слов на academic synonyms.',
+        ]
+        rewrite_suggestion = (
+            f"Intro: тема «{str(topic)[:70]}» + позиция/overview. "
+            "Body1: главный аргумент + пример. Body2: второй аргумент + сравнение. "
+            "Conclusion: коротко подтвердите позицию."
+        )
+    payload = normalize_feedback_payload({
         'summary': summary,
         'estimated_band': estimated_band,
         'task_achievement': criterion_values.get('task_achievement', max(4.0, estimated_band - 0.5)),
@@ -1928,9 +1982,11 @@ def _finalize_local_feedback(
             'engine_version': FEEDBACK_ENGINE_VERSION,
             'task_label': meta['task_label'],
             'word_count': word_count,
+            'ai_language': lang,
             **(extra or {}),
         },
     })
+    return payload
 
 
 def _clamp_score(value):
