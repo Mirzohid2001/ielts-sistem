@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load core_filters %}
 
 {% block title %}SAT {{ subject_label }} - Ton academy{% endblock %}
 
@@ -115,49 +116,49 @@
     <div class="sat-hero d-flex flex-wrap align-items-center justify-content-between mb-4">
         <div>
             <h2 class="mb-1">SAT - {{ subject_label }}</h2>
-            <p class="mb-0 opacity-75">Bo'limdagi video va PDF resurslar ro'yxati.</p>
+            <p class="mb-0 opacity-75">{% trans "Bo'limdagi video va PDF resurslar ro'yxati." %}</p>
         </div>
         <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left me-1"></i>Orqaga
+            <i class="fas fa-arrow-left me-1"></i>{% trans "Orqaga" %}
         </a>
     </div>
 
     <form method="get" class="sat-filter mb-4" id="sat-filter-form">
         <div class="row g-2 align-items-center">
             <div class="col-12 col-lg-4">
-                <input type="text" name="q" class="form-control form-control-sm" value="{{ search_query }}" placeholder="Resurs nomi yoki tavsif bo'yicha qidirish...">
+                <input type="text" name="q" class="form-control form-control-sm" value="{{ search_query }}" placeholder="{% trans "Resurs nomi yoki tavsif bo'yicha qidirish..." %}">
             </div>
             <div class="col-6 col-lg-2">
                 <select class="form-select form-select-sm" name="content_type">
-                    <option value="all" {% if content_type == 'all' %}selected{% endif %}>Kontent: Barchasi</option>
-                    <option value="video" {% if content_type == 'video' %}selected{% endif %}>Faqat Video</option>
-                    <option value="pdf" {% if content_type == 'pdf' %}selected{% endif %}>Faqat PDF</option>
+                    <option value="all" {% if content_type == 'all' %}selected{% endif %}>{% trans "Kontent:" %} {% trans "Barchasi" %}</option>
+                    <option value="video" {% if content_type == 'video' %}selected{% endif %}>{% trans "Faqat Video" %}</option>
+                    <option value="pdf" {% if content_type == 'pdf' %}selected{% endif %}>{% trans "Faqat PDF" %}</option>
                 </select>
             </div>
             <div class="col-6 col-lg-3">
                 <select class="form-select form-select-sm" name="progress_status">
-                    <option value="all" {% if progress_status == 'all' %}selected{% endif %}>Progress: Barchasi</option>
-                    <option value="not_started" {% if progress_status == 'not_started' %}selected{% endif %}>Boshlanmagan</option>
-                    <option value="in_progress" {% if progress_status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
-                    <option value="completed" {% if progress_status == 'completed' %}selected{% endif %}>Yakunlangan</option>
+                    <option value="all" {% if progress_status == 'all' %}selected{% endif %}>{% trans "Progress:" %} {% trans "Barchasi" %}</option>
+                    <option value="not_started" {% if progress_status == 'not_started' %}selected{% endif %}>{% trans "Boshlanmagan" %}</option>
+                    <option value="in_progress" {% if progress_status == 'in_progress' %}selected{% endif %}>{% trans "Jarayonda" %}</option>
+                    <option value="completed" {% if progress_status == 'completed' %}selected{% endif %}>{% trans "Yakunlangan" %}</option>
                 </select>
             </div>
             <div class="col-12 col-lg-3">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="bookmarked" value="1" id="bookmarkedOnly" {% if bookmarked_only %}checked{% endif %}>
                     <label class="form-check-label small" for="bookmarkedOnly">
-                        Faqat saqlanganlar
+                        {% trans "Faqat saqlanganlar" %}
                     </label>
                 </div>
             </div>
             <div class="col-12 d-flex gap-2">
                 <button type="submit" class="btn btn-sm btn-primary w-100">
-                    <i class="fas fa-search me-1"></i>Filterlash
+                    <i class="fas fa-search me-1"></i>{% trans "Filterlash" %}
                 </button>
-                <a href="{% url 'sat:sat_subject' subject %}" class="btn btn-sm btn-outline-secondary">Tozalash</a>
+                <a href="{% url 'sat:sat_subject' subject %}" class="btn btn-sm btn-outline-secondary">{% trans "Tozalash" %}</a>
             </div>
         </div>
-        <small class="text-muted d-block mt-2">Topildi: {{ results_count }} ta resurs</small>
+        <small class="text-muted d-block mt-2">{% blocktrans count n=results_count %}Topildi: {{ n }} ta resurs{% plural %}Topildi: {{ n }} ta resurs{% endblocktrans %}</small>
     </form>
 
     {% if items %}
@@ -172,24 +173,24 @@
                             <span class="sat-chip">{{ subject_label }}</span>
                             {% if row.obj.video_file or row.obj.youtube_id or row.obj.youtube_url %}
                             <button class="btn btn-sm sat-bookmark-btn sat-bookmark-pill {% if row.bookmark_video %}btn-warning{% else %}btn-outline-warning{% endif %}" data-id="{{ row.obj.pk }}" data-bookmark-type="video">
-                                <i class="fas fa-video me-1"></i>{% if row.bookmark_video %}Video saqlangan{% else %}Video saqlash{% endif %}
+                                <i class="fas fa-video me-1"></i>{% if row.bookmark_video %}{% trans "Video saqlangan" %}{% else %}{% trans "Video saqlash" %}{% endif %}
                             </button>
                             {% endif %}
                             {% if row.obj.pdf_file %}
                             <button class="btn btn-sm sat-bookmark-btn sat-bookmark-pill {% if row.bookmark_pdf %}btn-danger{% else %}btn-outline-danger{% endif %}" data-id="{{ row.obj.pk }}" data-bookmark-type="pdf">
-                                <i class="fas fa-file-pdf me-1"></i>{% if row.bookmark_pdf %}PDF saqlangan{% else %}PDF saqlash{% endif %}
+                                <i class="fas fa-file-pdf me-1"></i>{% if row.bookmark_pdf %}{% trans "PDF saqlangan" %}{% else %}{% trans "PDF saqlash" %}{% endif %}
                             </button>
                             {% endif %}
                         </div>
                     </div>
                     {% if row.obj.description %}
-                    <p class="text-muted mb-3">{{ row.obj.description|linebreaksbr }}</p>
+                    <p class="text-muted mb-3">{{ row.obj.description|site_t|linebreaksbr }}</p>
                     {% endif %}
 
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         {% if row.obj.pdf_file %}
                         <a href="{% url 'sat:sat_pdf_viewer' row.obj.pk %}" class="btn btn-sm btn-danger" target="_blank" rel="noopener">
-                            <i class="fas fa-file-pdf me-1"></i>PDF ko'rish
+                            <i class="fas fa-file-pdf me-1"></i>{% trans "PDF ko'rish" %}
                         </a>
                         {% endif %}
                     </div>
@@ -211,27 +212,27 @@
                     </div>
                     {% elif row.obj.youtube_url %}
                     <a href="{{ row.obj.youtube_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
-                        <i class="fab fa-youtube me-1"></i>YouTube'da ochish
+                        <i class="fab fa-youtube me-1"></i>{% trans "YouTube'da ochish" %}
                     </a>
                     {% else %}
-                    <small class="text-muted">Video biriktirilmagan.</small>
+                    <small class="text-muted">{% trans "Video biriktirilmagan." %}</small>
                     {% endif %}
 
                     <hr>
                     <div class="row g-3">
                         <div class="col-12 col-md-6 sat-progress-wrap">
-                            <label class="form-label small text-muted mb-1">Progress (0-100)</label>
+                            <label class="form-label small text-muted mb-1">{% trans "Progress (0-100)" %}</label>
                             <div class="d-flex gap-2 align-items-center">
                                 <input type="range" min="0" max="100" value="{% if row.progress %}{{ row.progress.watch_percentage }}{% else %}0{% endif %}" class="form-range sat-progress-input" data-id="{{ row.obj.pk }}">
                                 <span class="badge bg-secondary sat-progress-val" id="sat-progress-val-{{ row.obj.pk }}">{% if row.progress %}{{ row.progress.watch_percentage }}{% else %}0{% endif %}%</span>
                             </div>
-                            <button class="btn btn-sm btn-outline-primary sat-progress-save mt-1" data-id="{{ row.obj.pk }}">Progress saqlash</button>
+                            <button class="btn btn-sm btn-outline-primary sat-progress-save mt-1" data-id="{{ row.obj.pk }}">{% trans "Progress saqlash" %}</button>
                         </div>
                         <div class="col-12 col-md-6 sat-progress-wrap">
-                            <label class="form-label small text-muted mb-1">Eslatma</label>
+                            <label class="form-label small text-muted mb-1">{% trans "Eslatma" %}</label>
                             <div class="input-group input-group-sm">
-                                <input type="text" class="form-control sat-note-text" data-id="{{ row.obj.pk }}" placeholder="Eslatma yozing...">
-                                <button class="btn btn-outline-success sat-note-add" data-id="{{ row.obj.pk }}">Qo'shish</button>
+                                <input type="text" class="form-control sat-note-text" data-id="{{ row.obj.pk }}" placeholder="{% trans "Eslatma yozing..." %}">
+                                <button class="btn btn-outline-success sat-note-add" data-id="{{ row.obj.pk }}">{% trans "Qo'shish" %}</button>
                             </div>
                         </div>
                     </div>
@@ -244,7 +245,7 @@
                             </div>
                             {% endfor %}
                         {% else %}
-                            <small class="sat-note-empty">Eslatma yo'q</small>
+                            <small class="sat-note-empty">{% trans "Eslatma yo'q" %}</small>
                         {% endif %}
                     </div>
                 </div>
@@ -257,9 +258,9 @@
         <ul class="pagination justify-content-center sat-pagination flex-wrap">
             <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
                 {% if page_obj.has_previous %}
-                <a class="page-link sat-page-link" href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if bookmarked_only %}bookmarked=1&{% endif %}{% if content_type and content_type != 'all' %}content_type={{ content_type }}&{% endif %}{% if progress_status and progress_status != 'all' %}progress_status={{ progress_status }}&{% endif %}page={{ page_obj.previous_page_number }}">Oldingi</a>
+                <a class="page-link sat-page-link" href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if bookmarked_only %}bookmarked=1&{% endif %}{% if content_type and content_type != 'all' %}content_type={{ content_type }}&{% endif %}{% if progress_status and progress_status != 'all' %}progress_status={{ progress_status }}&{% endif %}page={{ page_obj.previous_page_number }}">{% trans "Oldingi" %}</a>
                 {% else %}
-                <span class="page-link">Oldingi</span>
+                <span class="page-link">{% trans "Oldingi" %}</span>
                 {% endif %}
             </li>
 
@@ -275,9 +276,9 @@
 
             <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
                 {% if page_obj.has_next %}
-                <a class="page-link sat-page-link" href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if bookmarked_only %}bookmarked=1&{% endif %}{% if content_type and content_type != 'all' %}content_type={{ content_type }}&{% endif %}{% if progress_status and progress_status != 'all' %}progress_status={{ progress_status }}&{% endif %}page={{ page_obj.next_page_number }}">Keyingi</a>
+                <a class="page-link sat-page-link" href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if bookmarked_only %}bookmarked=1&{% endif %}{% if content_type and content_type != 'all' %}content_type={{ content_type }}&{% endif %}{% if progress_status and progress_status != 'all' %}progress_status={{ progress_status }}&{% endif %}page={{ page_obj.next_page_number }}">{% trans "Keyingi" %}</a>
                 {% else %}
-                <span class="page-link">Keyingi</span>
+                <span class="page-link">{% trans "Keyingi" %}</span>
                 {% endif %}
             </li>
         </ul>
@@ -287,8 +288,8 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
             <i class="fas fa-folder-open fa-2x text-muted mb-3"></i>
-            <p class="text-muted mb-2">Filter bo'yicha mos resurs topilmadi.</p>
-            <a href="{% url 'sat:sat_subject' subject %}" class="btn btn-sm btn-outline-primary">Filterni tozalash</a>
+            <p class="text-muted mb-2">{% trans "Filter bo'yicha mos resurs topilmadi." %}</p>
+            <a href="{% url 'sat:sat_subject' subject %}" class="btn btn-sm btn-outline-primary">{% trans "Filterni tozalash" %}</a>
         </div>
     </div>
     {% endif %}
@@ -297,7 +298,7 @@
 <div class="sat-loading-overlay" id="sat-loading-overlay" aria-live="polite" aria-hidden="true">
     <div class="sat-loading-box">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        Yuklanmoqda...
+        {% trans "Yuklanmoqda..." %}
     </div>
 </div>
 {% endblock %}
@@ -403,21 +404,21 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (d.bookmarked) {
                             this.classList.remove('btn-outline-danger');
                             this.classList.add('btn-danger');
-                            this.innerHTML = '<i class="fas fa-file-pdf me-1"></i>PDF saqlangan';
+                            this.innerHTML = '<i class="fas fa-file-pdf me-1"></i>' + t('PDF saqlangan');
                         } else {
                             this.classList.remove('btn-danger');
                             this.classList.add('btn-outline-danger');
-                            this.innerHTML = '<i class="fas fa-file-pdf me-1"></i>PDF saqlash';
+                            this.innerHTML = '<i class="fas fa-file-pdf me-1"></i>' + t('PDF saqlash');
                         }
                     } else {
                         if (d.bookmarked) {
                             this.classList.remove('btn-outline-warning');
                             this.classList.add('btn-warning');
-                            this.innerHTML = '<i class="fas fa-video me-1"></i>Video saqlangan';
+                            this.innerHTML = '<i class="fas fa-video me-1"></i>' + t('Video saqlangan');
                         } else {
                             this.classList.remove('btn-warning');
                             this.classList.add('btn-outline-warning');
-                            this.innerHTML = '<i class="fas fa-video me-1"></i>Video saqlash';
+                            this.innerHTML = '<i class="fas fa-video me-1"></i>' + t('Video saqlash');
                         }
                     }
                 })
@@ -443,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(d => {
                     if (!d.success) return;
                     const wrap = document.getElementById('sat-notes-' + id);
-                    if (wrap && wrap.innerHTML.indexOf("Eslatma yo'q") >= 0) wrap.innerHTML = '';
+                    if (wrap && wrap.querySelector('.sat-note-empty')) wrap.innerHTML = '';
                     const empty = wrap ? wrap.querySelector('.sat-note-empty') : null;
                     if (empty) empty.remove();
                     if (wrap) {
@@ -473,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (item) item.remove();
                 const wrap = item ? item.closest('.sat-notes') : null;
                 if (wrap && wrap.querySelectorAll('.sat-note-item').length === 0) {
-                    wrap.insertAdjacentHTML('afterbegin', '<small class="sat-note-empty">Eslatma yo\\'q</small>');
+                    wrap.insertAdjacentHTML('afterbegin', '<small class="sat-note-empty">{% trans "Eslatma yo'q" %}</small>');
                 }
             });
     });

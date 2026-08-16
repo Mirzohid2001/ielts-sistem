@@ -9,6 +9,7 @@ from django.db.models.functions import Coalesce
 from django.db.models import Value
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.utils.translation import gettext
 from django.urls import reverse
 from django.db import transaction, connection
 from django.views.decorators.http import require_POST
@@ -420,7 +421,7 @@ def sat_clear_bookmarks(request):
     else:
         deleted_count, _ = qs.delete()
 
-    messages.success(request, f"{deleted_count} ta izbranniy o'chirildi.")
+    messages.success(request, gettext("%(n)d ta izbranniy o'chirildi.") % {'n': deleted_count})
     return redirect('sat:sat_bookmarks')
 
 
@@ -434,7 +435,7 @@ def sat_add_note(request, pk):
     except (TypeError, ValueError):
         ts = 0
     if not note_text:
-        return JsonResponse({'success': False, 'error': "Eslatma matni bo'sh."}, status=400)
+        return JsonResponse({'success': False, 'error': gettext("Eslatma matni bo'sh.")}, status=400)
     note = SATResourceNote.objects.create(
         user=request.user, resource=resource, note_text=note_text, timestamp=max(0, ts)
     )
@@ -1490,7 +1491,7 @@ def test_take(request, pk):
     total_answer_slots = total_gradable_slots_for_questions(questions)
 
     if total_questions == 0:
-        messages.warning(request, "Bu testda hali savollar qo'shilmagan. Admin orqali savollar qo'shing.")
+        messages.warning(request, gettext("Bu testda hali savollar qo'shilmagan. Admin orqali savollar qo'shing."))
         return redirect('core:test_detail', pk=test.pk)
 
     # Barcha javoblarni bir POST bilan saqlash (merge — avvalgi javoblar saqlanadi)
@@ -1596,7 +1597,7 @@ def test_take(request, pk):
 
             return redirect('core:test_result', pk=test_result.pk)
         else:
-            messages.success(request, "Javoblar saqlandi.")
+            messages.success(request, gettext("Javoblar saqlandi."))
             return redirect(request.path)
 
     answered_questions = [int(q_id) for q_id in answers.keys() if str(q_id).isdigit()]
@@ -2357,7 +2358,7 @@ def add_test_flashcard(request, pk):
     """Test sahifasidan flashcard qo'shish."""
     test = get_object_or_404(Test.objects.select_related('category'), pk=pk, is_active=True)
     if not getattr(test.category, 'show_on_site', True):
-        return JsonResponse({'success': False, 'error': 'Test mavjud emas.'}, status=404)
+        return JsonResponse({'success': False, 'error': gettext('Test mavjud emas.')}, status=404)
 
     term = (request.POST.get('term') or '').strip()
     definition = (request.POST.get('definition') or '').strip()
@@ -2366,7 +2367,7 @@ def add_test_flashcard(request, pk):
     question_id = (request.POST.get('question_id') or '').strip()
 
     if not term:
-        return JsonResponse({'success': False, 'error': 'Term bo\'sh bo\'lishi mumkin emas.'}, status=400)
+        return JsonResponse({'success': False, 'error': gettext("Term bo'sh bo'lishi mumkin emas.")}, status=400)
 
     flashcard_set = None
     if new_set_name:
@@ -2377,7 +2378,7 @@ def add_test_flashcard(request, pk):
     elif set_id:
         flashcard_set = FlashcardSet.objects.filter(pk=set_id, user=request.user).first()
     if not flashcard_set:
-        return JsonResponse({'success': False, 'error': 'Set tanlang yoki yangi set nomini kiriting.'}, status=400)
+        return JsonResponse({'success': False, 'error': gettext("Set tanlang yoki yangi set nomini kiriting.")}, status=400)
 
     source_question = None
     if question_id.isdigit():
@@ -2408,7 +2409,7 @@ def test_retake(request, pk):
     
     # Qayta ishlashga ruxsat bormi?
     if not test.allow_retake:
-        messages.error(request, 'Bu testni qayta ishlashga ruxsat berilmagan.')
+        messages.error(request, gettext('Bu testni qayta ishlashga ruxsat berilmagan.'))
         if request.headers.get('HX-Request'):
             return redirect('core:test_detail', pk=test.pk)
         return redirect('core:test_detail', pk=test.pk)
@@ -2421,7 +2422,7 @@ def test_retake(request, pk):
     ).count()
     
     if test.max_attempts and attempts_count >= test.max_attempts:
-        messages.error(request, f'Siz maksimal {test.max_attempts} marta urinish qildingiz.')
+        messages.error(request, gettext('Siz maksimal %(n)d marta urinish qildingiz.') % {'n': test.max_attempts})
         if request.headers.get('HX-Request'):
             return redirect('core:test_detail', pk=test.pk)
         return redirect('core:test_detail', pk=test.pk)
@@ -2518,7 +2519,7 @@ def regenerate_writing_feedback(request, pk):
     """AI writing feedbackni qayta generatsiya qilish (kunlik limit bilan)."""
     test_result = get_object_or_404(UserTestResult, pk=pk, user=request.user)
     if test_result.test.test_type != 'writing':
-        return JsonResponse({'ok': False, 'error': 'Faqat writing testlari uchun.'}, status=400)
+        return JsonResponse({'ok': False, 'error': gettext('Faqat writing testlari uchun.')}, status=400)
 
     sync_essay_answers_from_json(test_result)
     items = load_writing_feedback_for_result(test_result)
@@ -2532,7 +2533,7 @@ def regenerate_writing_feedback(request, pk):
     if not is_recovery:
         if remaining <= 0:
             return JsonResponse(
-                {'ok': False, 'error': 'Kunlik limit tugadi (3 marta). Ertaga qayta urinib ko\'ring.'},
+                {'ok': False, 'error': gettext("Kunlik limit tugadi (3 marta). Ertaga qayta urinib ko'ring.")},
                 status=429,
             )
         record_feedback_regenerate(request.user)
@@ -2619,7 +2620,7 @@ def regenerate_answer_explanation(request, pk):
         test_result__user=request.user,
     )
     if not supports_answer_explanations(obj.test_result.test):
-        return JsonResponse({'ok': False, 'error': 'Faqat reading/listening.'}, status=400)
+        return JsonResponse({'ok': False, 'error': gettext('Faqat reading/listening.')}, status=400)
 
     obj.status = AIAnswerExplanation.STATUS_PENDING
     obj.save(update_fields=['status', 'updated_at'])
@@ -2633,7 +2634,7 @@ def regenerate_rl_insight(request, pk):
     """Reading/Listening umumiy AI xulosani fonida qayta yaratish."""
     test_result = get_object_or_404(UserTestResult, pk=pk, user=request.user)
     if not supports_answer_explanations(test_result.test):
-        return JsonResponse({'ok': False, 'error': 'Faqat reading/listening.'}, status=400)
+        return JsonResponse({'ok': False, 'error': gettext('Faqat reading/listening.')}, status=400)
 
     insight = ensure_insight_placeholder(test_result)
     insight.status = AITestInsight.STATUS_PENDING
@@ -2674,6 +2675,20 @@ def _mark_ai_outputs_pending(test_result):
             status=AITestInsight.STATUS_PENDING,
             summary='',
         )
+
+
+def _sync_result_language_with_site(request, test_result):
+    """Sayt tili o'zgarsa, natija AI matni ham shu tilda qayta yoziladi."""
+    site_lang = get_ai_language(request)
+    if language_for_result(test_result) == site_lang:
+        persist_ai_language(request, test_result, lang=site_lang)
+        return
+    persist_ai_language(request, test_result, lang=site_lang)
+    _mark_ai_outputs_pending(test_result)
+    if test_result.test.test_type == 'writing':
+        schedule_writing_feedback_generation(test_result.pk, force=True)
+    if supports_answer_explanations(test_result.test):
+        schedule_answer_explanations(test_result.pk, force=True)
 
 
 @login_required
@@ -2719,13 +2734,13 @@ def save_feedback_flashcards(request, pk):
         test_result__user=request.user,
     )
     if feedback.status != AIWritingFeedback.STATUS_COMPLETED:
-        return JsonResponse({'ok': False, 'error': 'Feedback hali tayyor emas.'}, status=400)
+        return JsonResponse({'ok': False, 'error': gettext('Feedback hali tayyor emas.')}, status=400)
 
     from core.services.writing_flashcards import create_flashcards_from_feedback
 
     result = create_flashcards_from_feedback(request.user, feedback)
     if not result['created'] and not (feedback.vocabulary_upgrades or []):
-        return JsonResponse({'ok': False, 'error': 'Saqlash uchun so\'z topilmadi.'}, status=400)
+        return JsonResponse({'ok': False, 'error': gettext("Saqlash uchun so'z topilmadi.")}, status=400)
 
     return JsonResponse({
         'ok': True,
@@ -2734,9 +2749,12 @@ def save_feedback_flashcards(request, pk):
         'set_id': result['set_id'],
         'set_name': result['set_name'],
         'message': (
-            f"{result['created']} ta so'z «{result['set_name']}» to'plamiga saqlandi."
+            gettext("%(n)d ta so'z «%(name)s» to'plamiga saqlandi.") % {
+                'n': result['created'],
+                'name': result['set_name'],
+            }
             if result['created']
-            else 'Yangi so\'z qo\'shilmadi (barchasi allaqachon saqlangan).'
+            else gettext("Yangi so'z qo'shilmadi (barchasi allaqachon saqlangan).")
         ),
     })
 
@@ -2753,7 +2771,7 @@ def writing_coach_chat(request, pk):
         test_result__user=request.user,
     )
     if feedback.status != AIWritingFeedback.STATUS_COMPLETED:
-        return JsonResponse({'ok': False, 'error': 'Feedback tayyor bo\'lgach chat ishlaydi.'}, status=400)
+        return JsonResponse({'ok': False, 'error': gettext("Feedback tayyor bo'lgach chat ishlaydi.")}, status=400)
 
     from core.services.writing_chat_coach import (
         answer_writing_coach_question,
@@ -2766,7 +2784,7 @@ def writing_coach_chat(request, pk):
         return JsonResponse(
             {
                 'ok': False,
-                'error': 'Kunlik chat limiti tugadi (25 ta). Ertaga qayta urinib ko\'ring.',
+                'error': gettext("Kunlik chat limiti tugadi (25 ta). Ertaga qayta urinib ko'ring."),
                 'remaining': 0,
             },
             status=429,
@@ -2925,12 +2943,15 @@ def test_result(request, pk):
                     prepare_answer_explanation_placeholders(test_result)
                     schedule_answer_explanations(test_result.pk)
         except Exception as e:
-            messages.error(request, f'Xatolik yuz berdi: {str(e)}')
+            messages.error(request, gettext('Xatolik yuz berdi: %(err)s') % {'err': str(e)})
             return redirect('core:test_detail', pk=test_result.test.pk)
 
     if test_result.completed_at and needs_scoring_refresh(test_result):
         test_result.recalculate_from_answers()
         test_result.refresh_from_db()
+
+    if test_result.completed_at:
+        _sync_result_language_with_site(request, test_result)
 
     if test_result.test.test_type == 'writing':
         sync_essay_answers_from_json(test_result)
@@ -3124,7 +3145,7 @@ def test_result(request, pk):
             if test_result.test.test_type == 'writing'
             else 0
         ),
-        'ai_lang': language_for_result(test_result),
+        'ai_lang': get_ai_language(request, test_result),
     }
     return render(request, 'core/tests/result.html', context)
 
@@ -3216,7 +3237,7 @@ def profile(request, section=None):
     # Jobs hali yo'q — kelajak uchun placeholder
     jobs_stats = {
         'available': False,
-        'label': "Tez orada",
+        'label': gettext("Tez orada"),
     }
 
     writing_progress = build_writing_progress_summary(request.user) if active_section == 'ielts' else None
@@ -3274,7 +3295,7 @@ def toggle_bookmark(request):
         elif test_id:
             test = get_object_or_404(Test.objects.select_related('category'), pk=test_id)
             if not getattr(test.category, 'show_on_site', True):
-                return JsonResponse({'error': 'Test mavjud emas.'}, status=404)
+                return JsonResponse({'error': gettext('Test mavjud emas.')}, status=404)
             bookmark, created = Bookmark.objects.get_or_create(
                 user=request.user,
                 test=test
@@ -3284,7 +3305,7 @@ def toggle_bookmark(request):
                 return JsonResponse({'bookmarked': False})
             return JsonResponse({'bookmarked': True})
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3436,7 +3457,7 @@ def update_video_progress(request, pk):
             'progress': progress.watch_percentage
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3466,9 +3487,9 @@ def add_video_note(request, pk):
                 }
             })
         
-        return JsonResponse({'error': 'Eslatma matni bo\'sh bo\'lishi mumkin emas'}, status=400)
+        return JsonResponse({'error': gettext("Eslatma matni bo'sh bo'lishi mumkin emas")}, status=400)
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3480,7 +3501,7 @@ def delete_video_note(request, note_id):
         
         return JsonResponse({'success': True})
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3499,7 +3520,7 @@ def test_pause(request, pk):
     return JsonResponse({
         'success': True,
         'is_paused': True,
-        'message': 'Test to\'xtatildi'
+        'message': gettext("Test to'xtatildi")
     })
 
 
@@ -3519,7 +3540,7 @@ def test_resume(request, pk):
     return JsonResponse({
         'success': True,
         'is_paused': False,
-        'message': 'Test davom etmoqda'
+        'message': gettext('Test davom etmoqda')
     })
 
 
@@ -3551,7 +3572,7 @@ def test_update_time(request, pk):
             'is_paused': test_result.is_paused
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3563,10 +3584,10 @@ def rate_video(request, pk):
         try:
             rating_value = int(request.POST.get('rating', 0))
         except (ValueError, TypeError):
-            return JsonResponse({'error': 'Noto\'g\'ri reyting qiymati'}, status=400)
+            return JsonResponse({'error': gettext("Noto'g'ri reyting qiymati")}, status=400)
         
         if rating_value < 1 or rating_value > 5:
-            return JsonResponse({'error': 'Reyting 1 dan 5 gacha bo\'lishi kerak'}, status=400)
+            return JsonResponse({'error': gettext("Reyting 1 dan 5 gacha bo'lishi kerak")}, status=400)
         
         rating, created = VideoRating.objects.update_or_create(
             user=request.user,
@@ -3594,7 +3615,7 @@ def rate_video(request, pk):
             'total_ratings': total_ratings
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3606,14 +3627,14 @@ def add_video_comment(request, pk):
         parent_id = request.POST.get('parent_id')
         
         if not comment_text:
-            return JsonResponse({'error': 'Izoh matni bo\'sh bo\'lishi mumkin emas'}, status=400)
+            return JsonResponse({'error': gettext("Izoh matni bo'sh bo'lishi mumkin emas")}, status=400)
         
         parent = None
         if parent_id:
             try:
                 parent = VideoComment.objects.get(pk=parent_id, video=video)
             except VideoComment.DoesNotExist:
-                return JsonResponse({'error': 'Noto\'g\'ri parent izoh'}, status=400)
+                return JsonResponse({'error': gettext("Noto'g'ri parent izoh")}, status=400)
         
         comment = VideoComment.objects.create(
             user=request.user,
@@ -3635,7 +3656,7 @@ def add_video_comment(request, pk):
             }
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3647,7 +3668,7 @@ def delete_video_comment(request, comment_id):
         
         return JsonResponse({'success': True})
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3659,7 +3680,7 @@ def create_playlist(request):
         is_public = request.POST.get('is_public') == 'true'
         
         if not name:
-            return JsonResponse({'error': 'Playlist nomi bo\'sh bo\'lishi mumkin emas'}, status=400)
+            return JsonResponse({'error': gettext("Playlist nomi bo'sh bo'lishi mumkin emas")}, status=400)
         
         playlist = VideoPlaylist.objects.create(
             user=request.user,
@@ -3678,7 +3699,7 @@ def create_playlist(request):
             }
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3689,12 +3710,12 @@ def add_video_to_playlist(request, pk):
         playlist_id = request.POST.get('playlist_id')
         
         if not playlist_id:
-            return JsonResponse({'error': 'Playlist tanlanmagan'}, status=400)
+            return JsonResponse({'error': gettext('Playlist tanlanmagan')}, status=400)
         
         try:
             playlist = VideoPlaylist.objects.get(pk=playlist_id, user=request.user)
         except VideoPlaylist.DoesNotExist:
-            return JsonResponse({'error': 'Playlist topilmadi'}, status=404)
+            return JsonResponse({'error': gettext('Playlist topilmadi')}, status=404)
         
         # Videoni playlistga qo'shish
         playlist_video, created = PlaylistVideo.objects.get_or_create(
@@ -3704,14 +3725,14 @@ def add_video_to_playlist(request, pk):
         )
         
         if not created:
-            return JsonResponse({'error': 'Video allaqachon playlistda'}, status=400)
+            return JsonResponse({'error': gettext('Video allaqachon playlistda')}, status=400)
         
         return JsonResponse({
             'success': True,
-            'message': 'Video playlistga qo\'shildi'
+            'message': gettext("Video playlistga qo'shildi")
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3722,21 +3743,21 @@ def remove_video_from_playlist(request, pk):
         playlist_id = request.POST.get('playlist_id')
         
         if not playlist_id:
-            return JsonResponse({'error': 'Playlist tanlanmagan'}, status=400)
+            return JsonResponse({'error': gettext('Playlist tanlanmagan')}, status=400)
         
         try:
             playlist = VideoPlaylist.objects.get(pk=playlist_id, user=request.user)
         except VideoPlaylist.DoesNotExist:
-            return JsonResponse({'error': 'Playlist topilmadi'}, status=404)
+            return JsonResponse({'error': gettext('Playlist topilmadi')}, status=404)
         
         PlaylistVideo.objects.filter(playlist=playlist, video=video).delete()
         
         return JsonResponse({
             'success': True,
-            'message': 'Video playlistdan olib tashlandi'
+            'message': gettext('Video playlistdan olib tashlandi')
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3763,7 +3784,7 @@ def add_video_bookmark(request, pk):
             return JsonResponse({
                 'success': True,
                 'bookmarked': False,
-                'message': 'Bookmark olib tashlandi'
+                'message': gettext('Bookmark olib tashlandi')
             })
         
         return JsonResponse({
@@ -3774,10 +3795,10 @@ def add_video_bookmark(request, pk):
                 'timestamp': note.timestamp,
                 'timestamp_display': note.get_timestamp_display(),
             },
-            'message': 'Bookmark qo\'shildi'
+            'message': gettext("Bookmark qo'shildi")
         })
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({'error': gettext("Noto'g'ri so'rov")}, status=400)
 
 
 @login_required
@@ -3920,7 +3941,7 @@ def export_to_excel(request):
         from openpyxl.styles import Font, Alignment, PatternFill
         from openpyxl.utils import get_column_letter
     except ImportError:
-        messages.error(request, 'Excel export funksiyasi ishlamayapti. Iltimos, openpyxl paketini o\'rnating.')
+        messages.error(request, gettext("Excel export funksiyasi ishlamayapti. Iltimos, openpyxl paketini o'rnating."))
         return redirect('core:profile')
     
     # Test natijalari

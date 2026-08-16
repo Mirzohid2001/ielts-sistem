@@ -1,33 +1,33 @@
 {% extends 'base.html' %}
 
-{% block title %}Video Darslar - IELTS Center{% endblock %}
+{% block title %}{% trans "Video Darslar" %} - IELTS Center{% endblock %}
 
 {% block content %}
 <div class="container mt-4 videos-page">
     <div class="videos-hero">
         <div class="videos-hero__inner">
             <div>
-                <h1 class="videos-hero__title">Video Darslar</h1>
-                <p class="videos-hero__sub">IELTS tayyorgarlik uchun video darslar — kategoriyani tanlang va o'rganishni boshlang</p>
+                <h1 class="videos-hero__title">{% trans "Video Darslar" %}</h1>
+                <p class="videos-hero__sub">{% trans "IELTS tayyorgarlik uchun video darslar — kategoriyani tanlang va o'rganishni boshlang" %}</p>
             </div>
             <div class="videos-hero__actions">
                 <a href="{% url 'core:dashboard' %}" class="videos-hero__btn">
-                    <i class="fas fa-arrow-left"></i>Orqaga
+                    <i class="fas fa-arrow-left"></i>{% trans "Orqaga" %}
                 </a>
             </div>
             <div class="videos-hero__stats">
                 <div class="videos-hero__stat">
                     <strong>{{ total_videos_count }}</strong>
-                    <span>Video dars</span>
+                    <span>{% trans "Video dars" %}</span>
                 </div>
                 <div class="videos-hero__stat">
                     <strong>{{ categories|length }}</strong>
-                    <span>Kategoriya</span>
+                    <span>{% trans "Kategoriya" %}</span>
                 </div>
                 {% if user.is_authenticated %}
                 <div class="videos-hero__stat">
                     <strong>{{ user_watched_count }}</strong>
-                    <span>Ko'rilgan</span>
+                    <span>{% trans "Ko'rilgan" %}</span>
                 </div>
                 {% endif %}
             </div>
@@ -39,7 +39,7 @@
             <form method="get" id="search-form" class="row g-3 align-items-end">
                 <div class="col-12 col-md-5">
                     <label class="tests-search__label" for="search-input">
-                        <i class="fas fa-search me-1"></i>Qidirish
+                        <i class="fas fa-search me-1"></i>{% trans "Qidirish" %}
                     </label>
                     <div class="tests-search__input-wrap">
                         <i class="fas fa-search"></i>
@@ -47,7 +47,7 @@
                                name="search"
                                id="search-input"
                                class="form-control"
-                               placeholder="Video nomi, kategoriya..."
+                               placeholder="{% trans "Video nomi, kategoriya..." %}"
                                value="{{ search_query }}"
                                autocomplete="off">
                     </div>
@@ -55,26 +55,26 @@
 
                 <div class="col-12 col-md-3">
                     <label class="tests-search__label" for="sort-select">
-                        <i class="fas fa-sort me-1"></i>Tartiblash
+                        <i class="fas fa-sort me-1"></i>{% trans "Tartiblash" %}
                     </label>
                     <select name="sort" id="sort-select" class="form-select tests-search__select">
-                        <option value="order" {% if sort_by == 'order' or not sort_by %}selected{% endif %}>Tartib</option>
-                        <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Yangi</option>
-                        <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Eski</option>
-                        <option value="title_asc" {% if sort_by == 'title_asc' %}selected{% endif %}>Nomi (A-Z)</option>
-                        <option value="title_desc" {% if sort_by == 'title_desc' %}selected{% endif %}>Nomi (Z-A)</option>
-                        <option value="views" {% if sort_by == 'views' %}selected{% endif %}>Ko'rilganlar</option>
+                        <option value="order" {% if sort_by == 'order' or not sort_by %}selected{% endif %}>{% trans "Tartib" %}</option>
+                        <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>{% trans "Yangi" %}</option>
+                        <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>{% trans "Eski" %}</option>
+                        <option value="title_asc" {% if sort_by == 'title_asc' %}selected{% endif %}>{% trans "Nomi (A-Z)" %}</option>
+                        <option value="title_desc" {% if sort_by == 'title_desc' %}selected{% endif %}>{% trans "Nomi (Z-A)" %}</option>
+                        <option value="views" {% if sort_by == 'views' %}selected{% endif %}>{% trans "Ko'rilganlar" %}</option>
                     </select>
                 </div>
 
                 <div class="col-12 col-md-4">
                     <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-primary flex-grow-1">
-                            <i class="fas fa-search me-1"></i>Qidirish
+                            <i class="fas fa-search me-1"></i>{% trans "Qidirish" %}
                         </button>
                         {% if search_query or selected_category %}
                         <a href="{% url 'core:video_list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i>Tozalash
+                            <i class="fas fa-times me-1"></i>{% trans "Tozalash" %}
                         </a>
                         {% endif %}
                     </div>
@@ -87,7 +87,7 @@
 
             {% if search_query or selected_category %}
             <div class="tests-active-filters d-flex flex-wrap align-items-center gap-2">
-                <span class="tests-active-filters__label">Faol filterlar:</span>
+                <span class="tests-active-filters__label">{% trans "Faol filterlar:" %}</span>
                 {% if search_query %}
                 <span class="badge bg-primary">
                     <i class="fas fa-search me-1"></i>{{ search_query }}
@@ -109,7 +109,7 @@
                 <button class="btn btn-outline-primary w-100 tests-filter-toggle" type="button"
                         data-bs-toggle="collapse" data-bs-target="#filterSidebar"
                         aria-expanded="false" aria-controls="filterSidebar">
-                    <i class="fas fa-filter me-2"></i>Kategoriyalar
+                    <i class="fas fa-filter me-2"></i>{% trans "Kategoriyalar" %}
                     <i class="fas fa-chevron-down ms-2"></i>
                 </button>
             </div>
@@ -117,17 +117,17 @@
             <div class="collapse d-lg-block" id="filterSidebar">
                 <aside class="filter-sidebar">
                     <div class="filter-sidebar__top">
-                        <i class="fas fa-sliders-h"></i>Filterlar
+                        <i class="fas fa-sliders-h"></i>{% trans "Filterlar" %}
                     </div>
                     <div class="filter-section">
                         <div class="filter-section__title">
-                            <i class="fas fa-folder"></i>Kategoriyalar
+                            <i class="fas fa-folder"></i>{% trans "Kategoriyalar" %}
                         </div>
                         <ul class="filter-list">
                             <li>
                                 <a href="{% url 'core:video_list' %}"
                                    class="filter-item {% if not selected_category %}active{% endif %}">
-                                    <i class="fas fa-th-large"></i>Barchasi
+                                    <i class="fas fa-th-large"></i>{% trans "Barchasi" %}
                                 </a>
                             </li>
                             {% for category in categories %}
@@ -166,7 +166,7 @@
             <div class="tests-count">
                 <div class="tests-count__left">
                     <i class="fas fa-video"></i>
-                    <span><strong>{{ videos.paginator.count }}</strong> ta video topildi</span>
+                    <span>{% blocktrans count n=videos.paginator.count %}{{ n }} ta video topildi{% plural %}{{ n }} ta video topildi{% endblocktrans %}</span>
                 </div>
             </div>
             {% endif %}

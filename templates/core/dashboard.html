@@ -1,21 +1,22 @@
 {% extends 'base.html' %}
+{% load core_filters %}
 
-{% block title %}Bosh sahifa - IELTS Center{% endblock %}
+{% block title %}{% trans "Bosh sahifa" %} - IELTS Center{% endblock %}
 
 {% block content %}
 <div class="container mt-4 dash-page">
     <section class="dash-hero fade-in-up">
         <div class="dash-hero__inner">
             <div class="dash-hero__main">
-                <p class="dash-hero__eyebrow">Xush kelibsiz</p>
+                <p class="dash-hero__eyebrow">{% trans "Xush kelibsiz" %}</p>
                 <h1 class="dash-hero__title">{{ user.first_name|default:user.username }}! 👋</h1>
-                <p class="dash-hero__sub">Bugun nima o'rganamiz? Test yoki video darsni tanlang va davom eting.</p>
+                <p class="dash-hero__sub">{% trans "Bugun nima o'rganamiz? Test yoki video darsni tanlang va davom eting." %}</p>
                 <div class="dash-hero__chips">
                     <a href="{% url 'core:test_list' %}" class="dash-hero__chip">
-                        <i class="fas fa-clipboard-list"></i>Testlar
+                        <i class="fas fa-clipboard-list"></i>{% trans "Testlar" %}
                     </a>
                     <a href="{% url 'core:video_list' %}" class="dash-hero__chip">
-                        <i class="fas fa-video"></i>Videolar
+                        <i class="fas fa-video"></i>{% trans "Videolar" %}
                     </a>
                 </div>
             </div>
@@ -23,7 +24,7 @@
                 <div class="dash-hero__ring dash-hero__ring--pulse" style="--score-deg: {{ score_deg }}deg;">
                     <div class="dash-hero__ring-hole">
                         <strong>{{ user_stats.average_score|floatformat:1 }}%</strong>
-                        <small>O'rtacha ball</small>
+                        <small>{% trans "O'rtacha ball" %}</small>
                     </div>
                 </div>
             </div>
@@ -31,19 +32,19 @@
         <div class="dash-hero__stats">
             <div class="dash-hero__stat">
                 <strong>{{ user_stats.tests_completed }}</strong>
-                <span>Ishlangan test</span>
+                <span>{% trans "Ishlangan test" %}</span>
             </div>
             <div class="dash-hero__stat">
                 <strong>{{ user_stats.videos_watched }}</strong>
-                <span>Ko'rilgan video</span>
+                <span>{% trans "Ko'rilgan video" %}</span>
             </div>
             <div class="dash-hero__stat">
                 <strong>{{ user_stats.current_streak }}</strong>
-                <span>Streak (kun)</span>
+                <span>{% trans "Streak (kun)" %}</span>
             </div>
             <div class="dash-hero__stat">
                 <strong>{{ total_tests }}</strong>
-                <span>Mavjud test</span>
+                <span>{% trans "Mavjud test" %}</span>
             </div>
         </div>
     </section>
@@ -53,9 +54,9 @@
             <div class="dash-stat dash-stat--primary dash-stat--enter">
                 <div class="dash-stat__icon"><i class="fas fa-clipboard-list"></i></div>
                 <div class="dash-stat__body">
-                    <span class="dash-stat__label">Ishlangan testlar</span>
+                    <span class="dash-stat__label">{% trans "Ishlangan testlar" %}</span>
                     <strong class="dash-stat__value">{{ user_stats.tests_completed }}</strong>
-                    <span class="dash-stat__hint">Jami {{ total_tests }} ta</span>
+                    <span class="dash-stat__hint">{% trans "Jami" %} {{ total_tests }} {% trans "ta" %}</span>
                     <div class="dash-stat__bar" aria-hidden="true">
                         <div class="dash-stat__bar-fill" data-animate-width="{{ tests_progress_pct }}%"></div>
                     </div>
@@ -66,9 +67,9 @@
             <div class="dash-stat dash-stat--success dash-stat--enter">
                 <div class="dash-stat__icon"><i class="fas fa-video"></i></div>
                 <div class="dash-stat__body">
-                    <span class="dash-stat__label">Ko'rilgan videolar</span>
+                    <span class="dash-stat__label">{% trans "Ko'rilgan videolar" %}</span>
                     <strong class="dash-stat__value">{{ user_stats.videos_watched }}</strong>
-                    <span class="dash-stat__hint">Jami {{ total_videos }} ta</span>
+                    <span class="dash-stat__hint">{% trans "Jami" %} {{ total_videos }} {% trans "ta" %}</span>
                     <div class="dash-stat__bar" aria-hidden="true">
                         <div class="dash-stat__bar-fill" data-animate-width="{{ videos_progress_pct }}%"></div>
                     </div>
@@ -79,9 +80,9 @@
             <div class="dash-stat dash-stat--info dash-stat--enter">
                 <div class="dash-stat__icon"><i class="fas fa-chart-line"></i></div>
                 <div class="dash-stat__body">
-                    <span class="dash-stat__label">O'rtacha ball</span>
+                    <span class="dash-stat__label">{% trans "O'rtacha ball" %}</span>
                     <strong class="dash-stat__value">{{ user_stats.average_score|floatformat:1 }}%</strong>
-                    <span class="dash-stat__hint">Barcha testlar bo'yicha</span>
+                    <span class="dash-stat__hint">{% trans "Barcha testlar bo'yicha" %}</span>
                     <div class="dash-stat__bar" aria-hidden="true">
                         <div class="dash-stat__bar-fill" data-animate-width="{{ user_stats.average_score|floatformat:0 }}%"></div>
                     </div>
@@ -92,9 +93,9 @@
             <div class="dash-stat dash-stat--warning dash-stat--enter">
                 <div class="dash-stat__icon"><i class="fas fa-fire"></i></div>
                 <div class="dash-stat__body">
-                    <span class="dash-stat__label">Study streak</span>
+                    <span class="dash-stat__label">{% trans "Study streak" %}</span>
                     <strong class="dash-stat__value">{{ user_stats.current_streak }}</strong>
-                    <span class="dash-stat__hint">Ketma-ket kun 🔥</span>
+                    <span class="dash-stat__hint">{% trans "Ketma-ket kun" %} 🔥</span>
                     <div class="dash-stat__bar dash-stat__bar--streak" aria-hidden="true">
                         <div class="dash-stat__bar-fill" data-animate-width="{% if user_stats.current_streak >= 7 %}100{% elif user_stats.current_streak >= 3 %}60{% elif user_stats.current_streak >= 1 %}30{% else %}8{% endif %}%"></div>
                     </div>
@@ -107,24 +108,24 @@
         <a href="{% url 'core:leaderboard' %}" class="dash-action dash-action--gold dash-action--enter" style="--enter-i: 0;">
             <div class="dash-action__icon"><i class="fas fa-trophy fa-lg"></i></div>
             <div class="dash-action__text">
-                <strong>Reyting</strong>
-                <small>Eng yaxshi natijalar</small>
+                <strong>{% trans "Reyting" %}</strong>
+                <small>{% trans "Eng yaxshi natijalar" %}</small>
             </div>
             <i class="fas fa-arrow-right dash-action__arrow"></i>
         </a>
         <a href="{% url 'core:statistics' %}" class="dash-action dash-action--primary dash-action--enter" style="--enter-i: 1;">
             <div class="dash-action__icon"><i class="fas fa-chart-bar fa-lg"></i></div>
             <div class="dash-action__text">
-                <strong>Statistika</strong>
-                <small>Batafsil tahlillar</small>
+                <strong>{% trans "Statistika" %}</strong>
+                <small>{% trans "Batafsil tahlillar" %}</small>
             </div>
             <i class="fas fa-arrow-right dash-action__arrow"></i>
         </a>
         <a href="{% url 'core:profile' %}" class="dash-action dash-action--success dash-action--enter" style="--enter-i: 2;">
             <div class="dash-action__icon"><i class="fas fa-user fa-lg"></i></div>
             <div class="dash-action__text">
-                <strong>Profil</strong>
-                <small>Shaxsiy ma'lumotlar</small>
+                <strong>{% trans "Profil" %}</strong>
+                <small>{% trans "Shaxsiy ma'lumotlar" %}</small>
             </div>
             <i class="fas fa-arrow-right dash-action__arrow"></i>
         </a>
@@ -133,15 +134,15 @@
     <section class="dash-section fade-in-down">
         <header class="dash-section__head">
             <div>
-                <h2 class="dash-section__title">Kategoriyalar</h2>
-                <p class="dash-section__sub">Yo'nalishni tanlang va o'rganishni boshlang</p>
+                <h2 class="dash-section__title">{% trans "Kategoriyalar" %}</h2>
+                <p class="dash-section__sub">{% trans "Yo'nalishni tanlang va o'rganishni boshlang" %}</p>
             </div>
             <div class="dash-section__actions">
                 <a href="{% url 'core:video_list' %}" class="btn btn-primary">
-                    <i class="fas fa-video me-1"></i>Barcha videolar
+                    <i class="fas fa-video me-1"></i>{% trans "Barcha videolar" %}
                 </a>
                 <a href="{% url 'core:test_list' %}" class="btn btn-outline-primary">
-                    <i class="fas fa-clipboard-list me-1"></i>Barcha testlar
+                    <i class="fas fa-clipboard-list me-1"></i>{% trans "Barcha testlar" %}
                 </a>
             </div>
         </header>
@@ -161,16 +162,16 @@
                     </div>
                     <h3 class="dash-cat__title">{{ category.name }}</h3>
                     {% if category.description %}
-                    <p class="dash-cat__desc">{{ category.description|truncatewords:18 }}</p>
+                    <p class="dash-cat__desc">{{ category.description|site_t|truncatewords:18 }}</p>
                     {% else %}
-                    <p class="dash-cat__desc dash-cat__desc--muted">Video darslar va testlar</p>
+                    <p class="dash-cat__desc dash-cat__desc--muted">{% trans "Video darslar va testlar" %}</p>
                     {% endif %}
                     <div class="dash-cat__btns">
                         <a href="{% url 'core:video_list' %}?category={{ category.slug }}" class="btn btn-primary">
-                            <i class="fas fa-video me-2"></i>Videolar
+                            <i class="fas fa-video me-2"></i>{% trans "Videolar" %}
                         </a>
                         <a href="{% url 'core:test_list' %}?category={{ category.slug }}" class="btn btn-outline-primary">
-                            <i class="fas fa-clipboard-list me-2"></i>Testlar
+                            <i class="fas fa-clipboard-list me-2"></i>{% trans "Testlar" %}
                         </a>
                     </div>
                 </article>
@@ -179,8 +180,8 @@
             <div class="col-12">
                 <div class="dash-empty">
                     <div class="dash-empty__icon"><i class="fas fa-folder-open"></i></div>
-                    <h3 class="dash-empty__title">Kategoriyalar hozircha yo'q</h3>
-                    <p class="dash-empty__text">Admin panel orqali kategoriyalar qo'shilgach, bu yerda ko'rinadi.</p>
+                    <h3 class="dash-empty__title">{% trans "Kategoriyalar hozircha yo'q" %}</h3>
+                    <p class="dash-empty__text">{% trans "Admin panel orqali kategoriyalar qo'shilgach, bu yerda ko'rinadi." %}</p>
                 </div>
             </div>
             {% endfor %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load core_filters %}
 
 {% block title %}{{ collection_test_type_display }} Tests - IELTS Center{% endblock %}
 
@@ -75,11 +76,11 @@
         <div class="col-12">
             <div class="collection-hero d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
-                    <h2 class="mb-1" style="font-weight: 700;">{{ collection_test_type_display }} Test Collection</h2>
-                    <p class="mb-0" style="opacity: .92;">Filterlangan, tezkor va zamonaviy test katalogi</p>
+                    <h2 class="mb-1" style="font-weight: 700;">{{ collection_test_type_display }} {% trans "test to'plami" %}</h2>
+                    <p class="mb-0" style="opacity: .92;">{% trans "Filterlangan, tezkor va zamonaviy test katalogi" %}</p>
                 </div>
                 <a href="{% url 'core:test_list' %}" class="btn collection-back-btn">
-                    <i class="fas fa-arrow-left me-1"></i>Umumiy testlar
+                    <i class="fas fa-arrow-left me-1"></i>{% trans "Umumiy testlar" %}
                 </a>
             </div>
         </div>
@@ -89,42 +90,42 @@
         <div class="card-body">
             <form method="get" class="row g-2 align-items-end">
                 <div class="col-12 col-md-4">
-                    <label class="form-label">Search</label>
-                    <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Cambridge, test nomi...">
+                    <label class="form-label">{% trans "Qidirish" %}</label>
+                    <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="{% trans "Cambridge, test nomi..." %}">
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label">Question type</label>
+                    <label class="form-label">{% trans "Savol turi" %}</label>
                     <select name="qtype" class="form-select">
-                        <option value="">All</option>
+                        <option value="">{% trans "Barchasi" %}</option>
                         {% for code, label in available_question_types %}
                         <option value="{{ code }}" {% if selected_question_type == code %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label">Length</label>
+                    <label class="form-label">{% trans "Uzunlik" %}</label>
                     <select name="length" class="form-select">
-                        <option value="">All</option>
-                        <option value="full" {% if selected_length == 'full' %}selected{% endif %}>Full Tests</option>
-                        <option value="parts" {% if selected_length == 'parts' %}selected{% endif %}>Parts</option>
+                        <option value="">{% trans "Barchasi" %}</option>
+                        <option value="full" {% if selected_length == 'full' %}selected{% endif %}>{% trans "To'liq testlar" %}</option>
+                        <option value="parts" {% if selected_length == 'parts' %}selected{% endif %}>{% trans "Partlar" %}</option>
                     </select>
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label">Module</label>
+                    <label class="form-label">{% trans "Modul" %}</label>
                     <select name="module" class="form-select">
-                        <option value="">All</option>
-                        <option value="academic" {% if selected_module == 'academic' %}selected{% endif %}>Academic</option>
-                        <option value="general" {% if selected_module == 'general' %}selected{% endif %}>General</option>
+                        <option value="">{% trans "Barchasi" %}</option>
+                        <option value="academic" {% if selected_module == 'academic' %}selected{% endif %}>{% trans "Academic" %}</option>
+                        <option value="general" {% if selected_module == 'general' %}selected{% endif %}>{% trans "General" %}</option>
                     </select>
                 </div>
                 <div class="col-6 col-md-2 d-grid">
                     <button class="btn btn-primary" type="submit">
-                        <i class="fas fa-filter me-1"></i>Filter
+                        <i class="fas fa-filter me-1"></i>{% trans "Filter" %}
                     </button>
                 </div>
                 <div class="col-6 col-md-2 d-grid">
                     <a href="{% url 'core:test_collection_by_type' collection_test_type %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-rotate-left me-1"></i>Reset
+                        <i class="fas fa-rotate-left me-1"></i>{% trans "Tozalash" %}
                     </a>
                 </div>
             </form>
@@ -145,17 +146,18 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="badge bg-light text-dark border">{{ test.get_test_type_display }}</span>
                         {% if test.is_part_test %}
-                        <span class="badge bg-info-subtle text-info-emphasis">Part</span>
+                        <span class="badge bg-info-subtle text-info-emphasis">{% trans "Part" %}</span>
                         {% else %}
-                        <span class="badge bg-success-subtle text-success-emphasis">Full Test</span>
+                        <span class="badge bg-success-subtle text-success-emphasis">{% trans "To'liq test" %}</span>
                         {% endif %}
                     </div>
                     <h5 class="card-title mb-2">{{ test.title }}</h5>
-                    <p class="text-muted small mb-3">{{ test.description|default:"Tavsif yo'q"|truncatewords:20 }}</p>
+                    {% trans "Tavsif yo'q" as no_desc %}
+                    <p class="text-muted small mb-3">{{ test.description|site_t|default:no_desc|truncatewords:20 }}</p>
                     <div class="d-flex flex-wrap gap-2 mb-3">
-                        <span class="collection-chip"><i class="fas fa-question-circle"></i>{{ test.questions_count }} savol</span>
+                        <span class="collection-chip"><i class="fas fa-question-circle"></i>{{ test.questions_count }} {% trans "savol" %}</span>
                         {% if test.duration_minutes %}
-                        <span class="collection-chip"><i class="fas fa-clock"></i>{{ test.duration_minutes }} daqiqa</span>
+                        <span class="collection-chip"><i class="fas fa-clock"></i>{{ test.duration_minutes }} {% trans "daqiqa" %}</span>
                         {% endif %}
                         {% if test.primary_question_type_label %}
                         <span class="collection-chip"><i class="fas fa-layer-group"></i>{{ test.primary_question_type_label }}</span>
@@ -163,7 +165,7 @@
                     </div>
                     <div class="d-flex justify-content-end">
                         <a href="{% url 'core:test_detail' test.pk %}" class="btn btn-primary btn-sm btn-collection-take">
-                            <i class="fas fa-play me-1"></i>Take Test
+                            <i class="fas fa-play me-1"></i>{% trans "Testni boshlash" %}
                         </a>
                     </div>
                 </div>
@@ -171,7 +173,7 @@
         </div>
         {% empty %}
         <div class="col-12">
-            <div class="alert alert-light border">Test topilmadi. Filterlarni o'zgartirib ko'ring.</div>
+            <div class="alert alert-light border">{% trans "Test topilmadi. Filterlarni o'zgartirib ko'ring." %}</div>
         </div>
         {% endfor %}
     </div>

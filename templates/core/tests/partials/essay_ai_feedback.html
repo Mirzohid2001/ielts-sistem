@@ -7,11 +7,11 @@
         <div class="tr-ai__top">
             <div class="tr-ai__brand">
                 <span class="tr-ai__badge">AI Coach</span>
-                <h6 class="tr-ai__title">Writing feedback</h6>
+                <h6 class="tr-ai__title">{% ai_t "Writing feedback" "Writing feedback" %}</h6>
                 <div class="tr-ai__meta">
-                    {% if feedback.raw_response_json.word_count %}<span>{{ feedback.raw_response_json.word_count }} so'z</span>{% endif %}
+                    {% if feedback.raw_response_json.word_count %}<span>{% blocktrans with n=feedback.raw_response_json.word_count %}{{ n }} so'z{% endblocktrans %}</span>{% endif %}
                     {% if feedback.raw_response_json.vision_used %}<span>Diagram</span>{% endif %}
-                    <span>Training · rasmiy IELTS emas</span>
+                    <span>{% ai_t "Training · rasmiy IELTS emas" "Training · не официальный IELTS" %}</span>
                 </div>
             </div>
             {% if feedback.estimated_band %}
@@ -32,7 +32,7 @@
                 {% else %}
                 <i class="fas fa-minus" aria-hidden="true"></i><span>0</span>
                 {% endif %}
-                <span class="tr-ai__delta-note">oldingi: {{ comparison.prev_band|floatformat:1 }}</span>
+                <span class="tr-ai__delta-note">{% ai_t "oldingi:" "было:" %} {{ comparison.prev_band|floatformat:1 }}</span>
             </div>
             {% if comparison.improved or comparison.declined %}
             <div class="tr-ai__criteria-delta">
@@ -136,8 +136,8 @@
                         <article class="tr-ai__fix">
                             {% if corr.type %}<span class="tr-ai__pill">{{ corr.type }}</span>{% endif %}
                             <div class="tr-ai__fix-cols">
-                                <div><span class="tr-ai__kicker">Was</span><p class="tr-ai__was">{{ corr.original }}</p></div>
-                                <div><span class="tr-ai__kicker tr-ai__kicker--ok">Better</span><p class="tr-ai__better">{{ corr.corrected }}</p></div>
+                                <div><span class="tr-ai__kicker">{% ai_t "Edi" "Было" %}</span><p class="tr-ai__was">{{ corr.original }}</p></div>
+                                <div><span class="tr-ai__kicker tr-ai__kicker--ok">{% ai_t "Yaxshiroq" "Лучше" %}</span><p class="tr-ai__better">{{ corr.corrected }}</p></div>
                             </div>
                             {% if corr.why %}<p class="tr-ai__note">{{ corr.why }}</p>{% endif %}
                         </article>
@@ -236,7 +236,7 @@
                         {% if coach_chat_remaining <= 0 %}
                         <p class="tr-ai-chat__limit-note">{% ai_t "Kunlik limit tugadi." "Дневной лимит закончился." %}</p>
                         {% else %}
-                        <p class="tr-ai-chat__hint">Ctrl+Enter — yuborish</p>
+                        <p class="tr-ai-chat__hint">{% ai_t "Ctrl+Enter — yuborish" "Ctrl+Enter — отправить" %}</p>
                         {% endif %}
                     </section>
                 </div>

@@ -1,0 +1,11 @@
+<form method="post" action="{% url 'set_site_language' %}" class="ai-lang-toggle site-lang-toggle" role="group" aria-label="{% trans 'Til' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <span class="ai-lang-toggle__label">{% trans "Til" %}</span>
+    <button type="submit" name="ai_lang" value="uz"
+            class="ai-lang-toggle__btn{% if site_lang != 'ru' %} is-active{% endif %}"
+            aria-pressed="{% if site_lang != 'ru' %}true{% else %}false{% endif %}">O'zbekcha</button>
+    <button type="submit" name="ai_lang" value="ru"
+            class="ai-lang-toggle__btn{% if site_lang == 'ru' %} is-active{% endif %}"
+            aria-pressed="{% if site_lang == 'ru' %}true{% else %}false{% endif %}">Русский</button>
+</form>

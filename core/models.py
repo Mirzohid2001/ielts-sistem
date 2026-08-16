@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 import json
 import re
 import unicodedata
@@ -259,9 +260,9 @@ class Test(models.Model):
     ]
     
     DIFFICULTY_LEVELS = [
-        ('easy', 'Oson'),
-        ('medium', 'O\'rta'),
-        ('hard', 'Qiyin'),
+        ('easy', _('Oson')),
+        ('medium', _("O'rta")),
+        ('hard', _('Qiyin')),
     ]
 
     title = models.CharField(max_length=300, verbose_name="Sarlavha")
@@ -1945,8 +1946,8 @@ class SATResource(models.Model):
     SUBJECT_MATH = 'math'
     SUBJECT_ENGLISH = 'english'
     SUBJECT_CHOICES = [
-        (SUBJECT_MATH, 'Matematika'),
-        (SUBJECT_ENGLISH, 'Ingliz tili'),
+        (SUBJECT_MATH, _('Matematika')),
+        (SUBJECT_ENGLISH, _('Ingliz tili')),
     ]
 
     title = models.CharField(max_length=300, verbose_name="Sarlavha")
@@ -2032,8 +2033,8 @@ class SATResourceBookmark(models.Model):
     TYPE_VIDEO = 'video'
     TYPE_PDF = 'pdf'
     TYPE_CHOICES = [
-        (TYPE_GENERAL, "Umumiy"),
-        (TYPE_VIDEO, "Video"),
+        (TYPE_GENERAL, _("Umumiy")),
+        (TYPE_VIDEO, _("Video")),
         (TYPE_PDF, "PDF"),
     ]
 

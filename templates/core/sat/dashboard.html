@@ -39,13 +39,13 @@
 <div class="container py-4">
     {% include 'core/sat/_mini_nav.html' %}
     <div class="sat-d-head d-flex align-items-center justify-content-between mb-4">
-        <h2 class="mb-0">SAT Dashboard</h2>
-        <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-secondary btn-sm">SAT Home</a>
+        <h2 class="mb-0">{% trans "SAT Dashboard" %}</h2>
+        <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-secondary btn-sm">{% trans "SAT Home" %}</a>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3"><div class="card sat-d-card"><div class="card-body"><small class="text-muted">Bookmark</small><div class="fw-bold">{{ bookmarks_count }}</div></div></div></div>
-        <div class="col-6 col-md-3"><div class="card sat-d-card"><div class="card-body"><small class="text-muted">Eslatma</small><div class="fw-bold">{{ notes_count }}</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-d-card"><div class="card-body"><small class="text-muted">{% trans "Saqlanganlar" %}</small><div class="fw-bold">{{ bookmarks_count }}</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-d-card"><div class="card-body"><small class="text-muted">{% trans "Eslatma" %}</small><div class="fw-bold">{{ notes_count }}</div></div></div></div>
     </div>
 
     <div class="row g-4">
@@ -54,9 +54,9 @@
             <div class="card sat-d-card h-100">
                 <div class="card-body">
                     <h5 class="mb-3">{{ row.label }}</h5>
-                    <p class="mb-1 text-muted">Jami resurs: <strong>{{ row.total }}</strong></p>
-                    <p class="mb-1 text-muted">Yakunlangan: <strong>{{ row.completed }}</strong></p>
-                    <p class="mb-0 text-muted">O'rtacha progress: <strong>{{ row.avg_progress }}%</strong></p>
+                    <p class="mb-1 text-muted">{% trans "Jami resurs" %}: <strong>{{ row.total }}</strong></p>
+                    <p class="mb-1 text-muted">{% trans "Yakunlangan" %}: <strong>{{ row.completed }}</strong></p>
+                    <p class="mb-0 text-muted">{% trans "O'rtacha progress" %}: <strong>{{ row.avg_progress }}%</strong></p>
                 </div>
             </div>
         </div>

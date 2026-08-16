@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
 
+from core.language_views import set_site_language
 from core.views import admin_toliq_yoriqnoma
 
 
@@ -31,6 +32,7 @@ def favicon_view(request):
 
 urlpatterns = [
     path('favicon.ico', favicon_view),
+    path('lang/', set_site_language, name='set_site_language'),
     path('admin/yoriqnoma/', admin_toliq_yoriqnoma, name='admin_toliq_yoriqnoma'),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Profil - Ton academy{% endblock %}
+{% block title %}{% trans "Profil" %} - Ton academy{% endblock %}
 
 {% block content %}
 <div class="container mt-4 platform-page">
@@ -13,8 +13,8 @@
                             <i class="fas fa-user fa-3x text-white"></i>
                         </div>
                         <div>
-                            <h1 class="profile-title">Profil</h1>
-                            <p class="profile-subtitle mb-0">{{ user.first_name|default:user.username }} - Shaxsiy ma'lumotlar</p>
+                            <h1 class="profile-title">{% trans "Profil" %}</h1>
+                            <p class="profile-subtitle mb-0">{{ user.first_name|default:user.username }} - {% trans "Shaxsiy ma'lumotlar" %}</p>
                         </div>
                     </div>
                 </div>
@@ -25,7 +25,7 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex flex-wrap gap-2">
-                <a href="{% url 'core:profile_section' 'overall' %}" class="btn {% if active_section == 'overall' %}btn-primary{% else %}btn-outline-primary{% endif %}">Umumiy</a>
+                <a href="{% url 'core:profile_section' 'overall' %}" class="btn {% if active_section == 'overall' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% trans "Umumiy" %}</a>
                 <a href="{% url 'core:profile_section' 'ielts' %}" class="btn {% if active_section == 'ielts' %}btn-primary{% else %}btn-outline-primary{% endif %}">IELTS</a>
                 <a href="{% url 'core:profile_section' 'sat' %}" class="btn {% if active_section == 'sat' %}btn-primary{% else %}btn-outline-primary{% endif %}">SAT</a>
                 <a href="{% url 'core:profile_section' 'jobs' %}" class="btn {% if active_section == 'jobs' %}btn-primary{% else %}btn-outline-primary{% endif %}">Jobs</a>
@@ -40,7 +40,7 @@
             <div class="stat-card stat-card-primary hover-lift">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="stat-card-label">Ishlangan testlar</p>
+                        <p class="stat-card-label">{% trans "Ishlangan testlar" %}</p>
                         <h3 class="stat-card-value gradient-text" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ stats.total_tests }}</h3>
                     </div>
                     <i class="fas fa-clipboard-list fa-2x" style="color: var(--primary); opacity: 0.15; animation: float 4s ease-in-out infinite;"></i>
@@ -51,7 +51,7 @@
             <div class="stat-card stat-card-info hover-lift">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="stat-card-label">O'rtacha ball</p>
+                        <p class="stat-card-label">{% trans "O'rtacha ball" %}</p>
                         <h3 class="stat-card-value gradient-text" style="background: linear-gradient(135deg, var(--info) 0%, #0891b2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ stats.average_score|floatformat:1 }}%</h3>
                     </div>
                     <i class="fas fa-chart-line fa-2x" style="color: var(--info); opacity: 0.15; animation: float 4s ease-in-out infinite 0.5s;"></i>
@@ -62,9 +62,9 @@
             <div class="stat-card stat-card-success hover-lift">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="stat-card-label">Study Streak</p>
+                        <p class="stat-card-label">{% trans "Study Streak" %}</p>
                         <h3 class="stat-card-value gradient-text" style="background: linear-gradient(135deg, var(--success) 0%, #34d399 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ stats.current_streak }}</h3>
-                        <p class="text-muted mb-0 mt-1" style="font-size: 0.8125rem; font-weight: 600;">kun ketma-ket</p>
+                        <p class="text-muted mb-0 mt-1" style="font-size: 0.8125rem; font-weight: 600;">{% trans "kun ketma-ket" %}</p>
                     </div>
                     <i class="fas fa-fire fa-2x" style="color: var(--success); opacity: 0.15; animation: bounce 2s ease-in-out infinite;"></i>
                 </div>
@@ -74,7 +74,7 @@
             <div class="stat-card stat-card-warning hover-lift">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="stat-card-label">Bookmarks</p>
+                        <p class="stat-card-label">{% trans "Bookmarks" %}</p>
                         <h3 class="stat-card-value gradient-text" style="background: linear-gradient(135deg, var(--warning) 0%, #fbbf24 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ stats.total_bookmarks }}</h3>
                     </div>
                     <i class="fas fa-bookmark fa-2x" style="color: var(--warning); opacity: 0.15; animation: float 4s ease-in-out infinite 1s;"></i>
@@ -88,7 +88,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-lg">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Umumiy platforma statistikasi</h5>
+                    <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>{% trans "Umumiy platforma statistikasi" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -96,9 +96,9 @@
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body">
                                     <h6 class="fw-bold mb-2"><i class="fas fa-graduation-cap me-2 text-primary"></i>IELTS</h6>
-                                    <p class="small text-muted mb-1">Testlar: <strong>{{ stats.total_tests }}</strong></p>
-                                    <p class="small text-muted mb-1">Videolar: <strong>{{ stats.total_videos }}</strong></p>
-                                    <p class="small text-muted mb-0">O'rtacha ball: <strong>{{ stats.average_score|floatformat:1 }}%</strong></p>
+                                    <p class="small text-muted mb-1">{% trans "Testlar" %}: <strong>{{ stats.total_tests }}</strong></p>
+                                    <p class="small text-muted mb-1">{% trans "Videolar" %}: <strong>{{ stats.total_videos }}</strong></p>
+                                    <p class="small text-muted mb-0">{% trans "O'rtacha ball" %}: <strong>{{ stats.average_score|floatformat:1 }}%</strong></p>
                                 </div>
                             </div>
                         </div>
@@ -106,9 +106,9 @@
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body">
                                     <h6 class="fw-bold mb-2"><i class="fas fa-calculator me-2 text-info"></i>SAT</h6>
-                                    <p class="small text-muted mb-1">Resurslar: <strong>{{ sat_stats.total_resources }}</strong></p>
-                                    <p class="small text-muted mb-1">Yakunlangan: <strong>{{ sat_stats.completed_resources }}</strong></p>
-                                    <p class="small text-muted mb-0">O'rtacha progress: <strong>{{ sat_stats.avg_progress }}%</strong></p>
+                                    <p class="small text-muted mb-1">{% trans "Resurslar" %}: <strong>{{ sat_stats.total_resources }}</strong></p>
+                                    <p class="small text-muted mb-1">{% trans "Yakunlangan" %}: <strong>{{ sat_stats.completed_resources }}</strong></p>
+                                    <p class="small text-muted mb-0">{% trans "O'rtacha progress" %}: <strong>{{ sat_stats.avg_progress }}%</strong></p>
                                 </div>
                             </div>
                         </div>
@@ -116,7 +116,7 @@
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body">
                                     <h6 class="fw-bold mb-2"><i class="fas fa-briefcase me-2 text-secondary"></i>Jobs</h6>
-                                    <p class="small text-muted mb-0">Holat: <strong>{{ jobs_stats.label }}</strong></p>
+                                    <p class="small text-muted mb-0">{% trans "Holat" %}: <strong>{{ jobs_stats.label }}</strong></p>
                                 </div>
                             </div>
                         </div>
@@ -126,9 +126,9 @@
                         <div class="col-12 col-lg-6">
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body">
-                                    <h6 class="fw-bold mb-2"><i class="fas fa-bookmark me-2 text-warning"></i>SAT Saqlanganlar</h6>
-                                    <p class="small text-muted mb-1">Jami: <strong>{{ sat_stats.bookmarks_total }}</strong></p>
-                                    <p class="small text-muted mb-1">Video: <strong>{{ sat_stats.bookmarks_video }}</strong></p>
+                                    <h6 class="fw-bold mb-2"><i class="fas fa-bookmark me-2 text-warning"></i>{% trans "SAT Saqlanganlar" %}</h6>
+                                    <p class="small text-muted mb-1">{% trans "Jami" %}: <strong>{{ sat_stats.bookmarks_total }}</strong></p>
+                                    <p class="small text-muted mb-1">{% trans "Video" %}: <strong>{{ sat_stats.bookmarks_video }}</strong></p>
                                     <p class="small text-muted mb-0">PDF: <strong>{{ sat_stats.bookmarks_pdf }}</strong></p>
                                 </div>
                             </div>
@@ -136,13 +136,13 @@
                         <div class="col-12 col-lg-6">
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body">
-                                    <h6 class="fw-bold mb-2"><i class="fas fa-history me-2 text-success"></i>SAT Oxirgi faollik</h6>
+                                    <h6 class="fw-bold mb-2"><i class="fas fa-history me-2 text-success"></i>{% trans "SAT Oxirgi faollik" %}</h6>
                                     {% if sat_recent_progress %}
                                         {% for p in sat_recent_progress|slice:":3" %}
                                         <div class="small text-muted mb-1">{{ p.resource.title }} — <strong>{{ p.watch_percentage }}%</strong></div>
                                         {% endfor %}
                                     {% else %}
-                                        <p class="small text-muted mb-0">SAT bo'limida hali faollik yo'q.</p>
+                                        <p class="small text-muted mb-0">{% trans "SAT bo'limida hali faollik yo'q." %}</p>
                                     {% endif %}
                                 </div>
                             </div>
@@ -159,7 +159,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-lg">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Tahlil va Hisobotlar</h5>
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>{% trans "Tahlil va Hisobotlar" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -167,9 +167,9 @@
                             <a href="{% url 'core:analytics' %}" class="card border-0 shadow-sm hover-lift text-decoration-none text-dark" style="display: block;">
                                 <div class="card-body text-center p-4">
                                     <i class="fas fa-chart-bar fa-3x mb-3 text-primary"></i>
-                                    <h5 class="mb-2">Batafsil Tahlillar</h5>
-                                    <p class="text-muted mb-1 small">Grafiklar va batafsil statistika</p>
-                                    <p class="mb-0 small fw-bold text-primary">{{ analytics_summary.total_tests }} test · {{ analytics_summary.avg_score }}% o'rtacha · {{ analytics_summary.total_videos }} video</p>
+                                    <h5 class="mb-2">{% trans "Batafsil Tahlillar" %}</h5>
+                                    <p class="text-muted mb-1 small">{% trans "Grafiklar va batafsil statistika" %}</p>
+                                    <p class="mb-0 small fw-bold text-primary">{% blocktrans with tests=analytics_summary.total_tests score=analytics_summary.avg_score videos=analytics_summary.total_videos %}{{ tests }} test · {{ score }}% o'rtacha · {{ videos }} video{% endblocktrans %}</p>
                                 </div>
                             </a>
                         </div>
@@ -177,9 +177,9 @@
                             <a href="{% url 'core:weekly_summary' %}" class="card border-0 shadow-sm hover-lift text-decoration-none text-dark" style="display: block;">
                                 <div class="card-body text-center p-4">
                                     <i class="fas fa-calendar-week fa-3x mb-3 text-success"></i>
-                                    <h5 class="mb-2">Haftalik Xulosa</h5>
-                                    <p class="text-muted mb-1 small">Hafta davomidagi faollik</p>
-                                    <p class="mb-0 small fw-bold text-success">{{ weekly_summary_stats.total_tests }} test · {{ weekly_summary_stats.avg_score }}% · {{ weekly_summary_stats.total_videos }} video · {{ weekly_summary_stats.study_days }} kun</p>
+                                    <h5 class="mb-2">{% trans "Haftalik Xulosa" %}</h5>
+                                    <p class="text-muted mb-1 small">{% trans "Hafta davomidagi faollik" %}</p>
+                                    <p class="mb-0 small fw-bold text-success">{% blocktrans with tests=weekly_summary_stats.total_tests score=weekly_summary_stats.avg_score videos=weekly_summary_stats.total_videos days=weekly_summary_stats.study_days %}{{ tests }} test · {{ score }}% · {{ videos }} video · {{ days }} kun{% endblocktrans %}</p>
                                 </div>
                             </a>
                         </div>
@@ -187,22 +187,22 @@
                             <a href="{% url 'core:monthly_report' %}" class="card border-0 shadow-sm hover-lift text-decoration-none text-dark" style="display: block;">
                                 <div class="card-body text-center p-4">
                                     <i class="fas fa-calendar-alt fa-3x mb-3 text-info"></i>
-                                    <h5 class="mb-2">Oylik Hisobot</h5>
-                                    <p class="text-muted mb-1 small">Oy davomidagi natijalar</p>
-                                    <p class="mb-0 small fw-bold text-info">{{ monthly_summary_stats.total_tests }} test · {{ monthly_summary_stats.avg_score }}% · {{ monthly_summary_stats.total_videos }} video · {{ monthly_summary_stats.study_days }} kun</p>
+                                    <h5 class="mb-2">{% trans "Oylik Hisobot" %}</h5>
+                                    <p class="text-muted mb-1 small">{% trans "Oy davomidagi natijalar" %}</p>
+                                    <p class="mb-0 small fw-bold text-info">{% blocktrans with tests=monthly_summary_stats.total_tests score=monthly_summary_stats.avg_score videos=monthly_summary_stats.total_videos days=monthly_summary_stats.study_days %}{{ tests }} test · {{ score }}% · {{ videos }} video · {{ days }} kun{% endblocktrans %}</p>
                                 </div>
                             </a>
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-12">
-                            <p class="text-muted small mb-2">Test natijalaringizni yuklab oling:</p>
+                            <p class="text-muted small mb-2">{% trans "Test natijalaringizni yuklab oling:" %}</p>
                             <div class="d-flex gap-2 flex-wrap">
                                 <a href="{% url 'core:export_to_excel' %}" class="btn btn-success">
-                                    <i class="fas fa-file-excel me-1"></i>Excel'ga export
+                                    <i class="fas fa-file-excel me-1"></i>{% trans "Excel'ga export" %}
                                 </a>
                                 <a href="{% url 'core:export_results' %}" class="btn btn-primary">
-                                    <i class="fas fa-file-csv me-1"></i>CSV'ga export
+                                    <i class="fas fa-file-csv me-1"></i>{% trans "CSV'ga export" %}
                                 </a>
                             </div>
                         </div>
@@ -219,7 +219,7 @@
             <div class="card profile-bookmark-card">
                 <div class="profile-table-header">
                     <h5 class="mb-0 gradient-text" style="font-weight: 900; font-size: 1.5rem;">
-                        <i class="fas fa-bookmark me-2"></i>Sevimli videolar va testlar
+                        <i class="fas fa-bookmark me-2"></i>{% trans "Sevimli videolar va testlar" %}
                     </h5>
                 </div>
                 <div class="card-body p-4">
@@ -266,20 +266,20 @@
             <div class="card profile-table-card">
                 <div class="profile-table-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 gradient-text" style="font-weight: 900; font-size: 1.5rem;">
-                        <i class="fas fa-chart-bar me-2"></i>Test natijalari
+                        <i class="fas fa-chart-bar me-2"></i>{% trans "Test natijalari" %}
                     </h5>
                     {% if test_results_page and test_results_page.paginator.count %}
                     <a href="{% url 'core:export_results' %}" class="btn btn-outline-primary hover-lift" style="font-weight: 700; border-radius: 12px; padding: 0.625rem 1.25rem;">
-                        <i class="fas fa-download me-1"></i>Export (CSV)
+                        <i class="fas fa-download me-1"></i>{% trans "CSV'ga export" %}
                     </a>
                     {% endif %}
                 </div>
                 <div class="card-body p-0">
                     {% if test_results_page and test_results_page.paginator.count %}
                     <div class="profile-table-meta">
-                        Jami <strong>{{ test_results_page.paginator.count }}</strong> ta natija
+                        {% blocktrans count n=test_results_page.paginator.count %}Jami <strong>{{ n }}</strong> ta natija{% plural %}Jami <strong>{{ n }}</strong> ta natija{% endblocktrans %}
                         {% if test_results_page.paginator.num_pages > 1 %}
-                        · Sahifa {{ test_results_page.number }}/{{ test_results_page.paginator.num_pages }}
+                        · {% blocktrans with page=test_results_page.number pages=test_results_page.paginator.num_pages %}Sahifa {{ page }}/{{ pages }}{% endblocktrans %}
                         {% endif %}
                     </div>
                     {% endif %}
@@ -287,12 +287,12 @@
                         <table class="table profile-table mb-0">
                             <thead>
                                 <tr>
-                                    <th>Test</th>
-                                    <th>Kategoriya</th>
-                                    <th>Ball</th>
-                                    <th>Foiz</th>
-                                    <th>Sana</th>
-                                    <th>Holat</th>
+                                    <th>{% trans "Test" %}</th>
+                                    <th>{% trans "Kategoriya" %}</th>
+                                    <th>{% trans "Ball" %}</th>
+                                    <th>{% trans "Foiz" %}</th>
+                                    <th>{% trans "Sana" %}</th>
+                                    <th>{% trans "Holat" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -313,9 +313,9 @@
                                     <td style="color: var(--gray-600); font-weight: 600;">{{ result.completed_at|date:"d.m.Y H:i" }}</td>
                                     <td>
                                         {% if result.is_passed %}
-                                        <span class="badge bg-success" style="padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px;">O'tdi</span>
+                                        <span class="badge bg-success" style="padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px;">{% trans "O'tdi" %}</span>
                                         {% else %}
-                                        <span class="badge bg-danger" style="padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px;">O'tmadi</span>
+                                        <span class="badge bg-danger" style="padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px;">{% trans "O'tmadi" %}</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -325,7 +325,7 @@
                                         <div class="empty-state-icon" style="width: 100px; height: 100px; margin: 0 auto 1.5rem;">
                                             <i class="fas fa-clipboard-list"></i>
                                         </div>
-                                        <h5 class="empty-state-title">Hozircha test natijalari yo'q.</h5>
+                                        <h5 class="empty-state-title">{% trans "Hozircha test natijalari yo'q." %}</h5>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -333,11 +333,11 @@
                         </table>
                     </div>
                     {% if test_results_page and test_results_page.paginator.num_pages > 1 %}
-                    <nav class="profile-table-pagination" aria-label="Test natijalari sahifalari">
+                    <nav class="profile-table-pagination" aria-label="{% trans "Test natijalari sahifalari" %}">
                         <ul class="pagination justify-content-center mb-0">
                             {% if test_results_page.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="{% url 'core:profile_section' 'ielts' %}?page={{ test_results_page.previous_page_number }}" aria-label="Oldingi sahifa">
+                                <a class="page-link" href="{% url 'core:profile_section' 'ielts' %}?page={{ test_results_page.previous_page_number }}" aria-label="{% trans "Oldingi sahifa" %}">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             </li>
@@ -353,7 +353,7 @@
                             {% endfor %}
                             {% if test_results_page.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="{% url 'core:profile_section' 'ielts' %}?page={{ test_results_page.next_page_number }}" aria-label="Keyingi sahifa">
+                                <a class="page-link" href="{% url 'core:profile_section' 'ielts' %}?page={{ test_results_page.next_page_number }}" aria-label="{% trans "Keyingi sahifa" %}">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
@@ -372,7 +372,7 @@
             <div class="card profile-table-card">
                 <div class="profile-table-header">
                     <h5 class="mb-0 gradient-text" style="font-weight: 900; font-size: 1.5rem;">
-                        <i class="fas fa-video me-2"></i>Ko'rilgan videolar
+                        <i class="fas fa-video me-2"></i>{% trans "Ko'rilgan videolar" %}
                     </h5>
                 </div>
                 <div class="card-body p-4">
@@ -396,12 +396,12 @@
                                     </p>
                                     <p class="card-text mb-3">
                                         <small class="text-muted" style="font-weight: 600;">
-                                            <i class="fas fa-calendar me-1"></i>Ko'rilgan: {{ progress.completed_at|date:"d.m.Y"|default:progress.last_watched_at|date:"d.m.Y" }}
+                                            <i class="fas fa-calendar me-1"></i>{% trans "Ko'rilgan:" %} {{ progress.completed_at|date:"d.m.Y"|default:progress.last_watched_at|date:"d.m.Y" }}
                                         </small>
                                     </p>
                                     <a href="{% url 'core:video_detail' progress.video.pk %}" 
                                        class="btn btn-primary btn-sm hover-lift w-100" style="font-weight: 700; border-radius: 12px; padding: 0.625rem;">
-                                        <i class="fas fa-play me-1"></i>Qayta ko'rish
+                                        <i class="fas fa-play me-1"></i>{% trans "Qayta ko'rish" %}
                                     </a>
                                 </div>
                             </div>
@@ -412,7 +412,7 @@
                                 <div class="empty-state-icon" style="width: 100px; height: 100px; margin: 0 auto 1.5rem;">
                                     <i class="fas fa-video"></i>
                                 </div>
-                                <h5 class="empty-state-title">Hozircha ko'rilgan videolar yo'q.</h5>
+                                <h5 class="empty-state-title">{% trans "Hozircha ko'rilgan videolar yo'q." %}</h5>
                             </div>
                         </div>
                         {% endfor %}
@@ -429,21 +429,21 @@
                 <div class="card-header bg-white border-0 pb-0">
                     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                         <div>
-                            <h5 class="mb-1 fw-bold"><i class="fas fa-pen-fancy me-2 text-success"></i>Writing progress</h5>
-                            <p class="text-muted small mb-0">AI training band · rasmiy IELTS emas</p>
+                            <h5 class="mb-1 fw-bold"><i class="fas fa-pen-fancy me-2 text-success"></i>{% trans "Writing progress" %}</h5>
+                            <p class="text-muted small mb-0">{% trans "AI training band · rasmiy IELTS emas" %}</p>
                         </div>
                         <div class="wp-stats">
                             <div class="wp-stat">
-                                <span>O'rtacha</span>
+                                <span>{% trans "O'rtacha" %}</span>
                                 <strong>{{ writing_progress.avg_band|floatformat:1 }}</strong>
                             </div>
                             <div class="wp-stat">
-                                <span>Oxirgi</span>
+                                <span>{% trans "Oxirgi" %}</span>
                                 <strong>{{ writing_progress.latest_band|floatformat:1 }}</strong>
                             </div>
                             {% if writing_progress.trend is not None %}
                             <div class="wp-stat wp-stat--trend {% if writing_progress.trend > 0 %}wp-stat--up{% elif writing_progress.trend < 0 %}wp-stat--down{% endif %}">
-                                <span>Trend</span>
+                                <span>{% trans "Trend" %}</span>
                                 <strong>{% if writing_progress.trend > 0 %}+{% endif %}{{ writing_progress.trend|floatformat:1 }}</strong>
                             </div>
                             {% endif %}
@@ -452,7 +452,7 @@
                 </div>
                 <div class="card-body pt-3">
                     {% if writing_progress.chart_points %}
-                    <div class="wp-chart" role="img" aria-label="Writing band grafigi">
+                    <div class="wp-chart" role="img" aria-label="{% trans "Writing band grafigi" %}">
                         {% for point in writing_progress.chart_points %}
                         <div class="wp-chart__col" title="{{ point.test_title }} — {{ point.task_label }}: Band {{ point.band|floatformat:1 }}">
                             <div class="wp-chart__value">{{ point.band|floatformat:1 }}</div>
@@ -469,15 +469,15 @@
                         {% if writing_progress.weakest %}
                         <div class="col-12 col-md-5">
                             <div class="wp-focus">
-                                <span class="wp-focus__kicker">Eng zaif mezon</span>
+                                <span class="wp-focus__kicker">{% trans "Eng zaif mezon" %}</span>
                                 <strong>{{ writing_progress.weakest.label }}</strong>
-                                <span class="text-muted">o'rtacha {{ writing_progress.weakest.avg|floatformat:1 }}</span>
+                                <span class="text-muted">{% trans "o'rtacha" %} {{ writing_progress.weakest.avg|floatformat:1 }}</span>
                             </div>
                         </div>
                         {% endif %}
                         <div class="col-12 {% if writing_progress.weakest %}col-md-7{% endif %}">
                             <div class="wp-recent">
-                                <span class="wp-focus__kicker">Oxirgi essaylar</span>
+                                <span class="wp-focus__kicker">{% trans "Oxirgi essaylar" %}</span>
                                 <ul class="wp-recent__list mb-0">
                                 {% for essay in writing_progress.recent_essays %}
                                     <li>
@@ -499,25 +499,25 @@
     <div class="row mb-4">
         <div class="col-12 col-lg-3 col-md-6 mb-3">
             <div class="stat-card stat-card-info hover-lift">
-                <p class="stat-card-label">Jami SAT resurs</p>
+                <p class="stat-card-label">{% trans "Jami SAT resurs" %}</p>
                 <h3 class="stat-card-value">{{ sat_stats.total_resources }}</h3>
             </div>
         </div>
         <div class="col-12 col-lg-3 col-md-6 mb-3">
             <div class="stat-card stat-card-success hover-lift">
-                <p class="stat-card-label">Yakunlangan</p>
+                <p class="stat-card-label">{% trans "Yakunlangan" %}</p>
                 <h3 class="stat-card-value">{{ sat_stats.completed_resources }}</h3>
             </div>
         </div>
         <div class="col-12 col-lg-3 col-md-6 mb-3">
             <div class="stat-card stat-card-primary hover-lift">
-                <p class="stat-card-label">O'rtacha progress</p>
+                <p class="stat-card-label">{% trans "O'rtacha progress" %}</p>
                 <h3 class="stat-card-value">{{ sat_stats.avg_progress }}%</h3>
             </div>
         </div>
         <div class="col-12 col-lg-3 col-md-6 mb-3">
             <div class="stat-card stat-card-warning hover-lift">
-                <p class="stat-card-label">Saqlanganlar</p>
+                <p class="stat-card-label">{% trans "Saqlanganlar" %}</p>
                 <h3 class="stat-card-value">{{ sat_stats.bookmarks_total }}</h3>
             </div>
         </div>
@@ -527,7 +527,7 @@
         <div class="col-12 col-lg-7 mb-3">
             <div class="card border-0 shadow-lg h-100">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>SAT oxirgi faollik</h5>
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>{% trans "SAT oxirgi faollik" %}</h5>
                 </div>
                 <div class="card-body">
                     {% if sat_recent_progress %}
@@ -541,7 +541,7 @@
                         </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted mb-0">SAT bo'limida hali faollik yo'q.</p>
+                        <p class="text-muted mb-0">{% trans "SAT bo'limida hali faollik yo'q." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -549,12 +549,12 @@
         <div class="col-12 col-lg-5 mb-3">
             <div class="card border-0 shadow-lg h-100">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-compass me-2"></i>Tez kirish</h5>
+                    <h5 class="mb-0"><i class="fas fa-compass me-2"></i>{% trans "Tez kirish" %}</h5>
                 </div>
                 <div class="card-body d-grid gap-2">
-                    <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-primary">SAT bosh sahifa</a>
-                    <a href="{% url 'sat:sat_bookmarks' %}" class="btn btn-outline-secondary">SAT saqlanganlar</a>
-                    <a href="{% url 'sat:sat_statistics' %}" class="btn btn-outline-success">SAT statistika</a>
+                    <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-primary">{% trans "SAT bosh sahifa" %}</a>
+                    <a href="{% url 'sat:sat_bookmarks' %}" class="btn btn-outline-secondary">{% trans "SAT saqlanganlar" %}</a>
+                    <a href="{% url 'sat:sat_statistics' %}" class="btn btn-outline-success">{% trans "SAT statistika" %}</a>
                 </div>
             </div>
         </div>
@@ -565,8 +565,8 @@
             <div class="card border-0 shadow-lg">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-briefcase fa-2x text-muted mb-3"></i>
-                    <h5 class="mb-2">Jobs bo'limi hali tayyor emas</h5>
-                    <p class="text-muted mb-0">Jobs moduli ishga tushgach, shu yerda statistikalar va faollik ko'rinadi.</p>
+                    <h5 class="mb-2">{% trans "Jobs bo'limi hali tayyor emas" %}</h5>
+                    <p class="text-muted mb-0">{% trans "Jobs moduli ishga tushgach, shu yerda statistikalar va faollik ko'rinadi." %}</p>
                 </div>
             </div>
         </div>

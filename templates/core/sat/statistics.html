@@ -39,17 +39,17 @@
 <div class="container py-4">
     {% include 'core/sat/_mini_nav.html' %}
     <div class="sat-s-head d-flex align-items-center justify-content-between mb-4">
-        <h2 class="mb-0">SAT Statistika</h2>
-        <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-secondary btn-sm">SAT Home</a>
+        <h2 class="mb-0">{% trans "SAT Statistika" %}</h2>
+        <a href="{% url 'sat:sat_home' %}" class="btn btn-outline-secondary btn-sm">{% trans "SAT Home" %}</a>
     </div>
 
     <div class="row g-3">
-        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">Jami resurs</small><div class="fw-bold">{{ total_resources }}</div></div></div></div>
-        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">Progress kuzatilgan</small><div class="fw-bold">{{ tracked_resources }}</div></div></div></div>
-        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">Yakunlangan</small><div class="fw-bold">{{ completed_resources }}</div></div></div></div>
-        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">O'rtacha progress</small><div class="fw-bold">{{ avg_progress }}%</div></div></div></div>
-        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">Bookmark</small><div class="fw-bold">{{ bookmarks_count }}</div></div></div></div>
-        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">Eslatma</small><div class="fw-bold">{{ notes_count }}</div></div></div></div>
+        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">{% trans "Jami resurs" %}</small><div class="fw-bold">{{ total_resources }}</div></div></div></div>
+        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">{% trans "Progress kuzatilgan" %}</small><div class="fw-bold">{{ tracked_resources }}</div></div></div></div>
+        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">{% trans "Yakunlangan" %}</small><div class="fw-bold">{{ completed_resources }}</div></div></div></div>
+        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">{% trans "O'rtacha progress" %}</small><div class="fw-bold">{{ avg_progress }}%</div></div></div></div>
+        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">{% trans "Saqlanganlar" %}</small><div class="fw-bold">{{ bookmarks_count }}</div></div></div></div>
+        <div class="col-6 col-md-4"><div class="card sat-s-card"><div class="card-body"><small class="text-muted">{% trans "Eslatma" %}</small><div class="fw-bold">{{ notes_count }}</div></div></div></div>
     </div>
 </div>
 {% endblock %}

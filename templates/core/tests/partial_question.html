@@ -5,7 +5,7 @@
             <div class="question-number" style="width: clamp(40px, 8vw, 48px); height: clamp(40px, 8vw, 48px); background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: clamp(1rem, 3vw, 1.25rem); margin-right: 0.75rem; margin-right: clamp(0.75rem, 2vw, 1rem); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); flex-shrink: 0;">
                 {{ question_number }}
             </div>
-            <h4 class="card-title mb-0" style="font-weight: 700; font-size: clamp(1.1rem, 3vw, 1.5rem);">Savol</h4>
+            <h4 class="card-title mb-0" style="font-weight: 700; font-size: clamp(1.1rem, 3vw, 1.5rem);">{% trans "Savol" %}</h4>
         </div>
         
         {% if current_question %}
@@ -27,7 +27,7 @@
             {% endif %}
             
             {% if current_question.question_image %}
-            <img src="{{ current_question.question_image.url }}" class="img-fluid mb-4" alt="Savol rasmi">
+            <img src="{{ current_question.question_image.url }}" class="img-fluid mb-4" alt="{% trans "Savol rasmi" %}">
             {% endif %}
             
             {% if test.test_type == 'listening' and current_question.audio_timestamp %}
@@ -35,10 +35,10 @@
             <div class="alert alert-info d-flex flex-column flex-md-row align-items-start align-items-md-center mb-3 mb-md-4 audio-timestamp-alert" style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); padding: 0.75rem 1rem; gap: 0.75rem;">
                 <i class="fas fa-headphones me-0 me-md-3" style="font-size: clamp(1.25rem, 3vw, 1.5rem); color: var(--primary); flex-shrink: 0;"></i>
                 <div class="flex-grow-1" style="font-size: clamp(0.85rem, 2vw, 1rem);">
-                    <strong>Audio eshiting:</strong> Bu savol uchun audio qismini eshitish uchun quyidagi tugmani bosing.
+                    <strong>{% trans "Audio eshiting:" %}</strong> {% trans "Bu savol uchun audio qismini eshitish uchun quyidagi tugmani bosing." %}
                 </div>
                 <button type="button" class="btn btn-primary" style="font-size: clamp(0.8rem, 2vw, 0.875rem); white-space: nowrap; flex-shrink: 0;" onclick="playAudioAtTimestamp({{ current_question.audio_timestamp }})">
-                    <i class="fas fa-play me-1 me-md-2"></i>{{ current_question.audio_timestamp|floatformat:0 }}s dan eshitish
+                    <i class="fas fa-play me-1 me-md-2"></i>{{ current_question.audio_timestamp|floatformat:0 }} {% trans "s dan eshitish" %}
                 </button>
             </div>
             {% endif %}
@@ -176,7 +176,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color: var(--gray-700);">{{ field.num }}.</label>
                         <input type="text" name="answer_{{ field.num }}" id="answer_{{ field.num }}" 
-                               class="form-control form-control-lg fill-answer-input" placeholder="Javobingizni yozing..."
+                               class="form-control form-control-lg fill-answer-input" placeholder="{% trans "Javobingizni yozing..." %}"
                                value="{{ field.value }}"
                                maxlength="100" style="border-radius: 10px; border: 2px solid var(--gray-200);" 
                                autocomplete="off">
@@ -184,7 +184,7 @@
                     {% endfor %}
                 {% else %}
                     <input type="text" name="answer" id="answer_single" 
-                           class="form-control form-control-lg fill-answer-input" placeholder="Javobingizni yozing..."
+                           class="form-control form-control-lg fill-answer-input" placeholder="{% trans "Javobingizni yozing..." %}"
                            value="{{ current_answer }}"
                            maxlength="100" style="border-radius: 10px; border: 2px solid var(--gray-200);" 
                            autocomplete="off">
@@ -199,7 +199,7 @@
                 {% endif %}
 
                 {% if not matching_fields %}
-                <p class="text-warning">Admin panelda options_json ni to'ldiring (items, options).</p>
+                <p class="text-warning">{% trans "Admin panelda options_json ni to'ldiring (items, options)." %}</p>
                 {% endif %}
 
                 {# List of Headings / variantlar tepada bitta marta #}
@@ -245,7 +245,7 @@
                 <p class="text-muted mb-3" style="font-size: 0.9rem;"><i class="fas fa-info-circle me-1"></i>{{ current_question.options_json.instruction }}</p>
                 {% endif %}
                 {% if not list_options %}
-                <p class="text-warning">Admin panelda options_json ni to'ldiring (options ro'yxati).</p>
+                <p class="text-warning">{% trans "Admin panelda options_json ni to'ldiring (options ro'yxati)." %}</p>
                 {% endif %}
                 <div class="border rounded p-3" style="background: var(--gray-50);">
                     {% for opt in list_options %}
@@ -434,7 +434,7 @@
                     const alertDiv = document.createElement('div');
                     alertDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed';
                     alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                    alertDiv.innerHTML = '<strong>Diqqat!</strong> ' + msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                    alertDiv.innerHTML = '<strong>{% trans "Diqqat!" %}</strong> ' + msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
                     document.body.appendChild(alertDiv);
                     setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 3000);
                 }
@@ -486,19 +486,19 @@
                                 if (response.ok) {
                                     window.location.reload();
                                 } else {
-                                    alert('Xatolik yuz berdi. Sahifani yangilab qayta urinib ko\'ring.');
+                                    alert(t('Xatolik yuz berdi. Sahifani yangilab qayta urinib ko\'ring.'));
                                 }
                             })
                             .catch(error => {
                                 console.error('Error:', error);
-                                alert('Xatolik yuz berdi. Sahifani yangilab qayta urinib ko\'ring.');
+                                alert(t('Xatolik yuz berdi. Sahifani yangilab qayta urinib ko\'ring.'));
                             });
                         });
                         
                         // HTMX response error handling
                         form.addEventListener('htmx:responseError', function(event) {
                             console.error('HTMX response error:', event.detail);
-                            alert('Server xatoligi. Iltimos, qayta urinib ko\'ring.');
+                            alert(t('Server xatoligi. Iltimos, qayta urinib ko\'ring.'));
                         });
                         
                         // Form submit event - javobni tekshirish
@@ -593,11 +593,11 @@
                         audio.currentTime = timestamp || 0;
                         audio.play().catch(error => {
                             console.error('Audio play error:', error);
-                            alert('Audio eshitishda xatolik yuz berdi.');
+                            alert(t('Audio eshitishda xatolik yuz berdi.'));
                         });
                     } else {
                         // Audio fayl mavjud emas
-                        alert('Bu test uchun audio fayl hozircha yuklanmagan. Admin panel orqali audio fayl yuklashingiz mumkin.');
+                        alert(t('Bu test uchun audio fayl hozircha yuklanmagan. Admin panel orqali audio fayl yuklashingiz mumkin.'));
                     }
                 }
                 {% endif %}
@@ -614,7 +614,7 @@
             </script>
         </form>
         {% else %}
-        <div class="alert alert-warning">Savol topilmadi.</div>
+        <div class="alert alert-warning">{% trans "Savol topilmadi." %}</div>
         {% endif %}
     </div>
 </div>

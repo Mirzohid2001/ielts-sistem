@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Bildirishnomalar - Ton academy{% endblock %}
+{% block title %}{% trans "Bildirishnomalar" %} - Ton academy{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">Bildirishnomalar</h2>
+        <h2 class="mb-0">{% trans "Bildirishnomalar" %}</h2>
         <a href="{% url 'core:module_selector' %}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-th-large me-1"></i> Bo'limlarga qaytish
+            <i class="fas fa-th-large me-1"></i> {% trans "Bo'limlarga qaytish" %}
         </a>
     </div>
 
@@ -38,7 +38,7 @@
     </div>
     {% else %}
     <div class="alert alert-light border mb-0">
-        Hozircha bildirishnoma yo'q.
+        {% trans "Hozircha bildirishnoma yo'q." %}
     </div>
     {% endif %}
 </div>

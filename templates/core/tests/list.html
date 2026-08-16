@@ -1,33 +1,33 @@
 {% extends 'base.html' %}
 
-{% block title %}Testlar - IELTS Center{% endblock %}
+{% block title %}{% trans "Testlar" %} - IELTS Center{% endblock %}
 
 {% block content %}
 <div class="container mt-4 tests-page">
     <div class="tests-hero">
         <div class="tests-hero__inner">
             <div>
-                <h1 class="tests-hero__title">Testlar</h1>
-                <p class="tests-hero__sub">IELTS Reading, Listening va Writing bo'yicha professional testlar — o'zingizga mosini tanlang va boshlang</p>
+                <h1 class="tests-hero__title">{% trans "Testlar" %}</h1>
+                <p class="tests-hero__sub">{% trans "IELTS Reading, Listening va Writing bo'yicha professional testlar — o'zingizga mosini tanlang va boshlang" %}</p>
             </div>
             <div class="tests-hero__actions">
                 <a href="{% url 'core:dashboard' %}" class="tests-hero__btn">
-                    <i class="fas fa-arrow-left"></i>Orqaga
+                    <i class="fas fa-arrow-left"></i>{% trans "Orqaga" %}
                 </a>
             </div>
             {% if tests %}
             <div class="tests-hero__stats">
                 <div class="tests-hero__stat">
                     <strong>{{ tests|length }}</strong>
-                    <span>Test topildi</span>
+                    <span>{% trans "Test topildi" %}</span>
                 </div>
                 <div class="tests-hero__stat">
                     <strong>{{ categories|length }}</strong>
-                    <span>Kategoriya</span>
+                    <span>{% trans "Kategoriya" %}</span>
                 </div>
                 <div class="tests-hero__stat">
                     <strong>3</strong>
-                    <span>Yo'nalish</span>
+                    <span>{% trans "Yo'nalish" %}</span>
                 </div>
             </div>
             {% endif %}
@@ -39,21 +39,21 @@
             <div class="tests-collection-card__icon"><i class="fas fa-book-open"></i></div>
             <div class="tests-collection-card__text">
                 <strong>Reading</strong>
-                <small>Matn tushunish testlari</small>
+                <small>{% trans "Matn tushunish testlari" %}</small>
             </div>
         </a>
         <a href="{% url 'core:test_collection_by_type' 'listening' %}" class="tests-collection-card tests-collection-card--listening">
             <div class="tests-collection-card__icon"><i class="fas fa-headphones"></i></div>
             <div class="tests-collection-card__text">
                 <strong>Listening</strong>
-                <small>Audio eshitish testlari</small>
+                <small>{% trans "Audio eshitish testlari" %}</small>
             </div>
         </a>
         <a href="{% url 'core:test_collection_by_type' 'writing' %}" class="tests-collection-card tests-collection-card--writing">
             <div class="tests-collection-card__icon"><i class="fas fa-pen"></i></div>
             <div class="tests-collection-card__text">
                 <strong>Writing</strong>
-                <small>Essay va yozish testlari</small>
+                <small>{% trans "Essay va yozish testlari" %}</small>
             </div>
         </a>
     </div>
@@ -63,7 +63,7 @@
             <form method="get" id="search-form" class="row g-3 align-items-end">
                 <div class="col-12 col-md-5">
                     <label class="tests-search__label" for="search-input">
-                        <i class="fas fa-search me-1"></i>Qidirish
+                        <i class="fas fa-search me-1"></i>{% trans "Qidirish" %}
                     </label>
                     <div class="tests-search__input-wrap">
                         <i class="fas fa-search"></i>
@@ -71,7 +71,7 @@
                                name="search"
                                id="search-input"
                                class="form-control"
-                               placeholder="Test nomi, kategoriya..."
+                               placeholder="{% trans "Test nomi, kategoriya..." %}"
                                value="{{ search_query }}"
                                autocomplete="off">
                     </div>
@@ -79,26 +79,26 @@
 
                 <div class="col-12 col-md-3">
                     <label class="tests-search__label" for="sort-select">
-                        <i class="fas fa-sort me-1"></i>Tartiblash
+                        <i class="fas fa-sort me-1"></i>{% trans "Tartiblash" %}
                     </label>
                     <select name="sort" id="sort-select" class="form-select tests-search__select">
-                        <option value="newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>Yangi</option>
-                        <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Eski</option>
-                        <option value="title_asc" {% if request.GET.sort == 'title_asc' %}selected{% endif %}>Nomi (A-Z)</option>
-                        <option value="title_desc" {% if request.GET.sort == 'title_desc' %}selected{% endif %}>Nomi (Z-A)</option>
-                        <option value="questions_asc" {% if request.GET.sort == 'questions_asc' %}selected{% endif %}>Savollar (kam)</option>
-                        <option value="questions_desc" {% if request.GET.sort == 'questions_desc' %}selected{% endif %}>Savollar (ko'p)</option>
+                        <option value="newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>{% trans "Yangi" %}</option>
+                        <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>{% trans "Eski" %}</option>
+                        <option value="title_asc" {% if request.GET.sort == 'title_asc' %}selected{% endif %}>{% trans "Nomi (A-Z)" %}</option>
+                        <option value="title_desc" {% if request.GET.sort == 'title_desc' %}selected{% endif %}>{% trans "Nomi (Z-A)" %}</option>
+                        <option value="questions_asc" {% if request.GET.sort == 'questions_asc' %}selected{% endif %}>{% trans "Savollar (kam)" %}</option>
+                        <option value="questions_desc" {% if request.GET.sort == 'questions_desc' %}selected{% endif %}>{% trans "Savollar (ko'p)" %}</option>
                     </select>
                 </div>
 
                 <div class="col-12 col-md-4">
                     <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-primary flex-grow-1">
-                            <i class="fas fa-search me-1"></i>Qidirish
+                            <i class="fas fa-search me-1"></i>{% trans "Qidirish" %}
                         </button>
                         {% if search_query or selected_category or selected_type or selected_difficulty %}
                         <a href="{% url 'core:test_list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i>Tozalash
+                            <i class="fas fa-times me-1"></i>{% trans "Tozalash" %}
                         </a>
                         {% endif %}
                     </div>
@@ -117,7 +117,7 @@
 
             {% if search_query or selected_category or selected_type or selected_difficulty %}
             <div class="tests-active-filters d-flex flex-wrap align-items-center gap-2">
-                <span class="tests-active-filters__label">Faol filterlar:</span>
+                <span class="tests-active-filters__label">{% trans "Faol filterlar:" %}</span>
                 {% if search_query %}
                 <span class="badge bg-primary">
                     <i class="fas fa-search me-1"></i>{{ search_query }}
@@ -149,7 +149,7 @@
                 <button class="btn btn-outline-primary w-100 tests-filter-toggle" type="button"
                         data-bs-toggle="collapse" data-bs-target="#filterSidebar"
                         aria-expanded="false" aria-controls="filterSidebar">
-                    <i class="fas fa-filter me-2"></i>Filterlar
+                    <i class="fas fa-filter me-2"></i>{% trans "Filterlar" %}
                     <i class="fas fa-chevron-down ms-2"></i>
                 </button>
             </div>
@@ -157,17 +157,17 @@
             <div class="collapse d-lg-block" id="filterSidebar">
                 <aside class="filter-sidebar">
                     <div class="filter-sidebar__top">
-                        <i class="fas fa-sliders-h"></i>Filterlar
+                        <i class="fas fa-sliders-h"></i>{% trans "Filterlar" %}
                     </div>
                     <div class="filter-section">
                         <div class="filter-section__title">
-                            <i class="fas fa-folder"></i>Kategoriyalar
+                            <i class="fas fa-folder"></i>{% trans "Kategoriyalar" %}
                         </div>
                         <ul class="filter-list">
                             <li>
                                 <a href="{% url 'core:test_list' %}"
                                    class="filter-item {% if not selected_category %}active{% endif %}">
-                                    <i class="fas fa-th-large"></i>Barchasi
+                                    <i class="fas fa-th-large"></i>{% trans "Barchasi" %}
                                 </a>
                             </li>
                             {% for category in categories %}
@@ -184,13 +184,13 @@
 
                     <div class="filter-section">
                         <div class="filter-section__title">
-                            <i class="fas fa-tag"></i>Test turi
+                            <i class="fas fa-tag"></i>{% trans "Test turi" %}
                         </div>
                         <ul class="filter-list">
                             <li>
                                 <a href="{% url 'core:test_list' %}"
                                    class="filter-item {% if not selected_type %}active{% endif %}">
-                                    <i class="fas fa-th-large"></i>Barchasi
+                                    <i class="fas fa-th-large"></i>{% trans "Barchasi" %}
                                 </a>
                             </li>
                             {% for type_code, type_name in test_types %}
@@ -215,13 +215,13 @@
 
                     <div class="filter-section">
                         <div class="filter-section__title">
-                            <i class="fas fa-layer-group"></i>Qiyinlik
+                            <i class="fas fa-layer-group"></i>{% trans "Qiyinlik" %}
                         </div>
                         <ul class="filter-list">
                             <li>
                                 <a href="{% url 'core:test_list' %}"
                                    class="filter-item {% if not selected_difficulty %}active{% endif %}">
-                                    <i class="fas fa-th-large"></i>Barchasi
+                                    <i class="fas fa-th-large"></i>{% trans "Barchasi" %}
                                 </a>
                             </li>
                             {% for diff_code, diff_name in difficulty_levels %}
@@ -243,8 +243,8 @@
             {% if weak_areas %}
             <div class="tests-panel">
                 <div class="tests-panel__head">
-                    <h5><i class="fas fa-exclamation-triangle text-danger me-2"></i>Zaif tomonlar</h5>
-                    <p>Quyidagi kategoriyalarda yaxshilash kerak</p>
+                    <h5><i class="fas fa-exclamation-triangle text-danger me-2"></i>{% trans "Zaif tomonlar" %}</h5>
+                    <p>{% trans "Quyidagi kategoriyalarda yaxshilash kerak" %}</p>
                 </div>
                 <div class="tests-panel__body">
                     <div class="row g-3">
@@ -253,15 +253,15 @@
                             <div class="test-card-result h-100">
                                 <h6 class="fw-bold mb-2">{{ area.category_name }}</h6>
                                 <div class="d-flex justify-content-between small text-muted mb-1">
-                                    <span>O'rtacha</span>
+                                    <span>{% trans "O'rtacha" %}</span>
                                     <span class="badge bg-danger">{{ area.avg_score }}%</span>
                                 </div>
                                 <div class="d-flex justify-content-between small text-muted mb-2">
-                                    <span>Testlar</span>
+                                    <span>{% trans "Testlar" %}</span>
                                     <span>{{ area.count }}</span>
                                 </div>
                                 <a href="{% url 'core:test_list' %}?category={{ area.category_slug }}" class="btn btn-sm btn-outline-danger w-100">
-                                    Yaxshilash <i class="fas fa-arrow-right ms-1"></i>
+                                    {% trans "Yaxshilash" %} <i class="fas fa-arrow-right ms-1"></i>
                                 </a>
                             </div>
                         </div>
@@ -274,12 +274,12 @@
             {% if recommended_tests %}
             <div class="tests-panel">
                 <div class="tests-panel__head">
-                    <h5><i class="fas fa-star text-warning me-2"></i>Tavsiya qilingan testlar</h5>
+                    <h5><i class="fas fa-star text-warning me-2"></i>{% trans "Tavsiya qilingan testlar" %}</h5>
                     <p>
                         {% if user_avg_score > 0 %}
-                        O'rtacha balingiz: <strong>{{ user_avg_score }}%</strong>
+                        {% blocktrans with score=user_avg_score %}O'rtacha balingiz: <strong>{{ score }}%</strong>{% endblocktrans %}
                         {% else %}
-                        Sizning darajangizga mos testlar
+                        {% trans "Sizning darajangizga mos testlar" %}
                         {% endif %}
                     </p>
                 </div>
@@ -299,9 +299,9 @@
             <div class="tests-count">
                 <div class="tests-count__left">
                     <i class="fas fa-clipboard-list"></i>
-                    <span><strong>{{ tests|length }}</strong> ta test topildi</span>
+                    <span>{% blocktrans count n=tests|length %}{{ n }} ta test topildi{% plural %}{{ n }} ta test topildi{% endblocktrans %}</span>
                 </div>
-                <span class="tests-count__hint">O'zingizga mos testni tanlang va Boshlash tugmasini bosing</span>
+                <span class="tests-count__hint">{% trans "O'zingizga mos testni tanlang va Boshlash tugmasini bosing" %}</span>
             </div>
             {% endif %}
 

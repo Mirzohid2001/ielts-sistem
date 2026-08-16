@@ -117,24 +117,24 @@
     {% include 'core/sat/_mini_nav.html' %}
     <div class="sat-hero d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h2 class="mb-1">SAT Yo'nalishi</h2>
-            <p class="mb-0 opacity-75">Matematika va Ingliz tili bo'yicha video hamda PDF resurslar.</p>
+            <h2 class="mb-1">{% trans "SAT Yo'nalishi" %}</h2>
+            <p class="mb-0 opacity-75">{% trans "Matematika va Ingliz tili bo'yicha video hamda PDF resurslar." %}</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{% url 'sat:sat_dashboard' %}" class="btn sat-hero-btn-primary btn-sm">
-                <i class="fas fa-chart-line me-1"></i>Dashboard
+                <i class="fas fa-chart-line me-1"></i>{% trans "Dashboard" %}
             </a>
             <a href="{% url 'sat:sat_statistics' %}" class="btn sat-hero-btn-secondary btn-sm">
-                <i class="fas fa-chart-pie me-1"></i>Statistika
+                <i class="fas fa-chart-pie me-1"></i>{% trans "Statistika" %}
             </a>
         </div>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">Jami resurs</small><div class="fw-bold">{{ total_resources }}</div></div></div></div>
-        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">Yakunlangan</small><div class="fw-bold">{{ completed_count }}</div></div></div></div>
-        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">O'rtacha progress</small><div class="fw-bold">{{ avg_progress }}%</div></div></div></div>
-        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">Video/PDF saqlangan</small><div class="fw-bold">{{ video_bookmarks_count }} / {{ pdf_bookmarks_count }}</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">{% trans "Jami resurs" %}</small><div class="fw-bold">{{ total_resources }}</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">{% trans "Yakunlangan" %}</small><div class="fw-bold">{{ completed_count }}</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">{% trans "O'rtacha progress" %}</small><div class="fw-bold">{{ avg_progress }}%</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card sat-stat-card"><div class="card-body py-3"><small class="text-muted">{% trans "Video/PDF saqlangan" %}</small><div class="fw-bold">{{ video_bookmarks_count }} / {{ pdf_bookmarks_count }}</div></div></div></div>
     </div>
 
     <div class="row g-4">
@@ -142,11 +142,11 @@
             <a href="{% url 'sat:sat_subject' 'math' %}" class="text-decoration-none">
                 <div class="card sat-box h-100">
                     <div class="card-body">
-                        <h4 class="mb-2"><i class="fas fa-square-root-alt me-2 text-primary"></i>Matematika</h4>
-                        <p class="text-muted mb-3">SAT Math uchun video darslar va PDF materiallar.</p>
+                        <h4 class="mb-2"><i class="fas fa-square-root-alt me-2 text-primary"></i>{% trans "Matematika" %}</h4>
+                        <p class="text-muted mb-3">{% trans "SAT Math uchun video darslar va PDF materiallar." %}</p>
                         <div class="d-flex gap-2 flex-wrap">
-                            <span class="badge bg-primary">{{ math_count }} ta resurs</span>
-                            <span class="badge bg-light text-dark">Progress: {{ math_avg_progress }}%</span>
+                            <span class="badge bg-primary">{% blocktrans count n=math_count %}{{ n }} ta resurs{% plural %}{{ n }} ta resurs{% endblocktrans %}</span>
+                            <span class="badge bg-light text-dark">{% trans "Progress:" %} {{ math_avg_progress }}%</span>
                         </div>
                     </div>
                 </div>
@@ -156,11 +156,11 @@
             <a href="{% url 'sat:sat_subject' 'english' %}" class="text-decoration-none">
                 <div class="card sat-box h-100">
                     <div class="card-body">
-                        <h4 class="mb-2"><i class="fas fa-language me-2 text-success"></i>Ingliz tili</h4>
-                        <p class="text-muted mb-3">SAT English uchun video darslar va PDF materiallar.</p>
+                        <h4 class="mb-2"><i class="fas fa-language me-2 text-success"></i>{% trans "Ingliz tili" %}</h4>
+                        <p class="text-muted mb-3">{% trans "SAT English uchun video darslar va PDF materiallar." %}</p>
                         <div class="d-flex gap-2 flex-wrap">
-                            <span class="badge bg-success">{{ english_count }} ta resurs</span>
-                            <span class="badge bg-light text-dark">Progress: {{ english_avg_progress }}%</span>
+                            <span class="badge bg-success">{% blocktrans count n=english_count %}{{ n }} ta resurs{% plural %}{{ n }} ta resurs{% endblocktrans %}</span>
+                            <span class="badge bg-light text-dark">{% trans "Progress:" %} {{ english_avg_progress }}%</span>
                         </div>
                     </div>
                 </div>
@@ -173,13 +173,13 @@
         <div class="col-12 col-lg-8">
             <div class="sat-continue-card h-100 d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <div>
-                    <div class="fw-semibold">Davom etish</div>
+                    <div class="fw-semibold">{% trans "Davom etish" %}</div>
                     <div class="small text-muted">
                         {{ last_progress.resource.title }} — {{ last_progress.watch_percentage }}%
                     </div>
                 </div>
                 <a href="{% url 'sat:sat_subject' last_progress.resource.subject %}?q={{ last_progress.resource.title|urlencode }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-play me-1"></i>Davom etish
+                    <i class="fas fa-play me-1"></i>{% trans "Davom etish" %}
                 </a>
             </div>
         </div>
@@ -188,8 +188,8 @@
             <div class="card sat-note-board h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <h6 class="mb-0"><i class="fas fa-notes-medical me-2 text-primary"></i>Oxirgi eslatmalar</h6>
-                        <a href="{% url 'core:module_selector' %}" class="btn btn-sm btn-outline-secondary">Bo'limlar</a>
+                        <h6 class="mb-0"><i class="fas fa-notes-medical me-2 text-primary"></i>{% trans "Oxirgi eslatmalar" %}</h6>
+                        <a href="{% url 'core:module_selector' %}" class="btn btn-sm btn-outline-secondary">{% trans "Bo'limlar" %}</a>
                     </div>
                     {% if recent_notes %}
                         {% for note in recent_notes %}
@@ -203,7 +203,7 @@
                         </div>
                         {% endfor %}
                     {% else %}
-                        <small class="text-muted">Hozircha eslatmalar yo'q.</small>
+                        <small class="text-muted">{% trans "Hozircha eslatmalar yo'q." %}</small>
                     {% endif %}
                 </div>
             </div>
@@ -214,7 +214,7 @@
         <div class="col-12 col-lg-6">
             <div class="card sat-insight-card h-100">
                 <div class="card-body">
-                    <h6 class="mb-2"><i class="fas fa-history me-2 text-primary"></i>Oxirgi ko'rilganlar</h6>
+                    <h6 class="mb-2"><i class="fas fa-history me-2 text-primary"></i>{% trans "Oxirgi ko'rilganlar" %}</h6>
                     {% if recent_progress_items %}
                         {% for item in recent_progress_items %}
                         <div class="sat-insight-item d-flex align-items-center justify-content-between gap-2">
@@ -222,11 +222,11 @@
                                 <div class="small fw-semibold">{{ item.resource.title }}</div>
                                 <div class="small text-muted">{{ item.resource.get_subject_display }} • {{ item.watch_percentage }}%</div>
                             </div>
-                            <a href="{% url 'sat:sat_subject' item.resource.subject %}?res={{ item.resource.pk }}" class="btn btn-sm btn-outline-secondary">Ochish</a>
+                            <a href="{% url 'sat:sat_subject' item.resource.subject %}?res={{ item.resource.pk }}" class="btn btn-sm btn-outline-secondary">{% trans "Ochish" %}</a>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <small class="text-muted">Hali ko'rilgan resurslar mavjud emas.</small>
+                        <small class="text-muted">{% trans "Hali ko'rilgan resurslar mavjud emas." %}</small>
                     {% endif %}
                 </div>
             </div>
@@ -234,7 +234,7 @@
         <div class="col-12 col-lg-6">
             <div class="card sat-insight-card h-100">
                 <div class="card-body">
-                    <h6 class="mb-2"><i class="fas fa-lightbulb me-2 text-warning"></i>Sizga tavsiya</h6>
+                    <h6 class="mb-2"><i class="fas fa-lightbulb me-2 text-warning"></i>{% trans "Sizga tavsiya" %}</h6>
                     {% if recommended_resources %}
                         {% for rec in recommended_resources %}
                         <div class="sat-insight-item d-flex align-items-center justify-content-between gap-2">
@@ -242,11 +242,11 @@
                                 <div class="small fw-semibold">{{ rec.title }}</div>
                                 <div class="small text-muted">{{ rec.get_subject_display }}</div>
                             </div>
-                            <a href="{% url 'sat:sat_subject' rec.subject %}?res={{ rec.pk }}" class="btn btn-sm btn-primary">Boshlash</a>
+                            <a href="{% url 'sat:sat_subject' rec.subject %}?res={{ rec.pk }}" class="btn btn-sm btn-primary">{% trans "Boshlash" %}</a>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <small class="text-muted">Hozircha tavsiya uchun resurs topilmadi.</small>
+                        <small class="text-muted">{% trans "Hozircha tavsiya uchun resurs topilmadi." %}</small>
                     {% endif %}
                 </div>
             </div>

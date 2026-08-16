@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}SAT Saqlanganlar - Ton academy{% endblock %}
+{% block title %}{% trans "SAT Saqlanganlar" %} - Ton academy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -28,26 +28,26 @@
     {% include 'core/sat/_mini_nav.html' %}
 
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-        <h3 class="mb-0">SAT Saqlanganlar</h3>
+        <h3 class="mb-0">{% trans "SAT Saqlanganlar" %}</h3>
         <a href="{% url 'sat:sat_home' %}" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i>Orqaga
+            <i class="fas fa-arrow-left me-1"></i>{% trans "Orqaga" %}
         </a>
     </div>
 
     <div class="sat-tabs d-flex gap-2 flex-wrap mb-4">
-        <a href="{% url 'sat:sat_bookmarks' %}" class="btn btn-sm {% if active_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">Barchasi ({{ counts.all }})</a>
-        <a href="{% url 'sat:sat_bookmarks' %}?type=video" class="btn btn-sm {% if active_type == 'video' %}btn-primary{% else %}btn-outline-primary{% endif %}">Video ({{ counts.video }})</a>
+        <a href="{% url 'sat:sat_bookmarks' %}" class="btn btn-sm {% if active_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% trans "Barchasi" %} ({{ counts.all }})</a>
+        <a href="{% url 'sat:sat_bookmarks' %}?type=video" class="btn btn-sm {% if active_type == 'video' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% trans "Video" %} ({{ counts.video }})</a>
         <a href="{% url 'sat:sat_bookmarks' %}?type=pdf" class="btn btn-sm {% if active_type == 'pdf' %}btn-primary{% else %}btn-outline-primary{% endif %}">PDF ({{ counts.pdf }})</a>
-        <a href="{% url 'sat:sat_bookmarks' %}?type=general" class="btn btn-sm {% if active_type == 'general' %}btn-primary{% else %}btn-outline-primary{% endif %}">Umumiy ({{ counts.general }})</a>
+        <a href="{% url 'sat:sat_bookmarks' %}?type=general" class="btn btn-sm {% if active_type == 'general' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% trans "Umumiy" %} ({{ counts.general }})</a>
     </div>
 
     {% if bookmarks %}
     <form method="post" action="{% url 'sat:sat_clear_bookmarks' %}" class="d-flex gap-2 flex-wrap mb-3">
         {% csrf_token %}
         <input type="hidden" name="type" value="{{ active_type }}">
-        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Haqiqatan ham tanlangan saqlanganlarni o\\'chirasizmi?')">
+        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm(window.t('Haqiqatan ham tanlangan saqlanganlarni o\'chirasizmi?'))">
             <i class="fas fa-trash me-1"></i>
-            {% if active_type == 'all' %}Barchasini tozalash{% else %}Tanlangan turini tozalash{% endif %}
+            {% if active_type == 'all' %}{% trans "Barchasini tozalash" %}{% else %}{% trans "Tanlangan turini tozalash" %}{% endif %}
         </button>
     </form>
     <div class="row g-3">
@@ -63,7 +63,7 @@
                     </div>
                     <p class="small text-muted mb-2">{{ item.resource.get_subject_display }} • {{ item.created_at|date:"d.m.Y H:i" }}</p>
                     <div class="d-flex gap-2 flex-wrap">
-                        <a href="{% url 'sat:sat_subject' item.resource.subject %}?res={{ item.resource.pk }}{% if item.bookmark_type == 'video' %}&t={{ item.timestamp }}{% endif %}" class="btn btn-sm btn-outline-secondary">Davom etish</a>
+                        <a href="{% url 'sat:sat_subject' item.resource.subject %}?res={{ item.resource.pk }}{% if item.bookmark_type == 'video' %}&t={{ item.timestamp }}{% endif %}" class="btn btn-sm btn-outline-secondary">{% trans "Davom etish" %}</a>
                         {% if item.resource.pdf_file %}
                         <a href="{% url 'sat:sat_pdf_viewer' item.resource.pk %}" target="_blank" rel="noopener" class="btn btn-sm btn-danger">
                             <i class="fas fa-file-pdf me-1"></i>PDF
@@ -79,7 +79,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
             <i class="fas fa-bookmark fa-2x text-muted mb-3"></i>
-            <p class="text-muted mb-0">Hozircha saqlanganlar yo'q.</p>
+            <p class="text-muted mb-0">{% trans "Hozircha saqlanganlar yo'q." %}</p>
         </div>
     </div>
     {% endif %}

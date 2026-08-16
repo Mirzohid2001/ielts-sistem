@@ -1,18 +1,19 @@
 {% load core_filters %}
+{% trans "Javob berilmagan" as no_ans %}
 {% if feedback and feedback.status == 'completed' %}
 {% if feedback.writing_errors or feedback.sentence_corrections %}
 <div class="tr-ai-legend">
     {% if feedback.writing_errors %}
-    <span class="tr-ai-legend__item"><span class="tr-ai-hl tr-ai-hl--error tr-ai-hl--sample">xato</span> Grammatika / imlo</span>
+    <span class="tr-ai-legend__item"><span class="tr-ai-hl tr-ai-hl--error tr-ai-hl--sample">xato</span> {% trans "Grammatika / imlo" %}</span>
     {% endif %}
     {% if feedback.sentence_corrections %}
-    <span class="tr-ai-legend__item"><span class="tr-ai-hl tr-ai-hl--improve tr-ai-hl--sample">tip</span> Yaxshilash</span>
+    <span class="tr-ai-legend__item"><span class="tr-ai-hl tr-ai-hl--improve tr-ai-hl--sample">tip</span> {% trans "Yaxshilash" %}</span>
     {% endif %}
 </div>
 <div class="answer-value answer-value--prose answer-essay-wrap__text answer-essay-wrap__text--hl">{{ essay_text|highlight_essay_corrections:feedback }}</div>
 {% else %}
-<div class="answer-value answer-value--prose answer-essay-wrap__text">{{ essay_text|format_user_answer|default:"Javob berilmagan" }}</div>
+<div class="answer-value answer-value--prose answer-essay-wrap__text">{{ essay_text|format_user_answer|default:no_ans }}</div>
 {% endif %}
 {% else %}
-<div class="answer-value answer-value--prose answer-essay-wrap__text">{{ essay_text|format_user_answer|default:"Javob berilmagan" }}</div>
+<div class="answer-value answer-value--prose answer-essay-wrap__text">{{ essay_text|format_user_answer|default:no_ans }}</div>
 {% endif %}

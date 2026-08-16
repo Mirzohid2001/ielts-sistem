@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load youtube %}
+{% load youtube core_filters %}
 
 {% block title %}{{ video.title }} - IELTS Center{% endblock %}
 
@@ -13,15 +13,15 @@
                     <!-- Video Controls -->
                     <div class="video-controls d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-light" id="add-bookmark-btn" title="Bookmark qo'yish">
-                                <i class="fas fa-bookmark me-1"></i>Bookmark
+                            <button type="button" class="btn btn-sm btn-outline-light" id="add-bookmark-btn" title="{% trans "Bookmark qo'yish" %}">
+                                <i class="fas fa-bookmark me-1"></i>{% trans "Bookmark" %}
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-light" id="add-note-btn" title="Eslatma qo'shish">
-                                <i class="fas fa-sticky-note me-1"></i>Eslatma
+                            <button type="button" class="btn btn-sm btn-outline-light" id="add-note-btn" title="{% trans "Eslatma qo'shish" %}">
+                                <i class="fas fa-sticky-note me-1"></i>{% trans "Eslatma" %}
                             </button>
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="playlistDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-list me-1"></i>Playlist
+                                    <i class="fas fa-list me-1"></i>{% trans "Playlist" %}
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="playlistDropdown">
                                     {% for playlist in user_playlists %}
@@ -36,10 +36,10 @@
                                         </a>
                                     </li>
                                     {% empty %}
-                                    <li><span class="dropdown-item-text text-muted">Playlist yo'q</span></li>
+                                    <li><span class="dropdown-item-text text-muted">{% trans "Playlist yo'q" %}</span></li>
                                     {% endfor %}
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#" id="create-playlist-btn"><i class="fas fa-plus-circle me-2"></i>Yangi playlist</a></li>
+                                    <li><a class="dropdown-item" href="#" id="create-playlist-btn"><i class="fas fa-plus-circle me-2"></i>{% trans "Yangi playlist" %}</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -73,7 +73,7 @@
                                 data-protected="1"
                                 data-video-pk="{{ video.pk }}"
                                 src="{% if video_playback_url %}{{ video_playback_url }}{% else %}{% url 'core:video_stream' video.pk %}{% endif %}">
-                                Brauzeringiz video formatini qo‘llamaydi.
+                                {% trans "Brauzeringiz video formatini qo‘llamaydi." %}
                             </video>
                         </div>
                         <script>
@@ -134,13 +134,13 @@
                         <!-- Error fallback -->
                         <div id="video-error-{{ video.pk }}" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); color: white; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; z-index: 10;">
                             <i class="fas fa-exclamation-triangle fa-4x mb-4 text-warning" style="animation: pulse 2s ease-in-out infinite;"></i>
-                            <h4 class="mb-3" style="font-weight: 700;">Video yuklanmadi</h4>
-                            <p class="mb-4 text-center" style="max-width: 400px; opacity: 0.9;">Video yuklashda muammo yuz berdi. Iltimos, quyidagi havola orqali YouTube'da ko'ring.</p>
+                            <h4 class="mb-3" style="font-weight: 700;">{% trans "Video yuklanmadi" %}</h4>
+                            <p class="mb-4 text-center" style="max-width: 400px; opacity: 0.9;">{% trans "Video yuklashda muammo yuz berdi. Iltimos, quyidagi havola orqali YouTube'da ko'ring." %}</p>
                             <a href="https://www.youtube.com/watch?v={{ video.youtube_id }}" target="_blank" class="btn btn-primary btn-lg" rel="noopener noreferrer" style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">
-                                <i class="fas fa-external-link-alt me-2"></i>YouTube'da ko'rish
+                                <i class="fas fa-external-link-alt me-2"></i>{% trans "YouTube'da ko'rish" %}
                             </a>
                             <button onclick="retryVideo{{ video.pk }}()" class="btn btn-outline-light btn-sm mt-3" style="border-radius: 8px;">
-                                <i class="fas fa-redo me-2"></i>Qayta urinish
+                                <i class="fas fa-redo me-2"></i>{% trans "Qayta urinish" %}
                             </button>
                         </div>
                         <script>
@@ -302,10 +302,10 @@
                             <div class="d-flex align-items-center justify-content-center bg-dark text-white" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
                                 <div class="text-center p-4">
                                     <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
-                                    <h5 class="mb-3">Video yuklanmadi</h5>
-                                    <p class="mb-3">YouTube URL noto'g'ri</p>
+                                    <h5 class="mb-3">{% trans "Video yuklanmadi" %}</h5>
+                                    <p class="mb-3">{% trans "YouTube URL noto'g'ri" %}</p>
                                     <a href="{{ video.youtube_url }}" target="_blank" class="btn btn-primary" rel="noopener noreferrer">
-                                        <i class="fas fa-external-link-alt me-2"></i>YouTube'da ko'rish
+                                        <i class="fas fa-external-link-alt me-2"></i>{% trans "YouTube'da ko'rish" %}
                                     </a>
                                 </div>
                             </div>
@@ -317,7 +317,7 @@
                         <div class="d-flex align-items-center justify-content-center bg-dark text-white" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
                             <div class="text-center p-4">
                                 <i class="fas fa-video-slash fa-3x mb-3 text-muted"></i>
-                                <h5>Video URL kiritilmagan</h5>
+                                <h5>{% trans "Video URL kiritilmagan" %}</h5>
                             </div>
                         </div>
                         {% endif %}
@@ -369,7 +369,7 @@
                     <!-- Video Rating -->
                     <div class="mt-3">
                         <label class="form-label mb-2" style="font-weight: 600;">
-                            <i class="fas fa-star me-1 text-warning"></i>Videoni baholash:
+                            <i class="fas fa-star me-1 text-warning"></i>{% trans "Videoni baholash:" %}
                         </label>
                         <div class="d-flex align-items-center gap-2">
                             <div class="rating-stars" data-video-id="{{ video.pk }}">
@@ -382,21 +382,21 @@
                                 {% endfor %}
                             </div>
                             {% if user_rating %}
-                            <span class="text-muted user-rating-text" style="font-size: 0.875rem; margin-left: 0.5rem;">Sizning reytingingiz: <strong>{{ user_rating.rating }}/5</strong></span>
+                            <span class="text-muted user-rating-text" style="font-size: 0.875rem; margin-left: 0.5rem;">{% trans "Sizning reytingingiz:" %} <strong>{{ user_rating.rating }}/5</strong></span>
                             {% endif %}
                         </div>
                         {% if video.average_rating > 0 %}
                         <small class="text-muted d-block mt-2 average-rating-text">
-                            O'rtacha reyting: <strong>{{ video.average_rating|floatformat:1 }}/5</strong> ({{ video.total_ratings }} ta baho)
+                            {% trans "O'rtacha reyting:" %} <strong>{{ video.average_rating|floatformat:1 }}/5</strong> ({{ video.total_ratings }} {% trans "ta baho" %})
                         </small>
                         {% endif %}
                     </div>
                     {% if video.description %}
-                    <p class="card-text">{{ video.description|linebreaks }}</p>
+                    <p class="card-text">{{ video.description|site_t|linebreaks }}</p>
                     {% endif %}
                     {% if progress.watch_percentage > 0 %}
                     <div class="mt-3">
-                        <small class="text-muted d-block mb-1">Ko'rilgan progress:</small>
+                        <small class="text-muted d-block mb-1">{% trans "Ko'rilgan progress:" %}</small>
                         <div class="progress" style="height: 8px;">
                             <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress.watch_percentage }}%;"></div>
                         </div>
@@ -410,7 +410,7 @@
             <div class="card mb-4 video-notes-card">
                 <div class="video-notes-header">
                     <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
-                        <i class="fas fa-sticky-note me-2 text-primary"></i>Eslatmalar
+                        <i class="fas fa-sticky-note me-2 text-primary"></i>{% trans "Eslatmalar" %}
                     </h5>
                 </div>
                 <div class="card-body p-4">
@@ -433,7 +433,7 @@
                         {% empty %}
                         <div class="text-center text-muted py-4">
                             <i class="fas fa-sticky-note fa-3x mb-3 opacity-25"></i>
-                            <p>Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin.</p>
+                            <p>{% trans "Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin." %}</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -444,7 +444,7 @@
             <div class="card mb-4 video-comments-card">
                 <div class="video-notes-header">
                     <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
-                        <i class="fas fa-comments me-2 text-primary"></i>Izohlar
+                        <i class="fas fa-comments me-2 text-primary"></i>{% trans "Izohlar" %}
                         <span class="badge bg-primary ms-2" id="comments-count">{{ video_comments|length }}</span>
                     </h5>
                 </div>
@@ -454,10 +454,10 @@
                         <form id="add-comment-form">
                             {% csrf_token %}
                             <div class="mb-2">
-                                <textarea class="form-control" id="comment-text" name="comment_text" rows="3" placeholder="Izoh yozing..." required></textarea>
+                                <textarea class="form-control" id="comment-text" name="comment_text" rows="3" placeholder="{% trans "Izoh yozing..." %}" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane me-1"></i>Izoh qo'shish
+                                <i class="fas fa-paper-plane me-1"></i>{% trans "Izoh qo'shish" %}
                             </button>
                         </form>
                     </div>
@@ -472,7 +472,7 @@
                                         <strong>{{ comment.user.first_name|default:comment.user.username }}</strong>
                                         <small class="text-muted ms-2">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
                                         {% if comment.is_edited %}
-                                        <small class="text-muted ms-2">(tahrirlangan)</small>
+                                        <small class="text-muted ms-2">({% trans "tahrirlangan" %})</small>
                                         {% endif %}
                                     </div>
                                     {% if comment.user == request.user %}
@@ -485,7 +485,7 @@
                                 
                                 <!-- Reply Button -->
                                 <button type="button" class="btn btn-sm btn-outline-secondary reply-btn" data-comment-id="{{ comment.pk }}">
-                                    <i class="fas fa-reply me-1"></i>Javob berish
+                                    <i class="fas fa-reply me-1"></i>{% trans "Javob berish" %}
                                 </button>
                                 
                                 <!-- Replies -->
@@ -517,10 +517,10 @@
                                     <form class="reply-comment-form" data-parent-id="{{ comment.pk }}">
                                         {% csrf_token %}
                                         <div class="mb-2">
-                                            <textarea class="form-control form-control-sm" name="comment_text" rows="2" placeholder="Javob yozing..." required></textarea>
+                                            <textarea class="form-control form-control-sm" name="comment_text" rows="2" placeholder="{% trans "Javob yozing..." %}" required></textarea>
                                         </div>
-                                        <button type="submit" class="btn btn-sm btn-primary">Javob yuborish</button>
-                                        <button type="button" class="btn btn-sm btn-secondary cancel-reply-btn">Bekor qilish</button>
+                                        <button type="submit" class="btn btn-sm btn-primary">{% trans "Javob yuborish" %}</button>
+                                        <button type="button" class="btn btn-sm btn-secondary cancel-reply-btn">{% trans "Bekor qilish" %}</button>
                                     </form>
                                 </div>
                             </div>
@@ -528,7 +528,7 @@
                         {% empty %}
                         <div class="text-center text-muted py-4">
                             <i class="fas fa-comments fa-3x mb-3 opacity-25"></i>
-                            <p>Hozircha izohlar yo'q. Birinchi izohni siz yozing!</p>
+                            <p>{% trans "Hozircha izohlar yo'q. Birinchi izohni siz yozing!" %}</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -543,7 +543,7 @@
             <div class="card video-info-card">
                 <div class="video-notes-header">
                     <h5 class="mb-0" style="font-weight: 700; color: var(--gray-900);">
-                        <i class="fas fa-video me-2 text-primary"></i>Tegishli videolar
+                        <i class="fas fa-video me-2 text-primary"></i>{% trans "Tegishli videolar" %}
                     </h5>
                 </div>
                 <div class="list-group list-group-flush">
@@ -580,7 +580,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-sticky-note me-2"></i>Eslatma qo'shish
+                    <i class="fas fa-sticky-note me-2"></i>{% trans "Eslatma qo'shish" %}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -589,18 +589,18 @@
                     {% csrf_token %}
                     <input type="hidden" id="note-timestamp" name="timestamp" value="0">
                     <div class="mb-3">
-                        <label class="form-label">Vaqt: <span id="note-timestamp-display" class="badge bg-primary">0:00</span></label>
+                        <label class="form-label">{% trans "Vaqt:" %} <span id="note-timestamp-display" class="badge bg-primary">0:00</span></label>
                     </div>
                     <div class="mb-3">
-                        <label for="note-text" class="form-label">Eslatma matni</label>
-                        <textarea class="form-control" id="note-text" name="note_text" rows="4" required placeholder="Eslatma yozing..."></textarea>
+                        <label for="note-text" class="form-label">{% trans "Eslatma matni" %}</label>
+                        <textarea class="form-control" id="note-text" name="note_text" rows="4" required placeholder="{% trans "Eslatma yozing..." %}"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Bekor qilish" %}</button>
                 <button type="button" class="btn btn-primary" id="save-note-btn">
-                    <i class="fas fa-save me-1"></i>Saqlash
+                    <i class="fas fa-save me-1"></i>{% trans "Saqlash" %}
                 </button>
             </div>
         </div>
@@ -828,7 +828,7 @@ document.getElementById('save-note-btn').addEventListener('click', function() {
     const timestamp = document.getElementById('note-timestamp').value;
     
     if (!noteText) {
-        alert('Eslatma matni bo\'sh bo\'lishi mumkin emas!');
+        alert(t('Eslatma matni bo\'sh bo\'lishi mumkin emas!'));
         return;
     }
     
@@ -882,12 +882,12 @@ document.getElementById('save-note-btn').addEventListener('click', function() {
             // Delete button event listener qo'shish
             attachDeleteListeners();
         } else {
-            alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+            alert(t('Xatolik:') + ' ' + (data.error || t('Noma\'lum xatolik')));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Xatolik yuz berdi');
+        alert(t('Xatolik yuz berdi'));
     });
 });
 
@@ -897,7 +897,7 @@ function attachDeleteListeners() {
         if (btn.dataset.boundDelete === '1') return;
         btn.dataset.boundDelete = '1';
         btn.addEventListener('click', function() {
-            if (!confirm('Eslatmani o\'chirishni xohlaysizmi?')) {
+            if (!confirm(t('Eslatmani o\'chirishni xohlaysizmi?'))) {
                 return;
             }
             
@@ -930,7 +930,7 @@ function attachDeleteListeners() {
                         notesList.innerHTML = `
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-sticky-note fa-3x mb-3 opacity-25"></i>
-                                <p>Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin.</p>
+                                <p>{% trans "Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin." %}</p>
                             </div>
                         `;
                     }
@@ -938,7 +938,7 @@ function attachDeleteListeners() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Xatolik yuz berdi');
+                alert(t('Xatolik yuz berdi'));
             });
         });
     });
@@ -977,16 +977,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(data => {
                         if (data.success) {
                             if (data.bookmarked) {
-                                addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark qo\'yildi';
+                                addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>' + t("Bookmark qo'yildi");
                                 addBookmarkBtn.classList.add('active');
                                 setTimeout(() => {
-                                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>' + t('Bookmark');
                                 }, 2000);
                             } else {
-                                addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark olib tashlandi';
+                                addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>' + t('Bookmark olib tashlandi');
                                 addBookmarkBtn.classList.remove('active');
                                 setTimeout(() => {
-                                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>' + t('Bookmark');
                                 }, 2000);
                             }
                         }
@@ -1084,7 +1084,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const commentText = document.getElementById('comment-text').value.trim();
             
             if (!commentText) {
-                alert('Izoh matni bo\'sh bo\'lishi mumkin emas!');
+                alert(t('Izoh matni bo\'sh bo\'lishi mumkin emas!'));
                 return;
             }
             
@@ -1126,16 +1126,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 <p class="mb-2">${data.comment.text.replace(/\n/g, '<br>')}</p>
                                 <button type="button" class="btn btn-sm btn-outline-secondary reply-btn" data-comment-id="${data.comment.id}">
-                                    <i class="fas fa-reply me-1"></i>Javob berish
+                                    <i class="fas fa-reply me-1"></i>{% trans "Javob berish" %}
                                 </button>
                                 <div class="mt-2 ms-4 reply-form" id="reply-form-${data.comment.id}" style="display: none;">
                                     <form class="reply-comment-form" data-parent-id="${data.comment.id}">
                                         <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken.value}">
                                         <div class="mb-2">
-                                            <textarea class="form-control form-control-sm" name="comment_text" rows="2" placeholder="Javob yozing..." required></textarea>
+                                            <textarea class="form-control form-control-sm" name="comment_text" rows="2" placeholder="{% trans "Javob yozing..." %}" required></textarea>
                                         </div>
-                                        <button type="submit" class="btn btn-sm btn-primary">Javob yuborish</button>
-                                        <button type="button" class="btn btn-sm btn-secondary cancel-reply-btn">Bekor qilish</button>
+                                        <button type="submit" class="btn btn-sm btn-primary">{% trans "Javob yuborish" %}</button>
+                                        <button type="button" class="btn btn-sm btn-secondary cancel-reply-btn">{% trans "Bekor qilish" %}</button>
                                     </form>
                                 </div>
                             </div>
@@ -1155,12 +1155,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Attach event listeners
                     attachCommentListeners();
                 } else {
-                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                    alert(t('Xatolik:') + ' ' + (data.error || t('Noma\'lum xatolik')));
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Xatolik yuz berdi');
+                alert(t('Xatolik yuz berdi'));
             });
         });
     }
@@ -1201,7 +1201,7 @@ function attachCommentListeners() {
             const commentText = this.querySelector('textarea').value.trim();
             
             if (!commentText) {
-                alert('Javob matni bo\'sh bo\'lishi mumkin emas!');
+                alert(t('Javob matni bo\'sh bo\'lishi mumkin emas!'));
                 return;
             }
             
@@ -1263,12 +1263,12 @@ function attachCommentListeners() {
                         attachDeleteCommentListeners();
                     }
                 } else {
-                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                    alert(t('Xatolik:') + ' ' + (data.error || t('Noma\'lum xatolik')));
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Xatolik yuz berdi');
+                alert(t('Xatolik yuz berdi'));
             });
         });
     });
@@ -1280,7 +1280,7 @@ function attachCommentListeners() {
 function attachDeleteCommentListeners() {
     document.querySelectorAll('.delete-comment-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            if (!confirm('Izohni o\'chirishni xohlaysizmi?')) {
+            if (!confirm(t('Izohni o\'chirishni xohlaysizmi?'))) {
                 return;
             }
             
@@ -1323,7 +1323,7 @@ function attachDeleteCommentListeners() {
                         commentsList.innerHTML = `
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-comments fa-3x mb-3 opacity-25"></i>
-                                <p>Hozircha izohlar yo'q. Birinchi izohni siz yozing!</p>
+                                <p>{% trans "Hozircha izohlar yo'q. Birinchi izohni siz yozing!" %}</p>
                             </div>
                         `;
                     }
@@ -1331,7 +1331,7 @@ function attachDeleteCommentListeners() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Xatolik yuz berdi');
+                alert(t('Xatolik yuz berdi'));
             });
         });
     });
@@ -1372,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btn.dataset.boundDelete === '1') return;
             btn.dataset.boundDelete = '1';
             btn.addEventListener('click', function() {
-                if (!confirm('Eslatmani o\'chirishni xohlaysizmi?')) return;
+                if (!confirm(t('Eslatmani o\'chirishni xohlaysizmi?'))) return;
                 const noteId = this.getAttribute('data-note-id');
                 const formData = new FormData();
                 if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken);
@@ -1391,7 +1391,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         notesList.innerHTML = `
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-sticky-note fa-3x mb-3 opacity-25"></i>
-                                <p>Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin.</p>
+                                <p>{% trans "Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin." %}</p>
                             </div>
                         `;
                     }
@@ -1414,7 +1414,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const noteText = (document.getElementById('note-text').value || '').trim();
             const timestamp = document.getElementById('note-timestamp').value || 0;
             if (!noteText) {
-                alert('Eslatma matni bo\'sh bo\'lishi mumkin emas!');
+                alert(t('Eslatma matni bo\'sh bo\'lishi mumkin emas!'));
                 return;
             }
             const formData = new FormData();
@@ -1429,7 +1429,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(r => r.json())
             .then(data => {
                 if (!data.success) {
-                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                    alert(t('Xatolik:') + ' ' + (data.error || t('Noma\'lum xatolik')));
                     return;
                 }
                 const notesList = document.getElementById('notes-list');
@@ -1472,10 +1472,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (!data.success) return;
                 addBookmarkBtn.innerHTML = data.bookmarked
-                    ? '<i class="fas fa-bookmark me-1"></i>Bookmark qo\'yildi'
-                    : '<i class="fas fa-bookmark me-1"></i>Bookmark olib tashlandi';
+                    ? '<i class="fas fa-bookmark me-1"></i>' + t("Bookmark qo'yildi")
+                    : '<i class="fas fa-bookmark me-1"></i>' + t('Bookmark olib tashlandi');
                 setTimeout(() => {
-                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>Bookmark';
+                    addBookmarkBtn.innerHTML = '<i class="fas fa-bookmark me-1"></i>' + t('Bookmark');
                 }, 1500);
             });
         });
@@ -1613,13 +1613,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             userRatingText.style.marginLeft = '1rem';
                             ratingContainer.querySelector('.d-flex').appendChild(userRatingText);
                         }
-                        userRatingText.innerHTML = `Sizning reytingingiz: <strong>${rating}/5</strong>`;
+                        userRatingText.innerHTML = t('Sizning reytingingiz:') + ' <strong>' + rating + '/5</strong>';
                         
                         // Update average rating
                         let avgText = ratingContainer.querySelector('.average-rating-text');
                         const avgRating = parseFloat(data.average_rating) || 0;
                         const totalRatings = parseInt(data.total_ratings) || 0;
-                        const avgRatingText = `O'rtacha reyting: <strong>${avgRating.toFixed(1)}/5</strong> (${totalRatings} ta baho)`;
+                        const avgRatingText = t("O'rtacha reyting:") + ' <strong>' + avgRating.toFixed(1) + '/5</strong> (' + totalRatings + ' ' + t('ta baho') + ')';
                         
                         if (avgText) {
                             avgText.innerHTML = avgRatingText;
@@ -1635,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const successBadge = document.createElement('span');
                     successBadge.className = 'badge bg-success ms-2';
                     successBadge.style.fontSize = '0.75rem';
-                    successBadge.innerHTML = '<i class="fas fa-check me-1"></i>Saqlandi';
+                    successBadge.innerHTML = '<i class="fas fa-check me-1"></i>' + t('Saqlandi');
                     ratingContainer.querySelector('.d-flex').appendChild(successBadge);
                     setTimeout(() => {
                         successBadge.style.transition = 'opacity 0.3s';
@@ -1643,7 +1643,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         setTimeout(() => successBadge.remove(), 300);
                     }, 2000);
                 } else {
-                    alert('Xatolik: ' + (data.error || 'Noma\'lum xatolik'));
+                    alert(t('Xatolik:') + ' ' + (data.error || t('Noma\'lum xatolik')));
                 }
             })
             .catch(error => {
@@ -1652,7 +1652,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const errorBadge = document.createElement('span');
                 errorBadge.className = 'badge bg-danger ms-2';
                 errorBadge.style.fontSize = '0.75rem';
-                errorBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Xatolik';
+                errorBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>' + t('Xatolik');
                 const ratingContainer = ratingStars.closest('.mt-3');
                 if (ratingContainer) {
                     ratingContainer.querySelector('.d-flex').appendChild(errorBadge);

@@ -14,11 +14,11 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h5 class="mb-0">{{ resource.title }}</h5>
         <a href="{% url 'sat:sat_subject' resource.subject %}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left me-1"></i>Orqaga
+            <i class="fas fa-arrow-left me-1"></i>{% trans "Orqaga" %}
         </a>
     </div>
     <div class="pdf-tip mb-3">
-        PDF faqat ko'rish rejimida ochiladi.
+        {% trans "PDF faqat ko'rish rejimida ochiladi." %}
     </div>
     <div class="pdf-wrap">
         <iframe

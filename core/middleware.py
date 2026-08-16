@@ -1,7 +1,29 @@
 from django.contrib import messages
 from django.shortcuts import redirect
+from django.utils import translation
+from django.utils.translation import gettext as _
 
 from core.access import get_user_module_access
+from core.services.ai_language import LANG_UZ, get_ai_language
+
+
+class SiteLanguageMiddleware:
+    """Foydalanuvchi tili (cookie/session). Admin o'zbekcha qoladi."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path or ''
+        if path.startswith('/admin/'):
+            lang = LANG_UZ
+        else:
+            lang = get_ai_language(request)
+        translation.activate(lang)
+        request.LANGUAGE_CODE = lang
+        response = self.get_response(request)
+        translation.deactivate()
+        return response
 
 
 class ModuleAccessMiddleware:
@@ -30,11 +52,11 @@ class ModuleAccessMiddleware:
         url_name = match.url_name
 
         if namespace == 'sat' and not access.can_access_sat:
-            messages.error(request, "Sizga SAT bo'limiga kirish ruxsati berilmagan.")
+            messages.error(request, _("Sizga SAT bo'limiga kirish ruxsati berilmagan."))
             return redirect('core:module_selector')
 
         if namespace == 'core' and url_name != 'module_selector' and not access.can_access_ielts:
-            messages.error(request, "Sizga IELTS bo'limiga kirish ruxsati berilmagan.")
+            messages.error(request, _("Sizga IELTS bo'limiga kirish ruxsati berilmagan."))
             return redirect('core:module_selector')
 
         return None

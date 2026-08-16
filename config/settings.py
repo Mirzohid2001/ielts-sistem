@@ -70,6 +70,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'core.middleware.SiteLanguageMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -98,10 +99,15 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.platform_notifications',
                 'core.context_processors.static_asset_version',
+                'core.context_processors.site_language',
+            ],
+            'builtins': [
+                'django.templatetags.i18n',
             ],
         },
     },
@@ -153,6 +159,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'uz'
 
+LANGUAGES = [
+    ('uz', "O'zbekcha"),
+    ('ru', 'Русский'),
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
+
 TIME_ZONE = 'Asia/Tashkent'
 
 USE_I18N = True
@@ -168,7 +181,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Cache busting for CSS/JS — bump after changing static assets (or set STATIC_ASSET_VERSION env on deploy).
-STATIC_ASSET_VERSION = os.environ.get('STATIC_ASSET_VERSION', '15')
+STATIC_ASSET_VERSION = os.environ.get('STATIC_ASSET_VERSION', '21')
 
 # Media files
 

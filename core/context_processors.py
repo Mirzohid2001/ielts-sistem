@@ -1,8 +1,12 @@
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 
 from .models import AdminAnnouncement, SATResourceProgress, StudyStreak, UserTestResult
+from .services.ai_language import get_ai_language
+from .i18n_js import js_catalog
 
 
 def static_asset_version(request):
@@ -11,19 +15,19 @@ def static_asset_version(request):
 
 def _relative_time(dt):
     if not dt:
-        return "Hozir"
+        return _("Hozir")
     delta = timezone.now() - dt
     seconds = max(1, int(delta.total_seconds()))
     if seconds < 60:
-        return "Hozirgina"
+        return _("Hozirgina")
     minutes = seconds // 60
     if minutes < 60:
-        return f"{minutes} daqiqa oldin"
+        return ngettext("%(n)d daqiqa oldin", "%(n)d daqiqa oldin", minutes) % {'n': minutes}
     hours = minutes // 60
     if hours < 24:
-        return f"{hours} soat oldin"
+        return ngettext("%(n)d soat oldin", "%(n)d soat oldin", hours) % {'n': hours}
     days = hours // 24
-    return f"{days} kun oldin"
+    return ngettext("%(n)d kun oldin", "%(n)d kun oldin", days) % {'n': days}
 
 
 def build_notification_items(user, limit=8):
@@ -40,8 +44,8 @@ def build_notification_items(user, limit=8):
         items.append({
             'kind': 'streak',
             'icon': 'fa-fire',
-            'title': "Streakni yo'qotmang",
-            'message': f"Sizda {current_streak} kunlik streak bor. Bugun ham o'qishni davom ettiring.",
+            'title': _("Streakni yo'qotmang"),
+            'message': _("Sizda %(n)d kunlik streak bor. Bugun ham o'qishni davom ettiring.") % {'n': current_streak},
             'url': reverse('core:dashboard'),
             'created_at': timezone.now(),
         })
@@ -51,8 +55,8 @@ def build_notification_items(user, limit=8):
         items.append({
             'kind': 'continue',
             'icon': 'fa-circle-play',
-            'title': "IELTS davom ettirish",
-            'message': f"{paused_test.test.title} testi to'xtatilgan. Davom ettirishga qayting.",
+            'title': _("IELTS davom ettirish"),
+            'message': _("%(title)s testi to'xtatilgan. Davom ettirishga qayting.") % {'title': paused_test.test.title},
             'url': reverse('core:test_resume', kwargs={'pk': paused_test.id}),
             'created_at': paused_test.paused_at or paused_test.started_at,
         })
@@ -66,8 +70,8 @@ def build_notification_items(user, limit=8):
         items.append({
             'kind': 'continue',
             'icon': 'fa-book-open-reader',
-            'title': "SAT davom ettirish",
-            'message': f"{sat_progress.resource.title} resursini tugatib qo'ying.",
+            'title': _("SAT davom ettirish"),
+            'message': _("%(title)s resursini tugatib qo'ying.") % {'title': sat_progress.resource.title},
             'url': reverse('sat:sat_subject', kwargs={'subject': sat_progress.resource.subject}),
             'created_at': sat_progress.last_accessed_at,
         })
@@ -103,4 +107,13 @@ def platform_notifications(request):
     return {
         'notification_items': items,
         'notification_count': len(items),
+    }
+
+
+def site_language(request):
+    lang = getattr(request, 'LANGUAGE_CODE', None) or get_ai_language(request)
+    return {
+        'site_lang': lang,
+        'ai_lang': lang,
+        'i18n_js': js_catalog(),
     }

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Bo'lim tanlash - Ton academy{% endblock %}
+{% block title %}{% trans "Bo'lim tanlash" %} - Ton academy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -176,7 +176,7 @@
         position: relative;
     }
     .module-link-last::after {
-        content: "Oxirgi tanlov";
+        content: attr(data-last-label);
         position: absolute;
         top: -28px;
         right: 0;
@@ -283,24 +283,24 @@
         <div class="module-hero mb-4">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 hero-content">
                 <div>
-                    <div class="hero-kicker"><i class="fas fa-sparkles"></i> Ton academy platformasi</div>
-                    <h2 class="fw-bold mb-1 hero-title">Bo'limni tanlang</h2>
-                    <p class="text-muted mb-0">Kerakli tizimga kirish uchun quyidagi bo'limlardan birini tanlang.</p>
+                    <div class="hero-kicker"><i class="fas fa-sparkles"></i> {% trans "Ton academy platformasi" %}</div>
+                    <h2 class="fw-bold mb-1 hero-title">{% trans "Bo'limni tanlang" %}</h2>
+                    <p class="text-muted mb-0">{% trans "Kerakli tizimga kirish uchun quyidagi bo'limlardan birini tanlang." %}</p>
                     <small class="text-muted d-inline-block mt-2">
-                        Tez kirish: <span class="module-shortcut-hint">1</span> IELTS, <span class="module-shortcut-hint">2</span> SAT
+                        {% trans "Tez kirish:" %} <span class="module-shortcut-hint">1</span> IELTS, <span class="module-shortcut-hint">2</span> SAT
                     </small>
                     <div class="hero-points">
-                        <span class="hero-point"><i class="fas fa-shield-check"></i>Xavfsiz kirish</span>
-                        <span class="hero-point"><i class="fas fa-bolt"></i>Tez ishlash</span>
-                        <span class="hero-point"><i class="fas fa-chart-line"></i>Progress kuzatuvi</span>
+                        <span class="hero-point"><i class="fas fa-shield-check"></i>{% trans "Xavfsiz kirish" %}</span>
+                        <span class="hero-point"><i class="fas fa-bolt"></i>{% trans "Tez ishlash" %}</span>
+                        <span class="hero-point"><i class="fas fa-chart-line"></i>{% trans "Progress kuzatuvi" %}</span>
                     </div>
                 </div>
                 <div class="d-flex gap-2">
                     <span class="module-badge badge-open">
-                        <i class="fas fa-unlock-alt"></i>{{ available_count }} ta ochiq
+                        <i class="fas fa-unlock-alt"></i>{{ available_count }} {% trans "ta ochiq" %}
                     </span>
                     <span class="module-badge badge-locked">
-                        <i class="fas fa-lock"></i>{{ locked_count }} ta yopiq
+                        <i class="fas fa-lock"></i>{{ locked_count }} {% trans "ta yopiq" %}
                     </span>
                 </div>
             </div>
@@ -315,18 +315,18 @@
                             <i class="fas fa-graduation-cap"></i>
                         </div>
                         {% if can_access_ielts %}
-                        <span class="module-status status-ready">Tayyor</span>
+                        <span class="module-status status-ready">{% trans "Tayyor" %}</span>
                         {% else %}
-                        <span class="module-status status-lock">Yopiq</span>
+                        <span class="module-status status-lock">{% trans "Yopiq" %}</span>
                         {% endif %}
                         </div>
                         <h5 class="fw-bold">IELTS</h5>
-                        <div class="module-meta"><i class="fas fa-layer-group"></i>Video + Test + Statistika</div>
-                        <p class="text-muted flex-grow-1 mb-3">IELTS video darslar, testlar, statistika va reyting.</p>
+                        <div class="module-meta"><i class="fas fa-layer-group"></i>{% trans "Video + Test + Statistika" %}</div>
+                        <p class="text-muted flex-grow-1 mb-3">{% trans "IELTS video darslar, testlar, statistika va reyting." %}</p>
                         {% if can_access_ielts %}
-                        <a href="{% url 'core:dashboard' %}" class="btn module-link module-link-ielts" data-module="ielts" data-shortcut="1">IELTS tizimiga kirish</a>
+                        <a href="{% url 'core:dashboard' %}" class="btn module-link module-link-ielts" data-module="ielts" data-shortcut="1">{% trans "IELTS tizimiga kirish" %}</a>
                         {% else %}
-                        <button class="btn btn-outline-secondary" disabled>Ruxsat yo'q</button>
+                        <button class="btn btn-outline-secondary" disabled>{% trans "Ruxsat yo'q" %}</button>
                         {% endif %}
                     </div>
                 </div>
@@ -340,18 +340,18 @@
                             <i class="fas fa-calculator"></i>
                         </div>
                         {% if can_access_sat %}
-                        <span class="module-status status-ready">Tayyor</span>
+                        <span class="module-status status-ready">{% trans "Tayyor" %}</span>
                         {% else %}
-                        <span class="module-status status-lock">Yopiq</span>
+                        <span class="module-status status-lock">{% trans "Yopiq" %}</span>
                         {% endif %}
                         </div>
                         <h5 class="fw-bold">SAT</h5>
-                        <div class="module-meta"><i class="fas fa-layer-group"></i>Resurs + Eslatma + Progress</div>
-                        <p class="text-muted flex-grow-1 mb-3">SAT Math va English resurslari, progress va eslatmalar.</p>
+                        <div class="module-meta"><i class="fas fa-layer-group"></i>{% trans "Resurs + Eslatma + Progress" %}</div>
+                        <p class="text-muted flex-grow-1 mb-3">{% trans "SAT Math va English resurslari, progress va eslatmalar." %}</p>
                         {% if can_access_sat %}
-                        <a href="{% url 'sat:sat_home' %}" class="btn module-link module-link-sat" data-module="sat" data-shortcut="2">SAT bo'limiga kirish</a>
+                        <a href="{% url 'sat:sat_home' %}" class="btn module-link module-link-sat" data-module="sat" data-shortcut="2">{% trans "SAT bo'limiga kirish" %}</a>
                         {% else %}
-                        <button class="btn btn-outline-secondary" disabled>Ruxsat yo'q</button>
+                        <button class="btn btn-outline-secondary" disabled>{% trans "Ruxsat yo'q" %}</button>
                         {% endif %}
                     </div>
                 </div>
@@ -364,19 +364,19 @@
                         <div class="module-icon module-jobs">
                             <i class="fas fa-briefcase"></i>
                         </div>
-                        <span class="module-status status-soon">Tez orada</span>
+                        <span class="module-status status-soon">{% trans "Tez orada" %}</span>
                         </div>
                         <h5 class="fw-bold">Jobs</h5>
-                        <div class="module-meta"><i class="fas fa-hourglass-half"></i>Yangi modul tayyorlanmoqda</div>
-                        <p class="text-muted flex-grow-1 mb-3">Ish o'rinlari bo'limi keyingi bosqichda alohida modul sifatida ochiladi.</p>
-                        <button class="btn btn-outline-secondary" disabled>Tez orada</button>
+                        <div class="module-meta"><i class="fas fa-hourglass-half"></i>{% trans "Yangi modul tayyorlanmoqda" %}</div>
+                        <p class="text-muted flex-grow-1 mb-3">{% trans "Ish o'rinlari bo'limi keyingi bosqichda alohida modul sifatida ochiladi." %}</p>
+                        <button class="btn btn-outline-secondary" disabled>{% trans "Tez orada" %}</button>
                     </div>
                 </div>
             </div>
         </div>
         {% if not has_any_access %}
         <div class="alert alert-warning mt-4 mb-0">
-            Sizga hozircha hech bir bo'limga ruxsat berilmagan. Administrator bilan bog'laning.
+            {% trans "Sizga hozircha hech bir bo'limga ruxsat berilmagan. Administrator bilan bog'laning." %}
         </div>
         {% endif %}
     </div>
@@ -407,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const preferred = document.querySelector('.module-link[data-module="' + lastModule + '"]');
     if (preferred) {
         preferred.classList.add('module-link-last');
+        preferred.setAttribute('data-last-label', t("Oxirgi tanlov"));
         preferred.classList.add('module-pulse');
     } else if (links.length > 0) {
         links[0].classList.add('module-pulse');

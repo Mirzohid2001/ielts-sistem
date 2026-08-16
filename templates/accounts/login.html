@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Kirish - Ton academy{% endblock %}
+{% block title %}{% trans "Kirish" %} - Ton academy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -438,7 +438,10 @@
                 <i class="fas fa-graduation-cap"></i>
             </div>
             <h1 class="login-title">Ton academy</h1>
-            <p class="login-subtitle">Tizimga kirish</p>
+            <p class="login-subtitle">{% trans "Tizimga kirish" %}</p>
+        </div>
+        <div class="d-flex justify-content-center mb-3">
+            {% include 'core/partials/lang_toggle.html' %}
         </div>
         
         <form method="post" action="{% url 'accounts:login' %}" id="login-form">
@@ -482,7 +485,7 @@
                     name="{{ form.username.name }}" 
                     id="{{ form.username.id_for_label }}"
                     class="login-form-input"
-                    placeholder="Foydalanuvchi nomini kiriting"
+                    placeholder="{% trans "Foydalanuvchi nomini kiriting" %}"
                     autocomplete="username"
                     required
                     value="{{ form.username.value|default:'' }}"
@@ -499,7 +502,7 @@
                     name="{{ form.otp_code.name }}" 
                     id="{{ form.otp_code.id_for_label }}"
                     class="login-form-input"
-                    placeholder="Kirish kodini kiriting"
+                    placeholder="{% trans "Kirish kodini kiriting" %}"
                     autocomplete="off"
                     required
                     value="{{ form.otp_code.value|default:'' }}"
@@ -507,27 +510,27 @@
             </div>
             
             <button type="submit" class="login-btn">
-                <i class="fas fa-sign-in-alt me-2"></i>Kirish
+                <i class="fas fa-sign-in-alt me-2"></i>{% trans "Kirish" %}
             </button>
         </form>
         
         <div class="login-help">
             <div class="login-help-title">
                 <i class="fas fa-info-circle"></i>
-                Qanday foydalanish?
+                {% trans "Qanday foydalanish?" %}
             </div>
             <ul class="login-help-list">
                 <li class="login-help-item">
                     <i class="fas fa-check-circle"></i>
-                    <span>Foydalanuvchi nomingizni kiriting (admin panel orqali yaratilgan)</span>
+                    <span>{% trans "Foydalanuvchi nomingizni kiriting (admin panel orqali yaratilgan)" %}</span>
                 </li>
                 <li class="login-help-item">
                     <i class="fas fa-check-circle"></i>
-                    <span>Admin panel orqali berilgan kirish kodini kiriting</span>
+                    <span>{% trans "Admin panel orqali berilgan kirish kodini kiriting" %}</span>
                 </li>
                 <li class="login-help-item">
                     <i class="fas fa-check-circle"></i>
-                    <span>"Kirish" tugmasini bosing va tizimga kiring</span>
+                    <span>{% trans '"Kirish" tugmasini bosing va tizimga kiring' %}</span>
                 </li>
             </ul>
         </div>
@@ -587,7 +590,7 @@
                 errorDiv.innerHTML = `
                     <div class="login-error-content">
                         <i class="fas fa-exclamation-circle"></i>
-                        <div class="login-error-text">Iltimos, barcha maydonlarni to'ldiring!</div>
+                        <div class="login-error-text">${window.t("Iltimos, barcha maydonlarni to'ldiring!")}</div>
                     </div>
                 `;
                 
@@ -638,7 +641,7 @@
             
             if (username && otp) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kirilmoqda...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>' + window.t('Kirilmoqda...');
             }
         });
     });

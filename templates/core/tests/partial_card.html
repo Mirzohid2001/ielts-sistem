@@ -4,7 +4,7 @@
     <div class="test-card__accent" aria-hidden="true"></div>
 
     {% if test.created_at|is_within_days:7 %}
-    <span class="test-card__tag test-card__tag--new">Yangi</span>
+    <span class="test-card__tag test-card__tag--new">{% trans "Yangi" %}</span>
     {% elif test.id in completed_test_ids %}
     <span class="test-card__tag test-card__tag--done"><i class="fas fa-check"></i></span>
     {% endif %}
@@ -15,11 +15,11 @@
         {{ result.percentage|floatformat:0 }}%
     </div>
     {% elif test.difficulty == 'easy' %}
-    <span class="test-card__diff test-card__diff--easy">Oson</span>
+    <span class="test-card__diff test-card__diff--easy">{% trans "Oson" %}</span>
     {% elif test.difficulty == 'medium' %}
-    <span class="test-card__diff test-card__diff--medium">O'rta</span>
+    <span class="test-card__diff test-card__diff--medium">{% trans "O'rta" %}</span>
     {% elif test.difficulty == 'hard' %}
-    <span class="test-card__diff test-card__diff--hard">Qiyin</span>
+    <span class="test-card__diff test-card__diff--hard">{% trans "Qiyin" %}</span>
     {% endif %}
 
     <div class="test-card-body">
@@ -45,17 +45,17 @@
         </div>
 
         {% if test.description %}
-        <p class="test-card-description">{{ test.description|truncatewords:16 }}</p>
+        <p class="test-card-description">{{ test.description|site_t|truncatewords:16 }}</p>
         {% endif %}
 
         <div class="test-card-meta">
             <div class="test-card-meta__item test-card-meta__item--diff-{{ test.difficulty }}">
                 {% if test.difficulty == 'easy' %}
-                <i class="fas fa-seedling"></i>Oson
+                <i class="fas fa-seedling"></i>{% trans "Oson" %}
                 {% elif test.difficulty == 'medium' %}
-                <i class="fas fa-signal"></i>O'rta
+                <i class="fas fa-signal"></i>{% trans "O'rta" %}
                 {% elif test.difficulty == 'hard' %}
-                <i class="fas fa-fire"></i>Qiyin
+                <i class="fas fa-fire"></i>{% trans "Qiyin" %}
                 {% else %}
                 <i class="fas fa-layer-group"></i>—
                 {% endif %}
@@ -67,7 +67,7 @@
                 {% if test.duration_minutes %}
                 <i class="fas fa-clock"></i>{{ test.duration_minutes }} daq
                 {% else %}
-                <i class="fas fa-infinity"></i>Cheksiz
+                <i class="fas fa-infinity"></i>{% trans "Cheksiz" %}
                 {% endif %}
             </div>
         </div>
@@ -77,9 +77,9 @@
             <div class="d-flex justify-content-between align-items-center">
                 <small>
                     {% if result.is_passed %}
-                    <i class="fas fa-check-circle me-1"></i>O'tdingiz
+                    <i class="fas fa-check-circle me-1"></i>{% trans "O'tdingiz" %}
                     {% else %}
-                    <i class="fas fa-redo me-1"></i>Qayta urinib ko'ring
+                    <i class="fas fa-redo me-1"></i>{% trans "Qayta urinib ko'ring" %}
                     {% endif %}
                 </small>
                 <strong class="test-card-result-score">{{ result.percentage|floatformat:1 }}%</strong>
@@ -93,9 +93,9 @@
         <a href="{% url 'core:test_detail' test.pk %}"
            class="btn btn-start{% if result %} btn-start--continue{% endif %}">
             {% if result %}
-            <span>Qayta ishlash</span>
+            <span>{% trans "Qayta ishlash" %}</span>
             {% else %}
-            <span>Boshlash</span>
+            <span>{% trans "Boshlash" %}</span>
             {% endif %}
             <i class="fas fa-arrow-right"></i>
         </a>

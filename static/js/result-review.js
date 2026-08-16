@@ -77,7 +77,7 @@
                 var wrap = btn.closest('.answer-essay-wrap');
                 if (!wrap) return;
                 var expanded = wrap.classList.toggle('is-expanded');
-                btn.textContent = expanded ? 'Kamroq' : "Ko'proq o'qish";
+                btn.textContent = expanded ? (window.t ? t('Kamroq') : 'Kamroq') : (window.t ? t("Ko'proq o'qish") : "Ko'proq o'qish");
             });
         });
     }

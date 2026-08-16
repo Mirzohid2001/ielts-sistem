@@ -2,7 +2,7 @@
 {% load core_filters %}
 {% load static %}
 
-{% block title %}Test Natijasi - IELTS Center{% endblock %}
+{% block title %}{% trans "Test Natijasi" %} - IELTS Center{% endblock %}
 
 {% block content %}
 <canvas id="tr-confetti" class="tr-confetti d-none" aria-hidden="true"></canvas>
@@ -27,7 +27,7 @@
                     {% if test_result.attempt_number > 1 %}
                     <div class="mb-2">
                         <span class="badge bg-info">
-                            <i class="fas fa-redo me-1"></i>Urinish: {{ test_result.attempt_number }}
+                            <i class="fas fa-redo me-1"></i>{% trans "Urinish" %}: {{ test_result.attempt_number }}
                         </span>
                         {% if test_result.completed_at %}
                         <span class="badge bg-secondary ms-1">
@@ -40,11 +40,11 @@
                     <div class="tr-summary__score">{{ test_result.score }}<small>/{{ test_result.total_questions }}</small></div>
 
                     {% if writing_score_pending %}
-                    <span class="tr-summary__pct is-wait">Writing feedback tayyorlanmoqda</span>
+                    <span class="tr-summary__pct is-wait">{% trans "Writing feedback tayyorlanmoqda" %}</span>
                     {% elif test_result.is_passed %}
-                    <span class="tr-summary__pct is-pass">{{ test_result.percentage|floatformat:1 }}% — o'tdingiz</span>
+                    <span class="tr-summary__pct is-pass">{{ test_result.percentage|floatformat:1 }}% — {% trans "o'tdingiz" %}</span>
                     {% else %}
-                    <span class="tr-summary__pct is-fail">{{ test_result.percentage|floatformat:1 }}% — o'tmadingiz</span>
+                    <span class="tr-summary__pct is-fail">{{ test_result.percentage|floatformat:1 }}% — {% trans "o'tmadingiz" %}</span>
                     {% endif %}
                 </div>
 
@@ -54,13 +54,13 @@
                             <div class="tr-summary__stats">
                                 <div class="tr-mini-stat">
                                     <div class="tr-mini-stat__val">{{ test_result.score }}/{{ test_result.total_questions }}</div>
-                                    <div class="tr-mini-stat__lbl">Ball</div>
+                                    <div class="tr-mini-stat__lbl">{% trans "Ball" %}</div>
                                 </div>
                                 <div class="tr-mini-stat">
                                     <div class="tr-mini-stat__val">
                                         {% if writing_score_pending %}—{% else %}{{ test_result.percentage|floatformat:1 }}%{% endif %}
                                     </div>
-                                    <div class="tr-mini-stat__lbl">Foiz</div>
+                                    <div class="tr-mini-stat__lbl">{% trans "Foiz" %}</div>
                                 </div>
                                 <div class="tr-mini-stat">
                                     <div class="tr-mini-stat__val">
@@ -71,10 +71,10 @@
                             </div>
 
                             <ul class="tr-donut__legend">
-                                <li><span class="tr-donut__dot tr-donut__dot--ok"></span>To'g'ri <strong>{{ review_counts.correct }}</strong></li>
-                                <li><span class="tr-donut__dot tr-donut__dot--bad"></span>Noto'g'ri <strong>{{ review_counts.wrong }}</strong></li>
-                                <li><span class="tr-donut__dot tr-donut__dot--partial"></span>Qisman <strong>{{ review_counts.partial }}</strong></li>
-                                <li><span class="tr-donut__dot tr-donut__dot--empty"></span>Bo'sh <strong>{{ review_counts.empty }}</strong></li>
+                                <li><span class="tr-donut__dot tr-donut__dot--ok"></span>{% trans "To'g'ri" %} <strong>{{ review_counts.correct }}</strong></li>
+                                <li><span class="tr-donut__dot tr-donut__dot--bad"></span>{% trans "Noto'g'ri" %} <strong>{{ review_counts.wrong }}</strong></li>
+                                <li><span class="tr-donut__dot tr-donut__dot--partial"></span>{% trans "Qisman" %} <strong>{{ review_counts.partial }}</strong></li>
+                                <li><span class="tr-donut__dot tr-donut__dot--empty"></span>{% trans "Bo'sh" %} <strong>{{ review_counts.empty }}</strong></li>
                             </ul>
                         </div>
 
@@ -83,7 +83,7 @@
                             <div class="tr-donut" style="--d1: {{ donut_d1 }}deg; --d2: {{ donut_d2 }}deg; --d3: {{ donut_d3 }}deg; --d4: {{ donut_d4 }}deg;">
                                 <div class="tr-donut__hole">
                                     <strong>{% if writing_score_pending %}—{% else %}{{ test_result.percentage|floatformat:0 }}%{% endif %}</strong>
-                                    <small>Natija</small>
+                                    <small>{% trans "Natija" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -93,14 +93,14 @@
                     {% if test_result.time_taken %}
                     <div class="tr-time">
                         <i class="fas fa-clock"></i>
-                        Sarflangan vaqt:
+                        {% trans "Sarflangan vaqt:" %}
                         <strong>
                             {% if time_taken_hours %}
-                                {{ time_taken_hours }} soat {{ time_taken_minutes }} daqiqa
+                                {% blocktrans with hours=time_taken_hours minutes=time_taken_minutes %}{{ hours }} soat {{ minutes }} daqiqa{% endblocktrans %}
                             {% elif time_taken_minutes %}
-                                {{ time_taken_minutes }} daqiqa {{ time_taken_seconds }} soniya
+                                {% blocktrans with minutes=time_taken_minutes seconds=time_taken_seconds %}{{ minutes }} daqiqa {{ seconds }} soniya{% endblocktrans %}
                             {% else %}
-                                {{ time_taken_seconds }} soniya
+                                {% blocktrans with seconds=time_taken_seconds %}{{ seconds }} soniya{% endblocktrans %}
                             {% endif %}
                         </strong>
                     </div>
@@ -109,17 +109,17 @@
                     {% if writing_score_pending %}
                     <div class="tr-verdict tr-verdict--warn">
                         <i class="fas fa-pen"></i>
-                        <span><strong>Writing:</strong> essay(lar) yuborildi ({{ essays_submitted }}/{{ essay_total }}). AI tavsiya ko'rsatiladi, rasmiy foiz esa avtomatik berilmaydi.</span>
+                        <span>{% blocktrans with submitted=essays_submitted total=essay_total %}Writing: essay(lar) yuborildi ({{ submitted }}/{{ total }}). AI tavsiya ko'rsatiladi, rasmiy foiz esa avtomatik berilmaydi.{% endblocktrans %}</span>
                     </div>
                     {% elif test_result.is_passed %}
                     <div class="tr-verdict tr-verdict--ok">
                         <i class="fas fa-check-circle"></i>
-                        <span><strong>Tebriklar!</strong> Siz testdan muvaffaqiyatli o'tdingiz!</span>
+                        <span><strong>{% trans "Tebriklar!" %}</strong> {% trans "Siz testdan muvaffaqiyatli o'tdingiz!" %}</span>
                     </div>
                     {% else %}
                     <div class="tr-verdict tr-verdict--bad">
                         <i class="fas fa-times-circle"></i>
-                        <span>Testdan o'tish uchun kamida {{ test_result.test.passing_score }}% bo'lishi kerak.</span>
+                        <span>{% blocktrans with score=test_result.test.passing_score %}Testdan o'tish uchun kamida {{ score }}%% bo'lishi kerak.{% endblocktrans %}</span>
                     </div>
                     {% endif %}
                 </div>
@@ -127,33 +127,33 @@
 
             <div class="card tr-insights-card">
                 <div class="card-header">
-                    <h5><i class="fas fa-chart-pie me-2 text-primary"></i>Performance Insights</h5>
+                    <h5><i class="fas fa-chart-pie me-2 text-primary"></i>{% trans "Natija tahlili" %}</h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded" style="background: rgba(99, 102, 241, 0.08);">
-                                <small class="text-muted d-block">O'rtacha tezlik</small>
-                                <strong>{{ seconds_per_question }} soniya / savol</strong>
+                                <small class="text-muted d-block">{% trans "O'rtacha tezlik" %}</small>
+                                <strong>{% blocktrans with n=seconds_per_question %}{{ n }} soniya / savol{% endblocktrans %}</strong>
                             </div>
                         </div>
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded" style="background: rgba(16, 185, 129, 0.08);">
-                                <small class="text-muted d-block">Kuchli tomonlar</small>
-                                <strong>{{ top_strengths|length }} ta tur</strong>
+                                <small class="text-muted d-block">{% trans "Kuchli tomonlar" %}</small>
+                                <strong>{{ top_strengths|length }} {% trans "ta tur" %}</strong>
                             </div>
                         </div>
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded" style="background: rgba(239, 68, 68, 0.08);">
-                                <small class="text-muted d-block">Yaxshilash kerak</small>
-                                <strong>{{ weak_areas|length }} ta tur</strong>
+                                <small class="text-muted d-block">{% trans "Yaxshilash kerak" %}</small>
+                                <strong>{{ weak_areas|length }} {% trans "ta tur" %}</strong>
                             </div>
                         </div>
                     </div>
 
                     {% if type_stats %}
                     <div class="mb-3">
-                        <h6 class="fw-bold mb-3">Question type bo'yicha aniqlik</h6>
+                        <h6 class="fw-bold mb-3">{% trans "Savol turi bo'yicha aniqlik" %}</h6>
                         {% for item in type_stats %}
                         <div class="tr-type-row">
                             <div class="tr-type-row__head">
@@ -171,7 +171,7 @@
 
                     {% if improvement_tips %}
                     <div class="alert alert-light border mb-0">
-                        <strong class="d-block mb-2"><i class="fas fa-lightbulb text-warning me-1"></i>Keyingi urinish uchun aniq tavsiyalar</strong>
+                        <strong class="d-block mb-2"><i class="fas fa-lightbulb text-warning me-1"></i>{% trans "Keyingi urinish uchun aniq tavsiyalar" %}</strong>
                         {% for tip in improvement_tips %}
                         <div class="small">- {{ tip }}</div>
                         {% endfor %}
@@ -187,7 +187,7 @@
                 {% else %}
                 <section class="tr-rl-insight tr-rl-insight--pending" id="tr-rl-insight">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <span>Umumiy AI tahlil tayyorlanmoqda…</span>
+                    <span>{% trans "Umumiy AI tahlil tayyorlanmoqda…" %}</span>
                 </section>
                 {% endif %}
             </div>
@@ -195,17 +195,17 @@
 
             <div class="card tr-review">
                 <div class="tr-review__head">
-                    <h5><i class="fas fa-list-check me-2 text-primary"></i>Javoblar (Test Review)</h5>
+                    <h5><i class="fas fa-list-check me-2 text-primary"></i>{% trans "Javoblar (Test Review)" %}</h5>
                     <div class="tr-review__counts">
                         <span class="tr-review__count tr-review__count--ok">
-                            <i class="fas fa-check"></i>{{ review_counts.correct }} To'g'ri
+                            <i class="fas fa-check"></i>{{ review_counts.correct }} {% trans "To'g'ri" %}
                         </span>
                         <span class="tr-review__count tr-review__count--bad">
-                            <i class="fas fa-times"></i>{{ review_counts.wrong }} Noto'g'ri
+                            <i class="fas fa-times"></i>{{ review_counts.wrong }} {% trans "Noto'g'ri" %}
                         </span>
                         {% if review_counts.empty %}
                         <span class="tr-review__count tr-review__count--empty">
-                            <i class="fas fa-minus"></i>{{ review_counts.empty }} Bo'sh
+                            <i class="fas fa-minus"></i>{{ review_counts.empty }} {% trans "Bo'sh" %}
                         </span>
                         {% endif %}
                     </div>
@@ -213,18 +213,18 @@
 
                 <div class="tr-review__toolbar">
                     <div class="tr-review__filters">
-                        <button type="button" class="tr-review__filter is-active" data-review-filter="all">Barchasi</button>
-                        <button type="button" class="tr-review__filter" data-review-filter="correct">To'g'ri</button>
-                        <button type="button" class="tr-review__filter" data-review-filter="wrong">Noto'g'ri</button>
-                        <button type="button" class="tr-review__filter" data-review-filter="partial">Qisman</button>
-                        <button type="button" class="tr-review__filter" data-review-filter="empty">Bo'sh</button>
+                        <button type="button" class="tr-review__filter is-active" data-review-filter="all">{% trans "Barchasi" %}</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="correct">{% trans "To'g'ri" %}</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="wrong">{% trans "Noto'g'ri" %}</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="partial">{% trans "Qisman" %}</button>
+                        <button type="button" class="tr-review__filter" data-review-filter="empty">{% trans "Bo'sh" %}</button>
                     </div>
                     <div class="tr-review__search-wrap">
                         <i class="fas fa-search"></i>
-                        <input type="search" id="tr-review-search" class="tr-review__search" placeholder="Savol yoki javob bo'yicha qidirish..." autocomplete="off">
+                        <input type="search" id="tr-review-search" class="tr-review__search" placeholder="{% trans "Savol yoki javob bo'yicha qidirish..." %}" autocomplete="off">
                     </div>
                     <div class="tr-review__visible">
-                        Ko'rsatilmoqda: <strong id="tr-review-visible-count">{{ review_items|length }}</strong> / {{ review_items|length }}
+                        {% trans "Ko'rsatilmoqda:" %} <strong id="tr-review-visible-count">{{ review_items|length }}</strong> / {{ review_items|length }}
                     </div>
                 </div>
 
@@ -242,24 +242,24 @@
                                 <div class="tr-q__meta">
                                     <strong>
                                         {% if item.show_question_text %}
-                                        Javob {{ item.display_num }}
+                                        {% blocktrans with n=item.display_num %}Javob {{ n }}{% endblocktrans %}
                                         {% else %}
-                                        Savol {{ item.parent_num }} · {{ item.slot_label }}
+                                        {% blocktrans with n=item.parent_num label=item.slot_label %}Savol {{ n }} · {{ label }}{% endblocktrans %}
                                         {% endif %}
                                     </strong>
                                     <span>{{ question.get_question_type_display }}</span>
                                 </div>
                                 <span class="tr-q__badge">
                                     {% if card_state == 'correct' %}
-                                        <i class="fas fa-check me-1"></i>To'g'ri
+                                        <i class="fas fa-check me-1"></i>{% trans "To'g'ri" %}
                                     {% elif card_state == 'partial' %}
-                                        <i class="fas fa-adjust me-1"></i>Qisman
+                                        <i class="fas fa-adjust me-1"></i>{% trans "Qisman" %}
                                     {% elif card_state == 'wrong' %}
-                                        <i class="fas fa-times me-1"></i>Noto'g'ri
+                                        <i class="fas fa-times me-1"></i>{% trans "Noto'g'ri" %}
                                     {% elif card_state == 'pending' %}
-                                        <i class="fas fa-clock me-1"></i>Tekshirilmoqda
+                                        <i class="fas fa-clock me-1"></i>{% trans "Tekshirilmoqda" %}
                                     {% else %}
-                                        <i class="fas fa-minus me-1"></i>Javob berilmagan
+                                        <i class="fas fa-minus me-1"></i>{% trans "Javob berilmagan" %}
                                     {% endif %}
                                 </span>
                             </div>
@@ -275,7 +275,7 @@
                                     <div class="answer-pane answer-pane--you">
                                         <div class="answer-pane__head">
                                             <span class="answer-pane__icon answer-pane__icon--you"><i class="fas fa-user"></i></span>
-                                            <span>Sizning javobingiz</span>
+                                            <span>{% trans "Sizning javobingiz" %}</span>
                                         </div>
                                         {% if question.question_type == 'essay' %}
                                         {% if item.answer %}
@@ -285,7 +285,7 @@
                                                 {% include 'core/tests/partials/essay_highlight.html' with essay_text=item.user_part feedback=feedback %}
                                             </div>
                                             {% if item.user_part|length > 200 %}
-                                            <button type="button" class="answer-essay-toggle" data-essay-toggle>Ko'proq o'qish</button>
+                                            <button type="button" class="answer-essay-toggle" data-essay-toggle>{% trans "Ko'proq o'qish" %}</button>
                                             {% endif %}
                                         </div>
                                         {% endwith %}
@@ -293,19 +293,19 @@
                                         <div class="answer-essay-wrap">
                                             <div class="answer-value answer-value--prose answer-essay-wrap__text">{{ item.user_part|format_user_answer }}</div>
                                             {% if item.user_part|length > 200 %}
-                                            <button type="button" class="answer-essay-toggle" data-essay-toggle>Ko'proq o'qish</button>
+                                            <button type="button" class="answer-essay-toggle" data-essay-toggle>{% trans "Ko'proq o'qish" %}</button>
                                             {% endif %}
                                         </div>
                                         {% else %}
                                         <div class="answer-value answer-value--empty">
-                                            <i class="fas fa-minus-circle"></i>Javob berilmagan
+                                            <i class="fas fa-minus-circle"></i>{% trans "Javob berilmagan" %}
                                         </div>
                                         {% endif %}
                                         {% elif item.user_part %}
                                         <div class="answer-value answer-value--you">{{ item.user_part }}</div>
                                         {% else %}
                                         <div class="answer-value answer-value--empty">
-                                            <i class="fas fa-minus-circle"></i>Javob berilmagan
+                                            <i class="fas fa-minus-circle"></i>{% trans "Javob berilmagan" %}
                                         </div>
                                         {% endif %}
                                     </div>
@@ -327,31 +327,31 @@
                                     <div class="answer-pane answer-pane--key">
                                         <div class="answer-pane__head">
                                             <span class="answer-pane__icon answer-pane__icon--key"><i class="fas fa-key"></i></span>
-                                            <span>{% if question.question_type == 'essay' %}Baholash{% else %}To'g'ri javob{% endif %}</span>
+                                            <span>{% if question.question_type == 'essay' %}{% trans "Baholash" %}{% else %}{% trans "To'g'ri javob" %}{% endif %}</span>
                                         </div>
                                         {% if question.question_type == 'essay' %}
                                         {% if item.answer %}
                                         {% with feedback=writing_feedback_by_answer_id|get_item:item.answer.id %}
                                             {% if feedback and feedback.status == 'completed' %}
                                             <div class="answer-value answer-value--pending">
-                                                <i class="fas fa-robot"></i>AI tavsiya tayyor
+                                                <i class="fas fa-robot"></i>{% trans "AI tavsiya tayyor" %}
                                                 {% if feedback.estimated_band %}
-                                                <span class="d-block mt-1 small text-muted">Taxminiy band: {{ feedback.estimated_band|floatformat:1 }}</span>
+                                                <span class="d-block mt-1 small text-muted">{% trans "Taxminiy band:" %} {{ feedback.estimated_band|floatformat:1 }}</span>
                                                 {% endif %}
                                             </div>
                                             {% elif feedback and feedback.status == 'failed' %}
                                             <div class="answer-value answer-value--empty">
-                                                <i class="fas fa-triangle-exclamation"></i>AI feedback vaqtincha olinmadi
+                                                <i class="fas fa-triangle-exclamation"></i>{% trans "AI feedback vaqtincha olinmadi" %}
                                             </div>
                                             {% else %}
                                             <div class="answer-value answer-value--pending">
-                                                <i class="fas fa-user-edit"></i>AI/teacher feedback tayyorlanmoqda
+                                                <i class="fas fa-user-edit"></i>{% trans "AI/teacher feedback tayyorlanmoqda" %}
                                             </div>
                                             {% endif %}
                                         {% endwith %}
                                         {% else %}
                                         <div class="answer-value answer-value--empty">
-                                            <i class="fas fa-minus-circle"></i>Essay javobi topilmadi
+                                            <i class="fas fa-minus-circle"></i>{% trans "Essay javobi topilmadi" %}
                                         </div>
                                         {% endif %}
                                         {% elif item.correct_part %}
@@ -367,7 +367,7 @@
                             <div class="tr-q__explain">
                                 <i class="fas fa-lightbulb"></i>
                                 <div>
-                                    <strong>Tushuntirish</strong>
+                                    <strong>{% trans "Tushuntirish" %}</strong>
                                     {{ question.explanation|linebreaks }}
                                 </div>
                             </div>
@@ -394,7 +394,7 @@
                     {% endfor %}
                     <div id="tr-review-empty" class="tr-review__empty d-none">
                         <i class="fas fa-search"></i>
-                        <p>Filter bo'yicha javob topilmadi</p>
+                        <p>{% trans "Filter bo'yicha javob topilmadi" %}</p>
                     </div>
                 </div>
             </div>
@@ -403,7 +403,7 @@
             <div class="card border-0 shadow-lg mb-4" style="border-radius: 20px;">
                 <div class="card-header" style="background: var(--gray-50); border-bottom: 1px solid var(--gray-100);">
                     <h5 class="mb-0 fw-bold">
-                        <i class="fas fa-chart-line me-2 text-info"></i>Oldingi Natijalar bilan Solishtirish
+                        <i class="fas fa-chart-line me-2 text-info"></i>{% trans "Oldingi Natijalar bilan Solishtirish" %}
                     </h5>
                 </div>
                 <div class="card-body p-4">
@@ -411,11 +411,11 @@
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>Urinish</th>
-                                    <th>Ball</th>
-                                    <th>Foiz</th>
-                                    <th>O'zgarish</th>
-                                    <th>Sana</th>
+                                    <th>{% trans "Urinish" %}</th>
+                                    <th>{% trans "Ball" %}</th>
+                                    <th>{% trans "Foiz" %}</th>
+                                    <th>{% trans "O'zgarish" %}</th>
+                                    <th>{% trans "Sana" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -445,11 +445,11 @@
                                     <td>
                                         {% if comp.time_diff is not None %}
                                             {% if comp.time_diff < 0 %}
-                                            <span class="text-success"><i class="fas fa-arrow-down"></i> {{ comp.time_diff_abs }}s tezroq</span>
+                                            <span class="text-success"><i class="fas fa-arrow-down"></i> {% blocktrans with n=comp.time_diff_abs %}{{ n }}s tezroq{% endblocktrans %}</span>
                                             {% elif comp.time_diff > 0 %}
-                                            <span class="text-danger"><i class="fas fa-arrow-up"></i> {{ comp.time_diff }}s sekinroq</span>
+                                            <span class="text-danger"><i class="fas fa-arrow-up"></i> {% blocktrans with n=comp.time_diff %}{{ n }}s sekinroq{% endblocktrans %}</span>
                                             {% else %}
-                                            <span class="text-muted">Bir xil</span>
+                                            <span class="text-muted">{% trans "Bir xil" %}</span>
                                             {% endif %}
                                         {% else %}
                                         <span class="text-muted">-</span>
@@ -468,16 +468,16 @@
             <div class="text-center mt-4 tr-actions d-flex gap-3 justify-content-center flex-wrap">
                 <a href="{% url 'core:test_list' %}" class="btn btn-primary hover-lift"
                    hx-get="{% url 'core:test_list' %}" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                    <i class="fas fa-arrow-left me-2"></i>Testlar ro'yxatiga qaytish
+                    <i class="fas fa-arrow-left me-2"></i>{% trans "Testlar ro'yxatiga qaytish" %}
                 </a>
                 <a href="{% url 'core:profile' %}" class="btn btn-outline-primary hover-lift"
                    hx-get="{% url 'core:profile' %}" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                    <i class="fas fa-user me-2"></i>Profilga o'tish
+                    <i class="fas fa-user me-2"></i>{% trans "Profilga o'tish" %}
                 </a>
                 {% if can_retake %}
                 <a href="{% url 'core:test_retake' test_result.test.pk %}" class="btn btn-success hover-lift"
                    hx-post="{% url 'core:test_retake' test_result.test.pk %}" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                    <i class="fas fa-redo me-2"></i>Qayta ishlash
+                    <i class="fas fa-redo me-2"></i>{% trans "Qayta ishlash" %}
                 </a>
                 {% endif %}
             </div>
@@ -592,12 +592,12 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
     hlPopoverEl = document.createElement('div');
     hlPopoverEl.className = 'tr-ai-hl-popover';
     hlPopoverEl.innerHTML =
-      '<button type="button" class="tr-ai-hl-popover__close" aria-label="Yopish">&times;</button>' +
+      '<button type="button" class="tr-ai-hl-popover__close" aria-label="{% trans "Yopish" %}">&times;</button>' +
       (type ? '<span class="tr-ai-hl-popover__type">' + escapeHtml(type) + '</span>' : '') +
       '<p class="tr-ai-hl-popover__was"><span>Was</span>' + escapeHtml(original) + '</p>' +
       '<p class="tr-ai-hl-popover__better"><span>Better</span>' + escapeHtml(corrected) + '</p>' +
       (why ? '<p class="tr-ai-hl-popover__why">' + escapeHtml(why) + '</p>' : '') +
-      '<button type="button" class="tr-ai-hl-popover__chat" data-hl-ask-chat>Chatda so\'rash</button>';
+      '<button type="button" class="tr-ai-hl-popover__chat" data-hl-ask-chat>' + t('Chatda so\'rash') + '</button>';
 
     document.body.appendChild(hlPopoverEl);
     const popRect = hlPopoverEl.getBoundingClientRect();
@@ -678,7 +678,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
 
   function showPendingPanels() {
     document.querySelectorAll('[id^="wf-feedback-"]').forEach(function (el) {
-      el.innerHTML = '<div class="tr-ai tr-ai--state mt-3"><div class="tr-ai__state-icon"><i class="fas fa-spinner fa-spin"></i></div><div><strong>AI feedback yangilanmoqda</strong><p>Bir necha soniya kuting.</p></div></div>';
+      el.innerHTML = '<div class="tr-ai tr-ai--state mt-3"><div class="tr-ai__state-icon"><i class="fas fa-spinner fa-spin"></i></div><div><strong>' + t('AI feedback yangilanmoqda') + '</strong><p>' + t('Bir necha soniya kuting.') + '</p></div></div>';
     });
   }
 
@@ -686,7 +686,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
     if (!statusUrl || tries++ >= maxTries) {
       if (!failureToastShown) {
         failureToastShown = true;
-        showTrToast('AI feedback hali tayyor emas. Qayta urinish tugmasini bosing yoki sahifani yangilang.', 'warn');
+        showTrToast(t('AI feedback hali tayyor emas. Qayta urinish tugmasini bosing yoki sahifani yangilang.'), 'warn');
       }
       return;
     }
@@ -706,14 +706,14 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
           if (firstFeedback) {
             firstFeedback.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
-          showTrToast('AI feedback tayyor!', 'success');
+          showTrToast(t('AI feedback tayyor!'), 'success');
           return;
         }
         // Faqat hammasi failed bo'lganda to'xtaymiz; bitta fail pollingni o'ldirmasligi kerak.
         if (data.failed && !data.pending && !data.partial) {
           if (!failureToastShown) {
             failureToastShown = true;
-            showTrToast('AI feedback olinmadi. Avtomatik qayta urinilmoqda…', 'warn');
+            showTrToast(t('AI feedback olinmadi. Avtomatik qayta urinilmoqda…'), 'warn');
           }
           // Backend status endpoint failedlarni qayta schedule qiladi — pollingni davom ettiramiz.
           setTimeout(poll, 5000);
@@ -771,7 +771,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
       if (!note) {
         note = document.createElement('p');
         note.className = 'tr-ai-chat__limit-note';
-        note.textContent = 'Kunlik limit tugadi. Ertaga qayta urinib ko\'ring.';
+        note.textContent = t('Kunlik limit tugadi. Ertaga qayta urinib ko\'ring.');
         panel.appendChild(note);
       }
       const hint = panel.querySelector('.tr-ai-chat__hint');
@@ -813,7 +813,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
     const limit = parseInt(panel.getAttribute('data-coach-limit') || '0', 10);
     if (!feedbackId || !messagesEl || !text || coachSending[feedbackId]) return;
     if (limit <= 0) {
-      showTrToast('Kunlik chat limiti tugadi.', 'warn');
+      showTrToast(t('Kunlik chat limiti tugadi.'), 'warn');
       return;
     }
 
@@ -842,7 +842,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
       .then(function (res) {
         if (typingEl) typingEl.remove();
         if (!res.data.ok) {
-          appendCoachMessage(messagesEl, 'error', res.data.error || 'Xatolik yuz berdi');
+          appendCoachMessage(messagesEl, 'error', res.data.error || t('Xatolik yuz berdi'));
           if (res.status === 429 && typeof res.data.remaining === 'number') {
             updateCoachRemaining(res.data.remaining);
           }
@@ -860,7 +860,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
       })
       .catch(function () {
         if (typingEl) typingEl.remove();
-        appendCoachMessage(messagesEl, 'error', 'Tarmoq xatosi. Qayta urinib ko\'ring.');
+        appendCoachMessage(messagesEl, 'error', t('Tarmoq xatosi. Qayta urinib ko\'ring.'));
       })
       .finally(function () {
         coachSending[feedbackId] = false;
@@ -929,17 +929,17 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
               btn.classList.add('is-saved');
               const label = btn.querySelector('span') || btn;
               if (data.created > 0) {
-                btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> ' + data.created + ' ta saqlandi';
+                btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> ' + data.created + ' ' + t('ta saqlandi');
               } else {
-                btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> Allaqachon saqlangan';
+                btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> ' + t('Allaqachon saqlangan');
               }
-              showTrToast(data.message || 'Flashcardga saqlandi', 'success');
+              showTrToast(data.message || t('Flashcardga saqlandi'), 'success');
             } else {
-              showTrToast(data.error || 'Xatolik', 'error');
+              showTrToast(data.error || t('Xatolik'), 'error');
               btn.disabled = false;
             }
           })
-          .catch(function () { showTrToast('Tarmoq xatosi.', 'error'); btn.disabled = false; });
+          .catch(function () { showTrToast(t('Tarmoq xatosi.'), 'error'); btn.disabled = false; });
       });
     });
   }
@@ -962,16 +962,16 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
           .then(function (r) { return r.json(); })
           .then(function (data) {
             if (!data.ok) {
-              showTrToast(data.error || 'Xatolik yuz berdi', 'error');
+              showTrToast(data.error || t('Xatolik yuz berdi'), 'error');
               btn.disabled = false;
               return;
             }
-            showTrToast('Feedback yangilanmoqda…', 'info');
+            showTrToast(t('Feedback yangilanmoqda…'), 'info');
             showPendingPanels();
             startPolling();
           })
           .catch(function () {
-            showTrToast('Tarmoq xatosi. Qayta urinib ko\'ring.', 'error');
+            showTrToast(t('Tarmoq xatosi. Qayta urinib ko\'ring.'), 'error');
             btn.disabled = false;
           });
       });
@@ -1049,7 +1049,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
             if (toast) {
               const t = document.createElement('div');
               t.className = 'tr-toast tr-toast--success is-visible';
-              t.textContent = 'AI tahlil tayyor!';
+              t.textContent = window.t('AI tahlil tayyor!');
               toast.appendChild(t);
               setTimeout(function () { t.remove(); }, 3500);
             }
@@ -1084,7 +1084,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
         btn.disabled = true;
         const wrap = btn.closest('[data-rl-slot]');
         if (wrap) {
-          wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--pending"><i class="fas fa-spinner fa-spin"></i><span>Qayta generatsiya…</span></div>';
+          wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--pending"><i class="fas fa-spinner fa-spin"></i><span>' + t('Qayta generatsiya…') + '</span></div>';
         }
         fetch(url, {
           method: 'POST',
@@ -1095,7 +1095,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
           .then(function (data) {
             if (!data.ok) {
               if (wrap) {
-                wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--failed"><i class="fas fa-triangle-exclamation"></i><span>Qayta generatsiya xato. Yangilang.</span></div>';
+                wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--failed"><i class="fas fa-triangle-exclamation"></i><span>' + t('Qayta generatsiya xato. Yangilang.') + '</span></div>';
               }
               btn.disabled = false;
               return;
@@ -1104,7 +1104,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
           })
           .catch(function () {
             if (wrap) {
-              wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--failed"><i class="fas fa-triangle-exclamation"></i><span>Tarmoq xatosi.</span></div>';
+              wrap.innerHTML = '<div class="tr-rl-ai tr-rl-ai--failed"><i class="fas fa-triangle-exclamation"></i><span>' + t('Tarmoq xatosi.') + '</span></div>';
             }
             btn.disabled = false;
           });
@@ -1119,7 +1119,7 @@ document.body.setAttribute('data-show-confetti', document.querySelector('[data-p
         btn.disabled = true;
         const host = document.getElementById('tr-rl-insight-host');
         if (host) {
-          host.innerHTML = '<section class="tr-rl-insight tr-rl-insight--pending"><i class="fas fa-spinner fa-spin"></i><span>Xulosa yangilanmoqda…</span></section>';
+          host.innerHTML = '<section class="tr-rl-insight tr-rl-insight--pending"><i class="fas fa-spinner fa-spin"></i><span>' + t('Xulosa yangilanmoqda…') + '</span></section>';
         }
         fetch(insightRegenUrl, {
           method: 'POST',

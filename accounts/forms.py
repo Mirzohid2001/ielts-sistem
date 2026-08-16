@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
@@ -8,19 +9,19 @@ class OTPLoginForm(forms.Form):
     """Kirish kodi orqali login formasi"""
     username = forms.CharField(
         max_length=150,
-        label="Foydalanuvchi nomi",
+        label=_("Foydalanuvchi nomi"),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Foydalanuvchi nomini kiriting',
+            'placeholder': _("Foydalanuvchi nomini kiriting"),
             'autocomplete': 'username'
         })
     )
     otp_code = forms.CharField(
         max_length=20,
-        label="Kirish kodi",
+        label=_("Kirish kodi"),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Kirish kodini kiriting',
+            'placeholder': _("Kirish kodini kiriting"),
             'autocomplete': 'off'
         })
     )
@@ -42,6 +43,6 @@ class OTPLoginForm(forms.Form):
             Row(
                 Column('otp_code', css_class='mb-3'),
             ),
-            Submit('submit', 'Kirish', css_class='btn btn-primary w-100'),
+            Submit('submit', _('Kirish'), css_class='btn btn-primary w-100'),
         )
 

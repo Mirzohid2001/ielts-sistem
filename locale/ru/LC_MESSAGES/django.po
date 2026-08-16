@@ -1,0 +1,1857 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: ielts-sistem\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Ton academy - IELTS va SAT uchun video darslar, testlar va analitika"
+msgstr "Ton academy — видеоуроки, тесты и аналитика для IELTS и SAT"
+
+msgid "Asosiy kontentga o'tish"
+msgstr "Перейти к основному содержимому"
+
+msgid "Bo'limlar"
+msgstr "Разделы"
+
+msgid "Bosh sahifa"
+msgstr "Главная"
+
+msgid "Video Darslar"
+msgstr "Видеоуроки"
+
+msgid "Testlar"
+msgstr "Тесты"
+
+msgid "Reyting"
+msgstr "Рейтинг"
+
+msgid "Umumiy profil"
+msgstr "Общий профиль"
+
+msgid "Til"
+msgstr "Язык"
+
+msgid "Eslatmalar va e'lonlar"
+msgstr "Напоминания и объявления"
+
+msgid "Hammasini ko'rish"
+msgstr "Смотреть все"
+
+msgid "Hozircha yangi bildirishnoma yo'q."
+msgstr "Пока нет новых уведомлений."
+
+msgid "Profil"
+msgstr "Профиль"
+
+msgid "Chiqish"
+msgstr "Выйти"
+
+msgid "Yopish"
+msgstr "Закрыть"
+
+msgid "Barcha huquqlar himoyalangan."
+msgstr "Все права защищены."
+
+msgid "Kirish"
+msgstr "Войти"
+
+msgid "Tizimga kirish"
+msgstr "Вход в систему"
+
+msgid "Foydalanuvchi nomi"
+msgstr "Имя пользователя"
+
+msgid "Foydalanuvchi nomini kiriting"
+msgstr "Введите имя пользователя"
+
+msgid "Kirish kodi"
+msgstr "Код входа"
+
+msgid "Kirish kodini kiriting"
+msgstr "Введите код входа"
+
+msgid "Qanday foydalanish?"
+msgstr "Как пользоваться?"
+
+msgid "Foydalanuvchi nomingizni kiriting (admin panel orqali yaratilgan)"
+msgstr "Введите имя пользователя (создаётся в админ-панели)"
+
+msgid "Admin panel orqali berilgan kirish kodini kiriting"
+msgstr "Введите код входа, выданный в админ-панели"
+
+msgid "\"Kirish\" tugmasini bosing va tizimga kiring"
+msgstr "Нажмите «Войти» и войдите в систему"
+
+msgid "Iltimos, barcha maydonlarni to'ldiring!"
+msgstr "Пожалуйста, заполните все поля!"
+
+msgid "Kirilmoqda..."
+msgstr "Входим..."
+
+msgid "Bo'lim tanlash"
+msgstr "Выбор раздела"
+
+msgid "Ton academy platformasi"
+msgstr "Платформа Ton academy"
+
+msgid "Bo'limni tanlang"
+msgstr "Выберите раздел"
+
+msgid "Kerakli tizimga kirish uchun quyidagi bo'limlardan birini tanlang."
+msgstr "Выберите один из разделов, чтобы войти в нужную систему."
+
+msgid "Tez kirish:"
+msgstr "Быстрый вход:"
+
+msgid "Xavfsiz kirish"
+msgstr "Безопасный вход"
+
+msgid "Tez ishlash"
+msgstr "Быстрая работа"
+
+msgid "Progress kuzatuvi"
+msgstr "Отслеживание прогресса"
+
+msgid "ta ochiq"
+msgstr "открыто"
+
+msgid "ta yopiq"
+msgstr "закрыто"
+
+msgid "Tayyor"
+msgstr "Готово"
+
+msgid "Yopiq"
+msgstr "Закрыто"
+
+msgid "Video + Test + Statistika"
+msgstr "Видео + Тест + Статистика"
+
+msgid "IELTS video darslar, testlar, statistika va reyting."
+msgstr "Видеоуроки IELTS, тесты, статистика и рейтинг."
+
+msgid "IELTS tizimiga kirish"
+msgstr "Войти в IELTS"
+
+msgid "Ruxsat yo'q"
+msgstr "Нет доступа"
+
+msgid "Resurs + Eslatma + Progress"
+msgstr "Ресурсы + Заметки + Прогресс"
+
+msgid "SAT Math va English resurslari, progress va eslatmalar."
+msgstr "Ресурсы SAT Math и English, прогресс и заметки."
+
+msgid "SAT bo'limiga kirish"
+msgstr "Войти в SAT"
+
+msgid "Tez orada"
+msgstr "Скоро"
+
+msgid "Yangi modul tayyorlanmoqda"
+msgstr "Новый модуль готовится"
+
+msgid "Ish o'rinlari bo'limi keyingi bosqichda alohida modul sifatida ochiladi."
+msgstr "Раздел вакансий откроется позже как отдельный модуль."
+
+msgid "Sizga hozircha hech bir bo'limga ruxsat berilmagan. Administrator bilan bog'laning."
+msgstr "Пока нет доступа ни к одному разделу. Свяжитесь с администратором."
+
+msgid "Xush kelibsiz"
+msgstr "Добро пожаловать"
+
+msgid "Bugun nima o'rganamiz? Test yoki video darsni tanlang va davom eting."
+msgstr "Что будем учить сегодня? Выберите тест или видеоурок и продолжайте."
+
+msgid "Videolar"
+msgstr "Видео"
+
+msgid "O'rtacha ball"
+msgstr "Средний балл"
+
+msgid "Ishlangan test"
+msgstr "Пройденный тест"
+
+msgid "Ko'rilgan video"
+msgstr "Просмотренное видео"
+
+msgid "Streak (kun)"
+msgstr "Серия (дней)"
+
+msgid "Mavjud test"
+msgstr "Доступные тесты"
+
+msgid "Ishlangan testlar"
+msgstr "Пройденные тесты"
+
+msgid "Jami"
+msgstr "Всего"
+
+msgid "ta"
+msgstr "шт."
+
+msgid "Ko'rilgan videolar"
+msgstr "Просмотренные видео"
+
+msgid "Barcha testlar bo'yicha"
+msgstr "По всем тестам"
+
+msgid "Study streak"
+msgstr "Учебная серия"
+
+msgid "Ketma-ket kun"
+msgstr "Дней подряд"
+
+msgid "Eng yaxshi natijalar"
+msgstr "Лучшие результаты"
+
+msgid "Statistika"
+msgstr "Статистика"
+
+msgid "Batafsil tahlillar"
+msgstr "Подробная аналитика"
+
+msgid "Shaxsiy ma'lumotlar"
+msgstr "Личные данные"
+
+msgid "Kategoriyalar"
+msgstr "Категории"
+
+msgid "Yo'nalishni tanlang va o'rganishni boshlang"
+msgstr "Выберите направление и начните учиться"
+
+msgid "Barcha videolar"
+msgstr "Все видео"
+
+msgid "Barcha testlar"
+msgstr "Все тесты"
+
+msgid "Video darslar va testlar"
+msgstr "Видеоуроки и тесты"
+
+msgid "Kategoriyalar hozircha yo'q"
+msgstr "Категорий пока нет"
+
+msgid "Admin panel orqali kategoriyalar qo'shilgach, bu yerda ko'rinadi."
+msgstr "Когда категории добавят в админ-панели, они появятся здесь."
+
+msgid "Orqaga"
+msgstr "Назад"
+
+msgid "Qidirish"
+msgstr "Поиск"
+
+msgid "Tartiblash"
+msgstr "Сортировка"
+
+msgid "Tozalash"
+msgstr "Очистить"
+
+msgid "Filterlar"
+msgstr "Фильтры"
+
+msgid "Barchasi"
+msgstr "Все"
+
+msgid "Test turi"
+msgstr "Тип теста"
+
+msgid "Qiyinlik"
+msgstr "Сложность"
+
+msgid "Oson"
+msgstr "Лёгкий"
+
+msgid "O'rta"
+msgstr "Средний"
+
+msgid "Qiyin"
+msgstr "Сложный"
+
+msgid "Yangi"
+msgstr "Новые"
+
+msgid "Eski"
+msgstr "Старые"
+
+msgid "Nomi (A-Z)"
+msgstr "Название (А–Я)"
+
+msgid "Nomi (Z-A)"
+msgstr "Название (Я–А)"
+
+msgid "Savollar (kam)"
+msgstr "Вопросы (меньше)"
+
+msgid "Savollar (ko'p)"
+msgstr "Вопросы (больше)"
+
+msgid "Faol filterlar:"
+msgstr "Активные фильтры:"
+
+msgid "Zaif tomonlar"
+msgstr "Слабые стороны"
+
+msgid "O'rtacha"
+msgstr "Среднее"
+
+msgid "Yaxshilash"
+msgstr "Улучшить"
+
+msgid "Tavsiya qilingan testlar"
+msgstr "Рекомендуемые тесты"
+
+msgid "Sizning darajangizga mos testlar"
+msgstr "Тесты под ваш уровень"
+
+msgid "Boshlash"
+msgstr "Начать"
+
+msgid "Qayta ishlash"
+msgstr "Пройти снова"
+
+msgid "Davom ettirish"
+msgstr "Продолжить"
+
+msgid "To'xtatish"
+msgstr "Пауза"
+
+msgid "Saqlanganlar"
+msgstr "Сохранённые"
+
+msgid "Eslatma"
+msgstr "Заметка"
+
+msgid "Eslatmalar"
+msgstr "Заметки"
+
+msgid "Bildirishnomalar"
+msgstr "Уведомления"
+
+msgid "Bo'limlarga qaytish"
+msgstr "К разделам"
+
+msgid "Hozircha bildirishnoma yo'q."
+msgstr "Уведомлений пока нет."
+
+msgid "Testlar topilmadi"
+msgstr "Тесты не найдены"
+
+msgid "Qidiruv so'zini o'zgartiring yoki boshqa filterni tanlang"
+msgstr "Измените поисковый запрос или выберите другой фильтр"
+
+msgid "Cheksiz"
+msgstr "Без лимита"
+
+msgid "O'tdingiz"
+msgstr "Сдали"
+
+msgid "Qayta urinib ko'ring"
+msgstr "Попробуйте ещё раз"
+
+msgid "Ko'rilgan"
+msgstr "Просмотрено"
+
+msgid "Ko'rish"
+msgstr "Смотреть"
+
+msgid "Barchasini ko'rish"
+msgstr "Смотреть все"
+
+msgid "Hozircha videolar yo'q"
+msgstr "Видео пока нет"
+
+msgid "Videolar topilmadi"
+msgstr "Видео не найдены"
+
+msgid "Filtrlarni tozalash"
+msgstr "Сбросить фильтры"
+
+msgid "Oldingi"
+msgstr "Назад"
+
+msgid "Keyingi"
+msgstr "Далее"
+
+msgid "Testlarga o'tish"
+msgstr "К тестам"
+
+msgid "Diqqat!"
+msgstr "Внимание!"
+
+msgid "Ball"
+msgstr "Балл"
+
+msgid "Foiz"
+msgstr "Процент"
+
+msgid "Urinish"
+msgstr "Попытка"
+
+msgid "Daqiqa"
+msgstr "Минуты"
+
+msgid "O'tish"
+msgstr "Проходной"
+
+msgid "Javob (ball)"
+msgstr "Ответы (балл)"
+
+msgid "Oxirgi natija"
+msgstr "Последний результат"
+
+msgid "Batafsil ko'rish"
+msgstr "Подробнее"
+
+msgid "Savollar qo'shilmagan"
+msgstr "Вопросы не добавлены"
+
+msgid "Testni davom ettirish"
+msgstr "Продолжить тест"
+
+msgid "Umumiy"
+msgstr "Общее"
+
+msgid "Home"
+msgstr "Главная"
+
+msgid "Dashboard"
+msgstr "Дашборд"
+
+msgid "Davom etish"
+msgstr "Продолжить"
+
+msgid "Ochish"
+msgstr "Открыть"
+
+msgid "Matematika"
+msgstr "Математика"
+
+msgid "Ingliz tili"
+msgstr "Английский"
+
+msgid "Yakunlangan"
+msgstr "Завершено"
+
+msgid "Jami resurs"
+msgstr "Всего ресурсов"
+
+msgid "Sizga tavsiya"
+msgstr "Рекомендуем вам"
+
+msgid "Oxirgi eslatmalar"
+msgstr "Последние заметки"
+
+msgid "Oxirgi ko'rilganlar"
+msgstr "Недавно просмотренные"
+
+msgid "Hozircha eslatmalar yo'q."
+msgstr "Заметок пока нет."
+
+msgid "Hali ko'rilgan resurslar mavjud emas."
+msgstr "Просмотренных ресурсов пока нет."
+
+msgid "Hozircha tavsiya uchun resurs topilmadi."
+msgstr "Пока нет ресурсов для рекомендации."
+
+msgid "To'g'ri"
+msgstr "Верно"
+
+msgid "Noto'g'ri"
+msgstr "Неверно"
+
+msgid "Qisman"
+msgstr "Частично"
+
+msgid "Bo'sh"
+msgstr "Пусто"
+
+msgid "Natija"
+msgstr "Результат"
+
+msgid "Javob berilmagan"
+msgstr "Нет ответа"
+
+msgid "Tekshirilmoqda"
+msgstr "Проверяется"
+
+msgid "Sizning javobingiz"
+msgstr "Ваш ответ"
+
+msgid "Ko'proq o'qish"
+msgstr "Читать дальше"
+
+msgid "Tushuntirish"
+msgstr "Пояснение"
+
+msgid "Filter bo'yicha javob topilmadi"
+msgstr "По фильтру ответов нет"
+
+msgid "Testlar ro'yxatiga qaytish"
+msgstr "К списку тестов"
+
+msgid "Profilga o'tish"
+msgstr "К профилю"
+
+msgid "Ajratish"
+msgstr "Выделить"
+
+msgid "Savollar"
+msgstr "Вопросы"
+
+msgid "Tepaga"
+msgstr "Наверх"
+
+msgid "Submit"
+msgstr "Отправить"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "Save"
+msgstr "Сохранить"
+
+msgid "kun ketma-ket"
+msgstr "дней подряд"
+
+msgid "Bookmarks"
+msgstr "Закладки"
+
+msgid "Study Streak"
+msgstr "Учебная серия"
+
+msgid "Sizning pozitsiyangiz"
+msgstr "Ваша позиция"
+
+msgid "Pozitsiya"
+msgstr "Позиция"
+
+msgid "Foydalanuvchi"
+msgstr "Пользователь"
+
+msgid "Testlar soni"
+msgstr "Количество тестов"
+
+msgid "Top 10"
+msgstr "Топ 10"
+
+msgid "Video dars"
+msgstr "Видеоурок"
+
+msgid "Kategoriya"
+msgstr "Категория"
+
+msgid "Test topildi"
+msgstr "Тестов найдено"
+
+msgid "Yo'nalish"
+msgstr "Направление"
+
+msgid "Matn tushunish testlari"
+msgstr "Тесты на понимание текста"
+
+msgid "Audio eshitish testlari"
+msgstr "Аудирование"
+
+msgid "Essay va yozish testlari"
+msgstr "Эссе и письменные тесты"
+
+msgid "SAT Saqlanganlar"
+msgstr "SAT — сохранённые"
+
+msgid "SAT Statistika"
+msgstr "SAT — статистика"
+
+msgid "SAT Yo'nalishi"
+msgstr "Направление SAT"
+
+msgid "SAT Dashboard"
+msgstr "SAT — дашборд"
+
+msgid "SAT Home"
+msgstr "SAT — главная"
+
+msgid "O'rtacha progress"
+msgstr "Средний прогресс"
+
+msgid "O'rtacha tezlik"
+msgstr "Средняя скорость"
+
+msgid "O'rtacha vaqt"
+msgstr "Среднее время"
+
+msgid "Yaxshilash kerak"
+msgstr "Нужно улучшить"
+
+msgid "Kategoriya bo'yicha natijalar"
+msgstr "Результаты по категориям"
+
+msgid "Test turi bo'yicha natijalar"
+msgstr "Результаты по типу теста"
+
+msgid "Testlar ishlaganingizdan keyin statistika ko'rinadi"
+msgstr "Статистика появится после прохождения тестов"
+
+msgid "Keyingi urinish uchun aniq tavsiyalar"
+msgstr "Конкретные советы для следующей попытки"
+
+msgid "Umumiy AI tahlil tayyorlanmoqda…"
+msgstr "Общий AI-разбор готовится…"
+
+msgid "Oldingi Natijalar bilan Solishtirish"
+msgstr "Сравнение с предыдущими результатами"
+
+msgid "Umumiy platforma statistikasi"
+msgstr "Общая статистика платформы"
+
+msgid "Umumiy testlar"
+msgstr "Все тесты"
+
+msgid "Eslatma yo'q"
+msgstr "Нет заметки"
+
+msgid "Kategoriya bo'yicha batafsil natijalar"
+msgstr "Подробные результаты по категориям"
+
+msgid "Kategoriya bo'yicha statistika"
+msgstr "Статистика по категориям"
+
+msgid "Ko'rilgan sana"
+msgstr "Дата просмотра"
+
+msgid "Ko'rilgan progress:"
+msgstr "Прогресс просмотра:"
+
+msgid "Yangi playlist"
+msgstr "Новый плейлист"
+
+msgid "Eslatma qo'shish"
+msgstr "Добавить заметку"
+
+msgid "Eslatma matni"
+msgstr "Текст заметки"
+
+msgid "Matematika va Ingliz tili bo'yicha video hamda PDF resurslar."
+msgstr "Видео и PDF-материалы по математике и английскому."
+
+msgid "IELTS Reading, Listening va Writing bo'yicha professional testlar — o'zingizga mosini tanlang va boshlang"
+msgstr "Профессиональные тесты IELTS Reading, Listening и Writing — выберите подходящий и начните"
+
+msgid "Test Natijasi"
+msgstr "Результат теста"
+
+msgid "Writing feedback tayyorlanmoqda"
+msgstr "Writing feedback готовится"
+
+msgid "o'tdingiz"
+msgstr "сдали"
+
+msgid "o'tmadingiz"
+msgstr "не сдали"
+
+msgid "Tebriklar!"
+msgstr "Поздравляем!"
+
+msgid "Siz testdan muvaffaqiyatli o'tdingiz!"
+msgstr "Вы успешно сдали тест!"
+
+msgid "Javob"
+msgstr "Ответ"
+
+msgid "Javoblar serverga avtomatik saqlanadi"
+msgstr "Ответы автоматически сохраняются на сервер"
+
+msgid "Imtihon qog‘ozi:"
+msgstr "Экзаменационный вариант:"
+
+msgid "Variant"
+msgstr "Вариант"
+
+msgid "Audio yuklanmadi"
+msgstr "Аудио не загружено"
+
+msgid "Term kiriting"
+msgstr "Введите термин"
+
+msgid "Set tanlang yoki yangi set kiriting"
+msgstr "Выберите набор или введите новый"
+
+msgid "Xatolik yuz berdi"
+msgstr "Произошла ошибка"
+
+msgid "Avval matndan so'z yoki qismni tanlang."
+msgstr "Сначала выделите слово или фрагмент в тексте."
+
+msgid "Hozircha note yo'q."
+msgstr "Заметок пока нет."
+
+msgid "Sizda {n} ta javobsiz savol bor. Baribir testni yuborishni xohlaysizmi?"
+msgstr "У вас {n} вопросов без ответа. Всё равно отправить тест?"
+
+msgid "Bu savol uchun rasm yuklanmagan. Admin orqali savolga rasm qo'shing."
+msgstr "Для этого вопроса не загружено изображение. Добавьте его через админку."
+
+msgid "Serverga saqlandi"
+msgstr "Сохранено на сервер"
+
+msgid "Saqlash xatosi — qayta uriniladi"
+msgstr "Ошибка сохранения — повторим"
+
+msgid "Tarmoq xatosi — keyinroq saqlanadi"
+msgstr "Ошибка сети — сохраним позже"
+
+msgid "Saqlashda xatolik"
+msgstr "Ошибка при сохранении"
+
+msgid "Avval matndan tanlang (javob maydoni emas)"
+msgstr "Сначала выделите текст (не поле ответа)"
+
+msgid "Ajratish saqlandi"
+msgstr "Выделение сохранено"
+
+msgid "Avval matndan so'z yoki qismni tanlang"
+msgstr "Сначала выделите слово или фрагмент в тексте"
+
+msgid "Qisqa note yozing:"
+msgstr "Напишите короткую заметку:"
+
+msgid "Chatda so'rash"
+msgstr "Спросить в чате"
+
+msgid "AI feedback yangilanmoqda"
+msgstr "AI feedback обновляется"
+
+msgid "Bir necha soniya kuting."
+msgstr "Подождите несколько секунд."
+
+msgid "Qayta generatsiya…"
+msgstr "Генерация заново…"
+
+msgid "Qayta generatsiya xato. Yangilang."
+msgstr "Ошибка повторной генерации. Обновите страницу."
+
+msgid "Tarmoq xatosi."
+msgstr "Ошибка сети."
+
+msgid "Xulosa yangilanmoqda…"
+msgstr "Вывод обновляется…"
+
+msgid "Eslatma matni bo'sh bo'lishi mumkin emas!"
+msgstr "Текст заметки не может быть пустым!"
+
+msgid "Eslatmani o'chirishni xohlaysizmi?"
+msgstr "Удалить заметку?"
+
+msgid "Izoh matni bo'sh bo'lishi mumkin emas!"
+msgstr "Текст комментария не может быть пустым!"
+
+msgid "Javob matni bo'sh bo'lishi mumkin emas!"
+msgstr "Текст ответа не может быть пустым!"
+
+msgid "Izohni o'chirishni xohlaysizmi?"
+msgstr "Удалить комментарий?"
+
+msgid "Sizning reytingingiz:"
+msgstr "Ваша оценка:"
+
+msgid "Hozir"
+msgstr "Сейчас"
+
+msgid "Hozirgina"
+msgstr "Только что"
+
+msgid "Streakni yo'qotmang"
+msgstr "Не потеряйте серию"
+
+msgid "Sizda %(n)d kunlik streak bor. Bugun ham o'qishni davom ettiring."
+msgstr "У вас серия %(n)d дн. Занимайтесь и сегодня."
+
+msgid "IELTS davom ettirish"
+msgstr "Продолжить IELTS"
+
+msgid "%(title)s testi to'xtatilgan. Davom ettirishga qayting."
+msgstr "Тест «%(title)s» на паузе. Вернитесь, чтобы продолжить."
+
+msgid "SAT davom ettirish"
+msgstr "Продолжить SAT"
+
+msgid "%(title)s resursini tugatib qo'ying."
+msgstr "Досмотрите ресурс «%(title)s»."
+
+msgid "Sizga SAT bo'limiga kirish ruxsati berilmagan."
+msgstr "У вас нет доступа к разделу SAT."
+
+msgid "Sizga IELTS bo'limiga kirish ruxsati berilmagan."
+msgstr "У вас нет доступа к разделу IELTS."
+
+msgid "Bu kod bilan allaqachon tizimga kirilgan. Avval oldingi sessiyadan chiqing."
+msgstr "С этим кодом уже выполнен вход. Сначала выйдите из предыдущей сессии."
+
+msgid "Muvaffaqiyatli kirdingiz!"
+msgstr "Вы успешно вошли!"
+
+msgid "Noto'g'ri kod."
+msgstr "Неверный код."
+
+msgid "Bunday foydalanuvchi topilmadi."
+msgstr "Такой пользователь не найден."
+
+msgid "Tizimdan chiqdingiz."
+msgstr "Вы вышли из системы."
+
+msgid "Javoblar saqlandi."
+msgstr "Ответы сохранены."
+
+msgid "Bu testda hali savollar qo'shilmagan. Admin orqali savollar qo'shing."
+msgstr "В этом тесте ещё нет вопросов. Добавьте их через админку."
+
+msgid "Bu testni qayta ishlashga ruxsat berilmagan."
+msgstr "Повторное прохождение этого теста не разрешено."
+
+msgid "Siz maksimal %(n)d marta urinish qildingiz."
+msgstr "Вы использовали максимум попыток: %(n)d."
+
+msgid "Xatolik yuz berdi: %(err)s"
+msgstr "Произошла ошибка: %(err)s"
+
+msgid "Excel export funksiyasi ishlamayapti. Iltimos, openpyxl paketini o'rnating."
+msgstr "Экспорт в Excel недоступен. Установите пакет openpyxl."
+
+msgid "%(n)d ta izbranniy o'chirildi."
+msgstr "Удалено избранных: %(n)d."
+
+msgid "Eslatma matni bo'sh."
+msgstr "Текст заметки пуст."
+
+msgid "Test mavjud emas."
+msgstr "Тест не найден."
+
+msgid "Term bo'sh bo'lishi mumkin emas."
+msgstr "Термин не может быть пустым."
+
+msgid "Set tanlang yoki yangi set nomini kiriting."
+msgstr "Выберите набор или введите новое имя."
+
+msgid "Feedback hali tayyor emas."
+msgstr "Feedback ещё не готов."
+
+msgid "Saqlash uchun so'z topilmadi."
+msgstr "Нет слов для сохранения."
+
+msgid "Feedback tayyor bo'lgach chat ishlaydi."
+msgstr "Чат заработает, когда feedback будет готов."
+
+msgid "%(n)d ta so'z «%(name)s» to'plamiga saqlandi."
+msgstr "Сохранено слов в набор «%(name)s»: %(n)d."
+
+msgid "Yangi so'z qo'shilmadi (barchasi allaqachon saqlangan)."
+msgstr "Новые слова не добавлены (все уже сохранены)."
+
+msgid "Kunlik limit tugadi (3 marta). Ertaga qayta urinib ko'ring."
+msgstr "Дневной лимит исчерпан (3 раза). Попробуйте завтра."
+
+msgid "Faqat writing testlari uchun."
+msgstr "Только для writing-тестов."
+
+msgid "Faqat reading/listening."
+msgstr "Только для reading/listening."
+
+msgid "PDF faqat ko'rish rejimida ochiladi."
+msgstr "PDF открывается только для просмотра."
+
+msgid "Testdan o'tish uchun kamida %(score)s%% bo'lishi kerak."
+msgstr "Чтобы сдать тест, нужно набрать минимум %(score)s%%."
+
+msgid "%(n)d daqiqa oldin"
+msgid_plural "%(n)d daqiqa oldin"
+msgstr[0] "%(n)d мин. назад"
+msgstr[1] "%(n)d мин. назад"
+msgstr[2] "%(n)d мин. назад"
+
+msgid "%(n)d soat oldin"
+msgid_plural "%(n)d soat oldin"
+msgstr[0] "%(n)d ч. назад"
+msgstr[1] "%(n)d ч. назад"
+msgstr[2] "%(n)d ч. назад"
+
+msgid "%(n)d kun oldin"
+msgid_plural "%(n)d kun oldin"
+msgstr[0] "%(n)d дн. назад"
+msgstr[1] "%(n)d дн. назад"
+msgstr[2] "%(n)d дн. назад"
+
+
+msgid "Sarflangan vaqt:"
+msgstr "Затраченное время:"
+
+msgid "{{ hours }} soat {{ minutes }} daqiqa"
+msgstr "{{ hours }} ч {{ minutes }} мин"
+
+msgid "{{ minutes }} daqiqa {{ seconds }} soniya"
+msgstr "{{ minutes }} мин {{ seconds }} сек"
+
+msgid "{{ seconds }} soniya"
+msgstr "{{ seconds }} сек"
+
+msgid "{{ n }} soniya / savol"
+msgstr "{{ n }} сек / вопрос"
+
+msgid "Javob {{ n }}"
+msgstr "Ответ {{ n }}"
+
+msgid "Savol {{ n }} · {{ label }}"
+msgstr "Вопрос {{ n }} · {{ label }}"
+
+msgid "Baholash"
+msgstr "Оценка"
+
+msgid "To'g'ri javob"
+msgstr "Правильный ответ"
+
+msgid "AI tavsiya tayyor"
+msgstr "AI-рекомендация готова"
+
+msgid "Taxminiy band:"
+msgstr "Примерный балл:"
+
+msgid "AI feedback vaqtincha olinmadi"
+msgstr "AI feedback временно недоступен"
+
+msgid "AI/teacher feedback tayyorlanmoqda"
+msgstr "AI/teacher feedback готовится"
+
+msgid "Essay javobi topilmadi"
+msgstr "Ответ эссе не найден"
+
+msgid "{{ n }}s tezroq"
+msgstr "на {{ n }}с быстрее"
+
+msgid "{{ n }}s sekinroq"
+msgstr "на {{ n }}с медленнее"
+
+msgid "Bir xil"
+msgstr "Без изменений"
+
+msgid "Writing: essay(lar) yuborildi ({{ submitted }}/{{ total }}). AI tavsiya ko'rsatiladi, rasmiy foiz esa avtomatik berilmaydi."
+msgstr "Writing: эссе отправлено ({{ submitted }}/{{ total }}). Показывается AI-рекомендация, официальный процент автоматически не ставится."
+
+msgid "test to'plami"
+msgstr "коллекция тестов"
+
+msgid "Cambridge, test nomi..."
+msgstr "Cambridge, название теста..."
+
+msgid "Savol turi"
+msgstr "Тип вопроса"
+
+msgid "Uzunlik"
+msgstr "Длина"
+
+msgid "To'liq testlar"
+msgstr "Полные тесты"
+
+msgid "Partlar"
+msgstr "Части"
+
+msgid "Modul"
+msgstr "Модуль"
+
+msgid "Academic"
+msgstr "Academic"
+
+msgid "General"
+msgstr "General"
+
+msgid "Part"
+msgstr "Part"
+
+msgid "To'liq test"
+msgstr "Полный тест"
+
+msgid "Tavsif yo'q"
+msgstr "Нет описания"
+
+msgid "savol"
+msgstr "вопрос"
+
+msgid "daqiqa"
+msgstr "мин"
+
+msgid "Testni boshlash"
+msgstr "Начать тест"
+
+msgid "Filter"
+msgstr "Фильтр"
+
+msgid "Filterlangan, tezkor va zamonaviy test katalogi"
+msgstr "Отфильтрованный быстрый каталог тестов"
+
+msgid "Test topilmadi. Filterlarni o'zgartirib ko'ring."
+msgstr "Тест не найден. Измените фильтры."
+
+msgid "O'qish eslatmalarim"
+msgstr "Мои заметки по Reading"
+
+msgid "Kerak bo‘lsa qayta tinglang"
+msgstr "При необходимости прослушайте ещё раз"
+
+msgid "Audio hali yuklanmagan"
+msgstr "Аудио ещё не загружено"
+
+msgid "Admin MP3 qo‘shgach, pleyer shu yerda ochiladi."
+msgstr "Когда админ добавит MP3, плеер появится здесь."
+
+msgid "Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi."
+msgstr "Ваш браузер не поддерживает аудио."
+
+msgid "Bu part uchun passage admin orqali qo'shilmagan. Test → Passage'lar bo'limida Part {{ n }} uchun matn kiriting."
+msgstr "Для этой части passage ещё не добавлен. В тесте → Passages укажите текст для Part {{ n }}."
+
+msgid "Bu Reading test uchun passage (matn) admin orqali hali qo'shilmagan. Savollarni o'qish matnisiz javob bering yoki admin bilan bog'laning."
+msgstr "Для этого Reading-теста passage ещё не добавлен. Ответьте без текста или свяжитесь с админом."
+
+msgid "Matnni tanlang, keyin bosing"
+msgstr "Выделите текст, затем нажмите"
+
+msgid "Avtomatik saqlash: yoqilgan"
+msgstr "Автосохранение: включено"
+
+msgid "Savol topilmadi."
+msgstr "Вопрос не найден."
+
+msgid "Javobingizni yozing..."
+msgstr "Введите ответ..."
+
+msgid "Noto'g'ri so'rov"
+msgstr "Неверный запрос"
+
+msgid "Eslatma matni bo'sh bo'lishi mumkin emas"
+msgstr "Текст заметки не может быть пустым"
+
+msgid "Test to'xtatildi"
+msgstr "Тест приостановлен"
+
+msgid "Test davom etmoqda"
+msgstr "Тест продолжается"
+
+msgid "Noto'g'ri reyting qiymati"
+msgstr "Неверное значение рейтинга"
+
+msgid "Reyting 1 dan 5 gacha bo'lishi kerak"
+msgstr "Рейтинг должен быть от 1 до 5"
+
+msgid "Izoh matni bo'sh bo'lishi mumkin emas"
+msgstr "Текст комментария не может быть пустым"
+
+msgid "Noto'g'ri parent izoh"
+msgstr "Неверный родительский комментарий"
+
+msgid "Playlist nomi bo'sh bo'lishi mumkin emas"
+msgstr "Название плейлиста не может быть пустым"
+
+msgid "Playlist tanlanmagan"
+msgstr "Плейлист не выбран"
+
+msgid "Playlist topilmadi"
+msgstr "Плейлист не найден"
+
+msgid "Video allaqachon playlistda"
+msgstr "Видео уже в плейлисте"
+
+msgid "Video playlistga qo'shildi"
+msgstr "Видео добавлено в плейлист"
+
+msgid "Video playlistdan olib tashlandi"
+msgstr "Видео удалено из плейлиста"
+
+msgid "Bookmark olib tashlandi"
+msgstr "Закладка снята"
+
+msgid "Bookmark qo'shildi"
+msgstr "Закладка добавлена"
+
+msgid "Kunlik chat limiti tugadi (25 ta). Ertaga qayta urinib ko'ring."
+msgstr "Дневной лимит чата исчерпан (25). Попробуйте завтра."
+
+msgid "Bookmark qo'yish"
+msgstr "Поставить закладку"
+
+msgid "Bookmark"
+msgstr "Закладка"
+
+msgid "Playlist"
+msgstr "Плейлист"
+
+msgid "Playlist yo'q"
+msgstr "Нет плейлистов"
+
+msgid "Brauzeringiz video formatini qo‘llamaydi."
+msgstr "Браузер не поддерживает этот формат видео."
+
+msgid "Video yuklanmadi"
+msgstr "Видео не загрузилось"
+
+msgid "Video yuklashda muammo yuz berdi. Iltimos, quyidagi havola orqali YouTube'da ko'ring."
+msgstr "Не удалось загрузить видео. Откройте его на YouTube по ссылке ниже."
+
+msgid "YouTube'da ko'rish"
+msgstr "Смотреть на YouTube"
+
+msgid "Qayta urinish"
+msgstr "Повторить"
+
+msgid "YouTube URL noto'g'ri"
+msgstr "Неверный URL YouTube"
+
+msgid "Videoni baholash:"
+msgstr "Оценить видео:"
+
+msgid "O'rtacha reyting:"
+msgstr "Средний рейтинг:"
+
+msgid "ta baho"
+msgstr "оценок"
+
+msgid "Izohlar"
+msgstr "Комментарии"
+
+msgid "Izoh yozing..."
+msgstr "Напишите комментарий..."
+
+msgid "Izoh qo'shish"
+msgstr "Добавить комментарий"
+
+msgid "tahrirlangan"
+msgstr "изменено"
+
+msgid "Javob berish"
+msgstr "Ответить"
+
+msgid "Javob yozing..."
+msgstr "Напишите ответ..."
+
+msgid "Javob yuborish"
+msgstr "Отправить ответ"
+
+msgid "Bekor qilish"
+msgstr "Отмена"
+
+msgid "Hozircha izohlar yo'q. Birinchi izohni siz yozing!"
+msgstr "Пока нет комментариев. Напишите первый!"
+
+msgid "Tegishli videolar"
+msgstr "Похожие видео"
+
+msgid "Vaqt:"
+msgstr "Время:"
+
+msgid "Saqlash"
+msgstr "Сохранить"
+
+msgid "Bookmark qo'yildi"
+msgstr "Закладка поставлена"
+
+msgid "Video biriktirilmagan."
+msgstr "Видео не прикреплено."
+
+msgid "Progress (0-100)"
+msgstr "Прогресс (0–100)"
+
+msgid "Progress saqlash"
+msgstr "Сохранить прогресс"
+
+msgid "Qo'shish"
+msgstr "Добавить"
+
+msgid "Filter bo'yicha mos resurs topilmadi."
+msgstr "По фильтру ничего не найдено."
+
+msgid "Filterni tozalash"
+msgstr "Сбросить фильтр"
+
+msgid "Yuklanmoqda..."
+msgstr "Загрузка..."
+
+msgid "Hozircha saqlanganlar yo'q."
+msgstr "Пока ничего не сохранено."
+
+msgid "Test nomi, kategoriya..."
+msgstr "Название теста, категория..."
+
+msgid "Video nomi, kategoriya..."
+msgstr "Название видео, категория..."
+
+msgid "Tartib"
+msgstr "Порядок"
+
+msgid "Ko'rilganlar"
+msgstr "Просмотры"
+
+msgid "YouTube'da ochish"
+msgstr "Открыть на YouTube"
+
+msgid "PDF saqlangan"
+msgstr "PDF сохранён"
+
+msgid "PDF saqlash"
+msgstr "Сохранить PDF"
+
+msgid "Video saqlangan"
+msgstr "Видео сохранено"
+
+msgid "Video saqlash"
+msgstr "Сохранить видео"
+
+msgid "Tahlil va Hisobotlar"
+msgstr "Аналитика и отчёты"
+
+msgid "Batafsil Tahlillar"
+msgstr "Подробная аналитика"
+
+msgid "Grafiklar va batafsil statistika"
+msgstr "Графики и подробная статистика"
+
+msgid "Haftalik Xulosa"
+msgstr "Недельный итог"
+
+msgid "Hafta davomidagi faollik"
+msgstr "Активность за неделю"
+
+msgid "Oylik Hisobot"
+msgstr "Месячный отчёт"
+
+msgid "Oy davomidagi natijalar"
+msgstr "Результаты за месяц"
+
+msgid "Test natijalaringizni yuklab oling:"
+msgstr "Скачайте результаты тестов:"
+
+msgid "Excel'ga export"
+msgstr "Экспорт в Excel"
+
+msgid "CSV'ga export"
+msgstr "Экспорт в CSV"
+
+msgid "Sevimli videolar va testlar"
+msgstr "Избранные видео и тесты"
+
+msgid "Test natijalari"
+msgstr "Результаты тестов"
+
+msgid "Hozircha test natijalari yo'q."
+msgstr "Пока нет результатов тестов."
+
+msgid "Writing progress"
+msgstr "Прогресс Writing"
+
+msgid "AI training band · rasmiy IELTS emas"
+msgstr "Учебный балл AI · не официальный IELTS"
+
+msgid "Oxirgi"
+msgstr "Последний"
+
+msgid "Tez kirish"
+msgstr "Быстрый доступ"
+
+msgid "SAT bosh sahifa"
+msgstr "Главная SAT"
+
+msgid "SAT saqlanganlar"
+msgstr "Сохранённое SAT"
+
+msgid "SAT statistika"
+msgstr "Статистика SAT"
+
+msgid "Jobs bo'limi hali tayyor emas"
+msgstr "Раздел Jobs ещё не готов"
+
+msgid "Jobs moduli ishga tushgach, shu yerda statistikalar va faollik ko'rinadi."
+msgstr "Когда модуль Jobs заработает, здесь появятся статистика и активность."
+
+msgid "O'tdi"
+msgstr "Сдан"
+
+msgid "O'tmadi"
+msgstr "Не сдан"
+
+msgid "Ko'rilgan:"
+msgstr "Просмотрено:"
+
+msgid "Qayta ko'rish"
+msgstr "Смотреть снова"
+
+msgid "Hozircha ko'rilgan videolar yo'q."
+msgstr "Пока нет просмотренных видео."
+
+msgid "Eng zaif mezon"
+msgstr "Самый слабый критерий"
+
+msgid "Oxirgi essaylar"
+msgstr "Последние эссе"
+
+msgid "ta video"
+msgstr "видео"
+
+msgid "Tez orada yangi video darslar qo'shiladi. Bosh sahifaga qaytib, testlar bilan mashq qiling."
+msgstr "Скоро появятся новые видеоуроки. Вернитесь на главную и потренируйтесь на тестах."
+
+msgid "Qidiruv so'zini o'zgartiring yoki boshqa kategoriyani tanlang."
+msgstr "Измените поисковый запрос или выберите другую категорию."
+
+msgid "Tarmoq xatosi. Qayta urinib ko'ring."
+msgstr "Ошибка сети. Попробуйте ещё раз."
+
+msgid "Noma'lum xatolik"
+msgstr "Неизвестная ошибка"
+
+msgid "Haqiqatan ham tanlangan saqlanganlarni o'chirasizmi?"
+msgstr "Действительно удалить выбранные сохранённые?"
+
+msgid "AI feedback hali tayyor emas. Qayta urinish tugmasini bosing yoki sahifani yangilang."
+msgstr "AI feedback ещё не готов. Нажмите «Повторить» или обновите страницу."
+
+msgid "AI feedback tayyor!"
+msgstr "AI feedback готов!"
+
+msgid "AI feedback olinmadi. Avtomatik qayta urinilmoqda…"
+msgstr "AI feedback не получен. Повторная попытка…"
+
+msgid "Kunlik limit tugadi. Ertaga qayta urinib ko'ring."
+msgstr "Дневной лимит исчерпан. Попробуйте завтра."
+
+msgid "Kunlik chat limiti tugadi."
+msgstr "Дневной лимит чата исчерпан."
+
+msgid "ta saqlandi"
+msgstr "сохранено"
+
+msgid "Allaqachon saqlangan"
+msgstr "Уже сохранено"
+
+msgid "Flashcardga saqlandi"
+msgstr "Сохранено в карточки"
+
+msgid "Xatolik"
+msgstr "Ошибка"
+
+msgid "Feedback yangilanmoqda…"
+msgstr "Feedback обновляется…"
+
+msgid "AI tahlil tayyor!"
+msgstr "AI-анализ готов!"
+
+msgid "Xatolik yuz berdi. Sahifani yangilab qayta urinib ko'ring."
+msgstr "Произошла ошибка. Обновите страницу и попробуйте снова."
+
+msgid "Server xatoligi. Iltimos, qayta urinib ko'ring."
+msgstr "Ошибка сервера. Попробуйте ещё раз."
+
+msgid "Audio eshitishda xatolik yuz berdi."
+msgstr "Ошибка воспроизведения аудио."
+
+msgid "Bu test uchun audio fayl hozircha yuklanmagan. Admin panel orqali audio fayl yuklashingiz mumkin."
+msgstr "Для этого теста аудио ещё не загружено. Загрузите файл через админку."
+
+msgid "Barcha savollar"
+msgstr "Все вопросы"
+
+msgid "Faqat belgilanganlar"
+msgstr "Только отмеченные"
+
+msgid "Belgilangan"
+msgstr "Отмечено"
+
+msgid "Belgilash"
+msgstr "Отметить"
+
+msgid "Kamroq"
+msgstr "Свернуть"
+
+msgid "Natija tahlili"
+msgstr "Анализ результата"
+
+msgid "Kuchli tomonlar"
+msgstr "Сильные стороны"
+
+msgid "Savol turi bo'yicha aniqlik"
+msgstr "Точность по типу вопроса"
+
+msgid "Javoblar (Test Review)"
+msgstr "Ответы (Test Review)"
+
+msgid "Savol yoki javob bo'yicha qidirish..."
+msgstr "Поиск по вопросу или ответу..."
+
+msgid "Ko'rsatilmoqda:"
+msgstr "Показано:"
+
+msgid "O'zgarish"
+msgstr "Изменение"
+
+msgid "Sana"
+msgstr "Дата"
+
+msgid "Jami testlar"
+msgstr "Всего тестов"
+
+msgid "Sizning natijalaringiz va progress tahlili"
+msgstr "Анализ ваших результатов и прогресса"
+
+msgid "O'tgan testlar"
+msgstr "Сданные тесты"
+
+msgid "Ma'lumot yo'q"
+msgstr "Нет данных"
+
+msgid "Kunlik progress"
+msgstr "Ежедневный прогресс"
+
+msgid "Hozircha natijalar yo'q"
+msgstr "Пока нет результатов"
+
+msgid "Hozircha reyting mavjud emas"
+msgstr "Пока нет рейтинга"
+
+msgid "Batafsil statistika va tahlillar"
+msgstr "Подробная статистика и аналитика"
+
+msgid "Oylik statistika"
+msgstr "Месячная статистика"
+
+msgid "Hozircha statistika mavjud emas"
+msgstr "Пока нет статистики"
+
+msgid "O'zingizga mos testni tanlang va Boshlash tugmasini bosing"
+msgstr "Выберите подходящий тест и нажмите «Начать»"
+
+msgid "Qayta ishlashga ruxsat yo'q"
+msgstr "Повторное прохождение не разрешено"
+
+msgid "ta tur"
+msgstr "типа"
+
+msgid "IELTS tayyorgarlik uchun video darslar — kategoriyani tanlang va o'rganishni boshlang"
+msgstr "Видеоуроки для подготовки к IELTS — выберите категорию и начните"
+
+msgid "Hozircha eslatmalar yo'q. Video davomida eslatma qo'shishingiz mumkin."
+msgstr "Пока нет заметок. Их можно добавить во время просмотра."
+
+msgid "Eslatma yozing..."
+msgstr "Напишите заметку..."
+
+msgid "Bo'limdagi video va PDF resurslar ro'yxati."
+msgstr "Список видео и PDF в этом разделе."
+
+msgid "Resurs nomi yoki tavsif bo'yicha qidirish..."
+msgstr "Поиск по названию или описанию..."
+
+msgid "Kontent:"
+msgstr "Контент:"
+
+msgid "Faqat Video"
+msgstr "Только видео"
+
+msgid "Faqat PDF"
+msgstr "Только PDF"
+
+msgid "Progress:"
+msgstr "Прогресс:"
+
+msgid "Boshlanmagan"
+msgstr "Не начато"
+
+msgid "Jarayonda"
+msgstr "В процессе"
+
+msgid "Faqat saqlanganlar"
+msgstr "Только сохранённые"
+
+msgid "Filterlash"
+msgstr "Фильтровать"
+
+msgid "Sizda bu test bo'yicha yakunlanmagan urinish mavjud."
+msgstr "У вас есть незавершённая попытка по этому тесту."
+
+msgid "Boshlangan:"
+msgstr "Начато:"
+
+msgid "Quyidagi kategoriyalarda yaxshilash kerak"
+msgstr "Нужно подтянуть эти категории"
+
+msgid "Vaqt oralig'i:"
+msgstr "Период:"
+
+msgid "Hafta"
+msgstr "Неделя"
+
+msgid "Oy"
+msgstr "Месяц"
+
+msgid "Yil"
+msgstr "Год"
+
+msgid "O'qish kunlari"
+msgstr "Дни учёбы"
+
+msgid "Bu hafta hali faoliyat yo'q"
+msgstr "На этой неделе пока нет активности"
+
+msgid "Test yeching yoki video darslarni ko'ring — haftalik xulosa shu yerda ko'rinadi."
+msgstr "Решайте тесты или смотрите видео — недельный итог появится здесь."
+
+msgid "Test"
+msgstr "Тест"
+
+msgid "Holat"
+msgstr "Статус"
+
+msgid "Bu oy hali faoliyat yo'q"
+msgstr "В этом месяце пока нет активности"
+
+msgid "Test yeching yoki video darslarni ko'ring — oylik hisobot shu yerda to'planadi."
+msgstr "Решайте тесты или смотрите видео — месячный отчёт появится здесь."
+
+msgid "O'tgan"
+msgstr "Сдано"
+
+msgid "Progress kuzatilgan"
+msgstr "Прогресс отслеживается"
+
+msgid "Jami SAT resurs"
+msgstr "Всего SAT-ресурсов"
+
+msgid "Video URL kiritilmagan"
+msgstr "URL видео не указан"
+
+msgid "Yangi flashcard qo'shish"
+msgstr "Добавить flashcard"
+
+msgid "To'plamni tanlang"
+msgstr "Выберите набор"
+
+msgid "Yoki yangi to'plam yarating"
+msgstr "Или создайте новый набор"
+
+msgid "Masalan: Writing vocabulary"
+msgstr "Например: Writing vocabulary"
+
+msgid "Atama"
+msgstr "Термин"
+
+msgid "Tanlangan matn..."
+msgstr "Выделенный текст..."
+
+msgid "Ta'rif"
+msgstr "Определение"
+
+msgid "Ma'nosi yoki izohi..."
+msgstr "Значение или пояснение..."
+
+msgid "Xatolik:"
+msgstr "Ошибка:"
+
+msgid "Variant 1 — boshlash"
+msgstr "Вариант 1 — начать"
+
+msgid "Variant 2 — boshlash"
+msgstr "Вариант 2 — начать"
+
+msgid "Variant 3 — boshlash"
+msgstr "Вариант 3 — начать"
+
+msgid "%(n)s so'z"
+msgstr "%(n)s слов"
+
+msgid "Bu testda <strong>%(count)s</strong> ta imtihon qog'ozi bor. Boshlashda <strong>bittasini</strong> tanlang — bir sessiyada faqat shu variantdagi savollar chiqadi (taxminan %(slots)s ta javob o'rni)."
+msgstr "В этом тесте <strong>%(count)s</strong> экзаменационных варианта. При старте выберите <strong>один</strong> — в сессии будут только вопросы этого варианта (примерно %(slots)s ответов)."
+
+msgid "Topildi: %(n)s ta resurs"
+msgid_plural "Topildi: %(n)s ta resurs"
+msgstr[0] "Найдено: %(n)s ресурс"
+msgstr[1] "Найдено: %(n)s ресурса"
+msgstr[2] "Найдено: %(n)s ресурсов"
+
+#, python-format
+msgid "%(name)s testlari"
+msgstr "Тесты %(name)s"
+
+msgid "Reading testlari"
+msgstr "Тесты Reading"
+
+msgid "Listening testlari"
+msgstr "Тесты Listening"
+
+msgid "Writing testlari"
+msgstr "Тесты Writing"
+
+msgid "Grammar testlari"
+msgstr "Тесты Grammar"
+
+msgid "Speaking testlari"
+msgstr "Тесты Speaking"
+
+msgid "IELTS Reading testlari"
+msgstr "Тесты IELTS Reading"
+
+msgid "IELTS Listening testlari"
+msgstr "Тесты IELTS Listening"
+
+msgid "IELTS Writing testlari"
+msgstr "Тесты IELTS Writing"
+
+msgid "IELTS Grammar testlari"
+msgstr "Тесты IELTS Grammar"
+
+msgid "IELTS Speaking testlari"
+msgstr "Тесты IELTS Speaking"
+
+msgid "SAT Math uchun video darslar va PDF materiallar."
+msgstr "Видеоуроки и PDF-материалы по SAT Math."
+
+msgid "SAT English uchun video darslar va PDF materiallar."
+msgstr "Видеоуроки и PDF-материалы по SAT English."
+
+msgid "SAT Oxirgi faollik"
+msgstr "Последняя активность SAT"
+
+msgid "SAT oxirgi faollik"
+msgstr "Последняя активность SAT"
+
+msgid "SAT bo'limida hali faollik yo'q."
+msgstr "В разделе SAT пока нет активности."
+
+#, python-format
+msgid "O'rtacha balingiz: <strong>%(score)s%%</strong>"
+msgstr "Ваш средний балл: <strong>%(score)s%%</strong>"
+
+msgid "Savol"
+msgstr "Вопрос"
+
+msgid "Savol rasmi"
+msgstr "Изображение вопроса"
+
+msgid "Audio eshiting:"
+msgstr "Прослушайте аудио:"
+
+msgid "Bu savol uchun audio qismini eshitish uchun quyidagi tugmani bosing."
+msgstr "Нажмите кнопку ниже, чтобы прослушать фрагмент аудио к этому вопросу."
+
+msgid "s dan eshitish"
+msgstr "с — слушать"
+
+msgid "Admin panelda options_json ni to'ldiring (items, options)."
+msgstr "Заполните options_json в админ-панели (items, options)."
+
+msgid "Admin panelda options_json ni to'ldiring (options ro'yxati)."
+msgstr "Заполните options_json в админ-панели (список options)."
+
+msgid "Video/PDF saqlangan"
+msgstr "Сохранено видео/PDF"
+
+#, python-format
+msgid "%(n)s ta resurs"
+msgid_plural "%(n)s ta resurs"
+msgstr[0] "%(n)s ресурс"
+msgstr[1] "%(n)s ресурса"
+msgstr[2] "%(n)s ресурсов"
+
+msgid "PDF ko'rish"
+msgstr "Открыть PDF"
+
+msgid "Oxirgi tanlov"
+msgstr "Последний выбор"
+
+msgid "Barchasini tozalash"
+msgstr "Очистить все"
+
+msgid "Tanlangan turini tozalash"
+msgstr "Очистить выбранный тип"
+
+msgid "Video"
+msgstr "Видео"
+
+msgid "Progress"
+msgstr "Прогресс"
+
+msgid "Ko'rsatma/savol matnini tanlang"
+msgstr "Выделите инструкцию или текст вопроса"
+
+msgid "Oldingi va keyingi savol"
+msgstr "Предыдущий и следующий вопрос"
+
+msgid "Oldingi savol"
+msgstr "Предыдущий вопрос"
+
+msgid "Keyingi savol"
+msgstr "Следующий вопрос"
+
+#, python-format
+msgid "%(n)s ta savol"
+msgid_plural "%(n)s ta savol"
+msgstr[0] "%(n)s вопрос"
+msgstr[1] "%(n)s вопроса"
+msgstr[2] "%(n)s вопросов"
+
+msgid "Kichiklashtirish"
+msgstr "Уменьшить"
+
+msgid "Kattalashtirish"
+msgstr "Увеличить"
+
+msgid "Tanlangan matnni sariq bilan ajratish"
+msgstr "Выделить выбранный текст жёлтым"
+
+msgid "Flashcardga saqlash"
+msgstr "Сохранить во флешкарту"
+
+msgid "Oldingi rasm"
+msgstr "Предыдущее изображение"
+
+msgid "Keyingi rasm"
+msgstr "Следующее изображение"
+
+msgid "<strong>{n}</strong> so'z yetishmayapti (min {min})."
+msgstr "Не хватает <strong>{n}</strong> слов (мин. {min})."
+
+msgid "So'z soni yetarli — endi tuzilma va aniqilikka e'tibor bering."
+msgstr "Слов достаточно — теперь следите за структурой и точностью."
+
+msgid "Kamida <strong>2 paragraf</strong> bo'lishi kerak (bo'sh qator bilan ajrating)."
+msgstr "Нужно минимум <strong>2 абзаца</strong> (разделяйте пустой строкой)."
+
+msgid "Task 1: <strong>overview</strong> gapini qo'shing (Overall, / In general, ...)."
+msgstr "Task 1: добавьте предложение <strong>overview</strong> (Overall, / In general, ...)."
+
+msgid "Trendlarni <strong>taqqoslang</strong> (while, whereas, compared to)."
+msgstr "<strong>Сравните</strong> тренды (while, whereas, compared to)."
+
+msgid "Task 2: aniq <strong>pozitsiya</strong> bering (In my opinion, / I believe that ...)."
+msgstr "Task 2: чётко обозначьте <strong>позицию</strong> (In my opinion, / I believe that ...)."
+
+msgid "Paragraflarni <strong>bog'lovchi</strong> so'zlar bilan ulang (However, Furthermore, ...)."
+msgstr "Свяжите абзацы <strong>связующими</strong> словами (However, Furthermore, ...)."
+
+msgid "Yakuniy paragrafda <strong>xulosa</strong> bering (In conclusion, ...)."
+msgstr "В последнем абзаце дайте <strong>вывод</strong> (In conclusion, ...)."
+
+msgid "Resurslar"
+msgstr "Ресурсы"
+
+msgid "o'rtacha"
+msgstr "средний"
+
+msgid "Trend"
+msgstr "Тренд"
+
+msgid "Writing band grafigi"
+msgstr "График Writing band"
+
+msgid "Test natijalari sahifalari"
+msgstr "Страницы результатов тестов"
+
+msgid "Oldingi sahifa"
+msgstr "Предыдущая страница"
+
+msgid "Keyingi sahifa"
+msgstr "Следующая страница"
+
+#, python-format
+msgid "%(tests)s test · %(score)s%% o'rtacha · %(videos)s video"
+msgstr "%(tests)s тест · %(score)s%% средний · %(videos)s видео"
+
+#, python-format
+msgid "%(tests)s test · %(score)s%% · %(videos)s video · %(days)s kun"
+msgstr "%(tests)s тест · %(score)s%% · %(videos)s видео · %(days)s дн."
+
+#, python-format
+msgid "Jami <strong>%(n)s</strong> ta natija"
+msgid_plural "Jami <strong>%(n)s</strong> ta natija"
+msgstr[0] "Всего <strong>%(n)s</strong> результат"
+msgstr[1] "Всего <strong>%(n)s</strong> результата"
+msgstr[2] "Всего <strong>%(n)s</strong> результатов"
+
+#, python-format
+msgid "Sahifa %(page)s/%(pages)s"
+msgstr "Страница %(page)s/%(pages)s"
+
+#, python-format
+msgid "%(name)s bo'yicha %(diff)s darajadagi test. Barcha savol turlarini o'z ichiga oladi."
+msgstr "Тест %(name)s, уровень: %(diff)s. Включает все типы вопросов."
+
+#, python-format
+msgid "%(name)s bo'yicha %(diff)s darajadagi amaliy test. %(n)s ta savol."
+msgstr "Практический тест %(name)s, уровень: %(diff)s. %(n)s вопросов."
+
+#, python-format
+msgid "Bu test «%(label)s» savol turi uchun namuna. Admin da shu testga o'xshab yangi test yarating."
+msgstr "Этот тест — образец типа «%(label)s». В админке создайте новый тест по этому образцу."
+
+msgid "asosiy"
+msgstr "базовый"
+
+msgid "akademik"
+msgstr "академический"
+
+#, python-format
+msgid "(Variant %(n)s)"
+msgstr "(Вариант %(n)s)"
+
+msgid "O'tmagan"
+msgstr "Не сдан"
+
+msgid "Export:"
+msgstr "Экспорт:"
+
+msgid "Grammatika / imlo"
+msgstr "Грамматика / орфография"
+
+msgid "Listening partlari"
+msgstr "Части Listening"
+
+#, python-format
+msgid "Part %(n)s ga o'tish"
+msgstr "Перейти к Part %(n)s"
+
+msgid "Taskga o'tish"
+msgstr "Перейти к Task"
+
+msgid "Partga o'tish"
+msgstr "Перейти к Part"
+
+msgid "Taskga o'tish:"
+msgstr "Перейти к Task:"
+
+msgid "Partga o'tish:"
+msgstr "Перейти к Part:"
+
+msgid "Tanlang: Task"
+msgstr "Выберите: Task"
+
+msgid "Tanlang: Part"
+msgstr "Выберите: Part"
+
+msgid "Admin: savol matnida [36] kabi qavslar, «Matching variantlar» (a|matn) va «Matching to'g'ri javob» (1:f, 2:e) kiriting."
+msgstr "Админ: в тексте вопроса укажите скобки вроде [36], «Matching variantlar» (a|текст) и «Matching to'g'ri javob» (1:f, 2:e)."
+
+#, python-format
+msgid "%(n)s ta test topildi"
+msgid_plural "%(n)s ta test topildi"
+msgstr[0] "Найден %(n)s тест"
+msgstr[1] "Найдено %(n)s теста"
+msgstr[2] "Найдено %(n)s тестов"
+
+#, python-format
+msgid "%(n)s ta video topildi"
+msgid_plural "%(n)s ta video topildi"
+msgstr[0] "Найдено %(n)s видео"
+msgstr[1] "Найдено %(n)s видео"
+msgstr[2] "Найдено %(n)s видео"
+
+msgid "Saqlandi"
+msgstr "Сохранено"
+
+msgid "Bu gapni qanday yaxshilayman? Was: «{original}» → Better: «{corrected}»"
+msgstr "Как улучшить это предложение? Was: «{original}» → Better: «{corrected}»"

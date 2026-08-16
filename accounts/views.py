@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from .forms import OTPLoginForm
 from .models import UserOTP
 from core.models import UserActivity
@@ -42,7 +43,7 @@ def login_view(request):
                         session_key=active_session_key,
                         expire_date__gt=timezone.now()
                     ).exists():
-                        error_msg = "Bu kod bilan allaqachon tizimga kirilgan. Avval oldingi sessiyadan chiqing."
+                        error_msg = _("Bu kod bilan allaqachon tizimga kirilgan. Avval oldingi sessiyadan chiqing.")
                         if request.headers.get('HX-Request'):
                             form.add_error('otp_code', error_msg)
                         else:
@@ -67,7 +68,7 @@ def login_view(request):
                         metadata={'ip': request.META.get('REMOTE_ADDR')}
                     )
                     
-                    messages.success(request, 'Muvaffaqiyatli kirdingiz!')
+                    messages.success(request, _('Muvaffaqiyatli kirdingiz!'))
                     
                     # HTMX request bo'lsa JSON qaytarish
                     if request.headers.get('HX-Request'):
@@ -78,13 +79,13 @@ def login_view(request):
                     
                     return redirect('core:module_selector')
                 else:
-                    error_msg = "Noto'g'ri kod."
+                    error_msg = _("Noto'g'ri kod.")
                     if request.headers.get('HX-Request'):
                         form.add_error('otp_code', error_msg)
                     else:
                         messages.error(request, error_msg)
             except User.DoesNotExist:
-                error_msg = "Bunday foydalanuvchi topilmadi."
+                error_msg = _("Bunday foydalanuvchi topilmadi.")
                 if request.headers.get('HX-Request'):
                     form.add_error('username', error_msg)
                 else:
@@ -104,5 +105,5 @@ def logout_view(request):
             access.active_session_key = None
             access.save(update_fields=['active_session_key', 'updated_at'])
     logout(request)
-    messages.success(request, 'Tizimdan chiqdingiz.')
+    messages.success(request, _('Tizimdan chiqdingiz.'))
     return redirect('accounts:login')

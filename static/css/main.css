@@ -2283,9 +2283,8 @@ footer p {
 }
 
 .test-detail-stat small {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
     color: var(--gray-500);
     font-weight: 600;
 }
@@ -2395,6 +2394,13 @@ footer p {
     border-radius: 999px;
     background: #fff;
     vertical-align: middle;
+}
+.site-lang-toggle {
+    margin: 0;
+}
+.site-lang-toggle .ai-lang-toggle__btn {
+    -webkit-appearance: none;
+    appearance: none;
 }
 .ai-lang-toggle__label {
     font-size: 0.68rem;

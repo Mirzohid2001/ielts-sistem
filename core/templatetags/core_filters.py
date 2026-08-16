@@ -1,18 +1,102 @@
 from django import template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
+from django.utils.translation import get_language, gettext
 import json
 import re
 
+from core.services.ai_language import LANG_RU, normalize_ai_lang
 from core.services.essay_highlight import build_highlighted_essay_html
 
 register = template.Library()
 
+_APOS = r"['’ʻʼ‘]"
+_TESTLARI_RE = re.compile(r'^(?P<name>.+?)\s+testlari\.?$', re.IGNORECASE)
+_LEVEL_TEST_RE = re.compile(
+    rf"^(?P<name>.+?) bo{_APOS}yicha (?P<diff>.+?) darajadagi test\. "
+    rf"Barcha savol turlarini o{_APOS}z ichiga oladi\.?$",
+    re.IGNORECASE,
+)
+_AMALIY_TEST_RE = re.compile(
+    rf"^(?P<name>.+?) bo{_APOS}yicha (?P<diff>.+?) darajadagi amaliy test\. "
+    r"(?P<n>\d+) ta savol\.?$",
+    re.IGNORECASE,
+)
+_NAMUNA_TEST_RE = re.compile(
+    rf"^Bu test «(?P<label>.+?)» savol turi uchun namuna\. "
+    rf"Admin da shu testga o{_APOS}xshab yangi test yarating\.?$",
+    re.IGNORECASE,
+)
+_DIFF_MSGIDS = {
+    'easy': 'Oson',
+    'medium': "O'rta",
+    'hard': 'Qiyin',
+    'oson': 'Oson',
+    "o'rta": "O'rta",
+    'o‘rta': "O'rta",
+    'qiyin': 'Qiyin',
+    'asosiy': 'asosiy',
+    'akademik': 'akademik',
+}
+
+
+def _diff_label(diff):
+    key = (diff or '').strip().lower().replace('‘', "'").replace('’', "'")
+    msgid = _DIFF_MSGIDS.get(key)
+    if msgid:
+        return gettext(msgid)
+    translated = gettext(diff)
+    return translated if translated != diff else diff
+
+
+@register.filter
+def site_t(value):
+    """Bazadagi o'zbekcha UI matnini sayt tiliga o'giradi (masalan: Reading testlari)."""
+    if value is None:
+        return ''
+    text = str(value).strip()
+    if not text:
+        return text
+    translated = gettext(text)
+    if translated != text:
+        return translated
+    lang = (get_language() or 'uz')[:2]
+    if lang == 'uz':
+        return text
+    match = _TESTLARI_RE.match(text)
+    if match:
+        return gettext('%(name)s testlari') % {'name': match.group('name').strip()}
+    match = _LEVEL_TEST_RE.match(text)
+    if match:
+        return gettext(
+            "%(name)s bo'yicha %(diff)s darajadagi test. Barcha savol turlarini o'z ichiga oladi."
+        ) % {
+            'name': match.group('name').strip(),
+            'diff': _diff_label(match.group('diff')),
+        }
+    match = _AMALIY_TEST_RE.match(text)
+    if match:
+        return gettext(
+            "%(name)s bo'yicha %(diff)s darajadagi amaliy test. %(n)s ta savol."
+        ) % {
+            'name': match.group('name').strip(),
+            'diff': _diff_label(match.group('diff')),
+            'n': match.group('n'),
+        }
+    match = _NAMUNA_TEST_RE.match(text)
+    if match:
+        return gettext(
+            "Bu test «%(label)s» savol turi uchun namuna. Admin da shu testga o'xshab yangi test yarating."
+        ) % {'label': match.group('label').strip()}
+    return text
+
 
 @register.simple_tag(takes_context=True)
 def ai_t(context, uz, ru):
-    """AI UI matni: natija tiliga qarab o'zbekcha yoki ruscha."""
-    lang = str(context.get('ai_lang') or '').strip().lower()
+    """AI/UI matni: sayt tiliga qarab o'zbekcha yoki ruscha."""
+    lang = str(context.get('ai_lang') or context.get('site_lang') or '').strip().lower()
+    if not lang:
+        lang = get_language() or ''
     if not lang:
         for key in ('test_result', 'feedback', 'explanation', 'insight'):
             obj = context.get(key)
@@ -22,7 +106,7 @@ def ai_t(context, uz, ru):
             lang = str(getattr(tr, 'ai_language', '') or '').strip().lower()
             if lang:
                 break
-    return ru if lang == 'ru' else uz
+    return ru if normalize_ai_lang(lang) == LANG_RU else uz
 
 
 @register.filter

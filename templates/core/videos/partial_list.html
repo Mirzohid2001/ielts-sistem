@@ -14,11 +14,11 @@
                 </div>
                 <div>
                     <h2 class="videos-panel__title">{{ category.name }}</h2>
-                    <p class="videos-panel__sub">{{ category_videos.count }} ta video</p>
+                    <p class="videos-panel__sub">{{ category_videos.count }} {% trans "ta video" %}</p>
                 </div>
             </div>
             <a href="{% url 'core:video_list' %}?category={{ category.slug }}" class="videos-panel__link">
-                Barchasini ko'rish <i class="fas fa-arrow-right"></i>
+                {% trans "Barchasini ko'rish" %} <i class="fas fa-arrow-right"></i>
             </a>
         </header>
         <div class="videos-panel__body">
@@ -34,10 +34,10 @@
     {% empty %}
     <div class="videos-empty">
         <div class="videos-empty__icon"><i class="fas fa-video"></i></div>
-        <h3 class="videos-empty__title">Hozircha videolar yo'q</h3>
-        <p class="videos-empty__text">Tez orada yangi video darslar qo'shiladi. Bosh sahifaga qaytib, testlar bilan mashq qiling.</p>
+        <h3 class="videos-empty__title">{% trans "Hozircha videolar yo'q" %}</h3>
+        <p class="videos-empty__text">{% trans "Tez orada yangi video darslar qo'shiladi. Bosh sahifaga qaytib, testlar bilan mashq qiling." %}</p>
         <a href="{% url 'core:test_list' %}" class="btn btn-primary">
-            <i class="fas fa-clipboard-list me-2"></i>Testlarga o'tish
+            <i class="fas fa-clipboard-list me-2"></i>{% trans "Testlarga o'tish" %}
         </a>
     </div>
     {% endfor %}
@@ -52,10 +52,10 @@
         <div class="col-12">
             <div class="videos-empty">
                 <div class="videos-empty__icon"><i class="fas fa-search"></i></div>
-                <h3 class="videos-empty__title">Videolar topilmadi</h3>
-                <p class="videos-empty__text">Qidiruv so'zini o'zgartiring yoki boshqa kategoriyani tanlang.</p>
+                <h3 class="videos-empty__title">{% trans "Videolar topilmadi" %}</h3>
+                <p class="videos-empty__text">{% trans "Qidiruv so'zini o'zgartiring yoki boshqa kategoriyani tanlang." %}</p>
                 <a href="{% url 'core:video_list' %}" class="btn btn-outline-primary">
-                    <i class="fas fa-times me-2"></i>Filtrlarni tozalash
+                    <i class="fas fa-times me-2"></i>{% trans "Filtrlarni tozalash" %}
                 </a>
             </div>
         </div>
@@ -69,7 +69,7 @@
             <li class="page-item">
                 <a class="page-link"
                    href="?page={{ videos.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
-                    <i class="fas fa-chevron-left me-1"></i>Oldingi
+                    <i class="fas fa-chevron-left me-1"></i>{% trans "Oldingi" %}
                 </a>
             </li>
             {% endif %}
@@ -83,7 +83,7 @@
             <li class="page-item">
                 <a class="page-link"
                    href="?page={{ videos.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
-                    Keyingi<i class="fas fa-chevron-right ms-1"></i>
+                    {% trans "Keyingi" %}<i class="fas fa-chevron-right ms-1"></i>
                 </a>
             </li>
             {% endif %}
@@ -93,10 +93,10 @@
     {% else %}
     <div class="videos-empty">
         <div class="videos-empty__icon"><i class="fas fa-video"></i></div>
-        <h3 class="videos-empty__title">Hozircha videolar yo'q</h3>
-        <p class="videos-empty__text">Tez orada yangi video darslar qo'shiladi. Bosh sahifaga qaytib, testlar bilan mashq qiling.</p>
+        <h3 class="videos-empty__title">{% trans "Hozircha videolar yo'q" %}</h3>
+        <p class="videos-empty__text">{% trans "Tez orada yangi video darslar qo'shiladi. Bosh sahifaga qaytib, testlar bilan mashq qiling." %}</p>
         <a href="{% url 'core:test_list' %}" class="btn btn-primary">
-            <i class="fas fa-clipboard-list me-2"></i>Testlarga o'tish
+            <i class="fas fa-clipboard-list me-2"></i>{% trans "Testlarga o'tish" %}
         </a>
     </div>
     {% endif %}
