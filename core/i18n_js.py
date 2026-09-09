@@ -87,6 +87,12 @@ JS_STRINGS = (
     "Oxirgi tanlov",
     "<strong>{n}</strong> so'z yetishmayapti (min {min}).",
     "So'z soni yetarli — endi tuzilma va aniqilikka e'tibor bering.",
+    "Diqqat! Testga 5 daqiqa qoldi.",
+    "Diqqat! Testga 1 daqiqa qoldi.",
+    "Vaqt tugadi!",
+    "Test vaqti yakunlandi. Javoblaringiz avtomatik yuborilmoqda.",
+    "Yuborish",
+    "Yuborilmoqda...",
 )
 
 

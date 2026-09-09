@@ -1855,3 +1855,24 @@ msgstr "Сохранено"
 
 msgid "Bu gapni qanday yaxshilayman? Was: «{original}» → Better: «{corrected}»"
 msgstr "Как улучшить это предложение? Was: «{original}» → Better: «{corrected}»"
+
+msgid "Vaqt tugadi!"
+msgstr "Время вышло!"
+
+msgid "Test vaqti yakunlandi. Javoblaringiz avtomatik yuborilmoqda."
+msgstr "Время теста закончилось. Ваши ответы отправляются автоматически."
+
+msgid "Yuborish"
+msgstr "Отправить"
+
+msgid "Yuborilmoqda..."
+msgstr "Отправляется..."
+
+msgid "Diqqat! Testga 5 daqiqa qoldi."
+msgstr "Внимание! До конца теста осталось 5 минут."
+
+msgid "Diqqat! Testga 1 daqiqa qoldi."
+msgstr "Внимание! До конца теста осталась 1 минута."
+
+msgid "Vaqt tugadi. Test avtomatik yakunlandi."
+msgstr "Время вышло. Тест завершён автоматически."

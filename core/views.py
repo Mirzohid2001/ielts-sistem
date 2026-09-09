@@ -1595,6 +1595,9 @@ def test_take(request, pk):
                 prepare_answer_explanation_placeholders(test_result)
                 schedule_answer_explanations(test_result.pk)
 
+            if request.POST.get('time_expired') == '1':
+                messages.warning(request, gettext('Vaqt tugadi. Test avtomatik yakunlandi.'))
+
             return redirect('core:test_result', pk=test_result.pk)
         else:
             messages.success(request, gettext("Javoblar saqlandi."))

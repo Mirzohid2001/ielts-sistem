@@ -181,7 +181,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Cache busting for CSS/JS — bump after changing static assets (or set STATIC_ASSET_VERSION env on deploy).
-STATIC_ASSET_VERSION = os.environ.get('STATIC_ASSET_VERSION', '21')
+STATIC_ASSET_VERSION = os.environ.get('STATIC_ASSET_VERSION', '22')
 
 # Media files
 
