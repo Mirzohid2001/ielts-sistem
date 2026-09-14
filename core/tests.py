@@ -312,6 +312,8 @@ class BuildReviewItemsTests(TestCase):
         self.assertEqual(len(items), 3)
         self.assertEqual(items[0]['slot_label'], '[1]')
         self.assertEqual(items[1]['slot_label'], '[2]')
+        self.assertEqual(items[1]['paper_num'], 2)
+        self.assertEqual(items[1]['ui_num'], 2)
         self.assertEqual(items[1]['review_layout'], 'inline_blank')
         self.assertIn('Rent per week', items[1]['slot_context'])
         self.assertIn('[2]', items[1]['slot_context'])
@@ -320,6 +322,23 @@ class BuildReviewItemsTests(TestCase):
         self.assertFalse(items[0]['show_question_text'])
         self.assertFalse(items[1]['show_question_text'])
         self.assertIn('tr-blank-mark', str(items[1]['slot_context_html']))
+
+    def test_blank_edges_get_padding_when_source_has_no_spaces(self):
+        from core.test_session_helpers import fill_review_slot_meta
+
+        q = type('Q', (), {
+            'question_type': 'summary_completion',
+            'question_text': 'Although sounds are never[20]he believes they do share some similarities.',
+            'options_json': {},
+        })()
+        meta = fill_review_slot_meta(q, 0, 1)
+        self.assertEqual(meta['slot_placeholder'], '[20]')
+        self.assertEqual(meta['paper_num'], 20)
+        self.assertTrue(meta['slot_before'].endswith(' '))
+        self.assertTrue(meta['slot_after'].startswith(' '))
+        self.assertIn('never ', meta['slot_before'] + 'x')
+        joined = f"{meta['slot_before']}identical{meta['slot_after']}"
+        self.assertIn('never identical he', joined)
 
     def test_short_answer_items_use_prompt_as_context(self):
         from core.test_session_helpers import build_review_items

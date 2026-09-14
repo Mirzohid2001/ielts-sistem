@@ -234,14 +234,16 @@
                     <article class="tr-q tr-q--{{ card_state }} tr-q--animate{% if item.review_layout == 'inline_blank' or item.review_layout == 'prompt' %} tr-q--slot{% endif %}{% if card_state == 'correct' %} tr-q--pulse-once{% endif %}"
                              style="--rq-i: {{ forloop.counter0 }};"
                              data-review-state="{{ card_state }}"
-                             data-search-text="javob {{ item.display_num }} {{ question.question_text|striptags }} {{ item.slot_label }} {{ item.slot_context }} {{ item.user_part }} {{ item.correct_part }} {{ question.get_question_type_display }}">
+                             data-search-text="javob {{ item.ui_num|default:item.display_num }} {{ question.question_text|striptags }} {{ item.slot_label }} {{ item.slot_context }} {{ item.user_part }} {{ item.correct_part }} {{ question.get_question_type_display }}">
                         <div class="tr-q__bar"></div>
                         <div class="tr-q__inner">
                             <div class="tr-q__head">
-                                <div class="tr-q__num">{{ item.display_num }}</div>
+                                <div class="tr-q__num">{{ item.ui_num|default:item.display_num }}</div>
                                 <div class="tr-q__meta">
                                     <strong>
-                                        {% if item.slot_label %}
+                                        {% if item.paper_num %}
+                                        {% blocktrans with n=item.paper_num %}Javob {{ n }}{% endblocktrans %}
+                                        {% elif item.slot_label %}
                                         <span class="tr-q__blank-pill">{{ item.slot_label }}</span>
                                         {% blocktrans with n=item.parent_num %}Savol {{ n }}{% endblocktrans %}
                                         {% else %}

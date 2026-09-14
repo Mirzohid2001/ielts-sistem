@@ -406,8 +406,31 @@ def _split_context_around_placeholder(context, placeholder):
     placeholder = placeholder or ''
     if context and placeholder and placeholder in context:
         before, after = context.split(placeholder, 1)
+        before, after = _pad_blank_edges(before, after)
         return before, after, placeholder
     return context, '', placeholder
+
+
+def _pad_blank_edges(before, after):
+    """
+    Matnda [20] atrofida space bo'lmasa ham UI da so'zlar yopishib ketmasin:
+    never[20]he → never _ he
+    """
+    before = before or ''
+    after = after or ''
+    if before and before[-1] not in ' \t\n\u00a0([{/\'"“‘':
+        before = before + ' '
+    if after and after[0] not in ' \t\n\u00a0.,;:!?)]}…\'"”’':
+        after = ' ' + after
+    return before, after
+
+
+def _paper_num_from_placeholder(placeholder):
+    """[20] → 20; bo'lmasa None."""
+    m = re.match(r'^\[(\d+)\]$', (placeholder or '').strip())
+    if m:
+        return int(m.group(1))
+    return None
 
 
 def _highlight_blank_in_context(context, placeholder):
@@ -437,12 +460,14 @@ def _slot_meta_result(
     review_layout='default',
 ):
     before, after, ph = _split_context_around_placeholder(slot_context, placeholder)
+    paper_num = _paper_num_from_placeholder(ph) or _paper_num_from_placeholder(slot_label)
     return {
         'slot_label': slot_label,
         'slot_context': slot_context,
         'slot_before': before,
         'slot_after': after,
         'slot_placeholder': ph,
+        'paper_num': paper_num,
         'slot_context_html': _highlight_blank_in_context(slot_context, ph),
         'show_question_text': show_question_text,
         'review_layout': review_layout,
@@ -600,6 +625,7 @@ def build_review_items(questions, user_answers):
                     'slot_before': meta['slot_before'],
                     'slot_after': meta['slot_after'],
                     'slot_placeholder': meta['slot_placeholder'],
+                    'paper_num': meta.get('paper_num'),
                     'review_layout': meta['review_layout'],
                     'show_question_text': meta['show_question_text'],
                     'user_part': up,
@@ -710,5 +736,8 @@ def build_review_items(questions, user_answers):
     question_parent = {q.pk: i + 1 for i, q in enumerate(questions)}
     for item in items:
         item['parent_num'] = question_parent.get(item['question'].pk, 0)
+        # IELTS qog'oz raqami ([20]) bo'lsa — doira/sarlavhada shu ko'rinsin
+        paper = item.get('paper_num')
+        item['ui_num'] = int(paper) if paper else int(item.get('display_num') or 0)
 
     return items

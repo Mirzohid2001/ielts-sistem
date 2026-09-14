@@ -47,6 +47,48 @@ class RLExplanationHelpersTests(SimpleTestCase):
         self.assertGreaterEqual(len(payload['explanation']), 80)
         self.assertEqual(explanation_slot_key(item), 'q1-n1')
 
+    def test_tfng_local_uses_passage_evidence(self):
+        from core.services.ai_rl_explanation import _local_explanation, _payload_is_weak
+
+        item = {
+            'question': type('Q', (), {
+                'pk': 9,
+                'question_type': 'true_false_not_given',
+                'question_text': 'HMS Agamemnon and USS Niagara set sail from different locations on August 5, 1857.',
+                'question_instruction': '',
+            })(),
+            'user_part': 'TRUE',
+            'correct_part': 'B) FALSE',
+            'display_num': 2,
+        }
+        source = (
+            'On 5 August 1857 both HMS Agamemnon and USS Niagara left Valentia Bay together. '
+            'The ships carried cable for the Atlantic telegraph project.'
+        )
+        payload = _local_explanation(item, skill='reading', source_text=source)
+        self.assertIn('Valentia', payload['explanation'])
+        self.assertIn('FALSE', payload['explanation'])
+        self.assertTrue(payload['evidence_quote'])
+        self.assertNotEqual(payload['evidence_quote'].strip(), item['question'].question_text.strip())
+        # Yangi TFNG local endi generic emas
+        self.assertFalse(_payload_is_weak(payload))
+
+    def test_old_generic_template_is_weak(self):
+        from core.services.ai_rl_explanation import _payload_is_weak
+        weak = {
+            'explanation': (
+                "To‘g‘ri javob: «FALSE». Sizning javobingiz: «TRUE». "
+                "Bu true false not given tipida faqat o‘xshash so‘z emas — "
+                "matn/audiodagi aniq ma’no va dalil muhim. "
+                "To‘g‘ri kalitni savol konteksti bilan solishtirib tekshiring."
+            ),
+            'why_wrong': (
+                "«TRUE» noto‘g‘ri, chunki to‘g‘ri kalit «FALSE». "
+                "Synonym yoki distractorni haqiqiy dalil deb o‘ylagan bo‘lishingiz mumkin."
+            ),
+        }
+        self.assertTrue(_payload_is_weak(weak))
+
     def test_local_explanation_uses_blank_context(self):
         item = {
             'question': type('Q', (), {

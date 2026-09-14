@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import time
 from urllib import error as urllib_error
@@ -71,6 +72,13 @@ def _options_blurb(question) -> str:
     return '\n'.join(parts)[:800]
 
 
+def _answer_label(text: str) -> str:
+    """'B) FALSE' → 'FALSE'."""
+    t = (text or '').strip()
+    m = re.match(r'^[A-Da-d]\)\s*(.+)$', t)
+    return (m.group(1).strip() if m else t)
+
+
 def _item_blank_context(item) -> str:
     """FILL/notes/short_answer uchun haqiqiy kontekst qatori."""
     # Bo'sh joy atrofidagi spacelarni saqlaymiz (£ [2] → £[2] bo'lib ketmasin)
@@ -92,16 +100,42 @@ def _item_blank_context(item) -> str:
     return ((item.get('slot_label') or '').strip())[:240]
 
 
+_STOPWORDS = {
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'from',
+    'with', 'by', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'that', 'this',
+    'these', 'those', 'it', 'its', 'they', 'their', 'have', 'has', 'had', 'not',
+    'about', 'into', 'over', 'after', 'before', 'between', 'than', 'then', 'also',
+    'only', 'very', 'can', 'will', 'would', 'could', 'should', 'may', 'might',
+}
+
+
+def _keywords_from_text(text: str, *, limit=14):
+    words = re.findall(r"[A-Za-z][A-Za-z'-]{2,}", text or '')
+    out = []
+    seen = set()
+    for w in words:
+        lw = w.lower()
+        if lw in _STOPWORDS or lw in seen:
+            continue
+        seen.add(lw)
+        out.append(w)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def _find_evidence_in_text(text, needle, *, window=110) -> str:
     text = (text or '').strip()
-    needle = (needle or '').strip()
+    needle = _answer_label(needle)
     if not text or not needle or len(needle) < 2:
+        return ''
+    # TRUE/FALSE/NG ni passage dan qidirib bo'lmaydi
+    if needle.lower() in ('true', 'false', 'not given', 'yes', 'no'):
         return ''
     low = text.lower()
     key = needle.lower()
     idx = low.find(key)
     if idx < 0 and ' ' in key:
-        # birinchi so'z bilan qidirish
         idx = low.find(key.split()[0])
     if idx < 0:
         return ''
@@ -115,32 +149,81 @@ def _find_evidence_in_text(text, needle, *, window=110) -> str:
     return snippet[:220]
 
 
-def _passage_excerpt_for_question(test, question, limit=1600) -> str:
+def _split_sentences(text: str):
+    parts = re.split(r'(?<=[.!?])\s+|\n+', text or '')
+    return [p.strip() for p in parts if p and p.strip()]
+
+
+def _all_passage_text(test) -> str:
     try:
         passages = test.get_reading_passages() or []
     except Exception:
         passages = []
-    if not passages:
-        text = (getattr(test, 'reading_text', None) or '').strip()
-        return text[:limit]
-
+    chunks = []
     flat = []
     for p in passages:
         if isinstance(p, list):
             flat.extend(p)
         elif isinstance(p, dict):
             flat.append(p)
-    if not flat:
-        return ''
+    for chosen in flat:
+        title = (chosen.get('title') or '').strip()
+        body = (chosen.get('text') or '').strip()
+        if title and body:
+            chunks.append(f'{title}\n{body}')
+        elif body:
+            chunks.append(body)
+        elif title:
+            chunks.append(title)
+    if chunks:
+        return '\n\n'.join(chunks)
+    return (getattr(test, 'reading_text', None) or '').strip()
 
-    order = int(getattr(question, 'order', 0) or 0)
-    total_q = max(1, test.questions.count())
-    idx = min(len(flat) - 1, max(0, (order - 1) * len(flat) // total_q))
-    chosen = flat[idx]
-    title = (chosen.get('title') or '').strip()
-    body = (chosen.get('text') or '').strip()
-    combined = f"{title}\n{body}".strip() if title else body
-    return combined[:limit]
+
+def _relevant_passage_snippets(passage_text: str, query_text: str, *, limit=1500) -> str:
+    """Savol kalit so'zlari bo'yicha eng mos gaplarni ajratib oladi."""
+    passage_text = (passage_text or '').strip()
+    if not passage_text:
+        return ''
+    keywords = _keywords_from_text(query_text)
+    if not keywords:
+        return passage_text[:limit]
+
+    sentences = _split_sentences(passage_text)
+    if not sentences:
+        return passage_text[:limit]
+
+    scored = []
+    low_keys = [k.lower() for k in keywords]
+    for i, sent in enumerate(sentences):
+        low = sent.lower()
+        hit = sum(1 for k in low_keys if k in low)
+        if hit:
+            # qo'shni gaplar bilan biroz kontekst
+            scored.append((hit, i, sent))
+    if not scored:
+        return passage_text[:limit]
+
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    chosen_idx = sorted({i for _, i, _ in scored[:8]})
+    # expand neighbors
+    expanded = set()
+    for i in chosen_idx:
+        for j in (i - 1, i, i + 1):
+            if 0 <= j < len(sentences):
+                expanded.add(j)
+    pieces = [sentences[i] for i in sorted(expanded)]
+    out = ' '.join(pieces).strip()
+    return out[:limit] if out else passage_text[:limit]
+
+
+def _passage_excerpt_for_question(test, question, limit=1600) -> str:
+    full = _all_passage_text(test)
+    if not full:
+        return ''
+    qtext = (getattr(question, 'question_text', None) or '').strip()
+    relevant = _relevant_passage_snippets(full, qtext, limit=limit)
+    return relevant or full[:limit]
 
 
 def _source_material_for_item(test, item, *, skill) -> str:
@@ -151,12 +234,12 @@ def _source_material_for_item(test, item, *, skill) -> str:
         chunks.append(f'Blank line: {blank}')
     qtext = (getattr(q, 'question_text', None) or '').strip()
     if qtext:
-        chunks.append(qtext[:900])
+        chunks.append(f'Statement/question: {qtext[:900]}')
     if skill == 'reading':
-        passage = _passage_excerpt_for_question(test, q)
+        passage = _passage_excerpt_for_question(test, q, limit=1600)
         if passage:
-            chunks.append(passage)
-    return '\n---\n'.join(chunks)[:2200]
+            chunks.append(f'Relevant passage evidence:\n{passage}')
+    return '\n---\n'.join(chunks)[:2400]
 
 
 _QTYPE_TIP_UZ = {
@@ -202,7 +285,8 @@ _QTYPE_TIP_RU = {
 
 def _local_explanation(item, *, skill='reading', source_text='') -> dict:
     user = (item.get('user_part') or '').strip()
-    correct = (item.get('correct_part') or '').strip() or '—'
+    correct_raw = (item.get('correct_part') or '').strip() or '—'
+    correct = _answer_label(correct_raw) or correct_raw
     q = item['question']
     qtype = getattr(q, 'question_type', '') or 'question'
     tip = _QTYPE_TIP_UZ.get(qtype, 'Savol turiga qarab matndan (yoki audiodan) aniq dalil toping.')
@@ -211,14 +295,79 @@ def _local_explanation(item, *, skill='reading', source_text='') -> dict:
     ):
         tip = 'Listeningda keyword eshitilganda yozib boring; oldin/keyin aytilgan distractorlarga aldanning.'
 
-    user_disp = user if user else '(javob bermadingiz)'
+    user_disp = _answer_label(user) if user else '(javob bermadingiz)'
+    if not user:
+        user_disp = '(javob bermadingiz)'
     blank = _item_blank_context(item)
-    evidence = _find_evidence_in_text(source_text, correct) if source_text else ''
-    if not evidence and blank:
+    statement = (getattr(q, 'question_text', '') or '').strip()
+
+    # Passage dan statement kalitlari bo'yicha dalil
+    evidence = ''
+    if source_text:
+        evidence = _relevant_passage_snippets(source_text, statement or blank, limit=220)
+        if evidence and statement and evidence.strip() == statement.strip():
+            evidence = ''
+        if not evidence:
+            evidence = _find_evidence_in_text(source_text, correct)
+    if not evidence and blank and (item.get('review_layout') or '') != 'prompt':
         evidence = blank[:180]
-    if not evidence:
-        qtext = (getattr(q, 'question_text', '') or '').strip()
-        evidence = (qtext[:140] + ('…' if len(qtext) > 140 else '')) if qtext else ''
+
+    tfng_types = ('true_false', 'true_false_not_given', 'yes_no_not_given')
+    if qtype in tfng_types:
+        correct_up = correct.upper()
+        user_up = user_disp.upper() if user else ''
+        if evidence:
+            explanation = (
+                f"Gap: «{statement}». "
+                f"Matndagi dalil: «{evidence}». "
+                f"Shu dalilga ko‘ra to‘g‘ri javob — «{correct}»"
+                + (
+                    f", chunki gap matndagi faktga zid (FALSE/NO)."
+                    if correct_up in ('FALSE', 'NO')
+                    else (
+                        ", chunki matnda bu ma’lumot umuman yo‘q (NOT GIVEN)."
+                        if 'NOT GIVEN' in correct_up
+                        else ", chunki matn gapni to‘g‘ridan-to‘g‘ri tasdiqlaydi (TRUE/YES)."
+                    )
+                )
+                + f" Siz «{user_disp}» deb belgilagansiz — bu tanlov matn daliliga mos kelmaydi."
+            )
+            why = (
+                f"«{user_disp}» xato: siz gapni matndagi aniq fakt bilan solishtirmagansiz. "
+                f"Dalil («{evidence[:120]}») «{correct}» ni ko‘rsatadi."
+            )
+            trap = (
+                f"«{user_disp}» tuzog‘i: o‘xshash so‘z/sana ko‘rinishi bilan TRUE/YES deb o‘ylash. "
+                "Avval gapdagi HAR bir da’voni (joy, sana, miqdor) matndan tekshiring."
+                if user
+                else "Bo‘sh qoldirish — ball yo‘qoladi; matndan dalil topib tanlang."
+            )
+        else:
+            explanation = (
+                f"Gap: «{statement}». To‘g‘ri javob — «{correct}», sizniki — «{user_disp}». "
+                f"TF/NG da har bir da’vo (joy, sana, sabab) matndan alohida tasdiqlanishi kerak. "
+                f"FALSE/NO = matnda zid fakt bor; NOT GIVEN = bu haqda matnda hech narsa yo‘q; "
+                f"TRUE/YES = matn gapni to‘liq tasdiqlaydi."
+            )
+            why = (
+                f"«{user_disp}» noto‘g‘ri tanlangan; kalit «{correct}». "
+                "Ehtimol bitta o‘xshash so‘zni ko‘rib, butun gapni tasdiqlangan deb o‘yladingiz."
+                if user
+                else f"Javob berilmagan; to‘g‘ri kalit «{correct}» edi."
+            )
+            trap = (
+                "Eng ko‘p tuzoq: gapdagi bir qism to‘g‘ri, qolgani zid/yo‘q — baribir FALSE yoki NOT GIVEN."
+            )
+        return {
+            'explanation': explanation,
+            'why_wrong': why,
+            'tip': tip,
+            'evidence_quote': evidence[:400],
+            'trap': trap,
+            'provider_name': 'local',
+            'model_name': 'heuristic-rl-v4',
+            'raw_response_json': {'provider': 'local', 'ai_language': 'uz'},
+        }
 
     if blank:
         if (item.get('review_layout') or '') == 'prompt':
@@ -266,7 +415,7 @@ def _local_explanation(item, *, skill='reading', source_text='') -> dict:
         )
 
     trap = ''
-    if user and correct and user.lower() != correct.lower():
+    if user and correct and user_disp.lower() != correct.lower():
         trap = (
             f"«{user_disp}» ko‘pincha chalg‘ituvchi variant — uni «{blank or 'savol'}» "
             "kontekstida matndan tasdiqlamasdan tanlamang."
@@ -281,7 +430,7 @@ def _local_explanation(item, *, skill='reading', source_text='') -> dict:
         'evidence_quote': evidence,
         'trap': trap,
         'provider_name': 'local',
-        'model_name': 'heuristic-rl-v3',
+        'model_name': 'heuristic-rl-v4',
         'raw_response_json': {'provider': 'local', 'ai_language': 'uz'},
     }
 
@@ -289,11 +438,15 @@ def _local_explanation(item, *, skill='reading', source_text='') -> dict:
 def _local_explanation_ru(item, *, skill='reading', base=None, source_text='') -> dict:
     payload = dict(base or {})
     user = (item.get('user_part') or '').strip()
-    correct = (item.get('correct_part') or '').strip() or '—'
-    user_disp = user if user else '(нет ответа)'
+    correct_raw = (item.get('correct_part') or '').strip() or '—'
+    correct = _answer_label(correct_raw) or correct_raw
+    user_disp = _answer_label(user) if user else '(нет ответа)'
+    if not user:
+        user_disp = '(нет ответа)'
     q = item['question']
     qtype = getattr(q, 'question_type', '') or 'question'
     blank = _item_blank_context(item)
+    statement = (getattr(q, 'question_text', '') or '').strip()
     tip = _QTYPE_TIP_RU.get(qtype, 'Найдите точное доказательство в тексте/аудио.')
     if skill == 'listening' and qtype in (
         'notes_completion', 'fill_blank', 'table_completion', 'sentence_completion', 'summary_completion',
@@ -301,10 +454,76 @@ def _local_explanation_ru(item, *, skill='reading', base=None, source_text='') -
         tip = 'На Listening сразу записывайте ключевые слова; не ведитесь на дистракторы до/после.'
 
     evidence = (payload.get('evidence_quote') or '').strip()
-    if not evidence:
-        evidence = _find_evidence_in_text(source_text, correct) if source_text else ''
-    if not evidence and blank:
+    if evidence and statement and evidence.strip() == statement.strip():
+        evidence = ''
+    if not evidence and source_text:
+        evidence = _relevant_passage_snippets(source_text, statement or blank, limit=220)
+        if evidence and statement and evidence.strip() == statement.strip():
+            evidence = ''
+        if not evidence:
+            evidence = _find_evidence_in_text(source_text, correct)
+    if not evidence and blank and (item.get('review_layout') or '') != 'prompt':
         evidence = blank[:180]
+
+    tfng_types = ('true_false', 'true_false_not_given', 'yes_no_not_given')
+    if qtype in tfng_types:
+        correct_up = correct.upper()
+        if evidence:
+            explanation = (
+                f"Утверждение: «{statement}». "
+                f"Доказательство в тексте: «{evidence}». "
+                f"По этому фрагменту правильный ответ — «{correct}»"
+                + (
+                    ", потому что утверждение противоречит тексту (FALSE/NO)."
+                    if correct_up in ('FALSE', 'NO')
+                    else (
+                        ", потому что в тексте об этом ничего нет (NOT GIVEN)."
+                        if 'NOT GIVEN' in correct_up
+                        else ", потому что текст прямо подтверждает утверждение (TRUE/YES)."
+                    )
+                )
+                + f" Вы отметили «{user_disp}» — это не совпадает с доказательством."
+            )
+            why = (
+                f"«{user_disp}» неверно: нужно сверить каждое утверждение с текстом. "
+                f"Фрагмент «{evidence[:120]}» указывает на «{correct}»."
+            )
+            trap = (
+                f"Ловушка «{user_disp}»: похожее слово/дата кажется подтверждением. "
+                "Проверяйте КАЖДУЮ деталь (место, дату, количество)."
+                if user
+                else "Пустой ответ тоже теряет балл — найдите доказательство в тексте."
+            )
+        else:
+            explanation = (
+                f"Утверждение: «{statement}». Правильный ответ — «{correct}», ваш — «{user_disp}». "
+                f"В TF/NG каждая деталь (место, дата, причина) должна быть подтверждена текстом. "
+                f"FALSE/NO = в тексте есть противоречие; NOT GIVEN = информации нет; "
+                f"TRUE/YES = текст полностью подтверждает утверждение."
+            )
+            why = (
+                f"«{user_disp}» выбрано неверно; ключ — «{correct}». "
+                "Возможно, одно похожее слово показалось доказательством всего предложения."
+                if user
+                else f"Ответа не было; правильный ключ — «{correct}»."
+            )
+            trap = (
+                "Частая ловушка: часть утверждения верна, остальное противоречит/отсутствует — "
+                "всё равно FALSE или NOT GIVEN."
+            )
+        payload.update({
+            'explanation': explanation,
+            'why_wrong': why,
+            'tip': tip,
+            'evidence_quote': evidence[:400],
+            'trap': trap,
+            'provider_name': payload.get('provider_name') or 'local',
+            'model_name': payload.get('model_name') or 'heuristic-rl-v4',
+        })
+        raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
+        raw['ai_language'] = 'ru'
+        payload['raw_response_json'] = raw
+        return payload
 
     if blank:
         if (item.get('review_layout') or '') == 'prompt':
@@ -350,7 +569,7 @@ def _local_explanation_ru(item, *, skill='reading', base=None, source_text='') -
             else f"Ответа не было; правильный ключ — «{correct}»."
         )
 
-    if user and correct and user.lower() != correct.lower():
+    if user and correct and user_disp.lower() != correct.lower():
         trap = (
             f"«{user_disp}» часто дистрактор — не выбирайте без подтверждения в контексте "
             f"«{blank or 'вопроса'}»."
@@ -367,7 +586,7 @@ def _local_explanation_ru(item, *, skill='reading', base=None, source_text='') -
         'evidence_quote': evidence or (payload.get('evidence_quote') or ''),
         'trap': trap,
         'provider_name': payload.get('provider_name') or 'local',
-        'model_name': payload.get('model_name') or 'heuristic-rl-v3',
+        'model_name': payload.get('model_name') or 'heuristic-rl-v4',
     })
     raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
     raw['ai_language'] = 'ru'
@@ -520,12 +739,14 @@ Source material (question notes and/or passage excerpt):
 {(source_material or '—')[:1800]}
 {strict_block}
 Quality rules:
-- Be specific to THIS item only. No generic filler.
+- Be specific to THIS item only. No generic filler like "check the text" or "similar words".
 - Keep English answers, quotes, and keywords in English; explain in the learner language.
 - If blank context exists, weave it into explanation (e.g. "Rent per week: £ ___").
+- For TRUE/FALSE/NOT GIVEN or YES/NO/NOT GIVEN: you MUST quote the passage sentence that proves the key, then say whether the statement matches, contradicts, or is absent.
+- evidence_quote must be from the passage/notes, NEVER a copy of the question statement alone.
 - Prefer a real evidence_quote from the source material when possible.
 - Never leave explanation or why_wrong empty.
-- Do not invent passage facts that are not in the source material; if source is thin, reason from the blank/question text.
+- Do not invent passage facts that are not in the source material; if source is thin, reason from the blank/question text and say evidence is limited.
 """
 
 
@@ -534,45 +755,48 @@ def _field_len(payload, key) -> int:
 
 
 def _payload_is_weak(payload) -> bool:
-    """Yuzaki / bo'sh AI javobini aniqlash."""
-    if _field_len(payload, 'explanation') < 90:
+    """Yuzaki / bo'sh / generic shablon javobini aniqlash."""
+    if _field_len(payload, 'explanation') < 110:
         return True
-    if _field_len(payload, 'why_wrong') < 25:
+    if _field_len(payload, 'why_wrong') < 35:
         return True
     expl = (payload.get('explanation') or '').lower()
-    weak_markers = (
+    why = (payload.get('why_wrong') or '').lower()
+    blob = f'{expl}\n{why}'
+    generic_markers = (
+        "faqat o'xshash so'z emas",
+        'faqat o‘xshash so‘z emas',
+        'matn/audiodagi aniq',
+        "to'g'ri kalitni savol konteksti",
+        'to‘g‘ri kalitni savol konteksti',
+        'synonym yoki distractorni',
         'kalitni matn/audio',
+        'совпадение смысла с текстом/аудио',
         'совпадение смысла, а не похожих',
+        'возможно, синоним или дистрактор',
         'read the text carefully',
         'check the passage',
-        'matndan (yoki audiodan) aniq dalil',
         'be more careful',
+        'matndan (yoki audiodan) aniq dalil',
     )
-    if any(m in expl for m in weak_markers) and _field_len(payload, 'explanation') < 180:
-        return True
-    return False
+    return any(m in blob for m in generic_markers)
 
 
-def _merge_explanation_payload(ai_payload, local_payload) -> dict:
-    """AI yaxshi bo'lsa saqlaydi; bo'sh/zaif maydonlarni local bilan to'ldiradi."""
+def _merge_explanation_payload(ai_payload, local_payload, *, question_text='') -> dict:
+    """AI yaxshi bo'lsa asosiy matnni oladi; aks holda local (passage-aware) qoladi."""
     out = dict(local_payload)
-    used_ai = False
-    for key, min_len in (
-        ('explanation', 90),
-        ('why_wrong', 25),
-        ('tip', 20),
-        ('trap', 15),
-        ('evidence_quote', 8),
-    ):
-        ai_val = (ai_payload.get(key) or '').strip()
-        if len(ai_val) >= min_len:
-            out[key] = ai_val
-            if key in ('explanation', 'why_wrong'):
-                used_ai = True
-        elif ai_val and not (out.get(key) or '').strip():
-            out[key] = ai_val
+    qtext = (question_text or '').strip()
+    ai_expl = (ai_payload.get('explanation') or '').strip()
+    ai_why = (ai_payload.get('why_wrong') or '').strip()
+    ai_good = (
+        len(ai_expl) >= 110
+        and len(ai_why) >= 35
+        and not _payload_is_weak({'explanation': ai_expl, 'why_wrong': ai_why})
+    )
 
-    if used_ai:
+    if ai_good:
+        out['explanation'] = ai_expl
+        out['why_wrong'] = ai_why
         out['provider_name'] = ai_payload.get('provider_name') or out.get('provider_name')
         out['model_name'] = ai_payload.get('model_name') or out.get('model_name')
         raw = {}
@@ -582,6 +806,18 @@ def _merge_explanation_payload(ai_payload, local_payload) -> dict:
             raw.update(ai_payload['raw_response_json'])
         raw['quality_merged'] = True
         out['raw_response_json'] = raw
+
+    for key, min_len in (('tip', 20), ('trap', 15), ('evidence_quote', 12)):
+        ai_val = (ai_payload.get(key) or '').strip()
+        if key == 'evidence_quote' and qtext and ai_val == qtext:
+            continue
+        if len(ai_val) >= min_len:
+            # AI asosiy matnda yutqazsa ham, yaxshi tip/trap/evidence ni olish mumkin
+            if key == 'evidence_quote' and not ai_good and (out.get('evidence_quote') or '').strip():
+                continue
+            out[key] = ai_val
+        elif ai_val and not (out.get(key) or '').strip():
+            out[key] = ai_val
     return out
 
 
@@ -656,7 +892,11 @@ def generate_explanation_for_item(item, *, test, lang='uz') -> dict:
                     candidate = _gemini_payload_from_data(data, model=model, lang=lang)
                     _keep_best(candidate)
                     if not _payload_is_weak(candidate):
-                        merged = _merge_explanation_payload(candidate, local)
+                        merged = _merge_explanation_payload(
+                            candidate,
+                            local,
+                            question_text=(getattr(item['question'], 'question_text', None) or ''),
+                        )
                         return _stamp_ai_language(merged, lang)
                     # zaif — keyingi modelni ham sinab ko'ramiz
                 except Exception as exc:
@@ -668,7 +908,11 @@ def generate_explanation_for_item(item, *, test, lang='uz') -> dict:
             break
 
         if best:
-            merged = _merge_explanation_payload(best, local)
+            merged = _merge_explanation_payload(
+                best,
+                local,
+                question_text=(getattr(item['question'], 'question_text', None) or ''),
+            )
             raw = merged.get('raw_response_json') if isinstance(merged.get('raw_response_json'), dict) else {}
             if errors:
                 raw['gemini_errors'] = errors
