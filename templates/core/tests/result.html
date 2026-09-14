@@ -241,13 +241,9 @@
                                 <div class="tr-q__num">{{ item.ui_num|default:item.display_num }}</div>
                                 <div class="tr-q__meta">
                                     <strong>
-                                        {% if item.paper_num %}
-                                        {% blocktrans with n=item.paper_num %}Javob {{ n }}{% endblocktrans %}
-                                        {% elif item.slot_label %}
+                                        {% blocktrans with n=item.ui_num|default:item.display_num %}Javob {{ n }}{% endblocktrans %}
+                                        {% if item.slot_label and not item.paper_num %}
                                         <span class="tr-q__blank-pill">{{ item.slot_label }}</span>
-                                        {% blocktrans with n=item.parent_num %}Savol {{ n }}{% endblocktrans %}
-                                        {% else %}
-                                        {% blocktrans with n=item.display_num %}Javob {{ n }}{% endblocktrans %}
                                         {% endif %}
                                     </strong>
                                     <span>{{ question.get_question_type_display }}</span>
@@ -269,6 +265,8 @@
 
                             {% if item.review_layout == 'inline_blank' or item.review_layout == 'prompt' %}
                             {% include 'core/tests/partials/review_slot_fill.html' %}
+                            {% elif item.slot_context %}
+                            <div class="tr-q__text tr-q__text--context">{{ item.slot_context }}</div>
                             {% elif item.show_question_text %}
                             <div class="tr-q__text">{{ question.question_text|linebreaks }}</div>
                             {% elif item.slot_label %}

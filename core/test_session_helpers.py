@@ -426,11 +426,73 @@ def _pad_blank_edges(before, after):
 
 
 def _paper_num_from_placeholder(placeholder):
-    """[20] → 20; bo'lmasa None."""
-    m = re.match(r'^\[(\d+)\]$', (placeholder or '').strip())
+    """[20] / #18 / 18 → 20; bo'lmasa None."""
+    raw = (placeholder or '').strip()
+    if not raw:
+        return None
+    m = re.match(r'^\[(\d+)\]$', raw)
+    if m:
+        return int(m.group(1))
+    m = re.match(r'^#?(\d+)$', raw)
     if m:
         return int(m.group(1))
     return None
+
+
+def _matching_paper_num(question, key, slot_context='') -> int | None:
+    """
+    Matching kaliti IELTS qog'oz raqami bo'lsa qaytaradi.
+    '1' + 'Paragraph A' kabi paragraf indekslarini qog'oz raqami deb olmaydi.
+    """
+    sk = str(key).strip()
+    if not sk.isdigit():
+        return None
+    n = int(sk)
+    ctx = (slot_context or '').strip().lower()
+    if ctx.startswith('paragraph ') or re.match(r'^paragraph\s+[a-z]\b', ctx):
+        return None
+    text = getattr(question, 'question_text', None) or ''
+    # Matnda "18. ..." deb yozilgan bo'lsa — aniq qog'oz raqami
+    if re.search(rf'(?m)^\s*{n}\s*[.):\-]', text):
+        return n
+    # 10+ odatda IELTS question number (14–40)
+    if n >= 10:
+        return n
+    return None
+
+
+def _matching_slot_context(question, key) -> str:
+    """Matching item uchun ko'rinadigan matn (masalan: 'Link between nature...')."""
+    opts = question.options_json if isinstance(getattr(question, 'options_json', None), dict) else {}
+    rows = opts.get('items') or []
+    sk = str(key)
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, dict):
+                num = row.get('num', row.get('id', row.get('key', row.get('number'))))
+                if str(num) == sk:
+                    label = (
+                        row.get('label')
+                        or row.get('text')
+                        or row.get('prompt')
+                        or row.get('statement')
+                        or ''
+                    ).strip()
+                    if label:
+                        return label
+            elif isinstance(row, str) and row.strip():
+                # "18. A concern about new parks"
+                m = re.match(r'^(\d+)\s*[.):\-]\s*(.+)$', row.strip())
+                if m and m.group(1) == sk:
+                    return m.group(2).strip()
+    # question_text ichidan "18. ..." qatorini qidirish
+    text = getattr(question, 'question_text', None) or ''
+    for line in text.splitlines():
+        line = line.strip()
+        m = re.match(rf'^{re.escape(sk)}\s*[.):\-]\s*(.+)$', line)
+        if m:
+            return m.group(1).strip()
+    return ''
 
 
 def _highlight_blank_in_context(context, placeholder):
@@ -576,12 +638,17 @@ def build_review_items(questions, user_answers):
                     st = 'empty' if not any_answer else 'wrong'
                 else:
                     st = 'correct' if blank_answers_match(uv, cv) else 'wrong'
+                paper_num = None
+                slot_context = _matching_slot_context(question, sk)
+                paper_num = _matching_paper_num(question, sk, slot_context=slot_context)
                 items.append({
                     'display_num': display_num,
                     'question': question,
                     'answer': answer,
                     'slot_label': f'#{sk}',
-                    'show_question_text': i == 0,
+                    'slot_context': slot_context,
+                    'paper_num': paper_num,
+                    'show_question_text': (not slot_context) and i == 0,
                     'user_part': up,
                     'correct_part': cp,
                     'state': st,
@@ -736,8 +803,18 @@ def build_review_items(questions, user_answers):
     question_parent = {q.pk: i + 1 for i, q in enumerate(questions)}
     for item in items:
         item['parent_num'] = question_parent.get(item['question'].pk, 0)
-        # IELTS qog'oz raqami ([20]) bo'lsa — doira/sarlavhada shu ko'rinsin
+        # IELTS qog'oz raqami: fill [20] yoki matchingda allaqachon qo'yilgan paper_num
         paper = item.get('paper_num')
-        item['ui_num'] = int(paper) if paper else int(item.get('display_num') or 0)
+        if paper is None:
+            # Faqat [N] placeholder — '#1' matching labelini qayta paper deb olmaslik
+            ph = (item.get('slot_placeholder') or '').strip()
+            if ph.startswith('[') and ph.endswith(']'):
+                paper = _paper_num_from_placeholder(ph)
+        if paper is not None:
+            item['paper_num'] = int(paper)
+            item['ui_num'] = int(paper)
+        else:
+            item['paper_num'] = None
+            item['ui_num'] = int(item.get('display_num') or 0)
 
     return items

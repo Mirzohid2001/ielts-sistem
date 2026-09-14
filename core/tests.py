@@ -287,6 +287,36 @@ class BuildReviewItemsTests(TestCase):
         self.assertEqual([i['display_num'] for i in items], [1, 2, 3, 4])
         self.assertEqual(items[0]['state'], 'empty')
         self.assertEqual(items[1]['slot_label'], '#1')
+        self.assertIsNone(items[1]['paper_num'])  # Paragraph indeksi — qog'oz raqami emas
+        self.assertEqual(items[1]['ui_num'], 2)  # display_num tartibi
+
+    def test_matching_uses_paper_keys_not_parent_block(self):
+        from core.test_session_helpers import build_review_items
+
+        category = Category.objects.create(name="M", slug="cat-match-paper")
+        exam = Test.objects.create(
+            title="E", category=category, test_type="reading",
+            reading_passages_json=[], reading_text="",
+        )
+        q = Question.objects.create(
+            test=exam,
+            question_type="matching_features",
+            order=1,
+            question_text="Which paragraph does each idea refer to?\n\n18. Link between nature\n19. Connectivity",
+            options_json={
+                "items": [
+                    {"num": 18, "label": "A concern about new parks"},
+                    {"num": 19, "label": "Wildlife and connectivity"},
+                ],
+            },
+            correct_answer_json={"18": "A", "19": "B"},
+        )
+        items = build_review_items([q], {})
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]['paper_num'], 18)
+        self.assertEqual(items[0]['ui_num'], 18)
+        self.assertEqual(items[0]['slot_context'], 'A concern about new parks')
+        self.assertEqual(items[1]['ui_num'], 19)
 
     def test_fill_notes_review_shows_blank_context_per_slot(self):
         from core.test_session_helpers import build_review_items
