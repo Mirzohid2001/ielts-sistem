@@ -231,20 +231,21 @@
                 <div class="tr-review__list">
                     {% for item in review_items %}
                     {% with question=item.question card_state=item.state %}
-                    <article class="tr-q tr-q--{{ card_state }} tr-q--animate{% if card_state == 'correct' %} tr-q--pulse-once{% endif %}"
+                    <article class="tr-q tr-q--{{ card_state }} tr-q--animate{% if item.review_layout == 'inline_blank' or item.review_layout == 'prompt' %} tr-q--slot{% endif %}{% if card_state == 'correct' %} tr-q--pulse-once{% endif %}"
                              style="--rq-i: {{ forloop.counter0 }};"
                              data-review-state="{{ card_state }}"
-                             data-search-text="javob {{ item.display_num }} {{ question.question_text|striptags }} {{ item.user_part }} {{ item.correct_part }} {{ question.get_question_type_display }}">
+                             data-search-text="javob {{ item.display_num }} {{ question.question_text|striptags }} {{ item.slot_label }} {{ item.slot_context }} {{ item.user_part }} {{ item.correct_part }} {{ question.get_question_type_display }}">
                         <div class="tr-q__bar"></div>
                         <div class="tr-q__inner">
                             <div class="tr-q__head">
                                 <div class="tr-q__num">{{ item.display_num }}</div>
                                 <div class="tr-q__meta">
                                     <strong>
-                                        {% if item.show_question_text %}
-                                        {% blocktrans with n=item.display_num %}Javob {{ n }}{% endblocktrans %}
+                                        {% if item.slot_label %}
+                                        <span class="tr-q__blank-pill">{{ item.slot_label }}</span>
+                                        {% blocktrans with n=item.parent_num %}Savol {{ n }}{% endblocktrans %}
                                         {% else %}
-                                        {% blocktrans with n=item.parent_num label=item.slot_label %}Savol {{ n }} · {{ label }}{% endblocktrans %}
+                                        {% blocktrans with n=item.display_num %}Javob {{ n }}{% endblocktrans %}
                                         {% endif %}
                                     </strong>
                                     <span>{{ question.get_question_type_display }}</span>
@@ -264,12 +265,15 @@
                                 </span>
                             </div>
 
-                            {% if item.show_question_text %}
+                            {% if item.review_layout == 'inline_blank' or item.review_layout == 'prompt' %}
+                            {% include 'core/tests/partials/review_slot_fill.html' %}
+                            {% elif item.show_question_text %}
                             <div class="tr-q__text">{{ question.question_text|linebreaks }}</div>
                             {% elif item.slot_label %}
                             <div class="tr-q__text tr-q__text--slot">{{ item.slot_label }}</div>
                             {% endif %}
 
+                            {% if item.review_layout != 'inline_blank' and item.review_layout != 'prompt' %}
                             <div class="answer-compare answer-compare--{{ card_state }}">
                                 <div class="answer-compare__panel">
                                     <div class="answer-pane answer-pane--you">
@@ -362,6 +366,7 @@
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
 
                             {% if item.show_question_text and question.explanation %}
                             <div class="tr-q__explain">

@@ -364,6 +364,143 @@ def _list_selection_letter_display(question, letter):
     return str(letter).upper()
 
 
+def _nth_bracket_match(text, index):
+    """Savol matnidagi N-chi (0-based) [..] joylashuvini qaytaradi."""
+    matches = list(re.finditer(r'\[[^\]]+\]', text or ''))
+    if 0 <= index < len(matches):
+        return matches[index]
+    return None
+
+
+def _line_around_span(text, start, end, max_len=160):
+    """Bo'sh joy atrofidagi qator / qisqa snippet."""
+    text = text or ''
+    if start is None or end is None or start < 0 or end > len(text):
+        return ''
+    line_start = text.rfind('\n', 0, start) + 1
+    line_end = text.find('\n', end)
+    if line_end < 0:
+        line_end = len(text)
+    line = text[line_start:line_end].strip()
+    if not line:
+        return ''
+    if len(line) <= max_len:
+        return line
+    local_start = start - line_start
+    local_end = end - line_start
+    raw_line = text[line_start:line_end]
+    pad = max(24, (max_len - (local_end - local_start)) // 2)
+    a = max(0, local_start - pad)
+    b = min(len(raw_line), local_end + pad)
+    snippet = raw_line[a:b].strip()
+    if a > 0:
+        snippet = '…' + snippet
+    if b < len(raw_line):
+        snippet = snippet + '…'
+    return snippet
+
+
+def _split_context_around_placeholder(context, placeholder):
+    """Kontekstni [N] oldi/orqasi qilib ajratadi (inline review uchun)."""
+    context = context or ''
+    placeholder = placeholder or ''
+    if context and placeholder and placeholder in context:
+        before, after = context.split(placeholder, 1)
+        return before, after, placeholder
+    return context, '', placeholder
+
+
+def _highlight_blank_in_context(context, placeholder):
+    """Kontekst ichida [N] ni mark bilan ajratib, HTML xavfsiz qaytaradi."""
+    from django.utils.html import escape
+    from django.utils.safestring import mark_safe
+
+    if not context:
+        return ''
+    if not placeholder or placeholder not in context:
+        return escape(context)
+    parts = context.split(placeholder, 1)
+    html = (
+        escape(parts[0])
+        + f'<mark class="tr-blank-mark">{escape(placeholder)}</mark>'
+        + escape(parts[1] if len(parts) > 1 else '')
+    )
+    return mark_safe(html)
+
+
+def _slot_meta_result(
+    *,
+    slot_label='',
+    slot_context='',
+    placeholder='',
+    show_question_text=True,
+    review_layout='default',
+):
+    before, after, ph = _split_context_around_placeholder(slot_context, placeholder)
+    return {
+        'slot_label': slot_label,
+        'slot_context': slot_context,
+        'slot_before': before,
+        'slot_after': after,
+        'slot_placeholder': ph,
+        'slot_context_html': _highlight_blank_in_context(slot_context, ph),
+        'show_question_text': show_question_text,
+        'review_layout': review_layout,
+    }
+
+
+def fill_review_slot_meta(question, slot_index, n_slots):
+    """
+    FILL turidagi review kartasi uchun label + kontekst.
+    Ko'p bo'sh joyli notes/summary da foydalanuvchi qaysi qator ekanini ko'radi.
+    """
+    slot_label = f"Bo'sh joy {slot_index + 1}" if n_slots > 1 else ''
+
+    # short_answer: alohida promptlar
+    if getattr(question, 'question_type', None) == 'short_answer':
+        sa = (getattr(question, 'options_json', None) or {}).get('short_answer_items') or []
+        if isinstance(sa, list) and slot_index < len(sa) and isinstance(sa[slot_index], dict):
+            prompt = (
+                sa[slot_index].get('prompt')
+                or sa[slot_index].get('text')
+                or sa[slot_index].get('question')
+                or ''
+            ).strip()
+            if prompt:
+                return _slot_meta_result(
+                    slot_label=slot_label,
+                    slot_context=prompt,
+                    placeholder='',
+                    show_question_text=False,
+                    review_layout='prompt',
+                )
+
+    text = getattr(question, 'question_text', None) or ''
+    m = _nth_bracket_match(text, slot_index)
+    if m:
+        placeholder = m.group(0)
+        if n_slots > 1:
+            slot_label = placeholder
+        slot_context = _line_around_span(text, m.start(), m.end())
+        return _slot_meta_result(
+            slot_label=slot_label,
+            slot_context=slot_context,
+            placeholder=placeholder,
+            show_question_text=False if slot_context else (n_slots <= 1),
+            review_layout='inline_blank' if slot_context else 'default',
+        )
+
+    # Bracket yo'q: faqat birinchi kartada to'liq matn
+    show_question_text = n_slots <= 1 or slot_index == 0
+    return _slot_meta_result(
+        slot_label=slot_label,
+        slot_context='',
+        placeholder='',
+        show_question_text=show_question_text,
+        review_layout='default',
+    )
+
+
 def build_review_items(questions, user_answers):
     """
     Har bir gradable javob o'rni uchun alohida review qatori.
@@ -452,12 +589,19 @@ def build_review_items(questions, user_answers):
                     st = 'empty' if not any_answer else 'wrong'
                 else:
                     st = 'correct' if blank_answers_match(uv, cv) else 'wrong'
+                meta = fill_review_slot_meta(question, i, n_slots)
                 items.append({
                     'display_num': display_num,
                     'question': question,
                     'answer': answer,
-                    'slot_label': f"Bo'sh joy {i + 1}" if n_slots > 1 else '',
-                    'show_question_text': i == 0,
+                    'slot_label': meta['slot_label'],
+                    'slot_context': meta['slot_context'],
+                    'slot_context_html': meta['slot_context_html'],
+                    'slot_before': meta['slot_before'],
+                    'slot_after': meta['slot_after'],
+                    'slot_placeholder': meta['slot_placeholder'],
+                    'review_layout': meta['review_layout'],
+                    'show_question_text': meta['show_question_text'],
                     'user_part': up,
                     'correct_part': cp,
                     'state': st,

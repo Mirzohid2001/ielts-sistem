@@ -44,7 +44,118 @@ class RLExplanationHelpersTests(SimpleTestCase):
         payload = _local_explanation(item, skill='reading')
         self.assertIn('explanation', payload)
         self.assertTrue(payload['why_wrong'])
+        self.assertGreaterEqual(len(payload['explanation']), 80)
         self.assertEqual(explanation_slot_key(item), 'q1-n1')
+
+    def test_local_explanation_uses_blank_context(self):
+        item = {
+            'question': type('Q', (), {
+                'pk': 2,
+                'question_type': 'notes_completion',
+                'question_text': 'Type: [1]\nRent per week: £ [2]',
+                'question_instruction': '',
+            })(),
+            'user_part': 's',
+            'correct_part': '150',
+            'display_num': 2,
+            'slot_label': '[2]',
+            'slot_placeholder': '[2]',
+            'slot_before': 'Rent per week: £ ',
+            'slot_after': '',
+            'slot_context': 'Rent per week: £ [2]',
+        }
+        payload = _local_explanation(item, skill='listening')
+        self.assertIn('Rent per week', payload['explanation'])
+        self.assertIn('150', payload['explanation'])
+        self.assertIn('Rent per week', payload['evidence_quote'])
+        from core.services.ai_rl_explanation import _item_blank_context
+        self.assertEqual(_item_blank_context(item), 'Rent per week: £ [2]')
+
+    def test_gemini_russian_not_overwritten_by_local(self):
+        from core.services.ai_rl_explanation import _localize_rl_explanation
+
+        item = {
+            'question': type('Q', (), {
+                'pk': 3,
+                'question_type': 'mcq',
+                'question_text': 'Q',
+                'question_instruction': '',
+            })(),
+            'user_part': 'A',
+            'correct_part': 'B',
+            'display_num': 1,
+        }
+        gemini_payload = {
+            'explanation': 'Правильный ответ B, потому что в тексте прямо сказано after 1990 и это подтверждает утверждение.',
+            'why_wrong': 'A противоречит абзацу.',
+            'tip': 'Ищите точную дату в пассаже.',
+            'evidence_quote': 'after 1990',
+            'trap': 'Дистрактор с другой датой.',
+            'provider_name': 'gemini',
+            'model_name': 'gemini-2.5-flash',
+            'raw_response_json': {},
+        }
+        out = _localize_rl_explanation(gemini_payload, item, skill='reading', lang='ru')
+        self.assertIn('Правильный ответ B', out['explanation'])
+        self.assertEqual(out['provider_name'], 'gemini')
+        self.assertEqual(out['raw_response_json'].get('ai_language'), 'ru')
+
+    def test_short_answer_prompt_not_replaced_by_label(self):
+        from core.services.ai_rl_explanation import _item_blank_context
+
+        item = {
+            'question': type('Q', (), {
+                'pk': 5,
+                'question_type': 'short_answer',
+                'question_text': 'Questions 1–2',
+                'question_instruction': '',
+            })(),
+            'user_part': 'x',
+            'correct_part': 'gold',
+            'slot_label': "Bo'sh joy 1",
+            'slot_placeholder': '',
+            'slot_before': '',
+            'slot_after': '',
+            'slot_context': 'What type of mineral?',
+            'review_layout': 'prompt',
+        }
+        self.assertEqual(_item_blank_context(item), 'What type of mineral?')
+        payload = _local_explanation(item, skill='reading')
+        self.assertIn('What type of mineral?', payload['explanation'])
+        self.assertNotIn("Bo'sh joy 1", payload['explanation'])
+
+    def test_weak_payload_merged_with_local(self):
+        from core.services.ai_rl_explanation import _merge_explanation_payload, _payload_is_weak
+
+        item = {
+            'question': type('Q', (), {
+                'pk': 4,
+                'question_type': 'notes_completion',
+                'question_text': 'Rent per week: £ [2]',
+                'question_instruction': '',
+            })(),
+            'user_part': 's',
+            'correct_part': '150',
+            'slot_before': 'Rent per week: £ ',
+            'slot_after': '',
+            'slot_placeholder': '[2]',
+            'slot_context': 'Rent per week: £ [2]',
+        }
+        weak = {
+            'explanation': 'Wrong.',
+            'why_wrong': '',
+            'tip': 'Be careful',
+            'evidence_quote': '',
+            'trap': '',
+            'provider_name': 'gemini',
+            'model_name': 'x',
+            'raw_response_json': {},
+        }
+        self.assertTrue(_payload_is_weak(weak))
+        local = _local_explanation(item, skill='listening')
+        merged = _merge_explanation_payload(weak, local)
+        self.assertIn('Rent per week', merged['explanation'])
+        self.assertTrue(merged['why_wrong'])
 
 
 class RLExplanationIntegrationTests(TestCase):

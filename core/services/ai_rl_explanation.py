@@ -71,7 +71,51 @@ def _options_blurb(question) -> str:
     return '\n'.join(parts)[:800]
 
 
-def _passage_excerpt_for_question(test, question, limit=1200) -> str:
+def _item_blank_context(item) -> str:
+    """FILL/notes/short_answer uchun haqiqiy kontekst qatori."""
+    # Bo'sh joy atrofidagi spacelarni saqlaymiz (£ [2] → £[2] bo'lib ketmasin)
+    before = (item.get('slot_before') or '').replace('\r\n', '\n')
+    after = (item.get('slot_after') or '').replace('\r\n', '\n')
+    placeholder = (item.get('slot_placeholder') or '').strip()
+    ctx = (item.get('slot_context') or '').strip()
+
+    # Inline blank: "Rent per week: £ [2]"
+    if before or after:
+        mid = placeholder or (item.get('slot_label') or '').strip() or '___'
+        return f'{before}{mid}{after}'.strip()[:240]
+
+    # Prompt / notes qatori — "Bo'sh joy 1" labelidan ustun
+    if ctx:
+        return ctx[:240]
+    if placeholder:
+        return placeholder[:240]
+    return ((item.get('slot_label') or '').strip())[:240]
+
+
+def _find_evidence_in_text(text, needle, *, window=110) -> str:
+    text = (text or '').strip()
+    needle = (needle or '').strip()
+    if not text or not needle or len(needle) < 2:
+        return ''
+    low = text.lower()
+    key = needle.lower()
+    idx = low.find(key)
+    if idx < 0 and ' ' in key:
+        # birinchi so'z bilan qidirish
+        idx = low.find(key.split()[0])
+    if idx < 0:
+        return ''
+    start = max(0, idx - window // 3)
+    end = min(len(text), idx + len(needle) + window // 2)
+    snippet = text[start:end].strip()
+    if start > 0:
+        snippet = '…' + snippet
+    if end < len(text):
+        snippet = snippet + '…'
+    return snippet[:220]
+
+
+def _passage_excerpt_for_question(test, question, limit=1600) -> str:
     try:
         passages = test.get_reading_passages() or []
     except Exception:
@@ -80,7 +124,6 @@ def _passage_excerpt_for_question(test, question, limit=1200) -> str:
         text = (getattr(test, 'reading_text', None) or '').strip()
         return text[:limit]
 
-    # Flat list of passage dicts or variant buckets
     flat = []
     for p in passages:
         if isinstance(p, list):
@@ -90,7 +133,6 @@ def _passage_excerpt_for_question(test, question, limit=1200) -> str:
     if not flat:
         return ''
 
-    # Approx: map question order into thirds of passages
     order = int(getattr(question, 'order', 0) or 0)
     total_q = max(1, test.questions.count())
     idx = min(len(flat) - 1, max(0, (order - 1) * len(flat) // total_q))
@@ -101,61 +143,257 @@ def _passage_excerpt_for_question(test, question, limit=1200) -> str:
     return combined[:limit]
 
 
-def _local_explanation(item, *, skill='reading') -> dict:
+def _source_material_for_item(test, item, *, skill) -> str:
+    q = item['question']
+    chunks = []
+    blank = _item_blank_context(item)
+    if blank:
+        chunks.append(f'Blank line: {blank}')
+    qtext = (getattr(q, 'question_text', None) or '').strip()
+    if qtext:
+        chunks.append(qtext[:900])
+    if skill == 'reading':
+        passage = _passage_excerpt_for_question(test, q)
+        if passage:
+            chunks.append(passage)
+    return '\n---\n'.join(chunks)[:2200]
+
+
+_QTYPE_TIP_UZ = {
+    'true_false_not_given': 'True/False/NG: matnda aniq dalil bo‘lishi kerak. NG = matnda hech narsa yo‘q.',
+    'yes_no_not_given': 'Yes/No/NG — muallif fikri. Dalil bo‘lmasa NG.',
+    'true_false': 'True/False da faqat matnda aytilgan faktni tanlang.',
+    'matching_headings': 'Sarlavhada paragrafning ASOSIY g‘oyasiga qarang, bitta so‘zga emas.',
+    'matching_sentences': 'Gap oxirini moslashtirishda synonym va mantiqiy bog‘lanishni qidiring.',
+    'matching_features': 'Har bir elementning xos belgisini matndan toping.',
+    'matching_info': 'Paragrafdagi asosiy ma’lumotni qidiring, bitta misolga emas.',
+    'fill_blank': 'Bo‘sh joyda grammar (article/plural) va spelling muhim.',
+    'summary_completion': 'Summary’da gap grammatikasi va passage synonymlariga e’tibor bering.',
+    'notes_completion': 'Notes: odatda ONE WORD AND/OR A NUMBER — spelling va word form muhim.',
+    'sentence_completion': 'Gapni to‘ldirishda so‘z soni chegarasiga rioya qiling.',
+    'table_completion': 'Jadvaldagi qator/ustun kontekstini o‘qing.',
+    'short_answer': 'Qisqa va aniq yozing; ortiqcha so‘z qo‘shmang.',
+    'mcq': 'Variantlarni matndan isbot bilan tekshiring; distractorlarni chiqarib tashlang.',
+    'list_selection': 'Ro‘yxatdan faqat so‘ralgan soncha variantni tanlang.',
+    'classification': 'Har kategoriya uchun aniq belgini toping.',
+    'summary_box': 'Har bir qavs uchun boxdagi to‘g‘ri harfni tanlang.',
+}
+
+_QTYPE_TIP_RU = {
+    'true_false_not_given': 'True/False/NG: нужно точное доказательство в тексте. NG = в тексте ничего нет.',
+    'yes_no_not_given': 'Yes/No/NG — мнение автора. Нет доказательства → NG.',
+    'true_false': 'True/False: выбирайте только факт из текста.',
+    'matching_headings': 'В заголовке ищите ГЛАВНУЮ идею абзаца, а не одно слово.',
+    'matching_sentences': 'Ищите синонимы и логическую связь окончания предложения.',
+    'matching_features': 'Найдите уникальный признак каждого элемента в тексте.',
+    'matching_info': 'Ищите основную информацию абзаца, а не один пример.',
+    'fill_blank': 'В пропуске важны грамматика (article/plural) и spelling.',
+    'summary_completion': 'В summary следите за грамматикой и синонимами из пассажа.',
+    'notes_completion': 'Notes: обычно ONE WORD AND/OR A NUMBER — важны spelling и форма слова.',
+    'sentence_completion': 'Соблюдайте лимит слов в завершении предложения.',
+    'table_completion': 'Читайте контекст строки/столбца таблицы.',
+    'short_answer': 'Пишите кратко; не добавляйте лишние слова.',
+    'mcq': 'Проверяйте варианты доказательством из текста; отсекайте дистракторы.',
+    'list_selection': 'Выбирайте ровно столько вариантов, сколько просят.',
+    'classification': 'Для каждой категории найдите чёткий признак.',
+    'summary_box': 'Для каждой скобки выбирайте нужную букву из box.',
+}
+
+
+def _local_explanation(item, *, skill='reading', source_text='') -> dict:
     user = (item.get('user_part') or '').strip()
     correct = (item.get('correct_part') or '').strip() or '—'
-    qtype = getattr(item['question'], 'question_type', '') or 'question'
-    tip_map = {
-        'true_false_not_given': 'True/False/NG da matnda aniq dalil bo‘lishi kerak. NG = matnda hech narsa yo‘q.',
-        'yes_no_not_given': 'Yes/No/NG — muallif fikri. Dalil bo‘lmasa NG.',
-        'true_false': 'True/False da faqat matnda aytilgan faktni tanlang.',
-        'matching_headings': 'Sarlavhani tanlashda paragrafning ASOSIY g‘oyasiga qarang, bitta so‘zga emas.',
-        'matching_sentences': 'Gap oxirini moslashtirishda synonym va mantiqiy bog‘lanishni qidiring.',
-        'matching_features': 'Har bir elementning xos belgisini matndan toping.',
-        'matching_info': 'Paragrafdagi asosiy ma’lumotni qidiring, bitta misolga emas.',
-        'fill_blank': 'Bo‘sh joyga grammar (article, plural) va spelling muhim.',
-        'summary_completion': 'Summary’da gap grammatikasi va passage synonymlariga e’tibor bering.',
-        'notes_completion': 'Notes’da odatda ONE WORD AND/OR A NUMBER — spelling muhim.',
-        'sentence_completion': 'Gapni to‘ldirishda so‘z soni chegarasiga rioya qiling.',
-        'table_completion': 'Jadvaldagi qator/ustun kontekstini o‘qing.',
-        'short_answer': 'Qisqa va aniq yozing; ortiqcha so‘z qo‘shmang.',
-        'mcq': 'Variantlarni matndan isbot bilan tekshiring; distractorlarni chiqarib tashlang.',
-        'list_selection': 'Ro‘yxatdan faqat so‘ralgan soncha variantni tanlang.',
-        'classification': 'Har kategoriya uchun aniq belgini toping.',
-        'summary_box': 'Har bir qavs uchun boxdagi to‘g‘ri harfni tanlang.',
-    }
-    tip = tip_map.get(qtype, 'Savol turiga qarab matndan (yoki audiodan) aniq dalil toping.')
-    if skill == 'listening':
-        tip = tip_map.get(qtype) or tip
-        if qtype in ('notes_completion', 'fill_blank', 'table_completion', 'sentence_completion'):
-            tip = 'Listeningda keywordlar eshitilganda yozib boring; distractorlarga aldanning.'
+    q = item['question']
+    qtype = getattr(q, 'question_type', '') or 'question'
+    tip = _QTYPE_TIP_UZ.get(qtype, 'Savol turiga qarab matndan (yoki audiodan) aniq dalil toping.')
+    if skill == 'listening' and qtype in (
+        'notes_completion', 'fill_blank', 'table_completion', 'sentence_completion', 'summary_completion',
+    ):
+        tip = 'Listeningda keyword eshitilganda yozib boring; oldin/keyin aytilgan distractorlarga aldanning.'
+
     user_disp = user if user else '(javob bermadingiz)'
-    trap = ''
-    if user and correct and user.lower() != correct.lower():
-        trap = f"«{user_disp}» ko‘pincha chalg‘ituvchi variant — uni matndan tasdiqlamasdan tanlamang."
-    elif not user:
-        trap = "Bo‘sh qoldirish ham ball yo‘qotadi — noaniq bo‘lsa ham eng yaxshi taxminni yozing."
-    evidence = ''
-    qtext = (getattr(item['question'], 'question_text', '') or '').strip()
-    if qtext:
-        evidence = qtext[:120] + ('…' if len(qtext) > 120 else '')
-    return {
-        'explanation': (
+    blank = _item_blank_context(item)
+    evidence = _find_evidence_in_text(source_text, correct) if source_text else ''
+    if not evidence and blank:
+        evidence = blank[:180]
+    if not evidence:
+        qtext = (getattr(q, 'question_text', '') or '').strip()
+        evidence = (qtext[:140] + ('…' if len(qtext) > 140 else '')) if qtext else ''
+
+    if blank:
+        if (item.get('review_layout') or '') == 'prompt':
+            explanation = (
+                f"Savol: «{blank}». "
+                f"To‘g‘ri javob — «{correct}». "
+                f"Sizning javobingiz: «{user_disp}». "
+                f"Javob aynan so‘ralgan ma’lumotni qisqa va aniq berishi kerak; "
+                f"ortiqcha so‘z yoki boshqa faktni yozmang."
+            )
+            why = (
+                f"«{user_disp}» bu savolga mos kelmaydi; kutilgan kalit «{correct}»."
+                if user
+                else f"Javob berilmagan; savolga to‘g‘ri kalit «{correct}» edi."
+            )
+        else:
+            explanation = (
+                f"Bu bo‘sh joy konteksti: «{blank}». "
+                f"To‘g‘ri javob — «{correct}», chunki aynan shu qator/gap shu ma’noni kutadi. "
+                f"Siz yozgan «{user_disp}» bu joyga mos kelmaydi"
+                + (
+                    " (boshqa ma’no, noto‘g‘ri so‘z shakli yoki distractor)."
+                    if user
+                    else " — bo‘sh qoldirilgan."
+                )
+                + " Keyingi safar avval qatorni o‘qing, keyin kalit so‘zni matn/audiodan tasdiqlang."
+            )
+            why = (
+                f"«{user_disp}» xato, chunki «{blank}» qatorida kerakli ma’no «{correct}»."
+                if user
+                else f"Javob berilmagan; «{blank}» uchun to‘g‘ri kalit «{correct}» edi."
+            )
+    else:
+        explanation = (
             f"To‘g‘ri javob: «{correct}». Sizning javobingiz: «{user_disp}». "
-            f"Bu {qtype.replace('_', ' ')} tipida kalitni matn/audio bilan solishtiring — "
-            f"faqat o‘xshash so‘z emas, ma’no mosligi muhim."
-        ),
-        'why_wrong': (
+            f"Bu {qtype.replace('_', ' ')} tipida faqat o‘xshash so‘z emas — "
+            f"matn/audiodagi aniq ma’no va dalil muhim. "
+            f"To‘g‘ri kalitni savol konteksti bilan solishtirib tekshiring."
+        )
+        why = (
             f"«{user_disp}» noto‘g‘ri, chunki to‘g‘ri kalit «{correct}». "
             "Synonym yoki distractorni haqiqiy dalil deb o‘ylagan bo‘lishingiz mumkin."
-        ),
+            if user
+            else f"Javob berilmagan; to‘g‘ri kalit «{correct}» edi."
+        )
+
+    trap = ''
+    if user and correct and user.lower() != correct.lower():
+        trap = (
+            f"«{user_disp}» ko‘pincha chalg‘ituvchi variant — uni «{blank or 'savol'}» "
+            "kontekstida matndan tasdiqlamasdan tanlamang."
+        )
+    elif not user:
+        trap = "Bo‘sh qoldirish ham ball yo‘qotadi — noaniq bo‘lsa ham eng yaxshi taxminni yozing."
+
+    return {
+        'explanation': explanation,
+        'why_wrong': why,
         'tip': tip,
         'evidence_quote': evidence,
         'trap': trap,
         'provider_name': 'local',
-        'model_name': 'heuristic-rl-v2',
+        'model_name': 'heuristic-rl-v3',
         'raw_response_json': {'provider': 'local', 'ai_language': 'uz'},
     }
+
+
+def _local_explanation_ru(item, *, skill='reading', base=None, source_text='') -> dict:
+    payload = dict(base or {})
+    user = (item.get('user_part') or '').strip()
+    correct = (item.get('correct_part') or '').strip() or '—'
+    user_disp = user if user else '(нет ответа)'
+    q = item['question']
+    qtype = getattr(q, 'question_type', '') or 'question'
+    blank = _item_blank_context(item)
+    tip = _QTYPE_TIP_RU.get(qtype, 'Найдите точное доказательство в тексте/аудио.')
+    if skill == 'listening' and qtype in (
+        'notes_completion', 'fill_blank', 'table_completion', 'sentence_completion', 'summary_completion',
+    ):
+        tip = 'На Listening сразу записывайте ключевые слова; не ведитесь на дистракторы до/после.'
+
+    evidence = (payload.get('evidence_quote') or '').strip()
+    if not evidence:
+        evidence = _find_evidence_in_text(source_text, correct) if source_text else ''
+    if not evidence and blank:
+        evidence = blank[:180]
+
+    if blank:
+        if (item.get('review_layout') or '') == 'prompt':
+            explanation = (
+                f"Вопрос: «{blank}». "
+                f"Правильный ответ — «{correct}». "
+                f"Ваш ответ: «{user_disp}». "
+                f"Ответ должен кратко и точно давать именно запрошенную информацию, "
+                f"без лишних слов и других фактов."
+            )
+            why = (
+                f"«{user_disp}» не подходит к этому вопросу; ожидаемый ключ — «{correct}»."
+                if user
+                else f"Ответа не было; правильный ключ к вопросу — «{correct}»."
+            )
+        else:
+            explanation = (
+                f"Контекст пропуска: «{blank}». "
+                f"Правильный ответ — «{correct}», потому что именно эта строка/фраза требует такого значения. "
+                f"Ваш ответ «{user_disp}» сюда не подходит"
+                + (
+                    " (другой смысл, неверная форма слова или дистрактор)."
+                    if user
+                    else " — поле оставлено пустым."
+                )
+                + " В следующий раз сначала читайте строку, затем подтверждайте ключ текстом/аудио."
+            )
+            why = (
+                f"«{user_disp}» неверно: в «{blank}» нужен смысл «{correct}»."
+                if user
+                else f"Ответа не было; для «{blank}» ключ — «{correct}»."
+            )
+    else:
+        explanation = (
+            f"Правильный ответ: «{correct}». Ваш ответ: «{user_disp}». "
+            f"В задании {qtype.replace('_', ' ')} важно совпадение смысла с текстом/аудио, "
+            "а не похожих слов. Сверьте ключ с контекстом вопроса."
+        )
+        why = (
+            f"«{user_disp}» неверно, потому что ключ — «{correct}». "
+            "Возможно, синоним или дистрактор показались доказательством."
+            if user
+            else f"Ответа не было; правильный ключ — «{correct}»."
+        )
+
+    if user and correct and user.lower() != correct.lower():
+        trap = (
+            f"«{user_disp}» часто дистрактор — не выбирайте без подтверждения в контексте "
+            f"«{blank or 'вопроса'}»."
+        )
+    elif not user:
+        trap = "Пустой ответ тоже теряет балл — даже при сомнении напишите лучшую догадку."
+    else:
+        trap = (payload.get('trap') or '').strip()
+
+    payload.update({
+        'explanation': explanation,
+        'why_wrong': why,
+        'tip': tip,
+        'evidence_quote': evidence or (payload.get('evidence_quote') or ''),
+        'trap': trap,
+        'provider_name': payload.get('provider_name') or 'local',
+        'model_name': payload.get('model_name') or 'heuristic-rl-v3',
+    })
+    raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
+    raw['ai_language'] = 'ru'
+    payload['raw_response_json'] = raw
+    return payload
+
+
+def _stamp_ai_language(payload, lang='uz') -> dict:
+    lang = normalize_ai_lang(lang)
+    raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
+    raw['ai_language'] = lang
+    payload['raw_response_json'] = raw
+    return payload
+
+
+def _localize_rl_explanation(payload, item, *, skill, lang='uz', source_text=''):
+    """
+    Til belgisini qo'yadi.
+    Local/heuristic payload uchun RU matnini yozadi.
+    Gemini javobini HECH QACHON generic shablon bilan ustiga yozmaydi.
+    """
+    lang = normalize_ai_lang(lang)
+    provider = (payload.get('provider_name') or '').strip().lower()
+    if lang == 'ru' and provider in ('', 'local', 'heuristic'):
+        return _local_explanation_ru(item, skill=skill, base=payload, source_text=source_text)
+    return _stamp_ai_language(payload, lang)
 
 
 def _normalize_gemini_model(model_name):
@@ -187,7 +425,9 @@ def _call_gemini_json(prompt: str, *, model: str) -> dict:
     endpoint = f'{base_url}/{model}:generateContent?key={api_key}'
     body = {
         'generationConfig': {
-            'temperature': 0.3,
+            'temperature': 0.2,
+            'topP': 0.9,
+            'maxOutputTokens': 1024,
             'responseMimeType': 'application/json',
         },
         'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
@@ -199,7 +439,7 @@ def _call_gemini_json(prompt: str, *, model: str) -> dict:
         method='POST',
     )
     try:
-        with urllib_request.urlopen(req, timeout=45) as resp:
+        with urllib_request.urlopen(req, timeout=50) as resp:
             raw = json.loads(resp.read().decode('utf-8'))
     except urllib_error.HTTPError as exc:
         detail = exc.read().decode('utf-8', errors='ignore')
@@ -218,80 +458,147 @@ def _call_gemini_json(prompt: str, *, model: str) -> dict:
     return parsed
 
 
-def _build_prompt(item, *, skill, passage_excerpt='', lang='uz') -> str:
+_TYPE_COACH = {
+    'true_false_not_given': 'Teach the TRUE vs FALSE vs NOT GIVEN decision rule with THIS statement.',
+    'yes_no_not_given': 'Teach YES/NO/NG using the writer\'s view in THIS item.',
+    'notes_completion': 'Explain the exact blank line; focus on word form, spelling, and number vs word.',
+    'fill_blank': 'Explain the blank grammar/meaning; mention word limit if relevant.',
+    'summary_completion': 'Show how the summary paraphrase maps to the passage.',
+    'sentence_completion': 'Show how the completed sentence must fit grammatically and semantically.',
+    'table_completion': 'Use the table row/column labels as context for the blank.',
+    'short_answer': 'Keep the answer short; explain what the question asks for.',
+    'mcq': 'Eliminate distractors with evidence; say why the correct option wins.',
+    'matching_headings': 'Link the paragraph main idea to the chosen heading.',
+    'matching_info': 'Point to where the information sits in the passage.',
+    'matching_features': 'Match the unique feature, not a shared detail.',
+    'matching_sentences': 'Show the logical/synonym link for the sentence ending.',
+}
+
+
+def _build_prompt(item, *, skill, source_material='', lang='uz', stricter=False) -> str:
     q = item['question']
     options = _options_blurb(q)
     user = (item.get('user_part') or '').strip() or '(no answer)'
     correct = (item.get('correct_part') or '').strip() or '—'
-    return f"""You are an expert IELTS {skill} tutor. Explain ONE wrong student answer.
+    blank = _item_blank_context(item)
+    slot_label = (item.get('slot_label') or item.get('slot_placeholder') or '').strip()
+    coach = _TYPE_COACH.get(q.question_type, 'Be concrete for this exact item.')
+    strict_block = ''
+    if stricter:
+        strict_block = """
+STRICT RETRY:
+- Previous output was too vague / incomplete.
+- Do NOT write generic advice like "read carefully" or "check the text".
+- You MUST mention the blank/question context and why THIS correct answer fits.
+- why_wrong and tip are REQUIRED and must be specific.
+"""
+    return f"""You are a senior IELTS {skill} examiner-tutor. Explain ONE wrong student answer so the student learns and will not repeat the mistake.
 
 {learner_language_rules(lang)}
 
-Return ONLY JSON:
+Return ONLY valid JSON with these keys:
 {{
-  "explanation": "3-5 sentences: correct answer, where it comes from, a short mini-lesson",
-  "why_wrong": "1-3 sentences: why the student answer / trap is wrong",
-  "tip": "1 practical tip for the next test",
-  "evidence_quote": "short quote from passage/question (max 15 words) or empty",
-  "trap": "typical distractor/trap for this item (1 sentence)"
+  "explanation": "4-7 sentences. Must include: (1) the correct answer, (2) the exact place/context it comes from, (3) a mini-lesson for this question type, (4) how to think next time.",
+  "why_wrong": "2-4 sentences. Explain why the student's answer fails for THIS item (meaning, form, distractor, or empty).",
+  "tip": "1 concrete exam tip the student can apply on the next similar question.",
+  "evidence_quote": "Short quote from question/notes/passage that supports the correct answer (max 20 words), or empty if unavailable.",
+  "trap": "1 sentence naming the typical trap (paraphrase / absolute word / opposite meaning / wrong word form / number distractor)."
 }}
 
 Skill: {skill}
 Question type: {q.question_type}
-Question text: {(q.question_text or '')[:700]}
-Instruction: {(q.question_instruction or '')[:400]}
+Coach focus: {coach}
+Question number / blank: {slot_label or '—'}
+Blank / line context: {blank or '—'}
+Question text: {(q.question_text or '')[:800]}
+Instruction: {(getattr(q, 'question_instruction', None) or '')[:400]}
 Options:
 {options or '—'}
-User answer: {user}
+Student answer: {user}
 Correct answer: {correct}
-Passage excerpt (may be empty for listening):
-{(passage_excerpt or '—')[:1400]}
-
-Rules:
-- Be specific to THIS item; no generic filler.
-- Prefer quoting a short evidence cue from the passage when available.
-- Mention the trap (paraphrase / absolute word / opposite meaning) if relevant.
+Source material (question notes and/or passage excerpt):
+{(source_material or '—')[:1800]}
+{strict_block}
+Quality rules:
+- Be specific to THIS item only. No generic filler.
+- Keep English answers, quotes, and keywords in English; explain in the learner language.
+- If blank context exists, weave it into explanation (e.g. "Rent per week: £ ___").
+- Prefer a real evidence_quote from the source material when possible.
+- Never leave explanation or why_wrong empty.
+- Do not invent passage facts that are not in the source material; if source is thin, reason from the blank/question text.
 """
 
 
-def _localize_rl_explanation(payload, item, *, skill, lang='uz'):
-    lang = normalize_ai_lang(lang)
-    raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
-    raw['ai_language'] = lang
-    payload['raw_response_json'] = raw
-    if lang != 'ru':
-        return payload
-    return _local_explanation_ru(item, skill=skill, base=payload)
+def _field_len(payload, key) -> int:
+    return len((payload.get(key) or '').strip())
 
 
-def _local_explanation_ru(item, *, skill='reading', base=None):
-    payload = dict(base or {})
-    user = (item.get('user_part') or '').strip()
-    correct = (item.get('correct_part') or '').strip() or '—'
-    user_disp = user if user else '(нет ответа)'
-    qtype = getattr(item['question'], 'question_type', '') or 'question'
-    payload['explanation'] = (
-        f"Правильный ответ: «{correct}». Ваш ответ: «{user_disp}». "
-        f"В задании {qtype.replace('_', ' ')} сверяйте ключ с текстом/аудио — "
-        "важно совпадение смысла, а не похожих слов."
+def _payload_is_weak(payload) -> bool:
+    """Yuzaki / bo'sh AI javobini aniqlash."""
+    if _field_len(payload, 'explanation') < 90:
+        return True
+    if _field_len(payload, 'why_wrong') < 25:
+        return True
+    expl = (payload.get('explanation') or '').lower()
+    weak_markers = (
+        'kalitni matn/audio',
+        'совпадение смысла, а не похожих',
+        'read the text carefully',
+        'check the passage',
+        'matndan (yoki audiodan) aniq dalil',
+        'be more careful',
     )
-    payload['why_wrong'] = (
-        f"«{user_disp}» неверно, потому что ключ — «{correct}». "
-        "Возможно, синоним или дистрактор показались доказательством."
-    )
-    payload['tip'] = (
-        'На Listening записывайте ключевые слова сразу; не ведитесь на дистракторы.'
-        if skill == 'listening'
-        else 'Найдите точное доказательство в тексте, а не похожее слово.'
-    )
-    if user and correct and user.lower() != correct.lower():
-        payload['trap'] = f"«{user_disp}» часто дистрактор — не выбирайте без подтверждения в тексте."
-    elif not user:
-        payload['trap'] = "Пустой ответ тоже теряет балл — даже при сомнении напишите лучшую догадку."
-    raw = payload.get('raw_response_json') if isinstance(payload.get('raw_response_json'), dict) else {}
-    raw['ai_language'] = 'ru'
-    payload['raw_response_json'] = raw
-    return payload
+    if any(m in expl for m in weak_markers) and _field_len(payload, 'explanation') < 180:
+        return True
+    return False
+
+
+def _merge_explanation_payload(ai_payload, local_payload) -> dict:
+    """AI yaxshi bo'lsa saqlaydi; bo'sh/zaif maydonlarni local bilan to'ldiradi."""
+    out = dict(local_payload)
+    used_ai = False
+    for key, min_len in (
+        ('explanation', 90),
+        ('why_wrong', 25),
+        ('tip', 20),
+        ('trap', 15),
+        ('evidence_quote', 8),
+    ):
+        ai_val = (ai_payload.get(key) or '').strip()
+        if len(ai_val) >= min_len:
+            out[key] = ai_val
+            if key in ('explanation', 'why_wrong'):
+                used_ai = True
+        elif ai_val and not (out.get(key) or '').strip():
+            out[key] = ai_val
+
+    if used_ai:
+        out['provider_name'] = ai_payload.get('provider_name') or out.get('provider_name')
+        out['model_name'] = ai_payload.get('model_name') or out.get('model_name')
+        raw = {}
+        if isinstance(local_payload.get('raw_response_json'), dict):
+            raw.update(local_payload['raw_response_json'])
+        if isinstance(ai_payload.get('raw_response_json'), dict):
+            raw.update(ai_payload['raw_response_json'])
+        raw['quality_merged'] = True
+        out['raw_response_json'] = raw
+    return out
+
+
+def _gemini_payload_from_data(data, *, model, lang) -> dict:
+    return {
+        'explanation': (data.get('explanation') or '').strip(),
+        'why_wrong': (data.get('why_wrong') or '').strip(),
+        'tip': (data.get('tip') or '').strip(),
+        'evidence_quote': (data.get('evidence_quote') or '').strip()[:400],
+        'trap': (data.get('trap') or '').strip()[:500],
+        'provider_name': 'gemini',
+        'model_name': model,
+        'raw_response_json': {
+            **(data.get('_raw') or data if isinstance(data.get('_raw') or data, dict) else {}),
+            'ai_language': lang,
+        },
+    }
 
 
 def generate_explanation_for_item(item, *, test, lang='uz') -> dict:
@@ -308,48 +615,75 @@ def generate_explanation_for_item(item, *, test, lang='uz') -> dict:
         os.environ.get('AI_WRITING_FEEDBACK_MODEL', 'gemini-2.5-flash'),
     ).strip()
 
+    source = _source_material_for_item(test, item, skill=skill)
+    local = _localize_rl_explanation(
+        _local_explanation(item, skill=skill, source_text=source),
+        item,
+        skill=skill,
+        lang=lang,
+        source_text=source,
+    )
+
     if provider in ('', 'local', 'heuristic', 'fallback'):
-        payload = _local_explanation(item, skill=skill)
-        return _localize_rl_explanation(payload, item, skill=skill, lang=lang)
+        return local
 
-    passage = ''
-    if skill == 'reading':
-        passage = _passage_excerpt_for_question(test, item['question'])
-
-    prompt = _build_prompt(item, skill=skill, passage_excerpt=passage, lang=lang)
     if provider == 'gemini':
         errors = []
-        for model in _gemini_model_chain(model_name):
-            try:
-                data = _call_gemini_json(prompt, model=model)
-                return {
-                    'explanation': (data.get('explanation') or '').strip(),
-                    'why_wrong': (data.get('why_wrong') or '').strip(),
-                    'tip': (data.get('tip') or '').strip(),
-                    'evidence_quote': (data.get('evidence_quote') or '').strip()[:400],
-                    'trap': (data.get('trap') or '').strip()[:500],
-                    'provider_name': 'gemini',
-                    'model_name': model,
-                    'raw_response_json': {
-                        **(data.get('_raw') or data if isinstance(data.get('_raw') or data, dict) else {}),
-                        'ai_language': lang,
-                    },
-                }
-            except Exception as exc:
-                errors.append(str(exc)[:200])
+        best = None
+
+        def _keep_best(candidate):
+            nonlocal best
+            if best is None:
+                best = candidate
+                return
+            # Uzunroq explanation / to'liqroq why ni afzal ko'ramiz
+            score = _field_len(candidate, 'explanation') + _field_len(candidate, 'why_wrong')
+            best_score = _field_len(best, 'explanation') + _field_len(best, 'why_wrong')
+            if score > best_score:
+                best = candidate
+
+        for attempt, stricter in enumerate((False, True)):
+            prompt = _build_prompt(
+                item,
+                skill=skill,
+                source_material=source,
+                lang=lang,
+                stricter=stricter,
+            )
+            for model in _gemini_model_chain(model_name):
+                try:
+                    data = _call_gemini_json(prompt, model=model)
+                    candidate = _gemini_payload_from_data(data, model=model, lang=lang)
+                    _keep_best(candidate)
+                    if not _payload_is_weak(candidate):
+                        merged = _merge_explanation_payload(candidate, local)
+                        return _stamp_ai_language(merged, lang)
+                    # zaif — keyingi modelni ham sinab ko'ramiz
+                except Exception as exc:
+                    errors.append(str(exc)[:200])
+                    continue
+            # Birinchi urinishda hech bo'lmasa zaif javob bo'lsa — stricter retry
+            if attempt == 0 and best is not None:
                 continue
-        fallback = _localize_rl_explanation(
-            _local_explanation(item, skill=skill), item, skill=skill, lang=lang,
-        )
+            break
+
+        if best:
+            merged = _merge_explanation_payload(best, local)
+            raw = merged.get('raw_response_json') if isinstance(merged.get('raw_response_json'), dict) else {}
+            if errors:
+                raw['gemini_errors'] = errors
+            raw['quality_fallback'] = _payload_is_weak(best)
+            merged['raw_response_json'] = raw
+            return _stamp_ai_language(merged, lang)
+
+        fallback = dict(local)
         fallback['raw_response_json'] = {
             **(fallback.get('raw_response_json') or {}),
             'gemini_errors': errors,
         }
         return fallback
 
-    return _localize_rl_explanation(
-        _local_explanation(item, skill=skill), item, skill=skill, lang=lang,
-    )
+    return local
 
 
 def collect_wrong_review_items(test_result, *, user_answers=None, limit=MAX_EXPLANATIONS_PER_RESULT):
@@ -468,23 +802,23 @@ def generate_single_explanation(explanation_obj, *, force=True):
             item, test=test_result.test, lang=lang,
         )
         if not (payload.get('explanation') or '').strip():
+            skill = test_result.test.test_type
+            source = _source_material_for_item(test_result.test, item, skill=skill)
             payload = _localize_rl_explanation(
-                _local_explanation(item, skill=test_result.test.test_type),
-                item,
-                skill=test_result.test.test_type,
-                lang=lang,
+                _local_explanation(item, skill=skill, source_text=source),
+                item, skill=skill, lang=lang, source_text=source,
             )
         if language_still_matches(test_result, lang):
             explanation_obj.apply_completed(payload)
     except Exception as exc:
         try:
             if language_still_matches(test_result, lang):
+                skill = test_result.test.test_type
+                source = _source_material_for_item(test_result.test, item, skill=skill)
                 explanation_obj.apply_completed(
                     _localize_rl_explanation(
-                        _local_explanation(item, skill=test_result.test.test_type),
-                        item,
-                        skill=test_result.test.test_type,
-                        lang=lang,
+                        _local_explanation(item, skill=skill, source_text=source),
+                        item, skill=skill, lang=lang, source_text=source,
                     )
                 )
         except Exception:
@@ -561,22 +895,22 @@ def generate_answer_explanations_for_result(test_result, *, force=False, only_sl
                 item, test=test_result.test, lang=lang,
             )
             if not (payload.get('explanation') or '').strip():
+                skill = test_result.test.test_type
+                source = _source_material_for_item(test_result.test, item, skill=skill)
                 payload = _localize_rl_explanation(
-                    _local_explanation(item, skill=test_result.test.test_type),
-                    item,
-                    skill=test_result.test.test_type,
-                    lang=lang,
+                    _local_explanation(item, skill=skill, source_text=source),
+                    item, skill=skill, lang=lang, source_text=source,
                 )
             if language_still_matches(test_result, lang):
                 obj.apply_completed(payload)
         except Exception as exc:
             try:
                 if language_still_matches(test_result, lang):
+                    skill = test_result.test.test_type
+                    source = _source_material_for_item(test_result.test, item, skill=skill)
                     obj.apply_completed(_localize_rl_explanation(
-                        _local_explanation(item, skill=test_result.test.test_type),
-                        item,
-                        skill=test_result.test.test_type,
-                        lang=lang,
+                        _local_explanation(item, skill=skill, source_text=source),
+                        item, skill=skill, lang=lang, source_text=source,
                     ))
             except Exception:
                 if language_still_matches(test_result, lang):

@@ -1,0 +1,54 @@
+{# FILL / notes / short_answer: matn ichida javobni ko'rsatish #}
+<div class="tr-slot">
+    <div class="tr-slot__head">
+        <span class="tr-slot__tag"><i class="fas fa-quote-left"></i> {% trans "Matndagi joy" %}</span>
+        {% if item.slot_placeholder %}
+        <span class="tr-slot__id">{{ item.slot_placeholder }}</span>
+        {% elif item.slot_label %}
+        <span class="tr-slot__id">{{ item.slot_label }}</span>
+        {% endif %}
+    </div>
+
+    <div class="tr-slot__board">
+        <div class="tr-slot__row tr-slot__row--you">
+            <div class="tr-slot__row-label">
+                <span class="tr-slot__dot tr-slot__dot--you"></span>
+                {% trans "Sizning to'ldirishingiz" %}
+            </div>
+            {% if item.review_layout == 'inline_blank' %}
+            <p class="tr-slot__sentence">
+                <span class="tr-slot__pre">{{ item.slot_before }}</span><span class="tr-slot__gap tr-slot__gap--{{ card_state }}">{% if item.user_part %}{{ item.user_part }}{% else %}<span class="tr-slot__miss">{% trans "bo'sh" %}</span>{% endif %}</span><span class="tr-slot__pre">{{ item.slot_after }}</span>
+            </p>
+            {% else %}
+            <div class="tr-slot__prompt-wrap">
+                <p class="tr-slot__prompt">{{ item.slot_context }}</p>
+                <span class="tr-slot__gap tr-slot__gap--{{ card_state }}">{% if item.user_part %}{{ item.user_part }}{% else %}<span class="tr-slot__miss">{% trans "bo'sh" %}</span>{% endif %}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if card_state != 'correct' %}
+        <div class="tr-slot__bridge" aria-hidden="true">
+            <span class="tr-slot__bridge-line"></span>
+            <span class="tr-slot__bridge-icon"><i class="fas fa-{% if card_state == 'wrong' %}times{% elif card_state == 'empty' %}minus{% else %}adjust{% endif %}"></i></span>
+            <span class="tr-slot__bridge-line"></span>
+        </div>
+        <div class="tr-slot__row tr-slot__row--key">
+            <div class="tr-slot__row-label">
+                <span class="tr-slot__dot tr-slot__dot--key"></span>
+                {% trans "To'g'ri to'ldirish" %}
+            </div>
+            {% if item.review_layout == 'inline_blank' %}
+            <p class="tr-slot__sentence">
+                <span class="tr-slot__pre">{{ item.slot_before }}</span><span class="tr-slot__gap tr-slot__gap--key">{% if item.correct_part %}{{ item.correct_part }}{% else %}—{% endif %}</span><span class="tr-slot__pre">{{ item.slot_after }}</span>
+            </p>
+            {% else %}
+            <div class="tr-slot__prompt-wrap">
+                <p class="tr-slot__prompt">{{ item.slot_context }}</p>
+                <span class="tr-slot__gap tr-slot__gap--key">{% if item.correct_part %}{{ item.correct_part }}{% else %}—{% endif %}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>

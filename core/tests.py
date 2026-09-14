@@ -288,6 +288,66 @@ class BuildReviewItemsTests(TestCase):
         self.assertEqual(items[0]['state'], 'empty')
         self.assertEqual(items[1]['slot_label'], '#1')
 
+    def test_fill_notes_review_shows_blank_context_per_slot(self):
+        from core.test_session_helpers import build_review_items
+
+        category = Category.objects.create(name="N", slug="cat-notes-review")
+        exam = Test.objects.create(
+            title="Notes", category=category, test_type="listening",
+            reading_passages_json=[], reading_text="",
+        )
+        q = Question.objects.create(
+            test=exam,
+            question_type="notes_completion",
+            order=1,
+            question_text=(
+                "Student Accommodation\n"
+                "Type: [1]\n"
+                "Rent per week: £ [2]\n"
+                "Bills included: [3]"
+            ),
+            correct_answer_json=["room", "150", "no"],
+        )
+        items = build_review_items([q], {})
+        self.assertEqual(len(items), 3)
+        self.assertEqual(items[0]['slot_label'], '[1]')
+        self.assertEqual(items[1]['slot_label'], '[2]')
+        self.assertEqual(items[1]['review_layout'], 'inline_blank')
+        self.assertIn('Rent per week', items[1]['slot_context'])
+        self.assertIn('[2]', items[1]['slot_context'])
+        self.assertTrue(items[1]['slot_before'].endswith('£ ') or '£' in items[1]['slot_before'])
+        self.assertEqual(items[1]['slot_placeholder'], '[2]')
+        self.assertFalse(items[0]['show_question_text'])
+        self.assertFalse(items[1]['show_question_text'])
+        self.assertIn('tr-blank-mark', str(items[1]['slot_context_html']))
+
+    def test_short_answer_items_use_prompt_as_context(self):
+        from core.test_session_helpers import build_review_items
+
+        category = Category.objects.create(name="SA", slug="cat-sa-review")
+        exam = Test.objects.create(
+            title="SA", category=category, test_type="reading",
+            reading_passages_json=[], reading_text="",
+        )
+        q = Question.objects.create(
+            test=exam,
+            question_type="short_answer",
+            order=1,
+            question_text="Questions 1–2",
+            options_json={
+                "short_answer_items": [
+                    {"prompt": "What type of mineral?", "max_words": 2},
+                    {"prompt": "Whose name might be carved?", "max_words": 2},
+                ],
+            },
+            correct_answer_json=["gold", "emperor"],
+        )
+        items = build_review_items([q], {})
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]['slot_context'], 'What type of mineral?')
+        self.assertEqual(items[1]['slot_context'], 'Whose name might be carved?')
+        self.assertEqual(items[0]['review_layout'], 'prompt')
+        self.assertFalse(items[0]['show_question_text'])
 
 class TypeStatsPartialTests(TestCase):
     def test_build_type_stats_uses_slot_points(self):

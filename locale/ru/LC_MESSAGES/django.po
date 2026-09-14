@@ -902,8 +902,23 @@ msgstr "{{ n }} сек / вопрос"
 msgid "Javob {{ n }}"
 msgstr "Ответ {{ n }}"
 
+msgid "Savol {{ n }}"
+msgstr "Вопрос {{ n }}"
+
 msgid "Savol {{ n }} · {{ label }}"
 msgstr "Вопрос {{ n }} · {{ label }}"
+
+msgid "Matndagi joy"
+msgstr "Место в тексте"
+
+msgid "Sizning to'ldirishingiz"
+msgstr "Ваше заполнение"
+
+msgid "To'g'ri to'ldirish"
+msgstr "Правильное заполнение"
+
+msgid "bo'sh"
+msgstr "пусто"
 
 msgid "Baholash"
 msgstr "Оценка"

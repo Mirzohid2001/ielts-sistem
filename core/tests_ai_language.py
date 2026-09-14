@@ -80,6 +80,7 @@ class AILanguageIntegrationTests(TestCase):
         with self.settings(AI_WRITING_FEEDBACK_PROVIDER='local'):
             payload = generate_explanation_for_item(item, test=self.exam, lang='ru')
         self.assertIn('Правильный', payload['explanation'])
+        self.assertGreaterEqual(len(payload['explanation']), 60)
         self.assertEqual(payload['raw_response_json'].get('ai_language'), 'ru')
 
     def test_local_writing_feedback_russian(self):
