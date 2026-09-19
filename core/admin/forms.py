@@ -258,8 +258,10 @@ class QuestionAdminForm(forms.ModelForm):
                 pass
 
         if inst and inst.question_type in ('fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion', 'table_completion', 'short_answer'):
-            if isinstance(corr, list):
-                self.fields['fill_answers'].initial = ', '.join(str(x) for x in corr)
+            from core.models import normalize_fill_correct_answers
+            fill_list = normalize_fill_correct_answers(corr, question_text=inst.question_text or '')
+            if fill_list:
+                self.fields['fill_answers'].initial = ', '.join(fill_list)
             elif inst.correct_answer:
                 self.fields['fill_answers'].initial = inst.correct_answer
             if inst.question_type == 'short_answer':
@@ -508,7 +510,11 @@ class QuestionAdminForm(forms.ModelForm):
                 options_json.pop('images', None)
 
         if q_type in fill_types and fill_answers:
-            parsed = [x.strip() for x in fill_answers.replace('\n', ',').split(',') if x.strip()]
+            from core.models import normalize_fill_correct_answers
+            # "copper, weight" yoki "7:copper, 8:weight" / JSON — bir xil list[str]
+            parsed = normalize_fill_correct_answers(
+                fill_answers, question_text=question_text or ''
+            )
             if parsed:
                 cleaned['correct_answer_json'] = parsed
                 options_json['blanks_count'] = len(parsed)

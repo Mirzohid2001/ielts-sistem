@@ -11,7 +11,7 @@
         {% endif %}
     </div>
     {% if explanation.explanation %}
-    <p class="tr-rl-ai__text">{{ explanation.explanation }}</p>
+    <p class="tr-rl-ai__text">{{ explanation.explanation|linebreaksbr }}</p>
     {% endif %}
     {% if explanation.evidence_quote %}
     <blockquote class="tr-rl-ai__quote">«{{ explanation.evidence_quote }}»</blockquote>
@@ -19,19 +19,19 @@
     {% if explanation.why_wrong %}
     <div class="tr-rl-ai__block tr-rl-ai__block--why">
         <span class="tr-rl-ai__label">{% ai_t "Nega xato" "Почему ошибка" %}</span>
-        <p>{{ explanation.why_wrong }}</p>
+        <p>{{ explanation.why_wrong|linebreaksbr }}</p>
     </div>
     {% endif %}
     {% if explanation.trap %}
     <div class="tr-rl-ai__block tr-rl-ai__block--trap">
         <span class="tr-rl-ai__label">{% ai_t "Tuzoq" "Ловушка" %}</span>
-        <p>{{ explanation.trap }}</p>
+        <p>{{ explanation.trap|linebreaksbr }}</p>
     </div>
     {% endif %}
     {% if explanation.tip %}
     <div class="tr-rl-ai__block tr-rl-ai__block--tip">
         <span class="tr-rl-ai__label"><i class="fas fa-lightbulb" aria-hidden="true"></i> {% ai_t "Maslahat" "Совет" %}</span>
-        <p>{{ explanation.tip }}</p>
+        <p>{{ explanation.tip|linebreaksbr }}</p>
     </div>
     {% endif %}
 </div>

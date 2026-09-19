@@ -57,6 +57,129 @@ def blank_answers_match(user_text, correct_text):
     return False
 
 
+_FILL_ANSWER_TYPES = (
+    'fill_blank', 'summary_completion', 'notes_completion', 'sentence_completion',
+    'table_completion', 'short_answer',
+)
+
+
+def _fill_slot_answer_to_str(value):
+    """Bitta fill slot qiymatini ko'rsatish/baholash uchun qatorga."""
+    if value is None:
+        return ''
+    if isinstance(value, dict):
+        for key in ('answer', 'text', 'correct', 'value', 'word'):
+            got = value.get(key)
+            if got is not None and str(got).strip():
+                return str(got).strip()
+        return ''
+    if isinstance(value, (list, tuple)):
+        parts = [str(p).strip() for p in value if p is not None and str(p).strip()]
+        return '|'.join(parts)
+    return str(value).strip()
+
+
+def format_fill_correct_display(text):
+    """Review UI: color|colour → color / colour."""
+    s = (text or '').strip()
+    if not s:
+        return ''
+    if '|' in s:
+        return ' / '.join(p.strip() for p in s.split('|') if p.strip()) or s
+    return s
+
+
+def normalize_fill_correct_answers(raw, question_text=''):
+    """
+    Fill to'g'ri javoblarni har doim list[str] qilib beradi.
+    Admin/import ba'zan dict ({"7":"copper"}), JSON-string yoki vergulli matn saqlaydi —
+    shunda review/AI da kalit yoki harf chiqib ketmasin.
+    """
+    if raw is None or raw == '' or raw == [] or raw == {}:
+        return []
+
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        if (s.startswith('[') and s.endswith(']')) or (s.startswith('{') and s.endswith('}')):
+            try:
+                parsed = json.loads(s)
+            except (TypeError, json.JSONDecodeError, ValueError):
+                parsed = None
+            if parsed is not None:
+                return normalize_fill_correct_answers(parsed, question_text=question_text)
+        # "7:copper, 8:weight" yoki oddiy vergul
+        if re.search(r'\d+\s*:', s):
+            as_map = {}
+            for part in re.split(r'[\n,;]+', s):
+                part = part.strip()
+                if not part:
+                    continue
+                m = re.match(r'^(\d+)\s*:\s*(.+)$', part)
+                if m:
+                    as_map[m.group(1)] = m.group(2).strip()
+            if as_map:
+                return normalize_fill_correct_answers(as_map, question_text=question_text)
+        return [x.strip() for x in s.replace('\n', ',').split(',') if x.strip()]
+
+    if isinstance(raw, dict):
+        # {"answers": ["copper", "weight"]} yoki {"correct_answers": "..."}
+        for nest_key in ('answers', 'correct_answers', 'correct', 'blanks', 'fill_answers'):
+            if nest_key not in raw:
+                continue
+            nested = raw.get(nest_key)
+            if isinstance(nested, (list, tuple, str)) and nested not in ('', [], ()):
+                parsed = normalize_fill_correct_answers(nested, question_text=question_text)
+                if parsed:
+                    return parsed
+
+        brackets = re.findall(r'\[([^\]]+)\]', question_text or '')
+        if brackets:
+            out = []
+            for label in brackets:
+                key = (label or '').strip()
+                val = raw.get(key)
+                if val is None and key.isdigit():
+                    val = raw.get(int(key)) if any(isinstance(k, int) for k in raw.keys()) else None
+                if val is None:
+                    m = re.match(r'^(\d+)', key)
+                    if m:
+                        num = m.group(1)
+                        val = raw.get(num)
+                        if val is None and any(isinstance(k, int) for k in raw.keys()):
+                            val = raw.get(int(num))
+                out.append(_fill_slot_answer_to_str(val))
+            if any(out):
+                return out
+
+        def _sk(k):
+            try:
+                return (0, int(k))
+            except (TypeError, ValueError):
+                return (1, str(k))
+
+        # Faqat raqamli/slot kalitlar — wrapper kalitlarni tashlash
+        slot_items = [
+            (k, v) for k, v in raw.items()
+            if str(k).strip() not in (
+                'answers', 'correct_answers', 'correct', 'blanks', 'fill_answers',
+                'instruction', 'part', 'options',
+            )
+        ]
+        if slot_items:
+            return [
+                _fill_slot_answer_to_str(v)
+                for _, v in sorted(slot_items, key=lambda kv: _sk(kv[0]))
+            ]
+        return []
+
+    if isinstance(raw, list):
+        return [_fill_slot_answer_to_str(x) for x in raw]
+
+    return [_fill_slot_answer_to_str(raw)]
+
+
 class Category(models.Model):
     """Kategoriya modeli"""
     name = models.CharField(max_length=200, verbose_name="Nomi")
@@ -600,19 +723,23 @@ class Question(models.Model):
             sa = (self.options_json or {}).get('short_answer_items') or []
             if isinstance(sa, list) and sa:
                 return len(sa)
-        cl = self.get_correct_answers_list()
-        if cl:
-            return len(cl)
         import re
         text = self.question_text or ''
-        # IELTS map/notes: [15], [16] kabi savol raqamlari — bo'sh joylar soni qavs juftlari soni bilan bir xil.
-        # max(15..20)=20 bo'lib ketardi va ortiqcha slotlar UI/POST ni buzardi.
+        # IELTS map/notes: [15], [16] — bo'sh joylar soni = qavs juftlari (max(15..20)=20 bo'lib ketmasin).
+        # Matndagi [N] — UI/POST uchun asosiy haqiqat; javoblar kam bo'lsa ham slotlar yo'qolmasin.
         bracket_placeholders = re.findall(r'\[[^\]]+\]', text)
         if bracket_placeholders:
             return len(bracket_placeholders)
-        nums = re.findall(r'\[(\d+)\]', text)
-        if nums:
-            return max(int(n) for n in nums)
+        opts = self.options_json if isinstance(self.options_json, dict) else {}
+        try:
+            n_opt = int(opts.get('blanks_count') or 0)
+        except (TypeError, ValueError):
+            n_opt = 0
+        if n_opt > 0:
+            return n_opt
+        cl = self.get_correct_answers_list()
+        if cl:
+            return len(cl)
         return 1
 
     def get_max_words_for_blank_index(self, idx):
@@ -683,9 +810,32 @@ class Question(models.Model):
         return f"{letter.upper()}) {text}" if letter else text
 
     def get_correct_answers_list(self):
-        """To'g'ri javoblarni ro'yxat sifatida olish"""
-        if self.correct_answer_json:
-            return self.correct_answer_json
+        """To'g'ri javoblarni ro'yxat sifatida olish (fill uchun har doim list[str])."""
+        raw = self.correct_answer_json
+        if raw in (None, '', [], {}):
+            raw = None
+        if raw is None and self.correct_answer:
+            raw = self.correct_answer
+
+        if self.question_type in _FILL_ANSWER_TYPES:
+            qtext = self.question_text or ''
+            normalized = normalize_fill_correct_answers(raw, question_text=qtext)
+            if normalized:
+                return normalized
+            if self.correct_answer and raw is not self.correct_answer:
+                normalized = normalize_fill_correct_answers(self.correct_answer, question_text=qtext)
+                if normalized:
+                    return normalized
+            opts = self.options_json if isinstance(self.options_json, dict) else {}
+            for key in ('correct_answers', 'answers', 'fill_answers'):
+                if opts.get(key) not in (None, '', [], {}):
+                    normalized = normalize_fill_correct_answers(opts.get(key), question_text=qtext)
+                    if normalized:
+                        return normalized
+            return []
+
+        if raw is not None and raw != '':
+            return raw
         if self.correct_answer:
             return [self.correct_answer]
         return []
@@ -1485,7 +1635,14 @@ class AIAnswerExplanation(models.Model):
         self.tip = (payload.get('tip') or '')[:2000]
         self.evidence_quote = (payload.get('evidence_quote') or '')[:400]
         self.trap = (payload.get('trap') or '')[:500]
-        self.raw_response_json = payload.get('raw_response_json') or {}
+        raw = payload.get('raw_response_json') or {}
+        if not isinstance(raw, dict):
+            raw = {}
+        else:
+            raw = dict(raw)
+        # Engine versiyasi — eski qisqa tushuntirishlarni avtomatik yangilash uchun
+        raw.setdefault('rl_engine_version', 5)
+        self.raw_response_json = raw
         self.error_message = ''
         self.save(update_fields=[
             'status', 'provider_name', 'model_name', 'explanation',

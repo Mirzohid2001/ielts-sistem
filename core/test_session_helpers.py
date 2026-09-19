@@ -656,6 +656,8 @@ def build_review_items(questions, user_answers):
             continue
 
         if qt in FILL_TYPES:
+            from core.models import format_fill_correct_display
+
             correct_list = list(question.get_correct_answers_list())
             while len(correct_list) < n_slots:
                 correct_list.append('')
@@ -676,7 +678,7 @@ def build_review_items(questions, user_answers):
                 uv = user_list[i] if i < len(user_list) else ''
                 cv = correct_list[i] if i < len(correct_list) else ''
                 up = str(uv).strip()
-                cp = str(cv).strip()
+                cp = format_fill_correct_display(cv)
                 if not up:
                     st = 'empty' if not any_answer else 'wrong'
                 else:

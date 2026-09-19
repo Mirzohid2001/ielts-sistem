@@ -1369,6 +1369,112 @@ class AnswerNormalizationTests(TestCase):
         self.assertTrue(blank_answers_match("Colour", "color|colour"))
         self.assertTrue(blank_answers_match("color", "colour|color"))
 
+    def test_fill_dict_keyed_by_paper_num_normalizes_to_values(self):
+        from core.models import normalize_fill_correct_answers
+        text = (
+            "The wires were made of [7].\n"
+            "Ships due to its [8].\n"
+            "Thickness and [9].\n"
+            "Get the [10]."
+        )
+        raw = {"7": "copper", "8": "weight", "9": "strength", "10": "money"}
+        self.assertEqual(
+            normalize_fill_correct_answers(raw, question_text=text),
+            ["copper", "weight", "strength", "money"],
+        )
+
+    def test_fill_nested_answers_dict_and_bracket_count(self):
+        from core.models import normalize_fill_correct_answers
+        text = "a [7] b [8] c [9] d [10]"
+        self.assertEqual(
+            normalize_fill_correct_answers(
+                {"answers": ["copper", "weight", "strength", "money"]},
+                question_text=text,
+            ),
+            ["copper", "weight", "strength", "money"],
+        )
+        q = Question(
+            question_type="summary_completion",
+            question_text=text,
+            correct_answer_json=["copper", "weight"],  # kam javob
+        )
+        # Matnda 4 ta [N] — slotlar yo'qolmasin
+        self.assertEqual(q.fill_blanks_count(), 4)
+
+    def test_fill_json_string_and_comma_string(self):
+        from core.models import normalize_fill_correct_answers
+        self.assertEqual(
+            normalize_fill_correct_answers('["copper", "weight"]'),
+            ["copper", "weight"],
+        )
+        self.assertEqual(
+            normalize_fill_correct_answers("copper, weight"),
+            ["copper", "weight"],
+        )
+
+    def test_review_shows_dict_fill_values_not_keys(self):
+        from core.test_session_helpers import build_review_items
+        cat = Category.objects.create(name="FillNorm", slug="cat-fill-norm")
+        test = Test.objects.create(
+            title="Fill dict",
+            category=cat,
+            test_type="reading",
+            reading_passages_json=[],
+            reading_text="",
+        )
+        q = Question.objects.create(
+            test=test,
+            question_type="summary_completion",
+            order=1,
+            question_text=(
+                "The central wires were made of [7]. "
+                "The cable needed two ships due to its [8]."
+            ),
+            correct_answer_json={"7": "copper", "8": "weight"},
+            options_json={"instruction": "ONE WORD ONLY", "part": 1},
+        )
+        class A:
+            user_answer = '["iron", "size"]'
+        items = build_review_items([q], {q.pk: A()})
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]["correct_part"], "copper")
+        self.assertEqual(items[1]["correct_part"], "weight")
+        self.assertEqual(items[0]["ui_num"], 7)
+        self.assertEqual(items[1]["ui_num"], 8)
+        self.assertEqual(items[0]["state"], "wrong")
+        # scoring also uses values
+        got, total = q.score_fill_answer('["copper", "weight"]')
+        self.assertEqual((got, total), (2, 2))
+
+    def test_review_pipe_synonym_display_and_options_json_fallback(self):
+        from core.test_session_helpers import build_review_items
+        cat = Category.objects.create(name="FillPipe", slug="cat-fill-pipe")
+        test = Test.objects.create(
+            title="Fill pipe",
+            category=cat,
+            test_type="reading",
+            reading_passages_json=[],
+            reading_text="",
+        )
+        q = Question.objects.create(
+            test=test,
+            question_type="summary_completion",
+            order=1,
+            question_text="Made of [7]. Due to [8].",
+            correct_answer_json=[],
+            options_json={
+                "part": 1,
+                "answers": ["copper|cu", "weight"],
+            },
+        )
+        class A:
+            user_answer = '["iron", "size"]'
+        items = build_review_items([q], {q.pk: A()})
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]["correct_part"], "copper / cu")
+        self.assertEqual(items[1]["correct_part"], "weight")
+        self.assertTrue(blank_answers_match("cu", "copper|cu"))
+
 
 class QuestionAdminFormInitialTests(TestCase):
     """Admin tahrirlashda saqlangan ma'lumotlar formaga qayta yuklanishi."""

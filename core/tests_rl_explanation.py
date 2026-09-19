@@ -200,6 +200,75 @@ class RLExplanationHelpersTests(SimpleTestCase):
         self.assertTrue(merged['why_wrong'])
 
 
+    def test_local_fill_explanation_is_detailed(self):
+        from core.services.ai_rl_explanation import _local_explanation, _payload_is_weak
+
+        item = {
+            'question': type('Q', (), {
+                'pk': 9,
+                'question_type': 'summary_completion',
+                'question_text': 'The central wires of the cable were made of [7].',
+                'question_instruction': 'ONE WORD ONLY',
+            })(),
+            'user_part': 'iron',
+            'correct_part': 'copper',
+            'ui_num': 7,
+            'display_num': 7,
+            'slot_before': 'The central wires of the cable were made of ',
+            'slot_after': '.',
+            'slot_placeholder': '[7]',
+            'slot_context': 'The central wires of the cable were made of [7].',
+            'review_layout': 'inline_blank',
+        }
+        source = 'The core of the cable consisted of seven copper wires covered with gutta-percha.'
+        payload = _local_explanation(item, skill='reading', source_text=source)
+        self.assertGreaterEqual(len(payload['explanation']), 280)
+        self.assertGreaterEqual(len(payload['why_wrong']), 90)
+        self.assertIn('copper', payload['explanation'])
+        self.assertIn('iron', payload['explanation'])
+        self.assertIn('Savol 7', payload['explanation'])
+        self.assertFalse(_payload_is_weak(payload))
+
+    def test_old_short_explanation_needs_refresh(self):
+        from core.services.ai_rl_explanation import (
+            RL_EXPLANATION_ENGINE_VERSION,
+            _explanation_obj_needs_refresh,
+            _payload_is_weak,
+            _stamp_engine_version,
+        )
+
+        class Obj:
+            status = 'completed'
+            explanation = 'Qisqa.'
+            why_wrong = 'Xato.'
+            raw_response_json = {'rl_engine_version': 1}
+
+        self.assertTrue(_explanation_obj_needs_refresh(Obj()))
+        Obj.why_wrong = (
+            'iron xato chunki kontekst copper kutadi. Dalil matnda copper wires. '
+            'Word form va meaning mos emas. Keyingi safar blank qatorini o‘qing.'
+        )
+        Obj.explanation = (
+            'Savol 7 (summary completion). Bo‘sh joy: The wires were made of [7]. '
+            'To‘g‘ri javob — copper, chunki matnda seven copper wires aytilgan. '
+            'Siz iron yozdingiz — bu boshqa metall va kontekstga mos kelmaydi. '
+            'Gap-fill da avval qator grammatikasini, keyin passage synonymini tekshiring. '
+            'So‘z soni chegarasiga rioya qiling va spellingni qayta o‘qing. '
+            'Keyingi safar: qator → so‘z turi → matndan tasdiq → yozish.'
+        )
+        Obj.raw_response_json = {'rl_engine_version': RL_EXPLANATION_ENGINE_VERSION}
+        self.assertFalse(_payload_is_weak({
+            'explanation': Obj.explanation,
+            'why_wrong': Obj.why_wrong,
+        }))
+        self.assertFalse(_explanation_obj_needs_refresh(Obj()))
+        stamped = _stamp_engine_version({'explanation': 'x', 'raw_response_json': {}})
+        self.assertEqual(
+            stamped['raw_response_json']['rl_engine_version'],
+            RL_EXPLANATION_ENGINE_VERSION,
+        )
+
+
 class RLExplanationIntegrationTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username='rlai', password='pass12345')
