@@ -4106,3 +4106,95 @@ def monthly_report(request):
 def admin_toliq_yoriqnoma(request):
     """Admin uchun bitta sahifada to'liq yo'riqnoma — Test, Part, Savol qo'shish."""
     return render(request, 'admin/core/toliq_yoriqnoma.html')
+
+
+@login_required
+def practice_hub(request, skill='reading'):
+    """Reading/Writing AI mashq sahifasi."""
+    from core.services.ai_practice import LEVELS, READING_TYPES, WRITING_FOCUSES
+
+    skill = (skill or request.GET.get('skill') or 'reading').strip().lower()
+    if skill not in ('reading', 'writing'):
+        skill = 'reading'
+
+    reading_types = [
+        {'key': key, 'label': meta['label_uz']}
+        for key, meta in READING_TYPES.items()
+    ]
+    writing_focuses = [
+        {'key': key, 'label': meta['label_uz']}
+        for key, meta in WRITING_FOCUSES.items()
+    ]
+    return render(request, 'core/practice/mashq.html', {
+        'skill': skill,
+        'levels': LEVELS,
+        'reading_types': reading_types,
+        'writing_focuses': writing_focuses,
+        'page_title': 'Reading mashqi' if skill == 'reading' else 'Writing mashqi',
+    })
+
+
+@login_required
+@require_POST
+def practice_generate(request):
+    """AJAX: daraja + tur bo'yicha AI mashq yaratish."""
+    from core.services.ai_language import get_ai_language
+    from core.services.ai_practice import generate_practice, public_practice_payload
+
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (TypeError, json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+
+    skill = str(body.get('skill') or 'reading').strip().lower()
+    if skill not in ('reading', 'writing'):
+        skill = 'reading'
+    level = str(body.get('level') or 'B1').strip()
+    practice_type = str(body.get('practice_type') or body.get('type') or '').strip()
+    lang = get_ai_language(request)
+
+    try:
+        payload = generate_practice(
+            skill=skill,
+            level=level,
+            practice_type=practice_type,
+            lang=lang,
+        )
+    except Exception as exc:
+        return JsonResponse({'ok': False, 'error': str(exc)[:300]}, status=500)
+
+    # To'liq payload sessionda; clientga correct bermaymiz
+    request.session['practice_payload'] = payload
+    request.session.modified = True
+    return JsonResponse({'ok': True, 'data': public_practice_payload(payload)})
+
+
+@login_required
+@require_POST
+def practice_check(request):
+    """AJAX: foydalanuvchi javoblarini tekshirish (sessiondagi payload bo'yicha)."""
+    from core.services.ai_practice import check_practice_answers
+
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (TypeError, json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+
+    payload = request.session.get('practice_payload') or {}
+    if not isinstance(payload, dict) or not payload:
+        return JsonResponse(
+            {'ok': False, 'error': 'Avval mashq yarating.'},
+            status=400,
+        )
+
+    answers = body.get('answers') or {}
+    if not isinstance(answers, dict):
+        answers = {}
+    # JSON keys always str — normalize
+    answers = {str(k): v for k, v in answers.items()}
+    result = check_practice_answers(payload, answers)
+    return JsonResponse({'ok': True, 'result': result})

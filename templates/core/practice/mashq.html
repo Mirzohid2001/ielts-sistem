@@ -1,0 +1,579 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - Ton academy{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mashq-page" id="mashqApp"
+     data-skill="{{ skill }}"
+     data-generate-url="{% url 'core:practice_generate' %}"
+     data-check-url="{% url 'core:practice_check' %}">
+    {% csrf_token %}
+
+    <div class="mashq-top">
+        <div class="mashq-tabs" role="tablist">
+            <a href="{% url 'core:practice_skill' 'reading' %}"
+               class="mashq-tab {% if skill == 'reading' %}is-active{% endif %}"
+               role="tab"
+               aria-selected="{% if skill == 'reading' %}true{% else %}false{% endif %}">
+                <i class="fas fa-book-open me-1"></i>{% trans "Reading mashqi" %}
+            </a>
+            <a href="{% url 'core:practice_skill' 'writing' %}"
+               class="mashq-tab {% if skill == 'writing' %}is-active{% endif %}"
+               role="tab"
+               aria-selected="{% if skill == 'writing' %}true{% else %}false{% endif %}">
+                <i class="fas fa-pen-fancy me-1"></i>{% trans "Writing mashqi" %}
+            </a>
+        </div>
+        <span class="mashq-badge"><i class="fas fa-bolt me-1"></i>{% trans "Yangi funksiya" %}</span>
+    </div>
+
+    <header class="mashq-hero">
+        {% if skill == 'reading' %}
+        <h1 class="mashq-hero__title">{% trans "Reading mashqi — IELTS Academic" %}</h1>
+        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq turini tanlang. AI sizga mos akademik matn va savollarni soniyalar ichida tayyorlaydi." %}</p>
+        {% else %}
+        <h1 class="mashq-hero__title">{% trans "Writing mashqi — IELTS Academic" %}</h1>
+        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq yo‘nalishini tanlang. AI insho namunasi va mashqlarni tayyorlaydi." %}</p>
+        {% endif %}
+    </header>
+
+    <section class="mashq-controls">
+        <div class="mashq-controls__group">
+            <span class="mashq-controls__label">{% trans "Daraja" %}</span>
+            <div class="mashq-levels" id="mashqLevels">
+                {% for lv in levels %}
+                <button type="button" class="mashq-level {% if lv == 'B1' %}is-active{% endif %}" data-level="{{ lv }}" aria-pressed="{% if lv == 'B1' %}true{% else %}false{% endif %}">{{ lv }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mashq-controls__group mashq-controls__group--grow">
+            {% if skill == 'reading' %}
+            <span class="mashq-controls__label">{% trans "Mashq turi" %}</span>
+            <div class="mashq-types" id="mashqTypes">
+                {% for item in reading_types %}
+                <button type="button" class="mashq-type {% if forloop.first %}is-active{% endif %}" data-type="{{ item.key }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ item.label }}</button>
+                {% endfor %}
+            </div>
+            {% else %}
+            <span class="mashq-controls__label">{% trans "Nimani mashq qilmoqchisiz" %}</span>
+            <div class="mashq-types" id="mashqTypes">
+                {% for item in writing_focuses %}
+                <button type="button" class="mashq-type {% if forloop.first %}is-active{% endif %}" data-type="{{ item.key }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ item.label }}</button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mashq-controls__action">
+            <button type="button" class="btn mashq-generate" id="mashqGenerate">
+                <i class="fas fa-wand-magic-sparkles me-1"></i>
+                {% if skill == 'reading' %}
+                {% trans "Matn va savollar yaratish" %}
+                {% else %}
+                {% trans "Insho va mashqlar yaratish" %}
+                {% endif %}
+            </button>
+        </div>
+    </section>
+
+    <div class="mashq-status" id="mashqStatus" hidden></div>
+
+    <div class="mashq-workspace">
+        <article class="mashq-panel mashq-panel--passage" id="mashqLeft">
+            <div class="mashq-placeholder" id="mashqLeftEmpty">
+                <div class="mashq-placeholder__icon"><i class="fas fa-file-alt"></i></div>
+                {% if skill == 'reading' %}
+                <p>{% trans "Daraja va mashq turini tanlab, «Matn va savollar yaratish» tugmasini bosing." %}</p>
+                {% else %}
+                <p>{% trans "Daraja va yo‘nalishni tanlab, «Insho va mashqlar yaratish» tugmasini bosing." %}</p>
+                {% endif %}
+            </div>
+            <div class="mashq-panel__body" id="mashqLeftBody" hidden></div>
+        </article>
+
+        <article class="mashq-panel mashq-panel--questions" id="mashqRight">
+            <div class="mashq-placeholder" id="mashqRightEmpty">
+                <div class="mashq-placeholder__icon"><i class="fas fa-list-check"></i></div>
+                {% if skill == 'reading' %}
+                <p>{% trans "Savollar matn bilan birga shu yerda chiqadi." %}</p>
+                {% else %}
+                <p>{% trans "Mashqlar insho bilan birga shu yerda bo‘ladi." %}</p>
+                {% endif %}
+            </div>
+            <div class="mashq-panel__body" id="mashqRightBody" hidden></div>
+        </article>
+    </div>
+
+    <div class="mashq-bar" id="mashqFooter" hidden>
+        <div class="mashq-bar__progress">
+            <div class="mashq-bar__meta">
+                <span id="mashqProgressLabel">{% trans "Javoblar" %}: 0/0</span>
+                <span class="mashq-bar__hint" id="mashqProgressHint">{% trans "Barcha savollarga javob bering" %}</span>
+            </div>
+            <div class="mashq-bar__track" aria-hidden="true">
+                <div class="mashq-bar__fill" id="mashqProgressFill" style="width:0%"></div>
+            </div>
+        </div>
+        <div class="mashq-bar__actions">
+            <div class="mashq-score" id="mashqScore" hidden></div>
+            <button type="button" class="btn btn-outline-secondary mashq-bar__reset" id="mashqResetAnswers" hidden>
+                {% trans "Qayta urinish" %}
+            </button>
+            <button type="button" class="btn btn-primary mashq-bar__check" id="mashqCheck">
+                <i class="fas fa-check-double me-1"></i>{% trans "Javoblarni tekshirish" %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% trans "Savollar" as t_questions %}
+{% trans "Mashqlar" as t_exercises %}
+{% trans "Task" as t_task %}
+{% trans "Namuna insho" as t_sample %}
+{% trans "Maslahat" as t_tip %}
+{% trans "Javobni yozing" as t_fill_ph %}
+{% trans "Javobingizni yozing" as t_write_ph %}
+{% trans "Javoblar" as t_answers %}
+{% trans "Tayyor — tekshirishingiz mumkin" as t_all_done %}
+{% trans "Barcha savollarga javob bering" as t_need_more %}
+{% trans "Ba’zi savollar bo‘sh. Baribir tekshirasizmi?" as t_unanswered %}
+{% trans "To‘g‘ri!" as t_correct %}
+{% trans "To‘g‘ri javob" as t_correct_ans %}
+{% trans "Sizning javobingiz" as t_your_ans %}
+{% trans "Javob berilmagan" as t_empty_ans %}
+{% trans "Yaratilmoqda…" as t_creating %}
+{% trans "AI mashq tayyorlamoqda…" as t_ai_busy %}
+{% trans "Xatolik yuz berdi" as t_err %}
+{% trans "Tarmoq xatosi. Qayta urinib ko‘ring." as t_net %}
+{% trans "Tekshirishda xatolik." as t_check_err %}
+{% trans "Natija" as t_score %}
+{% trans "ta to‘g‘ri" as t_of %}
+<script>
+(function () {
+    const app = document.getElementById('mashqApp');
+    if (!app) return;
+
+    const skill = app.dataset.skill || 'reading';
+    const generateUrl = app.dataset.generateUrl;
+    const checkUrl = app.dataset.checkUrl;
+    const csrf = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
+    const i18n = {
+        questions: "{{ t_questions|escapejs }}",
+        exercises: "{{ t_exercises|escapejs }}",
+        task: "{{ t_task|escapejs }}",
+        sample: "{{ t_sample|escapejs }}",
+        tip: "{{ t_tip|escapejs }}",
+        fillPh: "{{ t_fill_ph|escapejs }}",
+        writePh: "{{ t_write_ph|escapejs }}",
+        answers: "{{ t_answers|escapejs }}",
+        allDone: "{{ t_all_done|escapejs }}",
+        needMore: "{{ t_need_more|escapejs }}",
+        unanswered: "{{ t_unanswered|escapejs }}",
+        correct: "{{ t_correct|escapejs }}",
+        correctAns: "{{ t_correct_ans|escapejs }}",
+        yourAns: "{{ t_your_ans|escapejs }}",
+        emptyAns: "{{ t_empty_ans|escapejs }}",
+        creating: "{{ t_creating|escapejs }}",
+        aiBusy: "{{ t_ai_busy|escapejs }}",
+        err: "{{ t_err|escapejs }}",
+        net: "{{ t_net|escapejs }}",
+        checkErr: "{{ t_check_err|escapejs }}",
+        score: "{{ t_score|escapejs }}",
+        of: "{{ t_of|escapejs }}"
+    };
+
+    let payload = null;
+    let checked = false;
+
+    const levelsEl = document.getElementById('mashqLevels');
+    const typesEl = document.getElementById('mashqTypes');
+    const generateBtn = document.getElementById('mashqGenerate');
+    const checkBtn = document.getElementById('mashqCheck');
+    const resetBtn = document.getElementById('mashqResetAnswers');
+    const statusEl = document.getElementById('mashqStatus');
+    const leftEmpty = document.getElementById('mashqLeftEmpty');
+    const rightEmpty = document.getElementById('mashqRightEmpty');
+    const leftBody = document.getElementById('mashqLeftBody');
+    const rightBody = document.getElementById('mashqRightBody');
+    const footer = document.getElementById('mashqFooter');
+    const scoreEl = document.getElementById('mashqScore');
+    const progressLabel = document.getElementById('mashqProgressLabel');
+    const progressHint = document.getElementById('mashqProgressHint');
+    const progressFill = document.getElementById('mashqProgressFill');
+
+    function selectedLevel() {
+        const btn = levelsEl.querySelector('.mashq-level.is-active');
+        return btn ? btn.dataset.level : 'B1';
+    }
+    function selectedType() {
+        const btn = typesEl.querySelector('.mashq-type.is-active');
+        return btn ? btn.dataset.type : '';
+    }
+
+    function setStatus(msg, kind) {
+        if (!msg) {
+            statusEl.hidden = true;
+            statusEl.textContent = '';
+            statusEl.className = 'mashq-status';
+            return;
+        }
+        statusEl.hidden = false;
+        statusEl.textContent = msg;
+        statusEl.className = 'mashq-status mashq-status--' + (kind || 'info');
+    }
+
+    function esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function activateGroup(group, btn, cls) {
+        group.querySelectorAll('.' + cls).forEach(function (b) {
+            b.classList.remove('is-active');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('is-active');
+        btn.setAttribute('aria-pressed', 'true');
+    }
+
+    levelsEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.mashq-level');
+        if (!btn) return;
+        activateGroup(levelsEl, btn, 'mashq-level');
+    });
+
+    typesEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.mashq-type');
+        if (!btn) return;
+        activateGroup(typesEl, btn, 'mashq-type');
+    });
+
+    function renderOptions(id, opts) {
+        return '<div class="mashq-opts" role="radiogroup">' + opts.map(function (o) {
+            const letter = (o.letter || '').toLowerCase();
+            const val = letter || (o.text || '');
+            const showLetter = (letter || '').toUpperCase();
+            return '<label class="mashq-opt">' +
+                '<input type="radio" name="pq_' + id + '" value="' + esc(val) + '" data-letter="' + esc(letter) + '">' +
+                '<span class="mashq-opt__letter" aria-hidden="true">' + esc(showLetter || '•') + '</span>' +
+                '<span class="mashq-opt__text">' + esc(o.text || '') + '</span>' +
+                '</label>';
+        }).join('') + '</div>';
+    }
+
+    function renderQuestionBlock(q, idx, fillAsTextarea) {
+        const id = q.id != null ? q.id : (idx + 1);
+        const opts = Array.isArray(q.options) ? q.options : [];
+        let inner;
+        if (opts.length) {
+            inner = renderOptions(id, opts);
+        } else if (fillAsTextarea) {
+            inner = '<textarea class="form-control mashq-fill" data-qid="' + id + '" rows="2" placeholder="' + esc(i18n.writePh) + '"></textarea>';
+        } else {
+            inner = '<input type="text" class="form-control mashq-fill" data-qid="' + id + '" placeholder="' + esc(i18n.fillPh) + '" autocomplete="off" spellcheck="false">';
+        }
+        return '<div class="mashq-q" data-qid="' + id + '" data-index="' + (idx + 1) + '">' +
+            '<div class="mashq-q__head">' +
+                '<span class="mashq-q__badge">' + (idx + 1) + '</span>' +
+                '<div class="mashq-q__prompt">' + esc(q.prompt || '') + '</div>' +
+            '</div>' +
+            inner +
+            '<div class="mashq-q__feedback" hidden></div>' +
+            '</div>';
+    }
+
+    function bindAnswerEvents() {
+        rightBody.querySelectorAll('.mashq-opt input').forEach(function (input) {
+            input.addEventListener('change', function () {
+                const group = input.closest('.mashq-opts');
+                if (group) {
+                    group.querySelectorAll('.mashq-opt').forEach(function (lab) {
+                        lab.classList.remove('is-selected');
+                    });
+                }
+                const lab = input.closest('.mashq-opt');
+                if (lab) lab.classList.add('is-selected');
+                updateProgress();
+            });
+        });
+        rightBody.querySelectorAll('.mashq-fill').forEach(function (el) {
+            el.addEventListener('input', updateProgress);
+        });
+    }
+
+    function questionCount() {
+        return rightBody.querySelectorAll('.mashq-q').length;
+    }
+
+    function answeredCount() {
+        let n = 0;
+        rightBody.querySelectorAll('.mashq-q').forEach(function (block) {
+            const checkedRadio = block.querySelector('input[type=radio]:checked');
+            if (checkedRadio) { n += 1; return; }
+            const fill = block.querySelector('.mashq-fill');
+            if (fill && String(fill.value || '').trim()) n += 1;
+        });
+        return n;
+    }
+
+    function updateProgress() {
+        const total = questionCount();
+        const done = answeredCount();
+        const pct = total ? Math.round(100 * done / total) : 0;
+        progressLabel.textContent = i18n.answers + ': ' + done + '/' + total;
+        progressFill.style.width = pct + '%';
+        progressHint.textContent = (done >= total && total) ? i18n.allDone : i18n.needMore;
+        progressHint.classList.toggle('is-ready', done >= total && total > 0);
+        checkBtn.classList.toggle('is-ready', done >= total && total > 0 && !checked);
+    }
+
+    function setInputsDisabled(disabled) {
+        rightBody.querySelectorAll('input, textarea').forEach(function (el) {
+            el.disabled = !!disabled;
+        });
+    }
+
+    function renderReading(data) {
+        checked = false;
+        leftEmpty.hidden = true;
+        leftBody.hidden = false;
+        leftBody.innerHTML =
+            '<div class="mashq-meta">' +
+                '<span class="mashq-pill">' + esc(data.level) + '</span>' +
+                '<span class="mashq-pill mashq-pill--soft">' + esc(data.practice_label || '') + '</span>' +
+            '</div>' +
+            '<h2 class="mashq-passage__title">' + esc(data.title || 'Reading') + '</h2>' +
+            (data.instruction ? '<p class="mashq-instruction"><i class="fas fa-info-circle me-1"></i>' + esc(data.instruction) + '</p>' : '') +
+            '<div class="mashq-passage">' + esc(data.passage || '').replace(/\n/g, '<br>') + '</div>' +
+            (data.tip ? '<p class="mashq-tip"><i class="fas fa-lightbulb me-1"></i><strong>' + esc(i18n.tip) + ':</strong> ' + esc(data.tip) + '</p>' : '');
+
+        const qs = Array.isArray(data.questions) ? data.questions : [];
+        rightEmpty.hidden = true;
+        rightBody.hidden = false;
+        rightBody.innerHTML =
+            '<div class="mashq-panel__heading-row">' +
+                '<h3 class="mashq-panel__heading">' + esc(i18n.questions) + '</h3>' +
+                '<span class="mashq-count">' + qs.length + '</span>' +
+            '</div>' +
+            qs.map(function (q, idx) { return renderQuestionBlock(q, idx, false); }).join('');
+        footer.hidden = false;
+        scoreEl.hidden = true;
+        resetBtn.hidden = true;
+        checkBtn.hidden = false;
+        setInputsDisabled(false);
+        bindAnswerEvents();
+        updateProgress();
+        rightBody.scrollTop = 0;
+    }
+
+    function renderWriting(data) {
+        checked = false;
+        leftEmpty.hidden = true;
+        leftBody.hidden = false;
+        leftBody.innerHTML =
+            '<div class="mashq-meta">' +
+                '<span class="mashq-pill">' + esc(data.level) + '</span>' +
+                '<span class="mashq-pill mashq-pill--soft">' + esc(data.practice_label || '') + '</span>' +
+            '</div>' +
+            '<h2 class="mashq-passage__title">' + esc(i18n.task) + '</h2>' +
+            '<div class="mashq-task">' + esc(data.task || '').replace(/\n/g, '<br>') + '</div>' +
+            '<h3 class="mashq-panel__heading">' + esc(i18n.sample) + '</h3>' +
+            '<div class="mashq-passage">' + esc(data.sample_essay || '').replace(/\n/g, '<br>') + '</div>' +
+            (data.tip ? '<p class="mashq-tip"><i class="fas fa-lightbulb me-1"></i><strong>' + esc(i18n.tip) + ':</strong> ' + esc(data.tip) + '</p>' : '');
+
+        const ex = Array.isArray(data.exercises) ? data.exercises : [];
+        rightEmpty.hidden = true;
+        rightBody.hidden = false;
+        rightBody.innerHTML =
+            '<div class="mashq-panel__heading-row">' +
+                '<h3 class="mashq-panel__heading">' + esc(i18n.exercises) + '</h3>' +
+                '<span class="mashq-count">' + ex.length + '</span>' +
+            '</div>' +
+            ex.map(function (q, idx) { return renderQuestionBlock(q, idx, true); }).join('');
+        footer.hidden = false;
+        scoreEl.hidden = true;
+        resetBtn.hidden = true;
+        checkBtn.hidden = false;
+        setInputsDisabled(false);
+        bindAnswerEvents();
+        updateProgress();
+        rightBody.scrollTop = 0;
+    }
+
+    function collectAnswers() {
+        const answers = {};
+        rightBody.querySelectorAll('.mashq-q').forEach(function (block) {
+            const qid = String(block.dataset.qid || '');
+            const checkedRadio = block.querySelector('input[type=radio]:checked');
+            if (checkedRadio) {
+                answers[qid] = checkedRadio.value;
+                return;
+            }
+            const fill = block.querySelector('.mashq-fill');
+            if (fill) answers[qid] = fill.value || '';
+        });
+        return answers;
+    }
+
+    function applyCheckResult(result) {
+        checked = true;
+        const items = Array.isArray(result.items) ? result.items : [];
+        let firstWrong = null;
+        items.forEach(function (item) {
+            const block = rightBody.querySelector('.mashq-q[data-qid="' + item.id + '"]');
+            if (!block) return;
+            const fb = block.querySelector('.mashq-q__feedback');
+            block.classList.remove('is-correct', 'is-wrong', 'is-empty');
+            block.classList.add(item.is_correct ? 'is-correct' : 'is-wrong');
+            if (!item.answered) block.classList.add('is-empty');
+
+            // option highlighting
+            block.querySelectorAll('.mashq-opt').forEach(function (lab) {
+                lab.classList.remove('is-right', 'is-miss', 'is-selected');
+                const input = lab.querySelector('input');
+                if (!input) return;
+                const val = String(input.value || '').toLowerCase();
+                const correctRaw = String(item.correct || '').toLowerCase().split('|')[0].trim();
+                const userRaw = String(item.user || '').toLowerCase();
+                if (val === correctRaw || (input.dataset.letter || '').toLowerCase() === correctRaw) {
+                    lab.classList.add('is-right');
+                }
+                if (input.checked) {
+                    lab.classList.add('is-selected');
+                    if (!item.is_correct) lab.classList.add('is-miss');
+                }
+            });
+
+            if (fb) {
+                fb.hidden = false;
+                if (item.is_correct) {
+                    fb.innerHTML =
+                        '<div class="mashq-fb mashq-fb--ok"><i class="fas fa-check-circle"></i><span>' +
+                        esc(item.explanation || i18n.correct) + '</span></div>';
+                } else {
+                    const your = item.answered
+                        ? esc(item.user)
+                        : '<em>' + esc(i18n.emptyAns) + '</em>';
+                    fb.innerHTML =
+                        '<div class="mashq-fb mashq-fb--bad">' +
+                            '<div><i class="fas fa-times-circle"></i> ' + esc(i18n.correctAns) +
+                            ': <strong>' + esc(item.correct_display || item.correct) + '</strong></div>' +
+                            '<div class="mashq-fb__you">' + esc(i18n.yourAns) + ': ' + your + '</div>' +
+                            (item.explanation ? '<div class="mashq-fb__why">' + esc(item.explanation) + '</div>' : '') +
+                        '</div>';
+                    if (!firstWrong) firstWrong = block;
+                }
+            }
+        });
+
+        const pct = result.percent || 0;
+        const tone = pct >= 80 ? 'good' : (pct >= 50 ? 'mid' : 'low');
+        scoreEl.hidden = false;
+        scoreEl.className = 'mashq-score mashq-score--' + tone;
+        scoreEl.innerHTML =
+            '<span class="mashq-score__label">' + esc(i18n.score) + '</span>' +
+            '<strong>' + (result.correct || 0) + '/' + (result.total || 0) + '</strong>' +
+            '<span class="mashq-score__pct">' + pct + '% · ' + (result.correct || 0) + ' ' + esc(i18n.of) + '</span>';
+
+        setInputsDisabled(true);
+        resetBtn.hidden = false;
+        checkBtn.hidden = true;
+        updateProgress();
+
+        if (firstWrong) {
+            firstWrong.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    generateBtn.addEventListener('click', async function () {
+        generateBtn.disabled = true;
+        const prevHtml = generateBtn.innerHTML;
+        generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + esc(i18n.creating);
+        setStatus(i18n.aiBusy, 'info');
+        scoreEl.hidden = true;
+        footer.hidden = true;
+        app.classList.add('is-loading');
+
+        try {
+            const res = await fetch(generateUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    skill: skill,
+                    level: selectedLevel(),
+                    practice_type: selectedType()
+                })
+            });
+            let json = {};
+            try { json = await res.json(); } catch (e) { json = {}; }
+            if (!res.ok || !json.ok) {
+                setStatus(json.error || i18n.err, 'error');
+                return;
+            }
+            payload = json.data;
+            if (skill === 'writing') renderWriting(payload);
+            else renderReading(payload);
+            setStatus('', '');
+            footer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (err) {
+            setStatus(i18n.net, 'error');
+        } finally {
+            app.classList.remove('is-loading');
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = prevHtml;
+        }
+    });
+
+    checkBtn.addEventListener('click', async function () {
+        if (!payload || checked) return;
+        const total = questionCount();
+        const done = answeredCount();
+        if (total && done < total) {
+            if (!window.confirm(i18n.unanswered)) return;
+        }
+        checkBtn.disabled = true;
+        try {
+            const res = await fetch(checkUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ answers: collectAnswers() })
+            });
+            let json = {};
+            try { json = await res.json(); } catch (e) { json = {}; }
+            if (!res.ok || !json.ok) {
+                setStatus(json.error || i18n.checkErr, 'error');
+                return;
+            }
+            applyCheckResult(json.result || {});
+            setStatus('', '');
+        } catch (err) {
+            setStatus(i18n.checkErr, 'error');
+        } finally {
+            checkBtn.disabled = false;
+        }
+    });
+
+    resetBtn.addEventListener('click', function () {
+        if (!payload) return;
+        if (skill === 'writing') renderWriting(payload);
+        else renderReading(payload);
+        setStatus('', '');
+    });
+})();
+</script>
+{% endblock %}

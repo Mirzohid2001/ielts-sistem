@@ -164,9 +164,20 @@
                     {% if category.description %}
                     <p class="dash-cat__desc">{{ category.description|site_t|truncatewords:18 }}</p>
                     {% else %}
-                    <p class="dash-cat__desc dash-cat__desc--muted">{% trans "Video darslar va testlar" %}</p>
+                    <p class="dash-cat__desc dash-cat__desc--muted">
+                        {% if category.slug == 'reading' or category.slug == 'writing' %}
+                        {% trans "Mashqlar, video darslar va testlar" %}
+                        {% else %}
+                        {% trans "Video darslar va testlar" %}
+                        {% endif %}
+                    </p>
                     {% endif %}
-                    <div class="dash-cat__btns">
+                    <div class="dash-cat__btns{% if category.slug == 'reading' or category.slug == 'writing' %} dash-cat__btns--3{% endif %}">
+                        {% if category.slug == 'reading' or category.slug == 'writing' %}
+                        <a href="{% url 'core:practice_skill' category.slug %}" class="btn btn-success">
+                            <i class="fas fa-dumbbell me-2"></i>{% trans "Mashqlar" %}
+                        </a>
+                        {% endif %}
                         <a href="{% url 'core:video_list' %}?category={{ category.slug }}" class="btn btn-primary">
                             <i class="fas fa-video me-2"></i>{% trans "Videolar" %}
                         </a>
