@@ -4,12 +4,18 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
 from django.conf import settings
 
 from core.services.ai_language import learner_language_rules, normalize_ai_lang, t
+
+# Gunicorn default timeout ~30s — Gemini shu ichida tugamasa 502.
+PRACTICE_GEMINI_BUDGET_SEC = 22.0
+PRACTICE_GEMINI_CALL_TIMEOUT = 18.0
+PRACTICE_GEMINI_MAX_MODELS = 2
 
 LEVELS = ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')
 READING_QUESTION_COUNT = 10
@@ -123,7 +129,7 @@ def _gemini_model_chain(preferred=''):
     return chain
 
 
-def _call_gemini_json(prompt: str, *, model: str) -> dict:
+def _call_gemini_json(prompt: str, *, model: str, timeout: float = 70) -> dict:
     api_key = os.environ.get('GEMINI_API_KEY', '').strip()
     if not api_key:
         raise ValueError('GEMINI_API_KEY topilmadi')
@@ -148,13 +154,15 @@ def _call_gemini_json(prompt: str, *, model: str) -> dict:
         method='POST',
     )
     try:
-        with urllib_request.urlopen(req, timeout=70) as resp:
+        with urllib_request.urlopen(req, timeout=timeout) as resp:
             raw = json.loads(resp.read().decode('utf-8'))
     except urllib_error.HTTPError as exc:
         detail = exc.read().decode('utf-8', errors='ignore')
         raise ValueError(f'Gemini HTTP {exc.code}: {detail[:300]}') from exc
     except urllib_error.URLError as exc:
         raise ValueError(f'Gemini aloqa: {exc.reason}') from exc
+    except TimeoutError as exc:
+        raise ValueError(f'Gemini timeout ({timeout}s)') from exc
     try:
         parts = raw['candidates'][0]['content']['parts']
         content = ''.join(str(p.get('text', '') or '') for p in parts if isinstance(p, dict)).strip()
@@ -893,19 +901,28 @@ def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz') ->
 
     errors = []
     prompt = _reading_prompt(level, rtype, lang)
-    for model in _gemini_model_chain(_model_name()):
+    deadline = time.monotonic() + PRACTICE_GEMINI_BUDGET_SEC
+    for model in _gemini_model_chain(_model_name())[:PRACTICE_GEMINI_MAX_MODELS]:
+        remaining = deadline - time.monotonic()
+        if remaining < 3:
+            errors.append('budget_exhausted')
+            break
+        call_timeout = min(PRACTICE_GEMINI_CALL_TIMEOUT, max(3.0, remaining - 1.0))
         try:
-            data = _call_gemini_json(prompt, model=model)
+            data = _call_gemini_json(prompt, model=model, timeout=call_timeout)
             data['provider_name'] = 'gemini'
             data['model_name'] = model
             payload = _normalize_reading_payload(data, level=level, rtype=rtype, lang=lang)
             if (payload.get('passage') or '').strip() and payload.get('questions'):
                 return payload
+            errors.append(f'{model}: empty_payload')
         except Exception as exc:
             errors.append(str(exc)[:180])
             continue
     local = dict(local)
     local['raw_errors'] = errors
+    local['provider_name'] = 'local'
+    local['model_name'] = 'fallback'
     return local
 
 
@@ -922,19 +939,28 @@ def generate_writing_practice(*, level='B1', practice_type='lexical_resource', l
 
     errors = []
     prompt = _writing_prompt(level, focus, lang)
-    for model in _gemini_model_chain(_model_name()):
+    deadline = time.monotonic() + PRACTICE_GEMINI_BUDGET_SEC
+    for model in _gemini_model_chain(_model_name())[:PRACTICE_GEMINI_MAX_MODELS]:
+        remaining = deadline - time.monotonic()
+        if remaining < 3:
+            errors.append('budget_exhausted')
+            break
+        call_timeout = min(PRACTICE_GEMINI_CALL_TIMEOUT, max(3.0, remaining - 1.0))
         try:
-            data = _call_gemini_json(prompt, model=model)
+            data = _call_gemini_json(prompt, model=model, timeout=call_timeout)
             data['provider_name'] = 'gemini'
             data['model_name'] = model
             payload = _normalize_writing_payload(data, level=level, focus=focus, lang=lang)
             if (payload.get('task') or '').strip() and payload.get('exercises'):
                 return payload
+            errors.append(f'{model}: empty_payload')
         except Exception as exc:
             errors.append(str(exc)[:180])
             continue
     local = dict(local)
     local['raw_errors'] = errors
+    local['provider_name'] = 'local'
+    local['model_name'] = 'fallback'
     return local
 
 

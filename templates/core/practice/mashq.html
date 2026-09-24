@@ -518,7 +518,15 @@
             let json = {};
             try { json = await res.json(); } catch (e) { json = {}; }
             if (!res.ok || !json.ok) {
-                setStatus(json.error || i18n.err, 'error');
+                var msg = json.error || i18n.err;
+                if (res.status === 502 || res.status === 504) {
+                    msg = i18n.net + ' (timeout)';
+                } else if (res.status === 403) {
+                    msg = i18n.err + ' (CSRF)';
+                } else if (res.status && !json.error) {
+                    msg = i18n.err + ' (' + res.status + ')';
+                }
+                setStatus(msg, 'error');
                 return;
             }
             payload = json.data;

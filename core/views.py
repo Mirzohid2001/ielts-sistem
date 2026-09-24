@@ -4163,7 +4163,22 @@ def practice_generate(request):
             lang=lang,
         )
     except Exception as exc:
-        return JsonResponse({'ok': False, 'error': str(exc)[:300]}, status=500)
+        from core.services import ai_practice as _ap
+        if skill == 'writing':
+            payload = _ap._local_writing(
+                _ap.normalize_level(level),
+                _ap.normalize_writing_focus(practice_type),
+                lang,
+            )
+        else:
+            payload = _ap._local_reading(
+                _ap.normalize_level(level),
+                _ap.normalize_reading_type(practice_type),
+                lang,
+            )
+        payload = dict(payload)
+        payload['provider_name'] = 'local'
+        payload['raw_errors'] = [str(exc)[:180]]
 
     # To'liq payload sessionda; clientga correct bermaymiz
     request.session['practice_payload'] = payload
