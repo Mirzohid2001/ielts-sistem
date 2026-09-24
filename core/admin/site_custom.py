@@ -170,49 +170,73 @@ def _hydrate_active_users(rows):
 
 def build_admin_dashboard_payload(period_days):
     """
-    Admin index uchun og'ir agregatlar — bitta payload, keshlanadi.
-    Miss bo'lganda 1 marta hisoblanadi; worker timeout / 502 xavfini kamaytiradi.
+    Admin index uchun YENGIL agregatlar (<2s maqsad).
+    Og'ir faol-user report (multi-JOIN) bu yerga kirmaydi — 502 sababi edi (~50s+).
     """
+    since = timezone.now() - timedelta(days=period_days)
+
     total_users = User.objects.count()
     total_tests = Test.objects.filter(is_active=True).count()
     total_videos = VideoLesson.objects.filter(is_active=True).count()
     total_test_results = UserTestResult.objects.filter(completed_at__isnull=False).count()
     total_video_views = UserVideoProgress.objects.filter(watched=True).count()
 
-    active_users = [_serialize_active_user(u) for u in build_active_users_report(days=period_days)]
-    active_users_summary = build_active_users_summary()
-    active_users_total_in_period = next(
-        (x['count'] for x in active_users_summary if x['days'] == period_days),
-        count_active_users(period_days),
+    # Tez faol user: faqat last_login (to'liq report alohida sahifaga)
+    active_qs = (
+        User.objects.filter(last_login__gte=since)
+        .exclude(username__startswith='demo_')
+        .order_by('-last_login')[:ACTIVE_USERS_MAX_LIMIT]
     )
-    active_month_labels, active_month_counts = build_active_users_monthly_trend(
-        days=min(period_days, 365)
+    active_users = []
+    for u in active_qs:
+        active_users.append({
+            'pk': u.pk,
+            'id': u.pk,
+            'username': u.username,
+            'first_name': u.first_name or '',
+            'last_name': u.last_name or '',
+            'email': u.email or '',
+            'is_staff': bool(u.is_staff),
+            'last_login': u.last_login,
+            'tests_period': 0,
+            'videos_period': 0,
+            'activities_period': 0,
+            'avg_score_period': None,
+            'last_seen': u.last_login,
+            'activity_score': 0,
+        })
+    active_users_total_in_period = (
+        User.objects.filter(last_login__gte=since)
+        .exclude(username__startswith='demo_')
+        .count()
     )
+    active_users_summary = [
+        {
+            'days': days,
+            'count': User.objects.filter(
+                last_login__gte=timezone.now() - timedelta(days=days)
+            ).exclude(username__startswith='demo_').count(),
+        }
+        for days in ACTIVE_USERS_PERIOD_CHOICES
+    ]
 
-    passed_tests = UserTestResult.objects.filter(
-        completed_at__isnull=False,
-        percentage__gte=F('test__passing_score'),
-    ).count()
-    failed_tests = max(total_test_results - passed_tests, 0)
+    # O'tdi/o'tmadi JOIN indexda o'tkazib yuboriladi (502 sababi)
+    passed_tests = 0
+    failed_tests = 0
 
     avg_score = UserTestResult.objects.filter(
         completed_at__isnull=False
     ).aggregate(avg=Avg('percentage'))['avg'] or 0
 
+    # Kategoriya: faqat test soni (results JOIN o'tkazib yuboriladi — sekin edi)
     category_test_stats = list(
         Category.objects.filter(is_active=True).annotate(
             test_count=Count('tests', filter=Q(tests__is_active=True), distinct=True),
-            result_count=Count(
-                'tests__results',
-                filter=Q(tests__results__completed_at__isnull=False),
-                distinct=True,
-            ),
-            avg_score=Avg(
-                'tests__results__percentage',
-                filter=Q(tests__results__completed_at__isnull=False),
-            ),
-        ).order_by('order').values('name', 'test_count', 'result_count', 'avg_score')
+        ).order_by('order').values('name', 'test_count')
     )
+    for row in category_test_stats:
+        row['result_count'] = 0
+        row['avg_score'] = None
 
     start_date = timezone.now() - timedelta(days=13)
     daily_map = {
@@ -233,11 +257,11 @@ def build_admin_dashboard_payload(period_days):
         'pass_fail': [passed_tests, failed_tests],
         'category_labels': [c['name'] for c in category_test_stats],
         'category_tests': [c['test_count'] or 0 for c in category_test_stats],
-        'category_results': [c['result_count'] or 0 for c in category_test_stats],
+        'category_results': [0 for _ in category_test_stats],
         'trend_labels': trend_labels,
         'trend_counts': trend_counts,
-        'active_month_labels': active_month_labels,
-        'active_month_counts': active_month_counts,
+        'active_month_labels': [],
+        'active_month_counts': [],
     }
 
     return {
@@ -260,7 +284,7 @@ def build_admin_dashboard_payload(period_days):
 
 
 def get_cached_admin_dashboard(period_days):
-    cache_key = f'core:admin_index_dash_v1:{period_days}'
+    cache_key = f'core:admin_index_dash_v2:{period_days}'
     payload = cache.get(cache_key)
     if payload is None:
         payload = build_admin_dashboard_payload(period_days)
