@@ -25,16 +25,16 @@
                 <i class="fas fa-pen-fancy me-1"></i>{% trans "Writing mashqi" %}
             </a>
         </div>
-        <span class="mashq-badge"><i class="fas fa-bolt me-1"></i>{% trans "Yangi funksiya" %}</span>
+        <span class="mashq-badge"><i class="fas fa-database me-1"></i>{% trans "Bazadan" %}</span>
     </div>
 
     <header class="mashq-hero">
         {% if skill == 'reading' %}
         <h1 class="mashq-hero__title">{% trans "Reading mashqi — IELTS Academic" %}</h1>
-        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq turini tanlang. AI sizga mos akademik matn va savollarni soniyalar ichida tayyorlaydi." %}</p>
+        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq turini tanlang. Bizning bazamizdan mos akademik matn va savollar tayyorlanadi." %}</p>
         {% else %}
         <h1 class="mashq-hero__title">{% trans "Writing mashqi — IELTS Academic" %}</h1>
-        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq yo‘nalishini tanlang. AI insho namunasi va mashqlarni tayyorlaydi." %}</p>
+        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq yo‘nalishini tanlang. Bazamizdan insho namunasi va mashqlar beriladi." %}</p>
         {% endif %}
     </header>
 
@@ -68,11 +68,11 @@
 
         <div class="mashq-controls__action">
             <button type="button" class="btn mashq-generate" id="mashqGenerate">
-                <i class="fas fa-wand-magic-sparkles me-1"></i>
+                <i class="fas fa-book-open me-1"></i>
                 {% if skill == 'reading' %}
-                {% trans "Matn va savollar yaratish" %}
+                {% trans "Matn va savollarni olish" %}
                 {% else %}
-                {% trans "Insho va mashqlar yaratish" %}
+                {% trans "Insho va mashqlarni olish" %}
                 {% endif %}
             </button>
         </div>
@@ -85,9 +85,9 @@
             <div class="mashq-placeholder" id="mashqLeftEmpty">
                 <div class="mashq-placeholder__icon"><i class="fas fa-file-alt"></i></div>
                 {% if skill == 'reading' %}
-                <p>{% trans "Daraja va mashq turini tanlab, «Matn va savollar yaratish» tugmasini bosing." %}</p>
+                <p>{% trans "Daraja va mashq turini tanlab, «Matn va savollarni olish» tugmasini bosing." %}</p>
                 {% else %}
-                <p>{% trans "Daraja va yo‘nalishni tanlab, «Insho va mashqlar yaratish» tugmasini bosing." %}</p>
+                <p>{% trans "Daraja va yo‘nalishni tanlab, «Insho va mashqlarni olish» tugmasini bosing." %}</p>
                 {% endif %}
             </div>
             <div class="mashq-panel__body" id="mashqLeftBody" hidden></div>
@@ -145,8 +145,8 @@
 {% trans "To‘g‘ri javob" as t_correct_ans %}
 {% trans "Sizning javobingiz" as t_your_ans %}
 {% trans "Javob berilmagan" as t_empty_ans %}
-{% trans "Yaratilmoqda…" as t_creating %}
-{% trans "AI mashq tayyorlamoqda…" as t_ai_busy %}
+{% trans "Mashq yuklanmoqda…" as t_creating %}
+{% trans "Bazadan matn va savollar olinmoqda…" as t_ai_busy %}
 {% trans "Xatolik yuz berdi" as t_err %}
 {% trans "Tarmoq xatosi. Qayta urinib ko‘ring." as t_net %}
 {% trans "Tekshirishda xatolik." as t_check_err %}
