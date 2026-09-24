@@ -1,8 +1,10 @@
 """AI Reading/Writing mashq (practice) generator — daraja + tur bo'yicha."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import random
 import re
 import time
 from urllib import error as urllib_error
@@ -18,8 +20,14 @@ PRACTICE_GEMINI_CALL_TIMEOUT = 12.0
 PRACTICE_GEMINI_MAX_MODELS = 1
 
 LEVELS = ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')
+READING_VARIANT_COUNT = 2
 READING_QUESTION_COUNT = 10
 WRITING_EXERCISE_COUNT = 4
+
+_ROMAN_LETTERS = (
+    'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x',
+)
+_ALPHA_LETTERS = tuple('abcdefgh')
 
 READING_TYPES = {
     'tfng': {
@@ -258,6 +266,96 @@ def _number_questions(rows):
         item = dict(row)
         item['id'] = i
         out.append(item)
+    return out
+
+
+def _practice_rng(seed: str | None = None) -> random.Random:
+    raw = str(seed or '').strip() or f'{time.time_ns()}'
+    digest = hashlib.sha256(raw.encode('utf-8', errors='ignore')).hexdigest()
+    return random.Random(int(digest[:16], 16))
+
+
+def _practice_fingerprint(payload: dict) -> str:
+    if not isinstance(payload, dict):
+        return ''
+    title = str(payload.get('title') or payload.get('task') or '').strip().lower()
+    body = str(payload.get('passage') or payload.get('sample_essay') or '').strip().lower()[:180]
+    ptype = str(payload.get('practice_type') or '').strip().lower()
+    level = str(payload.get('level') or '').strip().upper()
+    return f'{level}|{ptype}|{title}|{body}'
+
+
+def _variant_index(seed: str, *, level: str, practice_type: str, n: int = READING_VARIANT_COUNT) -> int:
+    n = max(1, int(n or 1))
+    digest = hashlib.md5(f'{seed}|{level}|{practice_type}'.encode('utf-8', errors='ignore')).hexdigest()
+    return int(digest[:8], 16) % n
+
+
+def _shuffle_choice_options(row: dict, rng: random.Random) -> dict:
+    """Variantlarni aralashtirib, correct harfini yangilaydi."""
+    item = dict(row)
+    opts = [dict(o) for o in (item.get('options') or []) if isinstance(o, dict) and o.get('text')]
+    if len(opts) < 2:
+        return item
+    correct_raw = str(item.get('correct') or '').strip().lower()
+    correct_text = ''
+    for o in opts:
+        letter = str(o.get('letter') or '').strip().lower()
+        if letter and letter == correct_raw:
+            correct_text = str(o.get('text') or '')
+            break
+    if not correct_text:
+        return item
+    use_roman = all(
+        str(o.get('letter') or '').strip().lower() in _ROMAN_LETTERS
+        for o in opts
+    )
+    rng.shuffle(opts)
+    letters = list(_ROMAN_LETTERS[:len(opts)]) if use_roman else list(_ALPHA_LETTERS[:len(opts)])
+    new_opts = []
+    new_correct = correct_raw
+    for i, o in enumerate(opts):
+        letter = letters[i] if i < len(letters) else _ALPHA_LETTERS[i % len(_ALPHA_LETTERS)]
+        text = str(o.get('text') or '')
+        new_opts.append({'letter': letter, 'text': text})
+        if text == correct_text:
+            new_correct = letter
+    item['options'] = new_opts
+    item['correct'] = new_correct
+    return item
+
+
+def _freshen_reading_payload(payload: dict, seed: str) -> dict:
+    out = dict(payload or {})
+    rng = _practice_rng(seed)
+    rows = [dict(q) for q in (out.get('questions') or []) if isinstance(q, dict)]
+    if not rows:
+        return out
+    rng.shuffle(rows)
+    fresh = []
+    for i, row in enumerate(rows, start=1):
+        item = _shuffle_choice_options(row, rng)
+        item['id'] = i
+        fresh.append(item)
+    out['questions'] = fresh
+    out['freshness_seed'] = str(seed)[:48]
+    return out
+
+
+def _freshen_writing_payload(payload: dict, seed: str) -> dict:
+    out = dict(payload or {})
+    rng = _practice_rng(seed)
+    rows = [dict(e) for e in (out.get('exercises') or []) if isinstance(e, dict)]
+    if not rows:
+        return out
+    rng.shuffle(rows)
+    fresh = []
+    for i, row in enumerate(rows, start=1):
+        item = _shuffle_choice_options(row, rng) if row.get('options') else dict(row)
+        item['id'] = i
+        fresh.append(item)
+    out['exercises'] = fresh
+    out['freshness_seed'] = str(seed)[:48]
     return out
 
 
@@ -581,7 +679,701 @@ def _high_level_reading_pack(level: str, rtype: str, tip: str) -> dict:
     return {}
 
 
-def _local_reading(level: str, rtype: str, lang: str) -> dict:
+def _local_reading_b(level: str, rtype: str, lang: str) -> dict:
+    """Ikkinchi matn/savol to'plami — qayta bosganda boshqa kontent."""
+    meta = READING_TYPES[rtype]
+    tip_common = t(lang, 'Matndan kalit so‘zlarni toping.', 'Ищите ключевые слова в тексте.')
+    packs = {
+        'A1': {
+            'title': 'A Day at the Beach',
+            'passage': (
+                "Many families like the beach. The sand is soft and warm. Children build sandcastles. "
+                "Some people swim in the sea. Others sit under umbrellas. Seagulls fly above the water. "
+                "In the afternoon, friends buy ice cream. Lifeguards watch the swimmers. "
+                "The beach shop sells water and fruit. In the evening the sun goes down. "
+                "People collect their towels and go home. The beach is quiet at night."
+            ),
+        },
+        'A2': {
+            'title': 'City Sports Clubs',
+            'passage': (
+                "Sports clubs in cities are popular with young people. Many clubs offer football, swimming, "
+                "and basketball. Members pay a monthly fee for training and equipment. Coaches help beginners "
+                "learn basic skills. Some clubs also organise weekend matches between neighbourhoods. "
+                "Parents often bring children on Saturday mornings. Changing rooms and showers are available. "
+                "Healthy snacks are sold in the small café. Because of these activities, teenagers spend less "
+                "time alone at home. Local councils sometimes support clubs with small grants."
+            ),
+        },
+        'B1': {
+            'title': 'Cycling in the City',
+            'passage': (
+                "Cycling has become a practical way to move through crowded cities. Bike lanes reduce travel "
+                "time for short trips and cut local air pollution. However, drivers sometimes ignore painted "
+                "lanes, which makes riders feel unsafe. Cities that add protected cycle tracks see higher "
+                "weekday use. Bike-share schemes help tourists and residents without private bicycles. "
+                "Storage at stations and workplaces remains a challenge. Helmet laws differ between countries. "
+                "Employers who offer showers and lockers report more staff cycling to work. Overall, planners "
+                "now treat cycling as transport, not only as a weekend hobby."
+            ),
+        },
+        'B2': {
+            'title': 'The Printing Press Revolution',
+            'passage': (
+                "In the fifteenth century, Johannes Gutenberg developed a movable-type printing press in Europe. "
+                "Metal letters could be rearranged and reused, which made books far cheaper to produce. "
+                "Workshops spread across cities as demand for religious and scholarly texts grew. Critics feared "
+                "that wider literacy would weaken traditional authorities. Yet printers also created newspapers "
+                "and pamphlets that shared news more quickly. Paper quality and ink chemistry improved over decades. "
+                "The press changed education, science, and politics by multiplying identical copies. Although "
+                "hand-copied manuscripts continued for luxury editions, mass reading culture had begun."
+            ),
+        },
+        'C1': {
+            'title': 'Sleep and Memory Consolidation',
+            'passage': (
+                "Sleep is no longer viewed as a passive shutdown of the brain. Research links slow-wave and REM "
+                "stages to memory consolidation, emotional regulation, and creative problem solving. "
+                "Nevertheless, laboratory findings do not always generalise: short naps help some tasks but not "
+                "others, and individual chronotypes matter. Chronic restriction impairs attention more visibly "
+                "than a single late night. Educators debate later school start times for adolescents. "
+                "Pharmaceutical sleep aids may increase duration without restoring natural architecture. "
+                "Public-health guidance therefore stresses regular schedules and light exposure rather than "
+                "treating sleep as optional recovery time."
+            ),
+        },
+        'C2': {
+            'title': 'Algorithmic Bias in Hiring',
+            'passage': (
+                "Automated screening tools promise efficiency in recruitment, yet they can reproduce historical "
+                "bias encoded in training data. Models trained on past hiring decisions may undervalue "
+                "candidates from under-represented groups even when proxies for protected attributes are removed. "
+                "Auditing frameworks recommend disparate-impact tests and human review of borderline cases. "
+                "Vendors often claim neutrality while disclosing little about features or error rates. "
+                "Regulators increasingly require explainability statements for high-stakes employment systems. "
+                "The ethical tension is between scalable shortlisting and fair opportunity: optimisation for "
+                "past 'success' can lock organisations into yesterday's workforce patterns."
+            ),
+        },
+    }
+    pack = packs.get(level, packs['B1'])
+    title = pack['title']
+    passage = pack['passage']
+
+    if rtype == 'tfng':
+        opts = _tfng_options()
+        raw_by = {
+            'A1': [
+                {'prompt': 'Children build sandcastles at the beach.', 'correct': 'a'},
+                {'prompt': 'The sand is cold and hard.', 'correct': 'b'},
+                {'prompt': 'Some people swim in the sea.', 'correct': 'a'},
+                {'prompt': 'Lifeguards watch the swimmers.', 'correct': 'a'},
+                {'prompt': 'The beach shop sells cars.', 'correct': 'b'},
+                {'prompt': 'Friends buy ice cream in the afternoon.', 'correct': 'a'},
+                {'prompt': 'The beach has a large airport.', 'correct': 'c'},
+                {'prompt': 'Seagulls fly above the water.', 'correct': 'a'},
+                {'prompt': 'People never go home in the evening.', 'correct': 'b'},
+                {'prompt': 'The beach is quiet at night.', 'correct': 'a'},
+            ],
+            'A2': [
+                {'prompt': 'Sports clubs offer football and swimming.', 'correct': 'a'},
+                {'prompt': 'Members never pay any fee.', 'correct': 'b'},
+                {'prompt': 'Coaches help beginners learn skills.', 'correct': 'a'},
+                {'prompt': 'Some clubs organise weekend matches.', 'correct': 'a'},
+                {'prompt': 'Parents often bring children on Saturday mornings.', 'correct': 'a'},
+                {'prompt': 'Clubs have no changing rooms.', 'correct': 'b'},
+                {'prompt': 'Every club owns a professional stadium.', 'correct': 'c'},
+                {'prompt': 'A café sells healthy snacks.', 'correct': 'a'},
+                {'prompt': 'Councils sometimes support clubs with grants.', 'correct': 'a'},
+                {'prompt': 'Teenagers only stay alone at home because of clubs.', 'correct': 'b'},
+            ],
+            'B1': [
+                {'prompt': 'Cycling can cut local air pollution.', 'correct': 'a'},
+                {'prompt': 'Drivers always respect bike lanes.', 'correct': 'b'},
+                {'prompt': 'Protected cycle tracks raise weekday use.', 'correct': 'a'},
+                {'prompt': 'Bike-share helps people without private bicycles.', 'correct': 'a'},
+                {'prompt': 'Storage at workplaces is never a problem.', 'correct': 'b'},
+                {'prompt': 'Helmet laws are the same in every country.', 'correct': 'b'},
+                {'prompt': 'The passage gives the exact number of city bikes worldwide.', 'correct': 'c'},
+                {'prompt': 'Showers and lockers encourage staff cycling.', 'correct': 'a'},
+                {'prompt': 'Planners now treat cycling as transport.', 'correct': 'a'},
+                {'prompt': 'Cycling is described only as a weekend hobby.', 'correct': 'b'},
+            ],
+            'B2': [
+                {'prompt': 'Gutenberg developed a movable-type press in Europe.', 'correct': 'a'},
+                {'prompt': 'Metal letters could not be reused.', 'correct': 'b'},
+                {'prompt': 'Books became cheaper to produce.', 'correct': 'a'},
+                {'prompt': 'Some critics feared wider literacy.', 'correct': 'a'},
+                {'prompt': 'Printers also made newspapers and pamphlets.', 'correct': 'a'},
+                {'prompt': 'Hand-copied manuscripts disappeared overnight.', 'correct': 'b'},
+                {'prompt': 'The passage states the exact price of the first Bible.', 'correct': 'c'},
+                {'prompt': 'The press affected education and science.', 'correct': 'a'},
+                {'prompt': 'Paper and ink quality never improved.', 'correct': 'b'},
+                {'prompt': 'Mass reading culture began after the press.', 'correct': 'a'},
+            ],
+            'C1': [
+                {'prompt': 'Sleep is linked to memory consolidation.', 'correct': 'a'},
+                {'prompt': 'All lab findings generalise perfectly to daily life.', 'correct': 'b'},
+                {'prompt': 'Chronotypes can matter for sleep effects.', 'correct': 'a'},
+                {'prompt': 'Chronic restriction impairs attention.', 'correct': 'a'},
+                {'prompt': 'Educators debate later school start times.', 'correct': 'a'},
+                {'prompt': 'Sleep aids always restore natural sleep architecture.', 'correct': 'b'},
+                {'prompt': 'The passage names one universal nap length for all tasks.', 'correct': 'c'},
+                {'prompt': 'Guidance stresses regular schedules and light exposure.', 'correct': 'a'},
+                {'prompt': 'Sleep is presented as optional recovery only.', 'correct': 'b'},
+                {'prompt': 'REM sleep is mentioned in relation to brain functions.', 'correct': 'a'},
+            ],
+            'C2': [
+                {'prompt': 'Hiring algorithms can reproduce historical bias.', 'correct': 'a'},
+                {'prompt': 'Removing obvious proxies always ends all bias.', 'correct': 'b'},
+                {'prompt': 'Audits may include disparate-impact tests.', 'correct': 'a'},
+                {'prompt': 'Vendors sometimes disclose little about error rates.', 'correct': 'a'},
+                {'prompt': 'Regulators may require explainability statements.', 'correct': 'a'},
+                {'prompt': 'Optimising for past success cannot lock in old patterns.', 'correct': 'b'},
+                {'prompt': 'The passage quotes a single global accuracy percentage.', 'correct': 'c'},
+                {'prompt': 'Human review of borderline cases is recommended.', 'correct': 'a'},
+                {'prompt': 'Efficiency is the only ethical concern mentioned.', 'correct': 'b'},
+                {'prompt': 'Training data can encode past hiring decisions.', 'correct': 'a'},
+            ],
+        }
+        raw = raw_by.get(level, raw_by['B1'])
+        questions = [
+            {'prompt': row['prompt'], 'options': opts, 'correct': row['correct'], 'explanation': tip_common}
+            for row in raw
+        ]
+    elif rtype == 'mcq':
+        q_by = {
+            'A1': [
+                _mcq('What do children build?', ['Sandcastles', 'Airports', 'Trains', 'Factories'], 'a', tip_common),
+                _mcq('Who watches the swimmers?', ['Lifeguards', 'Pilots', 'Teachers only', 'Nobody'], 'a', tip_common),
+                _mcq('What do friends buy in the afternoon?', ['Ice cream', 'Cars', 'Tickets to space', 'Sand'], 'a', tip_common),
+                _mcq('What does the beach shop sell?', ['Water and fruit', 'Airplanes', 'Computers only', 'Coal'], 'a', tip_common),
+                _mcq('When is the beach quiet?', ['At night', 'Only at noon forever', 'Never', 'During storms only'], 'a', tip_common),
+                _mcq('Where do people sit?', ['Under umbrellas', 'In submarines', 'On runways', 'In libraries'], 'a', tip_common),
+                _mcq('What flies above the water?', ['Seagulls', 'Trains', 'Buses', 'Cables'], 'a', tip_common),
+                _mcq('What is soft and warm?', ['The sand', 'The moon', 'Iron', 'Glass only'], 'a', tip_common),
+                _mcq('What do people collect before going home?', ['Towels', 'Ships', 'Planes', 'Stadiums'], 'a', tip_common),
+                _mcq('Who likes the beach?', ['Many families', 'Only robots', 'Only fish', 'Nobody'], 'a', tip_common),
+            ],
+            'A2': [
+                _mcq('What sports can clubs offer?', ['Football, swimming, basketball', 'Only chess online', 'Ship building', 'Mining'], 'a', tip_common),
+                _mcq('How do members usually pay?', ['A monthly fee', 'Nothing ever', 'Only gold', 'Free flights'], 'a', tip_common),
+                _mcq('Who helps beginners?', ['Coaches', 'Pilots', 'Farmers only', 'Judges'], 'a', tip_common),
+                _mcq('When do parents often bring children?', ['Saturday mornings', 'Only at midnight', 'Never', 'During exams only'], 'a', tip_common),
+                _mcq('What is in the café?', ['Healthy snacks', 'Airplane fuel', 'Sand only', 'Cable wire'], 'a', tip_common),
+                _mcq('What can councils give clubs?', ['Small grants', 'Airports', 'Oceans', 'Factories'], 'a', tip_common),
+                _mcq('What facilities are available?', ['Changing rooms and showers', 'Runways', 'Submarines', 'Mines'], 'a', tip_common),
+                _mcq('What do clubs organise on weekends?', ['Matches', 'Space launches', 'Bank audits', 'Ocean cables'], 'a', tip_common),
+                _mcq('Why are clubs useful for teenagers?', ['They spend less time alone at home', 'They ban all sports', 'They close cafés', 'They remove coaches'], 'a', tip_common),
+                _mcq('Who are clubs popular with?', ['Young people', 'Only ships', 'Only forests', 'Only museums'], 'a', tip_common),
+            ],
+            'B1': [
+                _mcq('What do bike lanes help with?', ['Short trips and less pollution', 'Building airports', 'Closing parks', 'Banning walking'], 'a', tip_common),
+                _mcq('What makes riders feel unsafe?', ['Drivers ignoring lanes', 'Too many showers', 'Free lockers', 'Bike-share apps'], 'a', tip_common),
+                _mcq('What raises weekday cycling?', ['Protected cycle tracks', 'Removing all bikes', 'Banning helmets always', 'Closing stations'], 'a', tip_common),
+                _mcq('Who can bike-share help?', ['Tourists and residents without private bikes', 'Only pilots', 'Only ships', 'Only miners'], 'a', tip_common),
+                _mcq('What workplace features help?', ['Showers and lockers', 'Airport runways', 'Ocean maps', 'Silent grants'], 'a', tip_common),
+                _mcq('How do planners view cycling now?', ['As transport', 'Only as a toy', 'As banned forever', 'As ocean sport only'], 'a', tip_common),
+                _mcq('What remains a challenge?', ['Storage at stations and workplaces', 'Too much free space', 'No cities left', 'Endless helmet agreement'], 'a', tip_common),
+                _mcq('What differs between countries?', ['Helmet laws', 'Whether wheels exist', 'Whether air exists', 'Whether roads exist'], 'a', tip_common),
+                _mcq('What do painted lanes not always get?', ['Respect from drivers', 'Rain', 'Sunlight', 'Tourists'], 'a', tip_common),
+                _mcq('What is cycling no longer only?', ['A weekend hobby', 'A form of transport', 'A city topic', 'A planning issue'], 'a', tip_common),
+            ],
+            'B2': [
+                _mcq('Who developed movable-type printing in Europe?', ['Johannes Gutenberg', 'Cyrus Field', 'A random sailor', 'A park keeper'], 'a', tip_common),
+                _mcq('Why did books become cheaper?', ['Reusable metal letters', 'Free gold ink', 'No paper needed', 'Banned reading'], 'a', tip_common),
+                _mcq('What did critics fear?', ['Wider literacy weakening authorities', 'Too few books', 'Closed workshops', 'No pamphlets'], 'a', tip_common),
+                _mcq('What else did printers create?', ['Newspapers and pamphlets', 'Only stone tablets', 'Only ships', 'Only stadiums'], 'a', tip_common),
+                _mcq('What continued for luxury editions?', ['Hand-copied manuscripts', 'Only radio', 'Only airports', 'Only bike lanes'], 'a', tip_common),
+                _mcq('What multiplied identical copies?', ['The printing press', 'Ocean cables only', 'Park grants', 'Helmet laws'], 'a', tip_common),
+                _mcq('What improved over decades?', ['Paper quality and ink chemistry', 'Only horse speed', 'Only castle walls', 'Only sand'], 'a', tip_common),
+                _mcq('Where did workshops spread?', ['Across cities', 'Only underwater', 'Only on the moon', 'Only in deserts'], 'a', tip_common),
+                _mcq('What culture began?', ['Mass reading culture', 'Only silent films', 'Only bike-share', 'Only remote work'], 'a', tip_common),
+                _mcq('Which fields did the press change?', ['Education, science, and politics', 'Only fishing', 'Only mining', 'Only cooking'], 'a', tip_common),
+            ],
+            'C1': [
+                _mcq('What is sleep linked to?', ['Memory consolidation', 'Building cables', 'Park tickets', 'Sandcastles'], 'a', tip_common),
+                _mcq('What may not always generalise?', ['Laboratory findings', 'That people sleep', 'That night exists', 'That schools exist'], 'a', tip_common),
+                _mcq('What do chronotypes affect?', ['How sleep interventions work', 'Ocean depth', 'Cable weight', 'Sand colour'], 'a', tip_common),
+                _mcq('What does chronic restriction impair?', ['Attention', 'Only printing', 'Only cycling lanes', 'Only hiring audits'], 'a', tip_common),
+                _mcq('What do educators debate?', ['Later school start times', 'Banning sleep', 'Closing libraries', 'Removing REM'], 'a', tip_common),
+                _mcq('What may sleep aids fail to restore?', ['Natural sleep architecture', 'Daylight', 'Paper ink', 'Bike lockers'], 'a', tip_common),
+                _mcq('What does guidance emphasise?', ['Regular schedules and light', 'More caffeine only', 'Endless naps for all', 'Ignoring sleep'], 'a', tip_common),
+                _mcq('How is sleep no longer viewed?', ['As a passive shutdown', 'As useful', 'As researched', 'As health-related'], 'a', tip_common),
+                _mcq('What can short naps help?', ['Some tasks but not others', 'Every task equally', 'Only printing books', 'Only hiring'], 'a', tip_common),
+                _mcq('Which stages are mentioned?', ['Slow-wave and REM', 'Only waking', 'Only sprinting', 'Only commuting'], 'a', tip_common),
+            ],
+            'C2': [
+                _mcq('What can screening tools reproduce?', ['Historical bias', 'Perfect fairness always', 'Ocean maps', 'Sandcastles'], 'a', tip_common),
+                _mcq('Where can bias be encoded?', ['Training data', 'Only printers', 'Only helmets', 'Only beaches'], 'a', tip_common),
+                _mcq('What do audits recommend?', ['Disparate-impact tests and human review', 'No reviews ever', 'Secret scores only', 'Deleting all applicants'], 'a', tip_common),
+                _mcq('What do vendors often disclose little about?', ['Features or error rates', 'That hiring exists', 'That computers exist', 'That jobs exist'], 'a', tip_common),
+                _mcq('What may regulators require?', ['Explainability statements', 'Silent algorithms only', 'No humans ever', 'Random hiring only'], 'a', tip_common),
+                _mcq('What ethical tension is described?', ['Scale vs fair opportunity', 'Beaches vs parks', 'Sleep vs cycling', 'Ink vs paper'], 'a', tip_common),
+                _mcq('What can optimisation for past success do?', ['Lock in old workforce patterns', 'End all bias', 'Guarantee diversity', 'Remove all data'], 'a', tip_common),
+                _mcq('What may still undervalue some candidates?', ['Models trained on past decisions', 'Human greetings', 'Office plants', 'Coffee machines'], 'a', tip_common),
+                _mcq('What promise do tools make?', ['Efficiency', 'Endless holidays', 'Free degrees', 'Perfect sleep'], 'a', tip_common),
+                _mcq('What is not enough alone?', ['Removing obvious proxies', 'Any audit', 'Any regulator', 'Any vendor claim'], 'a', tip_common),
+            ],
+        }
+        questions = q_by.get(level, q_by['B1'])
+    elif rtype == 'gap_fill':
+        g_by = {
+            'A1': [
+                _gap('Children build ______.', 'sandcastles|sand castles', tip_common),
+                _gap('Some people swim in the ______.', 'sea', tip_common),
+                _gap('Lifeguards watch the ______.', 'swimmers', tip_common),
+                _gap('Friends buy ______ in the afternoon.', 'ice cream|icecream', tip_common),
+                _gap('The beach shop sells water and ______.', 'fruit', tip_common),
+                _gap('Seagulls fly above the ______.', 'water', tip_common),
+                _gap('The sand is soft and ______.', 'warm', tip_common),
+                _gap('People sit under ______.', 'umbrellas', tip_common),
+                _gap('People collect their ______ and go home.', 'towels', tip_common),
+                _gap('The beach is quiet at ______.', 'night', tip_common),
+            ],
+            'A2': [
+                _gap('Members pay a monthly ______.', 'fee', tip_common),
+                _gap('______ help beginners learn skills.', 'Coaches|coaches', tip_common),
+                _gap('Clubs organise weekend ______.', 'matches', tip_common),
+                _gap('Parents bring children on Saturday ______.', 'mornings', tip_common),
+                _gap('The café sells healthy ______.', 'snacks', tip_common),
+                _gap('Councils may support clubs with ______.', 'grants', tip_common),
+                _gap('Changing rooms and ______ are available.', 'showers', tip_common),
+                _gap('Sports clubs are popular with ______ people.', 'young', tip_common),
+                _gap('Teenagers spend less time alone at ______.', 'home', tip_common),
+                _gap('Clubs offer football, swimming and ______.', 'basketball', tip_common),
+            ],
+            'B1': [
+                _gap('Bike lanes can cut local air ______.', 'pollution', tip_common),
+                _gap('Protected cycle ______ raise weekday use.', 'tracks', tip_common),
+                _gap('Bike-share helps people without private ______.', 'bicycles|bikes', tip_common),
+                _gap('Storage at workplaces remains a ______.', 'challenge', tip_common),
+                _gap('______ laws differ between countries.', 'Helmet|helmet', tip_common),
+                _gap('Showers and ______ encourage staff cycling.', 'lockers', tip_common),
+                _gap('Planners treat cycling as ______.', 'transport', tip_common),
+                _gap('Drivers sometimes ignore painted ______.', 'lanes', tip_common),
+                _gap('Cycling reduces travel time for short ______.', 'trips', tip_common),
+                _gap('Cycling is not only a weekend ______.', 'hobby', tip_common),
+            ],
+            'B2': [
+                _gap('Gutenberg developed a movable-type printing ______.', 'press', tip_common),
+                _gap('Metal ______ could be rearranged and reused.', 'letters', tip_common),
+                _gap('Books became ______ to produce.', 'cheaper', tip_common),
+                _gap('Workshops spread across ______.', 'cities', tip_common),
+                _gap('Printers created newspapers and ______.', 'pamphlets', tip_common),
+                _gap('Hand-copied ______ continued for luxury editions.', 'manuscripts', tip_common),
+                _gap('The press multiplied identical ______.', 'copies', tip_common),
+                _gap('Paper quality and ______ chemistry improved.', 'ink', tip_common),
+                _gap('Mass ______ culture had begun.', 'reading', tip_common),
+                _gap('Critics feared wider ______.', 'literacy', tip_common),
+            ],
+            'C1': [
+                _gap('Sleep is linked to memory ______.', 'consolidation', tip_common),
+                _gap('Lab findings do not always ______.', 'generalise|generalize', tip_common),
+                _gap('Individual ______ matter.', 'chronotypes', tip_common),
+                _gap('Chronic restriction impairs ______.', 'attention', tip_common),
+                _gap('Educators debate later school start ______.', 'times', tip_common),
+                _gap('Aids may not restore natural sleep ______.', 'architecture', tip_common),
+                _gap('Guidance stresses regular ______.', 'schedules', tip_common),
+                _gap('Light ______ is also recommended.', 'exposure', tip_common),
+                _gap('REM stages relate to creative problem ______.', 'solving', tip_common),
+                _gap('Sleep is not a passive ______ of the brain.', 'shutdown', tip_common),
+            ],
+            'C2': [
+                _gap('Tools can reproduce historical ______.', 'bias', tip_common),
+                _gap('Bias may be encoded in training ______.', 'data', tip_common),
+                _gap('Audits use disparate-impact ______.', 'tests', tip_common),
+                _gap('Borderline cases need human ______.', 'review', tip_common),
+                _gap('Vendors disclose little about error ______.', 'rates', tip_common),
+                _gap('Regulators require ______ statements.', 'explainability', tip_common),
+                _gap('Optimisation can lock in old workforce ______.', 'patterns', tip_common),
+                _gap('The promise of tools is ______.', 'efficiency', tip_common),
+                _gap('Removing proxies may not end all ______.', 'bias', tip_common),
+                _gap('High-stakes systems need fair ______.', 'opportunity', tip_common),
+            ],
+        }
+        questions = g_by.get(level, g_by['B1'])
+    elif rtype == 'matching_headings':
+        h_by = {
+            'A1': [
+                _heading('What children build', ['Sandcastles', 'Airports', 'Factories'], 'i', tip_common),
+                _heading('Who watches swimmers', ['Lifeguards', 'Pilots', 'Judges'], 'i', tip_common),
+                _heading('Afternoon treat', ['Ice cream', 'Coal', 'Tickets'], 'i', tip_common),
+                _heading('Shop products', ['Water and fruit', 'Planes', 'Cables'], 'i', tip_common),
+                _heading('Birds above water', ['Seagulls', 'Trains', 'Buses'], 'i', tip_common),
+                _heading('Shade on the beach', ['Umbrellas', 'Submarines', 'Mines'], 'i', tip_common),
+                _heading('Evening departure', ['Collect towels and go home', 'Build an airport', 'Open a factory'], 'i', tip_common),
+                _heading('Night atmosphere', ['Quiet beach', 'Loud stadium', 'Busy runway'], 'i', tip_common),
+                _heading('Sand quality', ['Soft and warm', 'Made of glass', 'Frozen metal'], 'i', tip_common),
+                _heading('Who enjoys beaches', ['Many families', 'Only robots', 'Only ships'], 'i', tip_common),
+            ],
+            'A2': [
+                _heading('Popular city activities', ['Sports clubs for young people', 'Closing all parks', 'Banning coaches'], 'i', tip_common),
+                _heading('How members pay', ['Monthly fee', 'Free gold', 'No payment ever'], 'i', tip_common),
+                _heading('Beginner support', ['Coaches teach skills', 'No training', 'Only exams'], 'i', tip_common),
+                _heading('Weekend events', ['Neighbourhood matches', 'Space launches', 'Mining trips'], 'i', tip_common),
+                _heading('Saturday visitors', ['Parents with children', 'Only pilots', 'Only judges'], 'i', tip_common),
+                _heading('Club facilities', ['Changing rooms and showers', 'Runways', 'Submarines'], 'i', tip_common),
+                _heading('Café offer', ['Healthy snacks', 'Airplane fuel', 'Sand'], 'i', tip_common),
+                _heading('Council help', ['Small grants', 'Airports', 'Oceans'], 'i', tip_common),
+                _heading('Teen free time', ['Less time alone at home', 'More isolation', 'No sports'], 'i', tip_common),
+                _heading('Sports on offer', ['Football, swimming, basketball', 'Only coding', 'Only chess online'], 'i', tip_common),
+            ],
+            'B1': [
+                _heading('Benefits of bike lanes', ['Faster short trips, less pollution', 'More traffic jams', 'No cities'], 'i', tip_common),
+                _heading('Safety problem', ['Drivers ignore lanes', 'Too many lockers', 'Free helmets'], 'i', tip_common),
+                _heading('Protected tracks', ['Higher weekday use', 'Fewer cyclists', 'Closed cities'], 'i', tip_common),
+                _heading('Shared bikes', ['Help without private bikes', 'Ban tourists', 'Remove stations'], 'i', tip_common),
+                _heading('Workplace support', ['Showers and lockers', 'No bikes allowed', 'Only cars'], 'i', tip_common),
+                _heading('Planning view', ['Cycling as transport', 'Only a hobby', 'Banned forever'], 'i', tip_common),
+                _heading('Storage issue', ['Stations and workplaces', 'Too much space', 'Endless racks'], 'i', tip_common),
+                _heading('Rule differences', ['Helmet laws vary', 'All laws identical', 'No laws exist'], 'i', tip_common),
+                _heading('Short trips', ['Practical city travel', 'Only ocean travel', 'Only flights'], 'i', tip_common),
+                _heading('Not only leisure', ['Transport role', 'Toy role only', 'No role'], 'i', tip_common),
+            ],
+            'B2': [
+                _heading('Key inventor', ['Gutenberg and movable type', 'Only sailors', 'Park designers'], 'i', tip_common),
+                _heading('Cheaper books', ['Reusable metal letters', 'No paper', 'Banned ink'], 'i', tip_common),
+                _heading('Workshop growth', ['Spread across cities', 'Only underwater', 'Only deserts'], 'i', tip_common),
+                _heading('Authority fears', ['Wider literacy risks', 'Too few readers', 'Closed presses'], 'i', tip_common),
+                _heading('Fast news', ['Newspapers and pamphlets', 'Only stone', 'Only radio later'], 'i', tip_common),
+                _heading('Luxury copies', ['Hand manuscripts remain', 'No books left', 'Only digital'], 'i', tip_common),
+                _heading('Social impact', ['Education, science, politics', 'Only fishing', 'Only sport'], 'i', tip_common),
+                _heading('Materials improve', ['Paper and ink chemistry', 'Only horses', 'Only sand'], 'i', tip_common),
+                _heading('Reading culture', ['Mass reading begins', 'Reading ends', 'Only elites forever'], 'i', tip_common),
+                _heading('Identical copies', ['Press multiplies texts', 'One copy only', 'No copying'], 'i', tip_common),
+            ],
+            'C1': [
+                _heading('Active brain overnight', ['Memory consolidation in sleep', 'Sleep as useless', 'Only muscle rest'], 'i', tip_common),
+                _heading('Limits of labs', ['Findings may not generalise', 'Labs always perfect', 'No research'], 'i', tip_common),
+                _heading('Individual differences', ['Chronotypes matter', 'Everyone identical', 'No variation'], 'i', tip_common),
+                _heading('Chronic loss', ['Attention suffers', 'Attention improves always', 'No effect'], 'i', tip_common),
+                _heading('School timing', ['Later starts debated', 'Schools ban sleep talk', 'No debate'], 'i', tip_common),
+                _heading('Medication limits', ['Architecture not restored', 'Perfect natural sleep', 'No drugs exist'], 'i', tip_common),
+                _heading('Public advice', ['Schedules and light', 'Ignore routines', 'Endless caffeine'], 'i', tip_common),
+                _heading('Creative links', ['REM and problem solving', 'Only printing', 'Only hiring'], 'i', tip_common),
+                _heading('Nap nuance', ['Helps some tasks only', 'Helps every task', 'Helps nothing'], 'i', tip_common),
+                _heading('Not optional recovery', ['Health priority', 'Optional luxury only', 'Ignore sleep'], 'i', tip_common),
+            ],
+            'C2': [
+                _heading('Efficiency promise', ['Automated screening speed', 'Perfect fairness', 'No tools'], 'i', tip_common),
+                _heading('Encoded history', ['Bias in training data', 'Bias-free data always', 'No data used'], 'i', tip_common),
+                _heading('Proxy problem', ['Hidden attributes remain', 'Proxies end all bias', 'No candidates'], 'i', tip_common),
+                _heading('Audit methods', ['Impact tests and review', 'No audits', 'Secret scores only'], 'i', tip_common),
+                _heading('Vendor opacity', ['Little error disclosure', 'Full open models always', 'No vendors'], 'i', tip_common),
+                _heading('Regulatory push', ['Explainability required', 'No rules', 'Ban all hiring'], 'i', tip_common),
+                _heading('Ethical tension', ['Scale versus fairness', 'Only beaches', 'Only sleep'], 'i', tip_common),
+                _heading('Past success trap', ['Old patterns locked in', 'Future guaranteed fair', 'No history'], 'i', tip_common),
+                _heading('Borderline cases', ['Human review needed', 'Never review humans', 'Delete all'], 'i', tip_common),
+                _heading('Fair opportunity', ['Core ethical goal', 'Ignore opportunity', 'Only speed'], 'i', tip_common),
+            ],
+        }
+        questions = h_by.get(level, h_by['B1'])
+    elif rtype == 'matching_endings':
+        if level == 'A1':
+            endings = ['sandcastles.', 'in the sea.', 'under umbrellas.', 'ice cream.', 'at night.', 'the swimmers.']
+            questions = [
+                _match('Children build', endings, 'a', tip_common),
+                _match('Some people swim', endings, 'b', tip_common),
+                _match('Others sit', endings, 'c', tip_common),
+                _match('Friends buy', endings, 'd', tip_common),
+                _match('The beach is quiet', endings, 'e', tip_common),
+                _match('Lifeguards watch', endings, 'f', tip_common),
+                _match('The shop sells', ['water and fruit.', 'airplanes.', 'cables.'], 'a', tip_common),
+                _match('Seagulls fly', ['above the water.', 'inside mines.', 'in libraries.'], 'a', tip_common),
+                _match('People collect', ['their towels.', 'runways.', 'stadiums.'], 'a', tip_common),
+                _match('Families like', ['the beach.', 'only factories.', 'only airports.'], 'a', tip_common),
+            ]
+        elif level == 'A2':
+            endings = ['a monthly fee.', 'basic skills.', 'weekend matches.', 'Saturday mornings.', 'healthy snacks.', 'small grants.']
+            questions = [
+                _match('Members pay', endings, 'a', tip_common),
+                _match('Coaches teach', endings, 'b', tip_common),
+                _match('Clubs organise', endings, 'c', tip_common),
+                _match('Parents visit on', endings, 'd', tip_common),
+                _match('The café sells', endings, 'e', tip_common),
+                _match('Councils may give', endings, 'f', tip_common),
+                _match('Clubs offer', ['football and swimming.', 'only mining.', 'only flights.'], 'a', tip_common),
+                _match('Teenagers spend', ['less time alone at home.', 'more time in airports.', 'no time training.'], 'a', tip_common),
+                _match('Changing rooms', ['and showers are available.', 'are banned.', 'are oceans.'], 'a', tip_common),
+                _match('Sports clubs are popular with', ['young people.', 'only ships.', 'only forests.'], 'a', tip_common),
+            ]
+        elif level == 'B1':
+            endings = [
+                'local air pollution.',
+                'feel unsafe.',
+                'higher weekday use.',
+                'without private bicycles.',
+                'showers and lockers.',
+                'as transport.',
+            ]
+            questions = [
+                _match('Bike lanes can reduce', endings, 'a', tip_common),
+                _match('Ignored lanes make riders', endings, 'b', tip_common),
+                _match('Protected tracks bring', endings, 'c', tip_common),
+                _match('Bike-share helps people', endings, 'd', tip_common),
+                _match('Employers may offer', endings, 'e', tip_common),
+                _match('Planners now treat cycling', endings, 'f', tip_common),
+                _match('Storage remains', ['a challenge.', 'solved forever.', 'illegal.'], 'a', tip_common),
+                _match('Helmet laws', ['differ between countries.', 'are identical everywhere.', 'do not exist.'], 'a', tip_common),
+                _match('Short trips become', ['more practical by bike.', 'impossible.', 'only by ship.'], 'a', tip_common),
+                _match('Cycling is no longer only', ['a weekend hobby.', 'a transport mode.', 'a planning topic.'], 'a', tip_common),
+            ]
+        elif level == 'B2':
+            endings = [
+                'a movable-type printing press.',
+                'rearranged and reused.',
+                'far cheaper to produce.',
+                'newspapers and pamphlets.',
+                'education, science, and politics.',
+                'mass reading culture.',
+            ]
+            questions = [
+                _match('Gutenberg developed', endings, 'a', tip_common),
+                _match('Metal letters could be', endings, 'b', tip_common),
+                _match('Books became', endings, 'c', tip_common),
+                _match('Printers also created', endings, 'd', tip_common),
+                _match('The press changed', endings, 'e', tip_common),
+                _match('The era began a', endings, 'f', tip_common),
+                _match('Critics feared', ['wider literacy.', 'too few books.', 'closed oceans.'], 'a', tip_common),
+                _match('Luxury editions still used', ['hand-copied manuscripts.', 'only radio.', 'only sand.'], 'a', tip_common),
+                _match('Workshops spread', ['across cities.', 'only underwater.', 'only on Mars.'], 'a', tip_common),
+                _match('Paper and ink', ['improved over decades.', 'never changed.', 'disappeared.'], 'a', tip_common),
+            ]
+        elif level == 'C1':
+            endings = [
+                'memory consolidation.',
+                'not always generalise.',
+                'individual chronotypes.',
+                'attention more visibly.',
+                'later school start times.',
+                'regular schedules and light.',
+            ]
+            questions = [
+                _match('Sleep is linked to', endings, 'a', tip_common),
+                _match('Lab findings do', endings, 'b', tip_common),
+                _match('Outcomes can depend on', endings, 'c', tip_common),
+                _match('Chronic restriction impairs', endings, 'd', tip_common),
+                _match('Educators debate', endings, 'e', tip_common),
+                _match('Guidance stresses', endings, 'f', tip_common),
+                _match('Sleep aids may fail to restore', ['natural architecture.', 'daylight.', 'printing.'], 'a', tip_common),
+                _match('Short naps help', ['some tasks but not others.', 'every task equally.', 'no tasks.'], 'a', tip_common),
+                _match('REM relates to', ['creative problem solving.', 'only hiring bias.', 'only bike lanes.'], 'a', tip_common),
+                _match('Sleep is not merely', ['passive shutdown.', 'useful research.', 'a schedule topic.'], 'a', tip_common),
+            ]
+        else:
+            endings = [
+                'historical bias.',
+                'training data.',
+                'disparate-impact tests.',
+                'error rates.',
+                'explainability statements.',
+                'old workforce patterns.',
+            ]
+            questions = [
+                _match('Screening tools can reproduce', endings, 'a', tip_common),
+                _match('Bias may be encoded in', endings, 'b', tip_common),
+                _match('Audits recommend', endings, 'c', tip_common),
+                _match('Vendors disclose little about', endings, 'd', tip_common),
+                _match('Regulators may require', endings, 'e', tip_common),
+                _match('Optimising past success can lock in', endings, 'f', tip_common),
+                _match('Borderline cases need', ['human review.', 'no humans.', 'random deletion.'], 'a', tip_common),
+                _match('Removing proxies may not', ['end all bias.', 'use any data.', 'hire anyone.'], 'a', tip_common),
+                _match('The ethical tension is between scale and', ['fair opportunity.', 'beach time.', 'sleep length.'], 'a', tip_common),
+                _match('Tools promise', ['efficiency.', 'perfect fairness always.', 'no decisions.'], 'a', tip_common),
+            ]
+    else:
+        # matching_names
+        names_packs = {
+            'A1': {
+                'title': 'People at the Beach',
+                'passage': (
+                    "Lila builds sandcastles near the water. Omar swims with a bright float. "
+                    "Mrs Park sits under a large umbrella and reads. Chef Rico sells ice cream from a small cart. "
+                    "Tina watches seagulls with binoculars. Lifeguard Sam blows a whistle when waves grow strong."
+                ),
+                'names': ['Lila', 'Omar', 'Mrs Park', 'Chef Rico', 'Tina', 'Sam'],
+                'rows': [
+                    ('Builds sandcastles near the water', 'a'),
+                    ('Swims with a bright float', 'b'),
+                    ('Sits under an umbrella and reads', 'c'),
+                    ('Sells ice cream from a cart', 'd'),
+                    ('Watches seagulls with binoculars', 'e'),
+                    ('Blows a whistle as lifeguard', 'f'),
+                    ('Plays with sand on the shore', 'a'),
+                    ('Is in the sea with a float', 'b'),
+                    ('Works with ice cream', 'd'),
+                    ('Keeps swimmers safer', 'f'),
+                ],
+            },
+            'A2': {
+                'title': 'Club Staff and Members',
+                'passage': (
+                    "Coach Dana teaches beginners basic football skills. Member Leo pays the monthly fee at the desk. "
+                    "Parent Nora brings her child every Saturday morning. Manager Chris books weekend matches. "
+                    "Barista Mia sells healthy snacks in the café. Officer Farid arranges a small council grant."
+                ),
+                'names': ['Coach Dana', 'Leo', 'Nora', 'Chris', 'Mia', 'Farid'],
+                'rows': [
+                    ('Teaches beginner football skills', 'a'),
+                    ('Pays the monthly fee', 'b'),
+                    ('Brings a child on Saturdays', 'c'),
+                    ('Books weekend matches', 'd'),
+                    ('Sells healthy snacks', 'e'),
+                    ('Arranges a council grant', 'f'),
+                    ('Works as a coach', 'a'),
+                    ('Is a fee-paying member', 'b'),
+                    ('Runs the café snacks', 'e'),
+                    ('Supports funding for the club', 'f'),
+                ],
+            },
+            'B1': {
+                'title': 'Voices on City Cycling',
+                'passage': (
+                    "Planner Hana Voss designs protected cycle tracks for weekday riders. "
+                    "Commuter Eli Park says ignored lanes make him feel unsafe. "
+                    "Engineer Sofia Ruiz installs bike-share stations for tourists. "
+                    "HR lead Tom Nguyen adds workplace showers and lockers. "
+                    "Advocate Mira Cole argues cycling is transport, not only a hobby. "
+                    "Researcher Ben Ortiz studies how lanes cut short-trip pollution."
+                ),
+                'names': [
+                    'Hana Voss', 'Eli Park', 'Sofia Ruiz', 'Tom Nguyen', 'Mira Cole', 'Ben Ortiz',
+                ],
+                'rows': [
+                    ('Designs protected cycle tracks', 'a'),
+                    ('Feels unsafe when lanes are ignored', 'b'),
+                    ('Installs bike-share stations', 'c'),
+                    ('Adds showers and lockers at work', 'd'),
+                    ('Calls cycling real transport', 'e'),
+                    ('Studies pollution cuts from lanes', 'f'),
+                    ('Focuses on weekday protected tracks', 'a'),
+                    ('Is a worried bike commute', 'b'),
+                    ('Supports workplace cycling facilities', 'd'),
+                    ('Researches air-quality benefits', 'f'),
+                ],
+            },
+            'B2': {
+                'title': 'Figures of the Printing Age',
+                'passage': (
+                    "Johannes Gutenberg developed movable-type printing in Europe. "
+                    "Merchant Klaus Weber funded a workshop for cheaper books. "
+                    "Scholar Anna Vogel warned that literacy might weaken old authorities. "
+                    "Printer Luca Romano produced pamphlets with faster news. "
+                    "Chemist Piotr Kaminski improved ink formulas over years. "
+                    "Historian Elise Brandt wrote that mass reading culture had begun."
+                ),
+                'names': [
+                    'Johannes Gutenberg', 'Klaus Weber', 'Anna Vogel',
+                    'Luca Romano', 'Piotr Kaminski', 'Elise Brandt',
+                ],
+                'rows': [
+                    ('Developed movable-type printing', 'a'),
+                    ('Funded a cheaper-book workshop', 'b'),
+                    ('Warned about literacy and authority', 'c'),
+                    ('Produced fast-news pamphlets', 'd'),
+                    ('Improved ink formulas', 'e'),
+                    ('Described mass reading culture', 'f'),
+                    ('Invented reusable metal letters approach', 'a'),
+                    ('Financed printing work', 'b'),
+                    ('Worked on ink chemistry', 'e'),
+                    ('Recorded the cultural shift to mass reading', 'f'),
+                ],
+            },
+            'C1': {
+                'title': 'Researchers on Sleep',
+                'passage': (
+                    "Dr Nina Hale links slow-wave sleep to memory consolidation. "
+                    "Professor Carl Orth warns lab findings do not always generalise. "
+                    "Psychologist Amira Sen studies how chronotypes change outcomes. "
+                    "Educator Paul Ruiz argues for later adolescent school starts. "
+                    "Pharmacologist Yuki Mori notes aids may miss natural architecture. "
+                    "Advisor Lena Frost promotes regular schedules and morning light."
+                ),
+                'names': [
+                    'Dr Nina Hale', 'Professor Carl Orth', 'Amira Sen',
+                    'Paul Ruiz', 'Yuki Mori', 'Lena Frost',
+                ],
+                'rows': [
+                    ('Links sleep stages to memory', 'a'),
+                    ('Warns labs may not generalise', 'b'),
+                    ('Studies chronotype differences', 'c'),
+                    ('Argues for later school starts', 'd'),
+                    ('Notes limits of sleep medication', 'e'),
+                    ('Promotes schedules and light', 'f'),
+                    ('Focuses on consolidation research', 'a'),
+                    ('Questions lab-to-life transfer', 'b'),
+                    ('Works on education timing policy', 'd'),
+                    ('Gives public sleep hygiene advice', 'f'),
+                ],
+            },
+            'C2': {
+                'title': 'Experts on Hiring Algorithms',
+                'passage': (
+                    "Dr Omar Reed shows how training data encodes past bias. "
+                    "Auditor Priya Shah runs disparate-impact tests on shortlists. "
+                    "Engineer Mateo Cruz builds human-review queues for borderline scores. "
+                    "Vendor liaison Helen Cho admits error rates are rarely published. "
+                    "Regulator Igor Petrov requires explainability statements. "
+                    "Ethicist Sara Blum warns optimisation can lock in old workforce patterns."
+                ),
+                'names': [
+                    'Dr Omar Reed', 'Priya Shah', 'Mateo Cruz',
+                    'Helen Cho', 'Igor Petrov', 'Sara Blum',
+                ],
+                'rows': [
+                    ('Shows bias in training data', 'a'),
+                    ('Runs disparate-impact audits', 'b'),
+                    ('Builds human-review queues', 'c'),
+                    ('Admits rare error-rate disclosure', 'd'),
+                    ('Requires explainability statements', 'e'),
+                    ('Warns about locked-in patterns', 'f'),
+                    ('Researches encoded hiring history', 'a'),
+                    ('Designs borderline case review', 'c'),
+                    ('Sets regulatory explainability rules', 'e'),
+                    ('Frames the fairness ethics problem', 'f'),
+                ],
+            },
+        }
+        np = names_packs.get(level, names_packs['B1'])
+        title = np['title']
+        passage = np['passage']
+        names = np['names']
+        questions = [_match(prompt, names, correct, tip_common) for prompt, correct in np['rows']]
+
+    instruction_map = {
+        'gap_fill': 'ONE WORD ONLY',
+        'matching_endings': 'Match each beginning with the correct ending.',
+        'matching_names': 'Match each statement with the correct person.',
+        'matching_headings': 'Choose the correct heading.',
+        'tfng': 'Choose TRUE, FALSE or NOT GIVEN.',
+        'mcq': 'Choose the correct option.',
+    }
+    tip = t(
+        lang,
+        f"{level} daraja · {meta['label_uz']}. Matndan dalil topib javob bering.",
+        f"Уровень {level} · {meta['label_ru']}. Ищите доказательство в тексте.",
+    )
+    return {
+        'skill': 'reading',
+        'level': level,
+        'practice_type': rtype,
+        'practice_label': meta['label_uz'] if normalize_ai_lang(lang) == 'uz' else meta['label_ru'],
+        'title': title,
+        'passage': passage,
+        'instruction': instruction_map.get(rtype, 'Choose the correct option.'),
+        'questions': _number_questions(questions),
+        'tip': tip,
+        'provider_name': 'local',
+        'model_name': 'practice-local-v2',
+        'content_variant': 1,
+    }
+
+
+def _local_reading(level: str, rtype: str, lang: str, *, variant: int = 0) -> dict:
+    variant = int(variant or 0) % READING_VARIANT_COUNT
+    if variant == 1:
+        return _local_reading_b(level, rtype, lang)
     meta = READING_TYPES[rtype]
     title = {
         'A1': 'A Day at the Park',
@@ -1026,12 +1818,14 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
         'tip': tip,
         'provider_name': 'local',
         'model_name': 'practice-local-v1',
+        'content_variant': 0,
     }
 
 
-def _local_writing(level: str, focus: str, lang: str) -> dict:
+def _local_writing(level: str, focus: str, lang: str, *, variant: int = 0) -> dict:
     meta = WRITING_FOCUSES[focus]
-    tasks = {
+    variant = int(variant or 0) % READING_VARIANT_COUNT
+    tasks_a = {
         'A1': 'Write about your favourite place. Say where it is and why you like it. (80–100 words)',
         'A2': 'Some people prefer living in a city. Do you agree or disagree? Give reasons. (120–150 words)',
         'B1': 'Many students use smartphones for study. Discuss the advantages and disadvantages. (150–180 words)',
@@ -1039,7 +1833,15 @@ def _local_writing(level: str, focus: str, lang: str) -> dict:
         'C1': 'Governments should invest more in public libraries than in new sports stadiums. To what extent do you agree or disagree? (250–280 words)',
         'C2': 'In an age of digital media, is the traditional essay still the best way to assess academic writing ability? Discuss. (280–320 words)',
     }
-    samples = {
+    tasks_b = {
+        'A1': 'Write about your favourite food. Say what it is and when you eat it. (80–100 words)',
+        'A2': 'Some students like online classes. Do you agree or disagree? Give reasons. (120–150 words)',
+        'B1': 'More people work from home. Discuss the advantages and disadvantages. (150–180 words)',
+        'B2': 'Some cities invest in bike lanes instead of new car parks. Discuss both views and give your opinion. (220–260 words)',
+        'C1': 'Universities should teach digital literacy as seriously as traditional academic writing. To what extent do you agree or disagree? (250–280 words)',
+        'C2': 'Should high-stakes hiring decisions ever be left to algorithms alone? Discuss. (280–320 words)',
+    }
+    samples_a = {
         'A1': (
             "My favourite place is a small park near my home. There are trees and a playground. "
             "I go there with my friends on Sunday. We walk and talk. I like this park because it is quiet and green."
@@ -1075,6 +1877,39 @@ def _local_writing(level: str, focus: str, lang: str) -> dict:
             "authentic academic work."
         ),
     }
+    samples_b = {
+        'A1': (
+            "My favourite food is plov. My mother cooks it on weekends. It has rice, meat, and carrots. "
+            "I eat it with my family. I like it because it is warm and delicious."
+        ),
+        'A2': (
+            "Online classes are useful because students can study from home and save travel time. "
+            "However, some learners lose focus without a classroom. In my opinion, online learning works best "
+            "when teachers check progress every week."
+        ),
+        'B1': (
+            "Working from home saves commuting time and can improve focus for quiet tasks. "
+            "On the other hand, people may feel isolated and miss team discussions. "
+            "I think a hybrid model is best: office days for meetings and home days for deep work."
+        ),
+        'B2': (
+            "Bike lanes make short trips cleaner and often faster in congested centres, while car parks support drivers "
+            "who need vehicles for work. Still, limited urban space means cities must prioritise high-capacity options. "
+            "Overall I favour protected cycling networks, with some parking retained near hospitals and logistics hubs."
+        ),
+        'C1': (
+            "Digital literacy underpins research, collaboration, and source evaluation in modern degrees. "
+            "Traditional essays remain valuable for argumentation, yet ignoring digital skills leaves graduates "
+            "underprepared. I therefore agree that universities should treat both as core competencies."
+        ),
+        'C2': (
+            "Algorithms can rank applicants quickly, but training data often encodes historical bias. "
+            "Leaving final decisions to opaque scores risks unfair exclusion. High-stakes hiring should combine "
+            "audited tools with meaningful human review rather than full automation."
+        ),
+    }
+    tasks = tasks_b if variant == 1 else tasks_a
+    samples = samples_b if variant == 1 else samples_a
 
     band = 'A' if level in ('A1', 'A2') else ('C' if level in ('C1', 'C2') else 'B')
     # Har fokus uchun daraja bandiga mos mashqlar (A / B / C)
@@ -1516,13 +2351,8 @@ def _local_writing(level: str, focus: str, lang: str) -> dict:
         'tip': tip,
         'provider_name': 'local',
         'model_name': 'practice-local-v1',
+        'content_variant': variant,
     }
-
-
-_ROMAN_LETTERS = (
-    'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x',
-)
-_ALPHA_LETTERS = tuple('abcdefgh')
 
 
 def _norm_option_letter(raw, *, rtype: str = 'mcq', index: int = 0) -> str:
@@ -1874,11 +2704,24 @@ Rules:
 """
 
 
-def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz') -> dict:
+def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz', seed='', avoid_fingerprint='') -> dict:
     level = normalize_level(level)
     rtype = normalize_reading_type(practice_type)
     lang = normalize_ai_lang(lang)
-    local = _local_reading(level, rtype, lang)
+    seed = str(seed or '').strip() or f'{time.time_ns()}'
+    variant = _variant_index(seed, level=level, practice_type=rtype)
+    local = _freshen_reading_payload(
+        _local_reading(level, rtype, lang, variant=variant),
+        seed,
+    )
+    if avoid_fingerprint and _practice_fingerprint(local) == avoid_fingerprint:
+        variant = 1 - variant
+        local = _freshen_reading_payload(
+            _local_reading(level, rtype, lang, variant=variant),
+            f'{seed}:alt',
+        )
+    local['content_variant'] = variant
+
     provider = _provider()
     if provider in ('', 'local', 'heuristic', 'fallback'):
         return local
@@ -1886,7 +2729,7 @@ def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz') ->
         return local
 
     errors = []
-    prompt = _reading_prompt(level, rtype, lang)
+    prompt = _reading_prompt(level, rtype, lang) + f"\nUnique request seed: {seed}. Produce a fresh passage (do not reuse a previous topic).\n"
     deadline = time.monotonic() + PRACTICE_GEMINI_BUDGET_SEC
     for model in _gemini_model_chain(_model_name())[:PRACTICE_GEMINI_MAX_MODELS]:
         remaining = deadline - time.monotonic()
@@ -1900,6 +2743,10 @@ def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz') ->
             data['model_name'] = model
             payload = _normalize_reading_payload(data, level=level, rtype=rtype, lang=lang)
             if (payload.get('passage') or '').strip() and payload.get('questions'):
+                payload = _freshen_reading_payload(payload, seed)
+                if avoid_fingerprint and _practice_fingerprint(payload) == avoid_fingerprint:
+                    # AI same topic — local alternative
+                    return local
                 return payload
             errors.append(f'{model}: empty_payload')
         except Exception as exc:
@@ -1912,11 +2759,24 @@ def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz') ->
     return local
 
 
-def generate_writing_practice(*, level='B1', practice_type='lexical_resource', lang='uz') -> dict:
+def generate_writing_practice(*, level='B1', practice_type='lexical_resource', lang='uz', seed='', avoid_fingerprint='') -> dict:
     level = normalize_level(level)
     focus = normalize_writing_focus(practice_type)
     lang = normalize_ai_lang(lang)
-    local = _local_writing(level, focus, lang)
+    seed = str(seed or '').strip() or f'{time.time_ns()}'
+    variant = _variant_index(seed, level=level, practice_type=focus)
+    local = _freshen_writing_payload(
+        _local_writing(level, focus, lang, variant=variant),
+        seed,
+    )
+    if avoid_fingerprint and _practice_fingerprint(local) == avoid_fingerprint:
+        variant = 1 - variant
+        local = _freshen_writing_payload(
+            _local_writing(level, focus, lang, variant=variant),
+            f'{seed}:alt',
+        )
+    local['content_variant'] = variant
+
     provider = _provider()
     if provider in ('', 'local', 'heuristic', 'fallback'):
         return local
@@ -1924,7 +2784,7 @@ def generate_writing_practice(*, level='B1', practice_type='lexical_resource', l
         return local
 
     errors = []
-    prompt = _writing_prompt(level, focus, lang)
+    prompt = _writing_prompt(level, focus, lang) + f"\nUnique request seed: {seed}. Create a fresh task (do not repeat a previous prompt).\n"
     deadline = time.monotonic() + PRACTICE_GEMINI_BUDGET_SEC
     for model in _gemini_model_chain(_model_name())[:PRACTICE_GEMINI_MAX_MODELS]:
         remaining = deadline - time.monotonic()
@@ -1938,6 +2798,9 @@ def generate_writing_practice(*, level='B1', practice_type='lexical_resource', l
             data['model_name'] = model
             payload = _normalize_writing_payload(data, level=level, focus=focus, lang=lang)
             if (payload.get('task') or '').strip() and payload.get('exercises'):
+                payload = _freshen_writing_payload(payload, seed)
+                if avoid_fingerprint and _practice_fingerprint(payload) == avoid_fingerprint:
+                    return local
                 return payload
             errors.append(f'{model}: empty_payload')
         except Exception as exc:
@@ -1950,11 +2813,23 @@ def generate_writing_practice(*, level='B1', practice_type='lexical_resource', l
     return local
 
 
-def generate_practice(*, skill='reading', level='B1', practice_type='', lang='uz') -> dict:
+def generate_practice(*, skill='reading', level='B1', practice_type='', lang='uz', seed='', avoid_fingerprint='') -> dict:
     skill = (skill or 'reading').strip().lower()
     if skill == 'writing':
-        return generate_writing_practice(level=level, practice_type=practice_type, lang=lang)
-    return generate_reading_practice(level=level, practice_type=practice_type, lang=lang)
+        return generate_writing_practice(
+            level=level,
+            practice_type=practice_type,
+            lang=lang,
+            seed=seed,
+            avoid_fingerprint=avoid_fingerprint,
+        )
+    return generate_reading_practice(
+        level=level,
+        practice_type=practice_type,
+        lang=lang,
+        seed=seed,
+        avoid_fingerprint=avoid_fingerprint,
+    )
 
 
 def _format_correct_display(row: dict, expected: str) -> str:

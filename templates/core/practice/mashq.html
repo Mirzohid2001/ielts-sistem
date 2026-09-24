@@ -572,6 +572,13 @@
         setStatus(i18n.aiBusy, 'info');
         scoreEl.hidden = true;
         footer.hidden = true;
+        checked = false;
+        payload = null;
+        // Eski matn/savollarni yashirib, yangi so'rov kutamiz
+        leftBody.hidden = true;
+        rightBody.hidden = true;
+        leftEmpty.hidden = false;
+        rightEmpty.hidden = false;
         app.classList.add('is-loading');
 
         try {
@@ -585,7 +592,9 @@
                 body: JSON.stringify({
                     skill: skill,
                     level: selectedLevel(),
-                    practice_type: selectedType()
+                    practice_type: selectedType(),
+                    seed: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 10),
+                    refresh: true
                 })
             });
             let json = {};

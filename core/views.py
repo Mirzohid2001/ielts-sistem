@@ -18,6 +18,7 @@ from calendar import monthrange
 import json
 import re
 import threading
+import time
 from .models import (
     Category, VideoLesson, Test, Question,
     UserTestResult, UserTestAnswer, UserVideoProgress, UserActivity,
@@ -4160,6 +4161,12 @@ def practice_generate(request):
     level = str(body.get('level') or 'B1').strip()
     practice_type = str(body.get('practice_type') or body.get('type') or '').strip()
     lang = get_ai_language(request)
+    seed = str(body.get('seed') or body.get('nonce') or '').strip() or str(time.time_ns())
+    prev = request.session.get('practice_payload') if isinstance(request.session.get('practice_payload'), dict) else {}
+    avoid_fingerprint = ''
+    if prev and str(prev.get('skill') or '') == skill:
+        from core.services.ai_practice import _practice_fingerprint
+        avoid_fingerprint = _practice_fingerprint(prev)
 
     try:
         payload = generate_practice(
@@ -4167,20 +4174,40 @@ def practice_generate(request):
             level=level,
             practice_type=practice_type,
             lang=lang,
+            seed=seed,
+            avoid_fingerprint=avoid_fingerprint,
         )
     except Exception as exc:
         from core.services import ai_practice as _ap
+        seed2 = seed + ':err'
+        variant = _ap._variant_index(
+            seed2,
+            level=_ap.normalize_level(level),
+            practice_type=(
+                _ap.normalize_writing_focus(practice_type)
+                if skill == 'writing'
+                else _ap.normalize_reading_type(practice_type)
+            ),
+        )
         if skill == 'writing':
-            payload = _ap._local_writing(
-                _ap.normalize_level(level),
-                _ap.normalize_writing_focus(practice_type),
-                lang,
+            payload = _ap._freshen_writing_payload(
+                _ap._local_writing(
+                    _ap.normalize_level(level),
+                    _ap.normalize_writing_focus(practice_type),
+                    lang,
+                    variant=variant,
+                ),
+                seed2,
             )
         else:
-            payload = _ap._local_reading(
-                _ap.normalize_level(level),
-                _ap.normalize_reading_type(practice_type),
-                lang,
+            payload = _ap._freshen_reading_payload(
+                _ap._local_reading(
+                    _ap.normalize_level(level),
+                    _ap.normalize_reading_type(practice_type),
+                    lang,
+                    variant=variant,
+                ),
+                seed2,
             )
         payload = dict(payload)
         payload['provider_name'] = 'local'
