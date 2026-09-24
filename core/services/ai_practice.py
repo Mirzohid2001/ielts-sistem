@@ -13,9 +13,9 @@ from django.conf import settings
 from core.services.ai_language import learner_language_rules, normalize_ai_lang, t
 
 # Gunicorn default timeout ~30s — Gemini shu ichida tugamasa 502.
-PRACTICE_GEMINI_BUDGET_SEC = 22.0
-PRACTICE_GEMINI_CALL_TIMEOUT = 18.0
-PRACTICE_GEMINI_MAX_MODELS = 2
+PRACTICE_GEMINI_BUDGET_SEC = 14.0
+PRACTICE_GEMINI_CALL_TIMEOUT = 12.0
+PRACTICE_GEMINI_MAX_MODELS = 1
 
 LEVELS = ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')
 READING_QUESTION_COUNT = 10
