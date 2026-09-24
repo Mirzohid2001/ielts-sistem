@@ -42,6 +42,16 @@ READING_TYPES = {
         'label_ru': 'Heading Matching',
         'qtype': 'matching_headings',
     },
+    'matching_endings': {
+        'label_uz': 'Matching Endings',
+        'label_ru': 'Matching Endings',
+        'qtype': 'matching_sentences',
+    },
+    'matching_names': {
+        'label_uz': 'Matching Names',
+        'label_ru': 'Matching Names',
+        'qtype': 'matching_features',
+    },
 }
 
 WRITING_FOCUSES = {
@@ -95,6 +105,14 @@ def normalize_reading_type(value) -> str:
         'fill_blank': 'gap_fill',
         'heading_matching': 'matching_headings',
         'headings': 'matching_headings',
+        'matching_sentences': 'matching_endings',
+        'sentence_endings': 'matching_endings',
+        'matching_ending': 'matching_endings',
+        'endings': 'matching_endings',
+        'matching_features': 'matching_names',
+        'matching_name': 'matching_names',
+        'names': 'matching_names',
+        'people': 'matching_names',
     }
     raw = aliases.get(raw, raw)
     return raw if raw in READING_TYPES else 'tfng'
@@ -219,6 +237,19 @@ def _heading(prompt, options, correct, explanation):
     romans = ('i', 'ii', 'iii', 'iv', 'v', 'vi')
     opts = [{'letter': romans[i], 'text': text} for i, text in enumerate(options[:6])]
     return {'id': 0, 'prompt': prompt, 'options': opts, 'correct': correct, 'explanation': explanation}
+
+
+def _match(prompt, options, correct, explanation):
+    """Matching endings / names — A–H harfli variantlar."""
+    letters = 'abcdefgh'
+    opts = [{'letter': letters[i], 'text': text} for i, text in enumerate(options[:8])]
+    return {
+        'id': 0,
+        'prompt': prompt,
+        'options': opts,
+        'correct': str(correct).strip().lower()[:1],
+        'explanation': explanation,
+    }
 
 
 def _number_questions(rows):
@@ -435,7 +466,7 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 _gap('Residents visit more when ______ are safe.', 'paths', tip_common),
                 _gap('Planners measure success by ______, not only by size.', 'use', tip_common),
             ]
-    else:
+    elif rtype == 'matching_headings':
         if level == 'A1':
             questions = [
                 _heading('What parks have', ['Trees, grass and play', 'Airport runways', 'Ocean cables'], 'i', tip_common),
@@ -475,7 +506,174 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 _heading('How success is measured', ['By use, not only size', 'By car sales', 'By ocean depth'], 'i', tip_common),
                 _heading('City planning theme', ['Urban green spaces', 'Only shopping centres', 'Ship design'], 'i', tip_common),
             ]
+    elif rtype == 'matching_endings':
+        if level == 'A1':
+            endings = [
+                'trees and grass.',
+                'feel happy.',
+                'near the playground.',
+                'on benches.',
+                'late at night.',
+                'in the morning.',
+            ]
+            questions = [
+                _match('Parks have', endings, 'a', tip_common),
+                _match('Parks help people', endings, 'b', tip_common),
+                _match('On Sunday, friends often meet', endings, 'c', tip_common),
+                _match('Old people sit', endings, 'd', tip_common),
+                _match('The park closes', endings, 'e', tip_common),
+                _match('Birds sing', endings, 'f', tip_common),
+                _match('Children play games in places with', ['trees and grass.', 'airports only.', 'no families.'], 'a', tip_common),
+                _match('Families sit and talk because parks make them', ['feel happy.', 'buy cars.', 'close shops.'], 'a', tip_common),
+                _match('People bring water and bread', ['for a small picnic.', 'to build ships.', 'to fly planes.'], 'a', tip_common),
+                _match('In big cities parks matter', ['because there are many buildings.', 'because birds hate parks.', 'because parks never open.'], 'a', tip_common),
+            ]
+        elif level == 'A2':
+            endings = [
+                'borrowed books.',
+                'free Wi-Fi and study rooms.',
+                'do homework.',
+                'language clubs.',
+                'find information quickly.',
+                'local residents.',
+            ]
+            questions = [
+                _match('In the past, people mainly', endings, 'a', tip_common),
+                _match('Today many libraries offer', endings, 'b', tip_common),
+                _match('Students often come after school to', endings, 'c', tip_common),
+                _match('Some libraries also run', endings, 'd', tip_common),
+                _match('Librarians help visitors', endings, 'e', tip_common),
+                _match('Membership is usually free for', endings, 'f', tip_common),
+                _match('Quiet zones help people', ['focus.', 'sing loudly.', 'close libraries.'], 'a', tip_common),
+                _match('In the evening some libraries show', ['educational films.', 'car races.', 'airport maps.'], 'a', tip_common),
+                _match('Children can join story time', ['on weekends.', 'only at midnight.', 'in airports.'], 'a', tip_common),
+                _match('Libraries remain useful even when people buy', ['e-books.', 'houses.', 'planes.'], 'a', tip_common),
+            ]
+        else:
+            endings = [
+                'lower stress and higher wellbeing.',
+                'raise property prices.',
+                'helps wildlife move and mix.',
+                'neglect after initial planting.',
+                'ring-fenced budgets and community involvement.',
+                'use, not only by size.',
+            ]
+            questions = [
+                _match('Research links access to nature with', endings, 'a', tip_common),
+                _match('Critics warn that new parks can', endings, 'b', tip_common),
+                _match('Connectivity between green areas', endings, 'c', tip_common),
+                _match('One-off grants often lead to', endings, 'd', tip_common),
+                _match('Best practice includes', endings, 'e', tip_common),
+                _match('Planners now measure success by', endings, 'f', tip_common),
+                _match('Some cities plant native trees', ['to cut watering costs.', 'to ban visitors.', 'to close parks.'], 'a', tip_common),
+                _match('Others create pocket parks', ['on unused corners.', 'inside airports.', 'under the ocean.'], 'a', tip_common),
+                _match('Residents visit parks more when', ['paths are safe and lighting is good.', 'parks are locked.', 'wildlife is removed.'], 'a', tip_common),
+                _match('Urban green spaces have become', ['a major theme in city planning.', 'a ban on libraries.', 'a type of ocean cable.'], 'a', tip_common),
+            ]
+    elif rtype == 'matching_names':
+        # Odamlar ismlari bo'lgan maxsus matn
+        title = {
+            'A1': 'People at the Park',
+            'A2': 'Library Staff and Visitors',
+            'B1': 'Voices on Urban Parks',
+            'B2': 'Engineers of the Atlantic Cable',
+            'C1': 'Researchers on Bilingualism',
+            'C2': 'Experts on Climate Uncertainty',
+        }.get(level, 'Voices on Urban Parks')
+        if level == 'A1':
+            passage = (
+                "Anna comes to the park every Sunday. She walks her dog near the playground. "
+                "Tom is a child who plays games with friends. Mrs Lee sits on a bench and reads a book. "
+                "Mr Karimov brings water and bread for a small picnic with his family. "
+                "Sara listens to birds in the morning. The park keeper, Jamshid, closes the park late at night."
+            )
+            names = ['Anna', 'Tom', 'Mrs Lee', 'Mr Karimov', 'Sara', 'Jamshid']
+            questions = [
+                _match('Walks a dog near the playground', names, 'a', tip_common),
+                _match('Plays games with friends', names, 'b', tip_common),
+                _match('Sits on a bench and reads', names, 'c', tip_common),
+                _match('Brings water and bread for a picnic', names, 'd', tip_common),
+                _match('Listens to birds in the morning', names, 'e', tip_common),
+                _match('Closes the park late at night', names, 'f', tip_common),
+                _match('Comes to the park every Sunday', names, 'a', tip_common),
+                _match('Is a child in the park', names, 'b', tip_common),
+                _match('Has a family picnic', names, 'd', tip_common),
+                _match('Is the park keeper', names, 'f', tip_common),
+            ]
+        elif level == 'A2':
+            passage = (
+                "Ms Rivera is a librarian who helps visitors find information quickly. "
+                "Omar is a student who comes after school to do homework in a study room. "
+                "Dr Patel runs a language club for adults on Wednesday evenings. "
+                "Lina joins story time with children on weekends. "
+                "Mr Brown manages quiet zones so people can focus. "
+                "Helena organises educational films in the evening."
+            )
+            names = ['Ms Rivera', 'Omar', 'Dr Patel', 'Lina', 'Mr Brown', 'Helena']
+            questions = [
+                _match('Helps visitors find information', names, 'a', tip_common),
+                _match('Does homework after school', names, 'b', tip_common),
+                _match('Runs a language club for adults', names, 'c', tip_common),
+                _match('Joins children\'s story time', names, 'd', tip_common),
+                _match('Manages quiet zones', names, 'e', tip_common),
+                _match('Organises evening educational films', names, 'f', tip_common),
+                _match('Works as a librarian', names, 'a', tip_common),
+                _match('Is a student visitor', names, 'b', tip_common),
+                _match('Supports adult learning clubs', names, 'c', tip_common),
+                _match('Helps people focus in quiet areas', names, 'e', tip_common),
+            ]
+        else:
+            passage = (
+                "Dr Maya Hassan studies how access to nature lowers stress in cities. "
+                "Councillor James Ortega warns that new parks can raise property prices and displace residents. "
+                "Ecologist Priya Nair argues that green corridors help wildlife move between parks. "
+                "Budget officer Kenji Sato says one-off grants often lead to neglect after planting. "
+                "Planner Sofia Almeida promotes ring-fenced budgets and community involvement. "
+                "Engineer Luis Romero designs safer paths and lighting to increase evening visits."
+            )
+            names = [
+                'Dr Maya Hassan',
+                'Councillor James Ortega',
+                'Ecologist Priya Nair',
+                'Budget officer Kenji Sato',
+                'Planner Sofia Almeida',
+                'Engineer Luis Romero',
+            ]
+            questions = [
+                _match('Links nature access to lower stress', names, 'a', tip_common),
+                _match('Warns about rising property prices', names, 'b', tip_common),
+                _match('Supports wildlife connectivity', names, 'c', tip_common),
+                _match('Criticises one-off planting grants', names, 'd', tip_common),
+                _match('Promotes ring-fenced budgets', names, 'e', tip_common),
+                _match('Designs safer paths and lighting', names, 'f', tip_common),
+                _match('Focuses on resident wellbeing research', names, 'a', tip_common),
+                _match('Raises social concerns about new parks', names, 'b', tip_common),
+                _match('Wants community involvement in parks', names, 'e', tip_common),
+                _match('Works on evening visit safety', names, 'f', tip_common),
+            ]
+    else:
+        # fallback — headings
+        questions = [
+            _heading('Main idea', ['Urban green spaces', 'Ocean fishing', 'Airport design'], 'i', tip_common),
+            _heading('Extra detail', ['Wellbeing benefits', 'Space travel', 'Mining'], 'i', tip_common),
+            _heading('Challenge', ['Funding', 'Cooking', 'Fashion'], 'i', tip_common),
+            _heading('Wildlife', ['Connectivity', 'Airports', 'Stadiums'], 'i', tip_common),
+            _heading('Practice', ['Community involvement', 'Closing parks', 'Banning trees'], 'i', tip_common),
+            _heading('Trees', ['Native species', 'Ocean cables', 'Car sales'], 'i', tip_common),
+            _heading('Small spaces', ['Pocket parks', 'Mines', 'Ships'], 'i', tip_common),
+            _heading('Visits', ['Safe paths and lighting', 'No grass', 'Locked gates'], 'i', tip_common),
+            _heading('Success', ['Measured by use', 'Measured by tickets', 'Measured by depth'], 'i', tip_common),
+            _heading('Theme', ['City planning', 'Ship design', 'Fashion weeks'], 'i', tip_common),
+        ]
 
+    instruction_map = {
+        'gap_fill': 'ONE WORD ONLY',
+        'matching_endings': 'Match each beginning with the correct ending.',
+        'matching_names': 'Match each statement with the correct person.',
+        'matching_headings': 'Choose the correct heading.',
+        'tfng': 'Choose TRUE, FALSE or NOT GIVEN.',
+        'mcq': 'Choose the correct option.',
+    }
     tip = t(
         lang,
         f"{level} daraja · {meta['label_uz']}. Matndan dalil topib javob bering.",
@@ -488,7 +686,7 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
         'practice_label': meta['label_uz'] if normalize_ai_lang(lang) == 'uz' else meta['label_ru'],
         'title': title,
         'passage': passage,
-        'instruction': 'ONE WORD ONLY' if rtype == 'gap_fill' else 'Choose the correct option.',
+        'instruction': instruction_map.get(rtype, 'Choose the correct option.'),
         'questions': _number_questions(questions),
         'tip': tip,
         'provider_name': 'local',
@@ -849,6 +1047,8 @@ Rules:
 - For mcq: 4 options a-d; correct is letter.
 - For gap_fill: options can be []; correct is the ONE WORD answer (lowercase ok).
 - For matching_headings: options are headings with roman or letter keys; correct matches option letter.
+- For matching_endings: prompt = sentence BEGINNING; options = possible ENDINGS (A–F); correct is letter. Use a shared bank of endings across questions when possible.
+- For matching_names: passage MUST mention several named people; prompt = statement/action; options = people names (A–F); correct is letter.
 - Content must be original, factual-sounding, level-appropriate.
 - Do not mention that you are an AI.
 """
