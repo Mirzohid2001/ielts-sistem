@@ -102,6 +102,10 @@ def build_notification_items(user, limit=8):
 def platform_notifications(request):
     if not request.user.is_authenticated:
         return {'notification_items': [], 'notification_count': 0}
+    # Admin har sahifada og'ir notification so'rovlarini o'tkazib yuboramiz
+    path = getattr(request, 'path', '') or ''
+    if path.startswith('/admin/'):
+        return {'notification_items': [], 'notification_count': 0}
 
     items = build_notification_items(request.user, limit=8)
     return {

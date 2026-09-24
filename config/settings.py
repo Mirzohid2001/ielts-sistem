@@ -128,6 +128,8 @@ DATABASES = {
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
         'PORT': os.environ.get('POSTGRES_PORT', 5432),
+        # Persistent connections — har request yangi TCP ochmaslik (admin/502 sekinligini kamaytiradi)
+        'CONN_MAX_AGE': int(os.environ.get('CONN_MAX_AGE', '60')),
     }
 }
 

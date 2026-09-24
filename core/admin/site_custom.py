@@ -126,9 +126,12 @@ def build_active_users_monthly_trend(days=365):
     return labels, counts
 
 
+ADMIN_DASHBOARD_CACHE_TTL = 300  # 5 daqiqa — /admin/ 502/sekinlikdan himoya
+
+
 def build_active_users_summary():
-    """7/30/90/180/365 — 2 daqiqa kesh (admin index tezligi)."""
-    cache_key = 'core:admin_active_users_summary_v2'
+    """7/30/90/180/365 — 5 daqiqa kesh (admin index tezligi)."""
+    cache_key = 'core:admin_active_users_summary_v3'
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
@@ -136,8 +139,136 @@ def build_active_users_summary():
         {'days': days, 'count': count_active_users(days)}
         for days in ACTIVE_USERS_PERIOD_CHOICES
     ]
-    cache.set(cache_key, data, 120)
+    cache.set(cache_key, data, ADMIN_DASHBOARD_CACHE_TTL)
     return data
+
+
+def _serialize_active_user(user):
+    return {
+        'pk': user.pk,
+        'id': user.pk,
+        'username': user.username,
+        'first_name': user.first_name or '',
+        'last_name': user.last_name or '',
+        'email': user.email or '',
+        'is_staff': bool(user.is_staff),
+        'last_login': user.last_login,
+        'tests_period': getattr(user, 'tests_period', 0) or 0,
+        'videos_period': getattr(user, 'videos_period', 0) or 0,
+        'activities_period': getattr(user, 'activities_period', 0) or 0,
+        'avg_score_period': getattr(user, 'avg_score_period', None),
+        'last_seen': getattr(user, 'last_seen', None),
+        'activity_score': getattr(user, 'activity_score', 0) or 0,
+    }
+
+
+def _hydrate_active_users(rows):
+    """Keshdan dict → template uchun attribute access."""
+    from types import SimpleNamespace
+    return [SimpleNamespace(**row) for row in (rows or [])]
+
+
+def build_admin_dashboard_payload(period_days):
+    """
+    Admin index uchun og'ir agregatlar — bitta payload, keshlanadi.
+    Miss bo'lganda 1 marta hisoblanadi; worker timeout / 502 xavfini kamaytiradi.
+    """
+    total_users = User.objects.count()
+    total_tests = Test.objects.filter(is_active=True).count()
+    total_videos = VideoLesson.objects.filter(is_active=True).count()
+    total_test_results = UserTestResult.objects.filter(completed_at__isnull=False).count()
+    total_video_views = UserVideoProgress.objects.filter(watched=True).count()
+
+    active_users = [_serialize_active_user(u) for u in build_active_users_report(days=period_days)]
+    active_users_summary = build_active_users_summary()
+    active_users_total_in_period = next(
+        (x['count'] for x in active_users_summary if x['days'] == period_days),
+        count_active_users(period_days),
+    )
+    active_month_labels, active_month_counts = build_active_users_monthly_trend(
+        days=min(period_days, 365)
+    )
+
+    passed_tests = UserTestResult.objects.filter(
+        completed_at__isnull=False,
+        percentage__gte=F('test__passing_score'),
+    ).count()
+    failed_tests = max(total_test_results - passed_tests, 0)
+
+    avg_score = UserTestResult.objects.filter(
+        completed_at__isnull=False
+    ).aggregate(avg=Avg('percentage'))['avg'] or 0
+
+    category_test_stats = list(
+        Category.objects.filter(is_active=True).annotate(
+            test_count=Count('tests', filter=Q(tests__is_active=True), distinct=True),
+            result_count=Count(
+                'tests__results',
+                filter=Q(tests__results__completed_at__isnull=False),
+                distinct=True,
+            ),
+            avg_score=Avg(
+                'tests__results__percentage',
+                filter=Q(tests__results__completed_at__isnull=False),
+            ),
+        ).order_by('order').values('name', 'test_count', 'result_count', 'avg_score')
+    )
+
+    start_date = timezone.now() - timedelta(days=13)
+    daily_map = {
+        row['day']: row['count']
+        for row in UserTestResult.objects.filter(
+            completed_at__isnull=False,
+            completed_at__gte=start_date,
+        ).annotate(day=TruncDate('completed_at')).values('day').annotate(count=Count('id'))
+    }
+    trend_labels = []
+    trend_counts = []
+    for i in range(14):
+        d = (start_date + timedelta(days=i)).date()
+        trend_labels.append(d.strftime('%d.%m'))
+        trend_counts.append(daily_map.get(d, 0))
+
+    chart_payload = {
+        'pass_fail': [passed_tests, failed_tests],
+        'category_labels': [c['name'] for c in category_test_stats],
+        'category_tests': [c['test_count'] or 0 for c in category_test_stats],
+        'category_results': [c['result_count'] or 0 for c in category_test_stats],
+        'trend_labels': trend_labels,
+        'trend_counts': trend_counts,
+        'active_month_labels': active_month_labels,
+        'active_month_counts': active_month_counts,
+    }
+
+    return {
+        'total_users': total_users,
+        'total_tests': total_tests,
+        'total_videos': total_videos,
+        'total_test_results': total_test_results,
+        'total_video_views': total_video_views,
+        'active_users': active_users,
+        'active_users_period_days': period_days,
+        'active_users_summary_list': active_users_summary,
+        'active_users_total_in_period': active_users_total_in_period,
+        'active_users_period_choices': ACTIVE_USERS_PERIOD_CHOICES,
+        'passed_tests': passed_tests,
+        'failed_tests': failed_tests,
+        'avg_score': round(avg_score, 2),
+        'category_test_stats': category_test_stats,
+        'chart_payload_json': json.dumps(chart_payload),
+    }
+
+
+def get_cached_admin_dashboard(period_days):
+    cache_key = f'core:admin_index_dash_v1:{period_days}'
+    payload = cache.get(cache_key)
+    if payload is None:
+        payload = build_admin_dashboard_payload(period_days)
+        cache.set(cache_key, payload, ADMIN_DASHBOARD_CACHE_TTL)
+    else:
+        payload = dict(payload)
+    payload['active_users'] = _hydrate_active_users(payload.get('active_users'))
+    return payload
 
 
 # Custom Admin Site - Statistikalar bilan
@@ -387,101 +518,25 @@ def custom_get_app_list(self, request, app_label=None):
     return split_apps + remaining_apps
 
 def custom_index(request, extra_context=None):
-    """Admin index sahifasini yaxshilash"""
-    # Asosiy statistikalar
-    total_users = User.objects.count()
-    total_tests = Test.objects.filter(is_active=True).count()
-    total_videos = VideoLesson.objects.filter(is_active=True).count()
-    total_test_results = UserTestResult.objects.filter(completed_at__isnull=False).count()
-    total_video_views = UserVideoProgress.objects.filter(watched=True).count()
-    
-    # Oxirgi test natijalari
+    """Admin index — og'ir statistikalar keshlanadi; faqat oxirgi ro'yxatlar har safar yangilanadi."""
+    period_days = parse_active_users_period(request)
+    dash = get_cached_admin_dashboard(period_days)
+
     recent_results = UserTestResult.objects.filter(
         completed_at__isnull=False
     ).select_related('user', 'test', 'test__category').order_by('-completed_at')[:10]
-    
-    # Oxirgi video ko'rishlar
+
     recent_video_views = UserVideoProgress.objects.filter(
         watched=True
     ).select_related('user', 'video', 'video__category').order_by('-completed_at')[:10]
-    
-    period_days = parse_active_users_period(request)
-    active_users = build_active_users_report(days=period_days)
-    active_users_summary = build_active_users_summary()
-    active_users_total_in_period = next(
-        (x['count'] for x in active_users_summary if x['days'] == period_days),
-        count_active_users(period_days),
-    )
-    active_month_labels, active_month_counts = build_active_users_monthly_trend(days=min(period_days, 365))
 
-    # O'tdi/O'tmadi statistikasi (DB da — barcha natijalarni xotiraga yuklamasdan)
-    passed_tests = UserTestResult.objects.filter(
-        completed_at__isnull=False,
-        percentage__gte=F('test__passing_score'),
-    ).count()
-    failed_tests = max(total_test_results - passed_tests, 0)
-
-    avg_score = UserTestResult.objects.filter(
-        completed_at__isnull=False
-    ).aggregate(avg=Avg('percentage'))['avg'] or 0
-
-    # Kategoriya bo'yicha statistikalar
-    category_test_stats = list(
-        Category.objects.filter(is_active=True).annotate(
-            test_count=Count('tests', filter=Q(tests__is_active=True), distinct=True),
-            result_count=Count('tests__results', filter=Q(tests__results__completed_at__isnull=False), distinct=True),
-            avg_score=Avg('tests__results__percentage', filter=Q(tests__results__completed_at__isnull=False))
-        ).order_by('order').values('name', 'test_count', 'result_count', 'avg_score')
-    )
-
-    # Oxirgi 14 kunlik trend (test yakunlashlar soni)
-    start_date = timezone.now() - timedelta(days=13)
-    daily_map = {
-        row['day']: row['count']
-        for row in UserTestResult.objects.filter(
-            completed_at__isnull=False,
-            completed_at__gte=start_date
-        ).annotate(day=TruncDate('completed_at')).values('day').annotate(count=Count('id'))
-    }
-    trend_labels = []
-    trend_counts = []
-    for i in range(14):
-        d = (start_date + timedelta(days=i)).date()
-        trend_labels.append(d.strftime('%d.%m'))
-        trend_counts.append(daily_map.get(d, 0))
-
-    chart_payload = {
-        'pass_fail': [passed_tests, failed_tests],
-        'category_labels': [c['name'] for c in category_test_stats],
-        'category_tests': [c['test_count'] or 0 for c in category_test_stats],
-        'category_results': [c['result_count'] or 0 for c in category_test_stats],
-        'trend_labels': trend_labels,
-        'trend_counts': trend_counts,
-        'active_month_labels': active_month_labels,
-        'active_month_counts': active_month_counts,
-    }
-    
     extra_context = extra_context or {}
+    extra_context.update(dash)
     extra_context.update({
-        'total_users': total_users,
-        'total_tests': total_tests,
-        'total_videos': total_videos,
-        'total_test_results': total_test_results,
-        'total_video_views': total_video_views,
         'recent_results': recent_results,
         'recent_video_views': recent_video_views,
-        'active_users': active_users,
-        'active_users_period_days': period_days,
-        'active_users_summary_list': active_users_summary,
-        'active_users_total_in_period': active_users_total_in_period,
-        'active_users_period_choices': ACTIVE_USERS_PERIOD_CHOICES,
-        'passed_tests': passed_tests,
-        'failed_tests': failed_tests,
-        'avg_score': round(avg_score, 2),
-        'category_test_stats': category_test_stats,
-        'chart_payload_json': json.dumps(chart_payload),
     })
-    
+
     return original_index(request, extra_context=extra_context)
 
 admin.site.index = custom_index

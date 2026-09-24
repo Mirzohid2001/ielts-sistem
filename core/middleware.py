@@ -43,6 +43,11 @@ class ModuleAccessMiddleware:
         if not request.user.is_authenticated:
             return None
 
+        # Admin panel o'z ruxsat modeliga ega — modul check kerak emas
+        path = getattr(request, 'path', '') or ''
+        if path.startswith('/admin/'):
+            return None
+
         match = request.resolver_match
         if not match:
             return None
