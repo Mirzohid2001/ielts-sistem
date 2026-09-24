@@ -89,13 +89,22 @@
     <div class="card collection-filter-card border-0 mb-4">
         <div class="card-body">
             <form method="get" class="row g-2 align-items-end">
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{% trans "Qidirish" %}</label>
-                    <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="{% trans "Cambridge, test nomi..." %}">
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="collectionSearch">{% trans "Qidirish" %}</label>
+                    <input id="collectionSearch" type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="{% trans "Cambridge, test nomi..." %}">
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label">{% trans "Savol turi" %}</label>
-                    <select name="qtype" class="form-select">
+                    <label class="form-label" for="collectionDifficulty">{% trans "Daraja" %}</label>
+                    <select id="collectionDifficulty" name="difficulty" class="form-select">
+                        <option value="">{% trans "Barchasi" %}</option>
+                        {% for code, label in difficulty_levels %}
+                        <option value="{{ code }}" {% if selected_difficulty == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label" for="collectionQtype">{% trans "Savol turi" %}</label>
+                    <select id="collectionQtype" name="qtype" class="form-select">
                         <option value="">{% trans "Barchasi" %}</option>
                         {% for code, label in available_question_types %}
                         <option value="{{ code }}" {% if selected_question_type == code %}selected{% endif %}>{{ label }}</option>
@@ -103,27 +112,27 @@
                     </select>
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label">{% trans "Uzunlik" %}</label>
-                    <select name="length" class="form-select">
+                    <label class="form-label" for="collectionLength">{% trans "Uzunlik" %}</label>
+                    <select id="collectionLength" name="length" class="form-select">
                         <option value="">{% trans "Barchasi" %}</option>
                         <option value="full" {% if selected_length == 'full' %}selected{% endif %}>{% trans "To'liq testlar" %}</option>
                         <option value="parts" {% if selected_length == 'parts' %}selected{% endif %}>{% trans "Partlar" %}</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label">{% trans "Modul" %}</label>
-                    <select name="module" class="form-select">
+                <div class="col-6 col-md-1">
+                    <label class="form-label" for="collectionModule">{% trans "Modul" %}</label>
+                    <select id="collectionModule" name="module" class="form-select">
                         <option value="">{% trans "Barchasi" %}</option>
                         <option value="academic" {% if selected_module == 'academic' %}selected{% endif %}>{% trans "Academic" %}</option>
                         <option value="general" {% if selected_module == 'general' %}selected{% endif %}>{% trans "General" %}</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-2 d-grid">
+                <div class="col-6 col-md-1 d-grid">
                     <button class="btn btn-primary" type="submit">
                         <i class="fas fa-filter me-1"></i>{% trans "Filter" %}
                     </button>
                 </div>
-                <div class="col-6 col-md-2 d-grid">
+                <div class="col-6 col-md-1 d-grid">
                     <a href="{% url 'core:test_collection_by_type' collection_test_type %}" class="btn btn-outline-secondary">
                         <i class="fas fa-rotate-left me-1"></i>{% trans "Tozalash" %}
                     </a>

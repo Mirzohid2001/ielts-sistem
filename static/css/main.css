@@ -7783,66 +7783,58 @@ textarea:focus-visible {
     margin-bottom: 0.45rem;
 }
 
-.mashq-levels {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-}
-
-.mashq-level {
-    min-width: 44px;
-    height: 42px;
-    padding: 0 0.55rem;
-    border-radius: 12px;
+.mashq-page select.mashq-select,
+.mashq-controls select.mashq-select {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 8.5rem;
+    max-width: 100%;
+    height: 48px;
+    padding: 0 2.75rem 0 1rem;
+    border-radius: 14px;
     border: 1.5px solid #e2e8f0;
-    background: #f8fafc;
-    color: #334155;
-    font-weight: 800;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.mashq-level:hover {
-    border-color: var(--primary-light);
-    color: var(--primary-dark);
-}
-
-.mashq-level.is-active {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.3);
-}
-
-.mashq-types {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-}
-
-.mashq-type {
-    padding: 0.5rem 0.85rem;
-    border-radius: 999px;
-    border: 1.5px solid #e2e8f0;
-    background: #fff;
-    color: #334155;
+    background-color: #f8fafc;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 18px;
+    color: #0f172a;
+    font-family: inherit;
     font-weight: 700;
-    font-size: 0.86rem;
+    font-size: 0.95rem;
+    line-height: 1.2;
     cursor: pointer;
-    transition: all 0.15s;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s, transform 0.12s;
 }
 
-.mashq-type:hover {
-    border-color: var(--primary-light);
-    color: var(--primary-dark);
+.mashq-controls__group--grow select.mashq-select {
+    min-width: 16rem;
 }
 
-.mashq-type.is-active {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.28);
+.mashq-page select.mashq-select:hover,
+.mashq-controls select.mashq-select:hover {
+    border-color: #a5b4fc;
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+}
+
+.mashq-page select.mashq-select:focus,
+.mashq-controls select.mashq-select:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.mashq-page select.mashq-select option {
+    font-weight: 600;
+    color: #0f172a;
+    background: #fff;
 }
 
 .mashq-generate {
@@ -8111,6 +8103,49 @@ textarea:focus-visible {
     gap: 0.45rem;
 }
 
+.mashq-opts:has(.mashq-opt--letter) {
+    grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr));
+    max-width: 22rem;
+}
+
+.mashq-opt--letter {
+    justify-content: center;
+    padding: 0.55rem 0.4rem;
+}
+
+.mashq-bank {
+    margin: 0 0 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+}
+
+.mashq-bank__title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.45rem;
+}
+
+.mashq-bank__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #0f172a;
+}
+
+.mashq-bank__list strong {
+    display: inline-block;
+    min-width: 1.4rem;
+    color: #4338ca;
+}
+
 .mashq-opt {
     display: flex;
     gap: 0.7rem;
@@ -8139,8 +8174,9 @@ textarea:focus-visible {
 
 .mashq-opt__letter {
     flex: 0 0 auto;
-    width: 1.7rem;
+    min-width: 1.7rem;
     height: 1.7rem;
+    padding: 0 0.35rem;
     border-radius: 8px;
     display: grid;
     place-items: center;
@@ -8352,6 +8388,12 @@ textarea:focus-visible {
 @media (max-width: 991.98px) {
     .mashq-controls {
         grid-template-columns: 1fr;
+    }
+
+    .mashq-controls__group--grow .mashq-select,
+    .mashq-select {
+        min-width: 0;
+        width: 100%;
     }
 
     .mashq-controls__action {

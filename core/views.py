@@ -1299,6 +1299,7 @@ def test_collection_by_type(request, test_type):
     question_type = request.GET.get('qtype', '').strip()
     length_filter = request.GET.get('length', '').strip()  # full | parts
     module_filter = request.GET.get('module', '').strip()  # academic | general
+    difficulty_filter = request.GET.get('difficulty', '').strip()  # easy | medium | hard
 
     tests = (
         Test.objects.filter(is_active=True, test_type=test_type, category__show_on_site=True)
@@ -1316,6 +1317,9 @@ def test_collection_by_type(request, test_type):
 
     if question_type:
         tests = tests.filter(questions__question_type=question_type).distinct()
+
+    if difficulty_filter in {code for code, _ in Test.DIFFICULTY_LEVELS}:
+        tests = tests.filter(difficulty=difficulty_filter)
 
     if length_filter == 'full':
         tests = tests.filter(questions_count__gte=30)
@@ -1369,7 +1373,9 @@ def test_collection_by_type(request, test_type):
         'collection_test_type_display': dict(Test.TEST_TYPES).get(test_type, test_type.title()),
         'tests': page_obj,
         'available_question_types': available_question_types,
+        'difficulty_levels': Test.DIFFICULTY_LEVELS,
         'selected_question_type': question_type,
+        'selected_difficulty': difficulty_filter,
         'selected_length': length_filter,
         'selected_module': module_filter,
         'search_query': search_query,

@@ -261,6 +261,326 @@ def _number_questions(rows):
     return out
 
 
+def _high_level_reading_pack(level: str, rtype: str, tip: str) -> dict:
+    """B2/C1/C2: savollar shu daraja matniga mos (park savollari aralashmasin)."""
+    if level == 'B2':
+        title = 'The Atlantic Telegraph Cable'
+        passage = None  # default passages['B2']
+        names_title = 'Engineers of the Atlantic Cable'
+        names_passage = (
+            "Cyrus Field raised money for a new Atlantic cable company after early failures. "
+            "Engineer Charles Bright supervised laying work from the ships. "
+            "William Thomson advised on electrical signalling through the long copper core. "
+            "Captain James Anderson commanded the Great Eastern on a later successful voyage. "
+            "Investor John Pender backed stronger cable designs after breaks at sea. "
+            "Reporter Emily Shaw wrote that messages crossed in minutes instead of weeks."
+        )
+        names = [
+            'Cyrus Field', 'Charles Bright', 'William Thomson',
+            'James Anderson', 'John Pender', 'Emily Shaw',
+        ]
+        if rtype == 'tfng':
+            raw = [
+                {'prompt': 'Early Atlantic cable attempts sometimes failed when the cable broke.', 'correct': 'a'},
+                {'prompt': 'The cable core was made of iron only, with no copper.', 'correct': 'b'},
+                {'prompt': 'Gutta-percha covered the central wires.', 'correct': 'a'},
+                {'prompt': 'Two ships had to share the heavy cable.', 'correct': 'a'},
+                {'prompt': 'The project made ocean mapping less important.', 'correct': 'b'},
+                {'prompt': 'Cyrus Field formed another company to raise money.', 'correct': 'a'},
+                {'prompt': 'Messages could travel in minutes instead of weeks by ship.', 'correct': 'a'},
+                {'prompt': 'The cable had no effect on diplomacy or news.', 'correct': 'b'},
+                {'prompt': 'Every voyage was ignored by investors.', 'correct': 'b'},
+                {'prompt': 'The passage states the exact cost in today’s dollars.', 'correct': 'c'},
+            ]
+            return {'tfng_raw': raw}
+        if rtype == 'mcq':
+            return {'questions': [
+                _mcq('What covered the copper wires?', ['Gutta-percha', 'Plastic paint', 'Only cloth', 'Dry sand'], 'a', tip),
+                _mcq('Why was the cable shared between two ships?', ['Because of its weight', 'Because captains refused', 'Because copper was illegal', 'Because the ocean was shallow'], 'a', tip),
+                _mcq('What happened in early attempts?', ['The cable broke', 'Ships never sailed', 'Copper vanished', 'News became slower'], 'a', tip),
+                _mcq('Who formed another company to raise money?', ['Cyrus Field', 'A random sailor', 'Only newspaper editors', 'Airport builders'], 'a', tip),
+                _mcq('How fast could messages travel after success?', ['In minutes', 'In decades', 'Only by horse', 'Never'], 'a', tip),
+                _mcq('What else did the project push forward?', ['Ocean mapping and stronger ships', 'Closing all ports', 'Banning copper', 'Ending newspapers'], 'a', tip),
+                _mcq('What material was in the central wires?', ['Copper', 'Glass only', 'Wood', 'Stone'], 'a', tip),
+                _mcq('What changed between Europe and America?', ['Business, news, and diplomacy', 'Only fashion styles', 'Airport design', 'Park lighting'], 'a', tip),
+                _mcq('How did investors behave?', ['They watched every voyage closely', 'They ignored the ships', 'They banned cables', 'They closed newspapers'], 'a', tip),
+                _mcq('What was true of the successful cable?', ['It was expensive but transformative', 'It was free and unused', 'It only carried music', 'It never worked'], 'a', tip),
+            ]}
+        if rtype == 'gap_fill':
+            return {'questions': [
+                _gap('The central wires were made of ______.', 'copper', tip),
+                _gap('The wires were covered with ______.', 'gutta-percha|gutta percha', tip),
+                _gap('Because of its weight, the cable had to be shared between two ______.', 'ships', tip),
+                _gap('Early attempts failed when the cable ______.', 'broke', tip),
+                _gap('Cyrus Field formed another ______ to raise money.', 'company', tip),
+                _gap('Operators could send messages in ______ instead of weeks.', 'minutes', tip),
+                _gap('Investors watched every ______ closely.', 'voyage', tip),
+                _gap('The project pushed better ocean ______.', 'mapping', tip),
+                _gap('Stronger ______ were also needed.', 'ships', tip),
+                _gap('The cable changed business, news, and ______.', 'diplomacy', tip),
+            ]}
+        if rtype == 'matching_headings':
+            return {'questions': [
+                _heading('Cable construction materials', ['Copper and gutta-percha', 'Airport runways', 'City parks'], 'i', tip),
+                _heading('Why two ships were needed', ['The cable’s weight', 'Lack of captains', 'Shallow rivers only'], 'i', tip),
+                _heading('Early failures at sea', ['Breaks during laying', 'Instant success', 'No ships available'], 'i', tip),
+                _heading('Raising money again', ['Cyrus Field’s new company', 'Closing newspapers', 'Banning copper'], 'i', tip),
+                _heading('Speed of communication', ['Minutes instead of weeks', 'Slower than ships', 'Only smoke signals'], 'i', tip),
+                _heading('Wider technical gains', ['Ocean mapping and stronger ships', 'Park lighting', 'Library Wi-Fi'], 'i', tip),
+                _heading('Investor attention', ['Every voyage watched closely', 'No interest at all', 'Only fashion news'], 'i', tip),
+                _heading('Cost versus impact', ['Expensive but transformative', 'Free and useless', 'Only local gossip'], 'i', tip),
+                _heading('What the cable changed', ['Business, news, diplomacy', 'Only sports scores', 'Tree planting'], 'i', tip),
+                _heading('Mid-nineteenth century goal', ['Atlantic telegraph link', 'Building stadiums', 'Closing ports'], 'i', tip),
+            ]}
+        if rtype == 'matching_endings':
+            endings = [
+                'copper covered with gutta-percha.',
+                'shared between two ships.',
+                'when the cable broke.',
+                'raise money for a new attempt.',
+                'minutes instead of weeks.',
+                'business, news, and diplomacy.',
+            ]
+            return {'questions': [
+                _match('The central wires were', endings, 'a', tip),
+                _match('Because of its weight, the cable had to be', endings, 'b', tip),
+                _match('Early attempts failed', endings, 'c', tip),
+                _match('Cyrus Field formed another company to', endings, 'd', tip),
+                _match('Operators could send messages in', endings, 'e', tip),
+                _match('Although expensive, the cable changed', endings, 'f', tip),
+                _match('Further research improved', ['thickness and strength.', 'park lighting.', 'library clubs.'], 'a', tip),
+                _match('Investors watched', ['every voyage closely.', 'only fashion shows.', 'tree planting.'], 'a', tip),
+                _match('The project also pushed', ['better ocean mapping.', 'closing newspapers.', 'banning ships.'], 'a', tip),
+                _match('Messages no longer needed', ['weeks by ship.', 'copper wires.', 'any ships.'], 'a', tip),
+            ]}
+        if rtype == 'matching_names':
+            return {
+                'title': names_title,
+                'passage': names_passage,
+                'questions': [
+                    _match('Raised money for a new cable company', names, 'a', tip),
+                    _match('Supervised laying work from the ships', names, 'b', tip),
+                    _match('Advised on electrical signalling', names, 'c', tip),
+                    _match('Commanded the Great Eastern', names, 'd', tip),
+                    _match('Backed stronger cable designs', names, 'e', tip),
+                    _match('Wrote that messages crossed in minutes', names, 'f', tip),
+                    _match('Organised funding after early failures', names, 'a', tip),
+                    _match('Led shipboard cable operations', names, 'b', tip),
+                    _match('Focused on the copper core’s signals', names, 'c', tip),
+                    _match('Reported the new communication speed', names, 'f', tip),
+                ],
+            }
+    if level == 'C1':
+        names_title = 'Researchers on Bilingualism'
+        names_passage = (
+            "Dr Lena Ortiz studies attentional control in bilingual adults. "
+            "Professor Mark Ellis argues effect sizes shrink after SES controls. "
+            "Psychologist Aisha Rahman links benefits to frequent language switching. "
+            "Educator Tomoko Abe reports gains in metalinguistic awareness in class. "
+            "Policy analyst Hugo Mendes warns against overselling a cognitive cure. "
+            "Statistician Nora Klein calls for more longitudinal designs."
+        )
+        names = [
+            'Dr Lena Ortiz', 'Professor Mark Ellis', 'Aisha Rahman',
+            'Tomoko Abe', 'Hugo Mendes', 'Nora Klein',
+        ]
+        if rtype == 'tfng':
+            return {'tfng_raw': [
+                {'prompt': 'Some evidence links bilingualism to executive functions such as attentional control.', 'correct': 'a'},
+                {'prompt': 'All large-scale studies show huge advantages with no debate.', 'correct': 'b'},
+                {'prompt': 'Socioeconomic status and education are mentioned as control factors.', 'correct': 'a'},
+                {'prompt': 'Researchers agree completely on why benefits appear.', 'correct': 'b'},
+                {'prompt': 'Language switching is one proposed source of benefits.', 'correct': 'a'},
+                {'prompt': 'Longitudinal designs are still rare.', 'correct': 'a'},
+                {'prompt': 'Lab tasks always mirror everyday communication perfectly.', 'correct': 'b'},
+                {'prompt': 'Teachers report practical gains in metalinguistic awareness.', 'correct': 'a'},
+                {'prompt': 'Policy makers are told to treat bilingualism as a universal cognitive cure.', 'correct': 'b'},
+                {'prompt': 'The passage gives the exact percentage of bilingual advantage worldwide.', 'correct': 'c'},
+            ]}
+        if rtype == 'mcq':
+            return {'questions': [
+                _mcq('Which executive functions are mentioned?', ['Attentional control and flexibility', 'Only handwriting speed', 'Airport design skills', 'Park maintenance'], 'a', tip),
+                _mcq('What may shrink reported advantages?', ['Controls for SES and education', 'More copper cables', 'Closing schools', 'Banning reading'], 'a', tip),
+                _mcq('What do researchers debate?', ['Switching vs lifestyle factors', 'Only cable thickness', 'Park ticket prices', 'Ocean depth'], 'a', tip),
+                _mcq('What designs are still rare?', ['Longitudinal designs', 'One-day quizzes only', 'Ship voyages', 'Picnic plans'], 'a', tip),
+                _mcq('What may lab tasks fail to mirror?', ['Everyday communication', 'Copper wiring', 'Ocean maps', 'Stadium lights'], 'a', tip),
+                _mcq('What do teachers report?', ['Metalinguistic awareness gains', 'Free cars for students', 'Ended bilingualism', 'Closed libraries'], 'a', tip),
+                _mcq('What should policy makers avoid?', ['Overselling a universal cognitive cure', 'Supporting language learning', 'Cultural reasons', 'Economic reasons'], 'a', tip),
+                _mcq('Why still support early language learning?', ['Cultural and economic reasons', 'Only to raise park prices', 'To ban switching', 'To end schools'], 'a', tip),
+                _mcq('What remains contested?', ['The size of the effects', 'Whether copper exists', 'Whether ships float', 'Whether parks have trees'], 'a', tip),
+                _mcq('What is bilingualism linked to in the opening?', ['Certain executive functions', 'Building cables', 'Climate models only', 'Picnic food'], 'a', tip),
+            ]}
+        if rtype == 'gap_fill':
+            return {'questions': [
+                _gap('Bilingualism may enhance certain ______ functions.', 'executive', tip),
+                _gap('One mentioned function is attentional ______.', 'control', tip),
+                _gap('Effect sizes may look modest after controlling for socioeconomic ______.', 'status', tip),
+                _gap('Another control factor mentioned is ______.', 'education', tip),
+                _gap('Benefits may arise from frequent language ______.', 'switching', tip),
+                _gap('______ designs are still rare.', 'Longitudinal|longitudinal', tip),
+                _gap('Lab tasks may not mirror everyday ______.', 'communication', tip),
+                _gap('Teachers report gains in metalinguistic ______.', 'awareness', tip),
+                _gap('Policy makers should avoid ______ bilingualism as a universal cure.', 'overselling', tip),
+                _gap('Early language learning still has cultural and ______ reasons.', 'economic', tip),
+            ]}
+        if rtype == 'matching_headings':
+            return {'questions': [
+                _heading('Possible cognitive gains', ['Executive functions', 'Ocean cables', 'Park benches'], 'i', tip),
+                _heading('Modest effects after controls', ['SES and education', 'Ship weight', 'Picnic menus'], 'i', tip),
+                _heading('Competing explanations', ['Switching vs lifestyle', 'Only copper quality', 'Only weather'], 'i', tip),
+                _heading('Research design limits', ['Rare longitudinal studies', 'Too many oceans', 'No teachers'], 'i', tip),
+                _heading('Lab versus real life', ['Tasks may not mirror communication', 'Ships never sail', 'Parks never open'], 'i', tip),
+                _heading('Classroom reports', ['Metalinguistic awareness', 'Cable breaks', 'Grant neglect'], 'i', tip),
+                _heading('Policy caution', ['Avoid overselling a cure', 'Ban all languages', 'Close schools'], 'i', tip),
+                _heading('Why support learning anyway', ['Cultural and economic reasons', 'Only fashion', 'Only copper'], 'i', tip),
+                _heading('What remains debated', ['Size of the advantages', 'Whether water is wet', 'Park closing times'], 'i', tip),
+                _heading('Overall evidence picture', ['Growing but contested', 'Settled forever', 'Only about ships'], 'i', tip),
+            ]}
+        if rtype == 'matching_endings':
+            endings = [
+                'attentional control and cognitive flexibility.',
+                'socioeconomic status and education.',
+                'frequent language switching.',
+                'longitudinal designs are still rare.',
+                'metalinguistic awareness.',
+                'a universal cognitive cure.',
+            ]
+            return {'questions': [
+                _match('Bilingualism may enhance', endings, 'a', tip),
+                _match('Some studies report modest advantages after controlling for', endings, 'b', tip),
+                _match('Benefits may arise from', endings, 'c', tip),
+                _match('Researchers note that', endings, 'd', tip),
+                _match('Teachers report gains in', endings, 'e', tip),
+                _match('Policy makers should avoid overselling bilingualism as', endings, 'f', tip),
+                _match('Lab tasks may not mirror', ['everyday communication.', 'ocean cables.', 'park tickets.'], 'a', tip),
+                _match('Lifestyle factors in multilingual communities are', ['another debated source.', 'proof cables fail.', 'park grants.'], 'a', tip),
+                _match('Early language learning is still supported for', ['cultural and economic reasons.', 'closing schools.', 'banning books.'], 'a', tip),
+                _match('The size of these effects', ['remains contested.', 'is exactly 100%.', 'only concerns ships.'], 'a', tip),
+            ]}
+        if rtype == 'matching_names':
+            return {
+                'title': names_title,
+                'passage': names_passage,
+                'questions': [
+                    _match('Studies attentional control in bilingual adults', names, 'a', tip),
+                    _match('Argues effect sizes shrink after SES controls', names, 'b', tip),
+                    _match('Links benefits to language switching', names, 'c', tip),
+                    _match('Reports classroom metalinguistic gains', names, 'd', tip),
+                    _match('Warns against overselling a cognitive cure', names, 'e', tip),
+                    _match('Calls for more longitudinal designs', names, 'f', tip),
+                    _match('Focuses on executive attention research', names, 'a', tip),
+                    _match('Emphasises statistical controls', names, 'b', tip),
+                    _match('Highlights switching frequency', names, 'c', tip),
+                    _match('Works on education policy caution', names, 'e', tip),
+                ],
+            }
+    if level == 'C2':
+        names_title = 'Experts on Climate Uncertainty'
+        names_passage = (
+            "Dr Farah Quinn models parameterisation choices in climate ensembles. "
+            "Professor Ian Vogt warns that technical presentations can obscure thresholds. "
+            "Communicator Sofia Berg promotes visual summaries for non-specialists. "
+            "Ethicist David Okonkwo focuses on acting under ambiguity. "
+            "Funding officer Mei Chen requires uncertainty statements in reports. "
+            "Advisor Lars Holm argues probabilistic ensembles improve decisions."
+        )
+        names = [
+            'Dr Farah Quinn', 'Professor Ian Vogt', 'Sofia Berg',
+            'David Okonkwo', 'Mei Chen', 'Lars Holm',
+        ]
+        if rtype == 'tfng':
+            return {'tfng_raw': [
+                {'prompt': 'Climate projections include epistemic uncertainty from incomplete process understanding.', 'correct': 'a'},
+                {'prompt': 'Parameterisation choices are irrelevant to uncertainty.', 'correct': 'b'},
+                {'prompt': 'Chaotic sensitivity to initial conditions is mentioned.', 'correct': 'a'},
+                {'prompt': 'Communicating uncertainty never challenges public trust.', 'correct': 'b'},
+                {'prompt': 'Some scholars argue probabilistic ensembles improve decision quality.', 'correct': 'a'},
+                {'prompt': 'Others warn technical presentations can obscure actionable thresholds.', 'correct': 'a'},
+                {'prompt': 'Visual summaries may help non-specialists.', 'correct': 'a'},
+                {'prompt': 'Funding agencies never ask for uncertainty statements.', 'correct': 'b'},
+                {'prompt': 'The ethical issue includes whether decision makers can act under ambiguity.', 'correct': 'a'},
+                {'prompt': 'The passage names the exact global temperature for 2100.', 'correct': 'c'},
+            ]}
+        if rtype == 'mcq':
+            return {'questions': [
+                _mcq('What kind of uncertainty is discussed?', ['Epistemic uncertainty', 'Only ticket prices', 'Park opening hours', 'Cable weight'], 'a', tip),
+                _mcq('Which sources of uncertainty are listed?', ['Process gaps, parameterisation, chaos', 'Only picnic weather', 'Only Wi-Fi speed', 'Only ship names'], 'a', tip),
+                _mcq('What communication challenge is raised?', ['Trust while explaining uncertainty', 'Closing all schools', 'Banning ensembles', 'Ending reports'], 'a', tip),
+                _mcq('What may improve decision quality?', ['Probabilistic ensembles', 'Hiding all data', 'Removing visuals', 'Banning funding'], 'a', tip),
+                _mcq('What can overly technical presentations obscure?', ['Actionable thresholds', 'Ocean copper', 'Park grass', 'Library cards'], 'a', tip),
+                _mcq('What may help non-specialists?', ['Visual summaries and ranges', 'Longer jargon only', 'No numbers at all', 'Closed reports'], 'a', tip),
+                _mcq('What do funding agencies increasingly require?', ['Uncertainty statements', 'Free cars', 'Park stadiums', 'Silent reports'], 'a', tip),
+                _mcq('What ethical issue is highlighted?', ['Acting under ambiguity', 'Banning science', 'Closing ports', 'Ending schools'], 'a', tip),
+                _mcq('What should decision makers not wait for?', ['Impossible certainty', 'Any ensemble', 'Any visual', 'Any funding'], 'a', tip),
+                _mcq('Who faces a distinctive communication challenge?', ['Scientists and policymakers', 'Only cable engineers', 'Only librarians', 'Only park keepers'], 'a', tip),
+            ]}
+        if rtype == 'gap_fill':
+            return {'questions': [
+                _gap('Climate projections incorporate epistemic ______.', 'uncertainty', tip),
+                _gap('Uncertainty arises from incomplete process ______.', 'understanding', tip),
+                _gap('______ choices also contribute to uncertainty.', 'Parameterisation|Parameterization|parameterisation|parameterization', tip),
+                _gap('There is chaotic sensitivity to initial ______.', 'conditions', tip),
+                _gap('Communicating uncertainty without undermining public ______ is hard.', 'trust', tip),
+                _gap('Probabilistic ______ may improve decision quality.', 'ensembles', tip),
+                _gap('Technical presentations can obscure actionable ______.', 'thresholds', tip),
+                _gap('Visual ______ may help non-specialists.', 'summaries', tip),
+                _gap('Funding agencies require uncertainty ______ in reports.', 'statements', tip),
+                _gap('Decision makers may need to act under ______.', 'ambiguity', tip),
+            ]}
+        if rtype == 'matching_headings':
+            return {'questions': [
+                _heading('Sources of model uncertainty', ['Process gaps and parameterisation', 'Park grants', 'Library Wi-Fi'], 'i', tip),
+                _heading('Chaos and starting points', ['Sensitivity to initial conditions', 'Ship cable weight', 'Picnic menus'], 'i', tip),
+                _heading('Public trust challenge', ['Communicating uncertainty carefully', 'Closing schools', 'Banning copper'], 'i', tip),
+                _heading('Ensemble arguments', ['Better decision quality', 'Useless forever', 'Only fashion'], 'i', tip),
+                _heading('Risk of jargon', ['Obscuring actionable thresholds', 'Planting trees', 'Borrowing books'], 'i', tip),
+                _heading('Help for non-specialists', ['Visual summaries and ranges', 'More jargon only', 'No reports'], 'i', tip),
+                _heading('Funding requirements', ['Uncertainty statements', 'Free stadiums', 'Silent science'], 'i', tip),
+                _heading('Ethics of action', ['Acting under ambiguity', 'Waiting forever', 'Ignoring all data'], 'i', tip),
+                _heading('Impossible standard', ['Waiting for perfect certainty', 'Banning ensembles', 'Ending visuals'], 'i', tip),
+                _heading('Who must communicate', ['Scientists and policymakers', 'Only park keepers', 'Only captains'], 'i', tip),
+            ]}
+        if rtype == 'matching_endings':
+            endings = [
+                'incomplete process understanding.',
+                'parameterisation choices.',
+                'chaotic sensitivity to initial conditions.',
+                'probabilistic ensembles.',
+                'actionable thresholds for adaptation.',
+                'uncertainty statements in reports.',
+            ]
+            return {'questions': [
+                _match('Epistemic uncertainty arises from', endings, 'a', tip),
+                _match('Further uncertainty comes from', endings, 'b', tip),
+                _match('Models also show', endings, 'c', tip),
+                _match('Some scholars argue for', endings, 'd', tip),
+                _match('Technical talks may obscure', endings, 'e', tip),
+                _match('Funding agencies increasingly require', endings, 'f', tip),
+                _match('Visual summaries may help', ['non-specialists.', 'only ships.', 'only parks.'], 'a', tip),
+                _match('The ethical issue includes whether leaders can', ['act under ambiguity.', 'ban all science.', 'close all ports.'], 'a', tip),
+                _match('Decision makers should not wait for', ['impossible certainty.', 'any rainfall.', 'park tickets.'], 'a', tip),
+                _match('Communicating uncertainty without harming', ['public trust is difficult.', 'copper cables.', 'library cards.'], 'a', tip),
+            ]}
+        if rtype == 'matching_names':
+            return {
+                'title': names_title,
+                'passage': names_passage,
+                'questions': [
+                    _match('Models parameterisation in climate ensembles', names, 'a', tip),
+                    _match('Warns technical talks obscure thresholds', names, 'b', tip),
+                    _match('Promotes visual summaries for non-specialists', names, 'c', tip),
+                    _match('Focuses on acting under ambiguity', names, 'd', tip),
+                    _match('Requires uncertainty statements in reports', names, 'e', tip),
+                    _match('Argues ensembles improve decisions', names, 'f', tip),
+                    _match('Works on ensemble parameter choices', names, 'a', tip),
+                    _match('Critiques overly technical presentation', names, 'b', tip),
+                    _match('Designs accessible visual communication', names, 'c', tip),
+                    _match('Sets funding rules on uncertainty', names, 'e', tip),
+                ],
+            }
+    return {}
+
+
 def _local_reading(level: str, rtype: str, lang: str) -> dict:
     meta = READING_TYPES[rtype]
     title = {
@@ -369,6 +689,8 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 {'prompt': 'Librarians refuse to help visitors.', 'correct': 'b'},
                 {'prompt': 'Children can join story time on weekends.', 'correct': 'a'},
             ]
+        elif level in ('B2', 'C1', 'C2'):
+            raw = _high_level_reading_pack(level, 'tfng', tip_common).get('tfng_raw') or []
         else:
             raw = [
                 {'prompt': 'Research links nature access to lower stress.', 'correct': 'a'},
@@ -413,6 +735,8 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 _mcq('Who usually gets free membership?', ['Local residents', 'Only tourists', 'Only pilots', 'Nobody'], 'a', tip_common),
                 _mcq('Why do libraries remain useful with e-books?', ['Because of extra services', 'Because books are banned', 'Because Wi-Fi is illegal', 'Because students never study'], 'a', tip_common),
             ]
+        elif level in ('B2', 'C1', 'C2'):
+            questions = _high_level_reading_pack(level, 'mcq', tip_common).get('questions') or []
         else:
             questions = [
                 _mcq('What is one benefit mentioned in the passage?', ['Lower stress / wellbeing', 'Free cars for residents', 'Closing all libraries', 'Banning pets outdoors'], 'a', tip_common),
@@ -453,6 +777,8 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 _gap('Children can join story time on ______.', 'weekends', tip_common),
                 _gap('Membership is usually free for local ______.', 'residents', tip_common),
             ]
+        elif level in ('B2', 'C1', 'C2'):
+            questions = _high_level_reading_pack(level, 'gap_fill', tip_common).get('questions') or []
         else:
             questions = [
                 _gap('Research links nature access to lower ______.', 'stress', tip_common),
@@ -493,6 +819,8 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 _heading('Weekend for children', ['Story time', 'Bank exams', 'Road works'], 'i', tip_common),
                 _heading('Membership', ['Often free for local residents', 'Only for tourists', 'Always paid in gold'], 'i', tip_common),
             ]
+        elif level in ('B2', 'C1', 'C2'):
+            questions = _high_level_reading_pack(level, 'matching_headings', tip_common).get('questions') or []
         else:
             questions = [
                 _heading('Wellbeing and nature nearby', ['Benefits of green access', 'History of telegraph cables', 'Airport construction costs'], 'i', tip_common),
@@ -549,6 +877,8 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 _match('Children can join story time', ['on weekends.', 'only at midnight.', 'in airports.'], 'a', tip_common),
                 _match('Libraries remain useful even when people buy', ['e-books.', 'houses.', 'planes.'], 'a', tip_common),
             ]
+        elif level in ('B2', 'C1', 'C2'):
+            questions = _high_level_reading_pack(level, 'matching_endings', tip_common).get('questions') or []
         else:
             endings = [
                 'lower stress and higher wellbeing.',
@@ -622,6 +952,11 @@ def _local_reading(level: str, rtype: str, lang: str) -> dict:
                 _match('Supports adult learning clubs', names, 'c', tip_common),
                 _match('Helps people focus in quiet areas', names, 'e', tip_common),
             ]
+        elif level in ('B2', 'C1', 'C2'):
+            pack = _high_level_reading_pack(level, 'matching_names', tip_common)
+            title = pack.get('title') or title
+            passage = pack.get('passage') or passage
+            questions = pack.get('questions') or []
         else:
             passage = (
                 "Dr Maya Hassan studies how access to nature lowers stress in cities. "
@@ -741,163 +1076,430 @@ def _local_writing(level: str, focus: str, lang: str) -> dict:
         ),
     }
 
+    band = 'A' if level in ('A1', 'A2') else ('C' if level in ('C1', 'C2') else 'B')
+    # Har fokus uchun daraja bandiga mos mashqlar (A / B / C)
     focus_exercises = {
-        'lexical_resource': [
-            {
-                'id': 1,
-                'kind': 'rewrite',
-                'prompt': 'Replace the basic word with a stronger academic synonym: "good idea" →',
-                'correct': 'sound approach|valuable approach|effective strategy',
-                'hint': t(lang, 'Academic synonym tanlang.', 'Выберите академический синоним.'),
-            },
-            {
-                'id': 2,
-                'kind': 'gap',
-                'prompt': 'Collocation: make a ______ decision (careful / carefully)',
-                'correct': 'careful',
-                'hint': t(lang, 'Adjective + noun.', 'Adjective + noun.'),
-            },
-            {
-                'id': 3,
-                'kind': 'rewrite',
-                'prompt': 'Upgrade: "a lot of people think" →',
-                'correct': 'many people believe|a large number of people argue|numerous commentators suggest',
-                'hint': t(lang, 'Formalroq ibora yozing.', 'Напишите более формальную фразу.'),
-            },
-        ],
-        'grammar': [
-            {
-                'id': 1,
-                'kind': 'rewrite',
-                'prompt': 'Correct the sentence: "People is happy in parks."',
-                'correct': 'People are happy in parks.',
-                'hint': t(lang, 'Subject–verb agreement.', 'Согласование подлежащего и сказуемого.'),
-            },
-            {
-                'id': 2,
-                'kind': 'gap',
-                'prompt': 'If cities ______ more parks, residents would feel healthier. (build)',
-                'correct': 'built',
-                'hint': t(lang, 'Second conditional.', 'Second conditional.'),
-            },
-            {
-                'id': 3,
-                'kind': 'rewrite',
-                'prompt': 'Fix article use: "Park is important for the children."',
-                'correct': 'Parks are important for children.|A park is important for children.',
-                'hint': t(lang, 'Article / plural.', 'Артикль / множественное число.'),
-            },
-        ],
-        'paraphrasing': [
-            {
-                'id': 1,
-                'kind': 'rewrite',
-                'prompt': 'Paraphrase: "Parks help people relax."',
-                'correct': 'Green spaces enable people to unwind.|Parks allow residents to reduce stress.',
-                'hint': t(lang, 'Same meaning, new words.', 'Тот же смысл, другие слова.'),
-            },
-            {
-                'id': 2,
-                'kind': 'rewrite',
-                'prompt': 'Paraphrase: "Many students use phones in class."',
-                'correct': 'A large number of learners rely on mobile devices during lessons.',
-                'hint': t(lang, 'Change structure + vocabulary.', 'Измените структуру и лексику.'),
-            },
-            {
-                'id': 3,
-                'kind': 'rewrite',
-                'prompt': 'Paraphrase: "I think libraries are useful."',
-                'correct': 'In my view, libraries provide significant educational value.',
-                'hint': t(lang, 'More academic tone.', 'Более академичный тон.'),
-            },
-        ],
-        'sentence_construction': [
-            {
-                'id': 1,
-                'kind': 'rewrite',
-                'prompt': 'Combine with although: "Parks are free. Malls create jobs."',
-                'correct': 'Although malls create jobs, parks are free.|Although parks are free, malls create jobs.',
-                'hint': t(lang, 'Complex sentence.', 'Сложное предложение.'),
-            },
-            {
-                'id': 2,
-                'kind': 'rewrite',
-                'prompt': 'Use which: "Libraries offer Wi-Fi. This helps students."',
-                'correct': 'Libraries offer Wi-Fi, which helps students.',
-                'hint': t(lang, 'Relative clause.', 'Relative clause.'),
-            },
-            {
-                'id': 3,
-                'kind': 'gap',
-                'prompt': 'Not only do parks improve air quality, ______ they also support community life.',
-                'correct': 'but',
-                'hint': t(lang, 'not only … but also', 'not only … but also'),
-            },
-        ],
-        'support_sentences': [
-            {
-                'id': 1,
-                'kind': 'mcq',
-                'prompt': 'Best supporting sentence for: "Parks improve wellbeing."',
-                'options': [
-                    {'letter': 'a', 'text': 'For example, walking in green areas can lower stress levels.'},
-                    {'letter': 'b', 'text': 'My uncle owns a car.'},
-                    {'letter': 'c', 'text': 'Football is a sport.'},
-                ],
-                'correct': 'a',
-                'hint': t(lang, 'Example that proves the claim.', 'Пример, подтверждающий тезис.'),
-            },
-            {
-                'id': 2,
-                'kind': 'rewrite',
-                'prompt': 'Add a support sentence after: "Libraries help students."',
-                'correct': 'They provide quiet study rooms and free internet access.',
-                'hint': t(lang, 'Concrete detail.', 'Конкретная деталь.'),
-            },
-            {
-                'id': 3,
-                'kind': 'mcq',
-                'prompt': 'Which sentence does NOT support city parks?',
-                'options': [
-                    {'letter': 'a', 'text': 'Children can play safely outdoors.'},
-                    {'letter': 'b', 'text': 'Green areas cool dense neighbourhoods.'},
-                    {'letter': 'c', 'text': 'Airports need longer runways.'},
-                ],
-                'correct': 'c',
-                'hint': t(lang, 'Irrelevant detail.', 'Нерелевантная деталь.'),
-            },
-        ],
-        'argument_development': [
-            {
-                'id': 1,
-                'kind': 'mcq',
-                'prompt': 'Strongest thesis for a discuss-both-views essay on parks vs malls:',
-                'options': [
-                    {'letter': 'a', 'text': 'Parks are nice.'},
-                    {'letter': 'b', 'text': 'While malls offer convenience and jobs, parks deliver broader public health benefits; overall I favour parks.'},
-                    {'letter': 'c', 'text': 'I went shopping yesterday.'},
-                ],
-                'correct': 'b',
-                'hint': t(lang, 'Clear position + both sides.', 'Чёткая позиция + обе стороны.'),
-            },
-            {
-                'id': 2,
-                'kind': 'rewrite',
-                'prompt': 'Improve this weak argument: "Parks are good because they are good."',
-                'correct': 'Parks are beneficial because they provide free recreation and improve air quality.',
-                'hint': t(lang, 'Reason + concrete benefit.', 'Причина + конкретная польза.'),
-            },
-            {
-                'id': 3,
-                'kind': 'gap',
-                'prompt': 'Linking: Parks improve wellbeing; ______, malls mainly serve commercial interests.',
-                'correct': 'by contrast|in contrast|however',
-                'hint': t(lang, 'Contrast linker.', 'Контрастный союз.'),
-            },
-        ],
+        'lexical_resource': {
+            'A': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Better word for "good": "a good park" →',
+                    'correct': 'a nice park|a lovely park|a pleasant park',
+                    'hint': t(lang, 'Oddiy sinonim.', 'Простой синоним.'),
+                },
+                {
+                    'id': 2, 'kind': 'gap',
+                    'prompt': 'Collocation: ______ a decision (make / do)',
+                    'correct': 'make',
+                    'hint': t(lang, 'make a decision', 'make a decision'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Upgrade: "many people like parks" →',
+                    'correct': 'many people enjoy parks|a lot of people like parks',
+                    'hint': t(lang, 'Yaxshiroq fe’l.', 'Лучший глагол.'),
+                },
+            ],
+            'B': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Replace the basic word with a stronger academic synonym: "good idea" →',
+                    'correct': 'sound approach|valuable approach|effective strategy',
+                    'hint': t(lang, 'Academic synonym tanlang.', 'Выберите академический синоним.'),
+                },
+                {
+                    'id': 2, 'kind': 'gap',
+                    'prompt': 'Collocation: make a ______ decision (careful / carefully)',
+                    'correct': 'careful',
+                    'hint': t(lang, 'Adjective + noun.', 'Adjective + noun.'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Upgrade: "a lot of people think" →',
+                    'correct': 'many people believe|a large number of people argue|numerous commentators suggest',
+                    'hint': t(lang, 'Formalroq ibora yozing.', 'Напишите более формальную фразу.'),
+                },
+            ],
+            'C': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Upgrade hedging: "Parks are always good for everyone" →',
+                    'correct': 'Parks tend to benefit most urban residents|Parks generally enhance wellbeing for many city dwellers',
+                    'hint': t(lang, 'Aniqroq + ehtiyotkor ibora.', 'Точнее и осторожнее.'),
+                },
+                {
+                    'id': 2, 'kind': 'gap',
+                    'prompt': 'Academic collocation: ______ evidence (compelling / compel)',
+                    'correct': 'compelling',
+                    'hint': t(lang, 'Adjective + noun.', 'Adjective + noun.'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Nominalise: "People use libraries more when cities invest" →',
+                    'correct': 'Greater municipal investment leads to higher library use|Increased city investment results in greater library usage',
+                    'hint': t(lang, 'Nominalisation.', 'Номинализация.'),
+                },
+            ],
+        },
+        'grammar': {
+            'A': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Correct: "She go to the park every Sunday."',
+                    'correct': 'She goes to the park every Sunday.',
+                    'hint': t(lang, 'Present simple -s.', 'Present simple -s.'),
+                },
+                {
+                    'id': 2, 'kind': 'gap',
+                    'prompt': 'There ______ many trees in the park. (is / are)',
+                    'correct': 'are',
+                    'hint': t(lang, 'There is / are', 'There is / are'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Fix: "I am like parks."',
+                    'correct': 'I like parks.|I am fond of parks.',
+                    'hint': t(lang, 'like = fe’l.', 'like = глагол.'),
+                },
+            ],
+            'B': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Correct the sentence: "People is happy in parks."',
+                    'correct': 'People are happy in parks.',
+                    'hint': t(lang, 'Subject–verb agreement.', 'Согласование подлежащего и сказуемого.'),
+                },
+                {
+                    'id': 2, 'kind': 'gap',
+                    'prompt': 'If cities ______ more parks, residents would feel healthier. (build)',
+                    'correct': 'built',
+                    'hint': t(lang, 'Second conditional.', 'Second conditional.'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Fix article use: "Park is important for the children."',
+                    'correct': 'Parks are important for children.|A park is important for children.',
+                    'hint': t(lang, 'Article / plural.', 'Артикль / множественное число.'),
+                },
+            ],
+            'C': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Fix: "Despite of the cost, the cable succeeded."',
+                    'correct': 'Despite the cost, the cable succeeded.|In spite of the cost, the cable succeeded.',
+                    'hint': t(lang, 'despite + noun (of yo‘q).', 'despite + noun.'),
+                },
+                {
+                    'id': 2, 'kind': 'gap',
+                    'prompt': 'Had the ensemble ______ clearer visuals, policymakers might have acted sooner. (include)',
+                    'correct': 'included',
+                    'hint': t(lang, 'Inversion / 3rd conditional feel.', 'Инверсия.'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Reduce relative clause: "Libraries which are funded by cities remain free."',
+                    'correct': 'City-funded libraries remain free.|Libraries funded by cities remain free.',
+                    'hint': t(lang, 'Reduced relative.', 'Сокращённый relative.'),
+                },
+            ],
+        },
+        'paraphrasing': {
+            'A': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "I like the park."',
+                    'correct': 'I enjoy the park.|The park is my favourite place.',
+                    'hint': t(lang, 'Boshqa so‘zlar.', 'Другие слова.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "Students come after school."',
+                    'correct': 'Learners arrive when school finishes.|Pupils visit after classes.',
+                    'hint': t(lang, 'Same idea.', 'Тот же смысл.'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "Libraries are useful."',
+                    'correct': 'Libraries help people.|Libraries are helpful places.',
+                    'hint': t(lang, 'Oddiy paraphrasing.', 'Простой paraphrase.'),
+                },
+            ],
+            'B': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "Parks help people relax."',
+                    'correct': 'Green spaces enable people to unwind.|Parks allow residents to reduce stress.',
+                    'hint': t(lang, 'Same meaning, new words.', 'Тот же смысл, другие слова.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "Many students use phones in class."',
+                    'correct': 'A large number of learners rely on mobile devices during lessons.',
+                    'hint': t(lang, 'Change structure + vocabulary.', 'Измените структуру и лексику.'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "I think libraries are useful."',
+                    'correct': 'In my view, libraries provide significant educational value.',
+                    'hint': t(lang, 'More academic tone.', 'Более академичный тон.'),
+                },
+            ],
+            'C': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "Bilingualism may improve attention."',
+                    'correct': 'Speaking two languages can enhance attentional control.|Bilingual experience is linked to gains in executive attention.',
+                    'hint': t(lang, 'Academic paraphrase.', 'Академический paraphrase.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "Uncertainty makes decisions hard."',
+                    'correct': 'Epistemic uncertainty complicates timely policy choices.|Incomplete certainty hinders decisive action.',
+                    'hint': t(lang, 'Keep meaning, raise register.', 'Сохраните смысл, повысьте регистр.'),
+                },
+                {
+                    'id': 3, 'kind': 'rewrite',
+                    'prompt': 'Paraphrase: "Essays still matter in universities."',
+                    'correct': 'The traditional essay remains a core tool for assessing academic writing.|Timed essays continue to play a central role in higher education assessment.',
+                    'hint': t(lang, 'Formal rewording.', 'Формальная перефразировка.'),
+                },
+            ],
+        },
+        'sentence_construction': {
+            'A': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Join with and: "I walk. I talk."',
+                    'correct': 'I walk and talk.|I walk and I talk.',
+                    'hint': t(lang, 'and bilan ulang.', 'Соедините and.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Use because: "I like parks. They are green."',
+                    'correct': 'I like parks because they are green.',
+                    'hint': t(lang, 'because', 'because'),
+                },
+                {
+                    'id': 3, 'kind': 'gap',
+                    'prompt': 'I go to the library ______ I can study. (so / because)',
+                    'correct': 'so|because',
+                    'hint': t(lang, 'Maqsad / sabab.', 'Цель / причина.'),
+                },
+            ],
+            'B': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Combine with although: "Parks are free. Malls create jobs."',
+                    'correct': 'Although malls create jobs, parks are free.|Although parks are free, malls create jobs.',
+                    'hint': t(lang, 'Complex sentence.', 'Сложное предложение.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Use which: "Libraries offer Wi-Fi. This helps students."',
+                    'correct': 'Libraries offer Wi-Fi, which helps students.',
+                    'hint': t(lang, 'Relative clause.', 'Relative clause.'),
+                },
+                {
+                    'id': 3, 'kind': 'gap',
+                    'prompt': 'Not only do parks improve air quality, ______ they also support community life.',
+                    'correct': 'but',
+                    'hint': t(lang, 'not only … but also', 'not only … but also'),
+                },
+            ],
+            'C': [
+                {
+                    'id': 1, 'kind': 'rewrite',
+                    'prompt': 'Combine with whereas: "Ensembles clarify risk. Jargon obscures thresholds."',
+                    'correct': 'Whereas ensembles clarify risk, jargon obscures actionable thresholds.|Ensembles clarify risk, whereas jargon obscures actionable thresholds.',
+                    'hint': t(lang, 'whereas contrast.', 'whereas.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Use participle clause: "Libraries receive stable funding. They serve more learners."',
+                    'correct': 'Receiving stable funding, libraries serve more learners.|Libraries, receiving stable funding, serve more learners.',
+                    'hint': t(lang, 'Participle clause.', 'Причастный оборот.'),
+                },
+                {
+                    'id': 3, 'kind': 'gap',
+                    'prompt': '______ the essay remains useful, multimodal tasks better mirror authentic work.',
+                    'correct': 'While|Whilst|Although',
+                    'hint': t(lang, 'Concession linker.', 'Уступительный союз.'),
+                },
+            ],
+        },
+        'support_sentences': {
+            'A': [
+                {
+                    'id': 1, 'kind': 'mcq',
+                    'prompt': 'Best support for: "Parks are good for children."',
+                    'options': [
+                        {'letter': 'a', 'text': 'Children can play games there.'},
+                        {'letter': 'b', 'text': 'Airplanes are fast.'},
+                        {'letter': 'c', 'text': 'My phone is new.'},
+                    ],
+                    'correct': 'a',
+                    'hint': t(lang, 'Mavzuga bog‘liq misol.', 'Связанный пример.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Add support after: "Libraries help students."',
+                    'correct': 'They have quiet rooms for homework.|Students can use free Wi-Fi there.',
+                    'hint': t(lang, 'Oddiy detail.', 'Простая деталь.'),
+                },
+                {
+                    'id': 3, 'kind': 'mcq',
+                    'prompt': 'Which does NOT support parks?',
+                    'options': [
+                        {'letter': 'a', 'text': 'People feel happy in green places.'},
+                        {'letter': 'b', 'text': 'Families meet near the playground.'},
+                        {'letter': 'c', 'text': 'Ships cross the ocean.'},
+                    ],
+                    'correct': 'c',
+                    'hint': t(lang, 'Mavzuga aloqasi yo‘q.', 'Не по теме.'),
+                },
+            ],
+            'B': [
+                {
+                    'id': 1, 'kind': 'mcq',
+                    'prompt': 'Best supporting sentence for: "Parks improve wellbeing."',
+                    'options': [
+                        {'letter': 'a', 'text': 'For example, walking in green areas can lower stress levels.'},
+                        {'letter': 'b', 'text': 'My uncle owns a car.'},
+                        {'letter': 'c', 'text': 'Football is a sport.'},
+                    ],
+                    'correct': 'a',
+                    'hint': t(lang, 'Example that proves the claim.', 'Пример, подтверждающий тезис.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Add a support sentence after: "Libraries help students."',
+                    'correct': 'They provide quiet study rooms and free internet access.',
+                    'hint': t(lang, 'Concrete detail.', 'Конкретная деталь.'),
+                },
+                {
+                    'id': 3, 'kind': 'mcq',
+                    'prompt': 'Which sentence does NOT support city parks?',
+                    'options': [
+                        {'letter': 'a', 'text': 'Children can play safely outdoors.'},
+                        {'letter': 'b', 'text': 'Green areas cool dense neighbourhoods.'},
+                        {'letter': 'c', 'text': 'Airports need longer runways.'},
+                    ],
+                    'correct': 'c',
+                    'hint': t(lang, 'Irrelevant detail.', 'Нерелевантная деталь.'),
+                },
+            ],
+            'C': [
+                {
+                    'id': 1, 'kind': 'mcq',
+                    'prompt': 'Best support for: "Uncertainty statements improve trust."',
+                    'options': [
+                        {'letter': 'a', 'text': 'Clear ranges help non-specialists judge actionable thresholds.'},
+                        {'letter': 'b', 'text': 'Copper cables were heavy.'},
+                        {'letter': 'c', 'text': 'Children like swings.'},
+                    ],
+                    'correct': 'a',
+                    'hint': t(lang, 'Claimga bog‘liq dalil.', 'Доказательство к тезису.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Support: "Longitudinal designs are still rare."',
+                    'correct': 'Most studies remain cross-sectional and cannot track change over years.|Few projects follow the same bilingual cohort across time.',
+                    'hint': t(lang, 'Izoh + misol.', 'Пояснение + пример.'),
+                },
+                {
+                    'id': 3, 'kind': 'mcq',
+                    'prompt': 'Which does NOT support investing in libraries?',
+                    'options': [
+                        {'letter': 'a', 'text': 'They expand equal access to knowledge.'},
+                        {'letter': 'b', 'text': 'They support lifelong learning.'},
+                        {'letter': 'c', 'text': 'Stadium concerts sell more merchandise.'},
+                    ],
+                    'correct': 'c',
+                    'hint': t(lang, 'Irrelevant.', 'Нерелевантно.'),
+                },
+            ],
+        },
+        'argument_development': {
+            'A': [
+                {
+                    'id': 1, 'kind': 'mcq',
+                    'prompt': 'Best main idea for an essay about parks:',
+                    'options': [
+                        {'letter': 'a', 'text': 'Parks help people feel happy and healthy.'},
+                        {'letter': 'b', 'text': 'I ate bread.'},
+                        {'letter': 'c', 'text': 'Buses are yellow.'},
+                    ],
+                    'correct': 'a',
+                    'hint': t(lang, 'Asosiy g‘oya.', 'Главная идея.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Improve: "Parks are good because they are good."',
+                    'correct': 'Parks are good because people can walk and play there.',
+                    'hint': t(lang, 'Sabab yozing.', 'Напишите причину.'),
+                },
+                {
+                    'id': 3, 'kind': 'gap',
+                    'prompt': 'First, parks are green. ______, they are quiet.',
+                    'correct': 'Second|Also|Next',
+                    'hint': t(lang, 'Ro‘yxat bog‘lovchisi.', 'Слово-связка.'),
+                },
+            ],
+            'B': [
+                {
+                    'id': 1, 'kind': 'mcq',
+                    'prompt': 'Strongest thesis for a discuss-both-views essay on parks vs malls:',
+                    'options': [
+                        {'letter': 'a', 'text': 'Parks are nice.'},
+                        {'letter': 'b', 'text': 'While malls offer convenience and jobs, parks deliver broader public health benefits; overall I favour parks.'},
+                        {'letter': 'c', 'text': 'I went shopping yesterday.'},
+                    ],
+                    'correct': 'b',
+                    'hint': t(lang, 'Clear position + both sides.', 'Чёткая позиция + обе стороны.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Improve this weak argument: "Parks are good because they are good."',
+                    'correct': 'Parks are beneficial because they provide free recreation and improve air quality.',
+                    'hint': t(lang, 'Reason + concrete benefit.', 'Причина + конкретная польза.'),
+                },
+                {
+                    'id': 3, 'kind': 'gap',
+                    'prompt': 'Linking: Parks improve wellbeing; ______, malls mainly serve commercial interests.',
+                    'correct': 'by contrast|in contrast|however',
+                    'hint': t(lang, 'Contrast linker.', 'Контрастный союз.'),
+                },
+            ],
+            'C': [
+                {
+                    'id': 1, 'kind': 'mcq',
+                    'prompt': 'Strongest thesis on essays vs multimodal assessment:',
+                    'options': [
+                        {'letter': 'a', 'text': 'Essays are old.'},
+                        {'letter': 'b', 'text': 'Although essays train argumentation, assessment should also include portfolios that mirror authentic academic work.'},
+                        {'letter': 'c', 'text': 'I like videos.'},
+                    ],
+                    'correct': 'b',
+                    'hint': t(lang, 'Nuanced thesis.', 'Нюансированный тезис.'),
+                },
+                {
+                    'id': 2, 'kind': 'rewrite',
+                    'prompt': 'Strengthen: "Uncertainty is bad so ignore it."',
+                    'correct': 'Uncertainty should be communicated clearly so decision makers can act without demanding impossible certainty.',
+                    'hint': t(lang, 'Sabab + yechim.', 'Причина + решение.'),
+                },
+                {
+                    'id': 3, 'kind': 'gap',
+                    'prompt': 'Libraries build literacy; ______, stadiums mainly deliver seasonal entertainment.',
+                    'correct': 'by contrast|conversely|in contrast',
+                    'hint': t(lang, 'Contrast.', 'Контраст.'),
+                },
+            ],
+        },
     }
 
-    exercises = focus_exercises.get(focus, focus_exercises['lexical_resource'])
+    bank = focus_exercises.get(focus, focus_exercises['lexical_resource'])
+    exercises = bank.get(band, bank.get('B', []))
     tip = t(
         lang,
         f"{level} · {meta['label_uz']}. Avval taskni o‘qing, keyin namuna va mashqlarni bajaring.",
@@ -917,6 +1519,123 @@ def _local_writing(level: str, focus: str, lang: str) -> dict:
     }
 
 
+_ROMAN_LETTERS = (
+    'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x',
+)
+_ALPHA_LETTERS = tuple('abcdefgh')
+
+
+def _norm_option_letter(raw, *, rtype: str = 'mcq', index: int = 0) -> str:
+    """Harf/roman raqamni saqlaydi — [:1] bilan ii→i buzilmasin."""
+    s = str(raw or '').strip().lower().rstrip('.)]')
+    if s.startswith('(') and s.endswith(')'):
+        s = s[1:-1].strip()
+    if s in _ROMAN_LETTERS:
+        return s
+    if len(s) == 1 and s in _ALPHA_LETTERS:
+        return s
+    m = re.match(r'^([a-h]|ix|iv|v?i{0,3}|x)\b', s)
+    if m:
+        return m.group(1)
+    if rtype == 'matching_headings':
+        return _ROMAN_LETTERS[index] if index < len(_ROMAN_LETTERS) else _ROMAN_LETTERS[0]
+    return _ALPHA_LETTERS[index] if index < len(_ALPHA_LETTERS) else 'a'
+
+
+def _option_texts_upper(opts) -> set:
+    out = set()
+    if not isinstance(opts, list):
+        return out
+    for o in opts:
+        if isinstance(o, dict):
+            text = str(o.get('text') or '').strip().upper()
+        else:
+            text = str(o or '').strip().upper()
+        if text:
+            out.add(text)
+    return out
+
+
+def _looks_like_tfng_options(opts) -> bool:
+    texts = _option_texts_upper(opts)
+    if not texts:
+        return False
+    tfng = {'TRUE', 'FALSE', 'NOT GIVEN', 'T', 'F', 'NG', 'YES', 'NO'}
+    return len(texts & tfng) >= 2
+
+
+def _questions_fit_rtype(questions: list, rtype: str) -> bool:
+    """Gemini ba'zan har tip uchun TFNG qaytaradi — shaklni tekshiramiz."""
+    if not questions:
+        return False
+    sample = [q for q in questions[:6] if isinstance(q, dict)]
+    if not sample:
+        return False
+    need = max(1, (len(sample) + 1) // 2)
+
+    if rtype == 'gap_fill':
+        ok = 0
+        for q in sample:
+            opts = q.get('options') or []
+            correct = str(q.get('correct') or '').strip()
+            prompt = str(q.get('prompt') or '')
+            if opts and _looks_like_tfng_options(opts):
+                continue
+            if not opts and correct and correct.lower() not in ('a', 'b', 'c'):
+                ok += 1
+            elif '_____' in prompt or '______' in prompt or '___' in prompt:
+                ok += 1
+        return ok >= need
+
+    if rtype == 'tfng':
+        return sum(1 for q in sample if _looks_like_tfng_options(q.get('options') or [])) >= need
+
+    # Boshqa tiplar: TRUE/FALSE/NOT GIVEN bo'lmasin
+    if sum(1 for q in sample if _looks_like_tfng_options(q.get('options') or [])) >= need:
+        return False
+
+    if rtype == 'mcq':
+        return sum(
+            1 for q in sample
+            if len(q.get('options') or []) >= 3 and not _looks_like_tfng_options(q.get('options') or [])
+        ) >= need
+
+    if rtype == 'matching_headings':
+        ok = 0
+        for q in sample:
+            opts = q.get('options') or []
+            if len(opts) < 2 or _looks_like_tfng_options(opts):
+                continue
+            letters = {
+                str(o.get('letter') or '').strip().lower()
+                for o in opts if isinstance(o, dict)
+            }
+            # Roman harflar yoki heading matnlari (TFNG emas)
+            if letters & set(_ROMAN_LETTERS):
+                ok += 1
+            elif len(opts) >= 3 and not _looks_like_tfng_options(opts):
+                ok += 1
+        return ok >= need
+
+    if rtype in ('matching_endings', 'matching_names'):
+        return sum(
+            1 for q in sample
+            if len(q.get('options') or []) >= 3 and not _looks_like_tfng_options(q.get('options') or [])
+        ) >= need
+
+    return True
+
+
+_INSTRUCTION_BY_TYPE = {
+    'gap_fill': 'ONE WORD ONLY',
+    'matching_endings': 'Match each beginning with the correct ending.',
+    'matching_names': 'Match each statement with the correct person.',
+    'matching_headings': 'Choose the correct heading.',
+    'tfng': 'Choose TRUE, FALSE or NOT GIVEN.',
+    'mcq': 'Choose the correct option.',
+}
+
+
 def _normalize_reading_payload(data: dict, *, level: str, rtype: str, lang: str) -> dict:
     meta = READING_TYPES[rtype]
     questions = data.get('questions') if isinstance(data.get('questions'), list) else []
@@ -927,24 +1646,44 @@ def _normalize_reading_payload(data: dict, *, level: str, rtype: str, lang: str)
         opts = row.get('options') or []
         clean_opts = []
         if isinstance(opts, list):
-            for o in opts[:6]:
+            for idx, o in enumerate(opts[:8]):
                 if isinstance(o, dict):
-                    clean_opts.append({
-                        'letter': str(o.get('letter') or '').strip().lower()[:1],
-                        'text': str(o.get('text') or '').strip()[:200],
-                    })
+                    letter = _norm_option_letter(o.get('letter'), rtype=rtype, index=idx)
+                    text = str(o.get('text') or '').strip()[:200]
+                    if text:
+                        clean_opts.append({'letter': letter, 'text': text})
                 elif o:
-                    clean_opts.append({'letter': '', 'text': str(o).strip()[:200]})
+                    text = str(o).strip()[:200]
+                    if text:
+                        clean_opts.append({
+                            'letter': _norm_option_letter('', rtype=rtype, index=idx),
+                            'text': text,
+                        })
+        correct_raw = str(row.get('correct') or row.get('answer') or '').strip().lower()[:80]
+        if rtype == 'gap_fill':
+            correct = correct_raw
+        elif rtype == 'matching_headings':
+            correct = _norm_option_letter(correct_raw, rtype=rtype, index=0) if correct_raw else ''
+            # agar correct to'liq roman bo'lsa saqlaymiz
+            if correct_raw in _ROMAN_LETTERS:
+                correct = correct_raw
+            elif correct_raw and correct_raw[0] in _ALPHA_LETTERS and correct_raw not in _ROMAN_LETTERS:
+                correct = correct_raw[:1]
+        else:
+            correct = correct_raw[:1] if correct_raw and correct_raw[0] in _ALPHA_LETTERS else correct_raw
         out_q.append({
             'id': int(row.get('id') or i),
             'prompt': str(row.get('prompt') or row.get('question') or '').strip()[:500],
-            'options': [o for o in clean_opts if o.get('text')],
-            'correct': str(row.get('correct') or row.get('answer') or '').strip().lower()[:80],
+            'options': clean_opts if rtype != 'gap_fill' else [],
+            'correct': correct,
             'explanation': str(row.get('explanation') or '').strip()[:400],
         })
-    if len(out_q) < max(7, READING_QUESTION_COUNT - 3):
+
+    # Yetarli emas YOKI tipga mos emas → to'liq local (aralash TFNG+MCQ qoldirmaymiz)
+    if len(out_q) < max(7, READING_QUESTION_COUNT - 3) or not _questions_fit_rtype(out_q, rtype):
         return _local_reading(level, rtype, lang)
-    # AI ba'zan 7–9 ta qaytaradi — local bilan 10 tagacha to'ldiramiz
+
+    # AI ba'zan 7–9 ta qaytaradi — local bilan 10 tagacha to'ldiramiz (shu tipdan)
     if len(out_q) < READING_QUESTION_COUNT:
         local_qs = _local_reading(level, rtype, lang).get('questions') or []
         seen = {str(q.get('prompt') or '').strip().lower() for q in out_q}
@@ -958,6 +1697,13 @@ def _normalize_reading_payload(data: dict, *, level: str, rtype: str, lang: str)
             item = dict(row)
             item['id'] = len(out_q) + 1
             out_q.append(item)
+
+    instruction = str(data.get('instruction') or '').strip()[:200]
+    if not instruction or (
+        rtype != 'tfng' and 'TRUE' in instruction.upper() and 'FALSE' in instruction.upper()
+    ):
+        instruction = _INSTRUCTION_BY_TYPE.get(rtype, 'Choose the correct option.')
+
     return {
         'skill': 'reading',
         'level': level,
@@ -965,7 +1711,7 @@ def _normalize_reading_payload(data: dict, *, level: str, rtype: str, lang: str)
         'practice_label': meta['label_uz'] if normalize_ai_lang(lang) == 'uz' else meta['label_ru'],
         'title': str(data.get('title') or 'Reading Practice').strip()[:160],
         'passage': str(data.get('passage') or data.get('text') or '').strip()[:6000],
-        'instruction': str(data.get('instruction') or '').strip()[:200],
+        'instruction': instruction,
         'questions': out_q,
         'tip': str(data.get('tip') or '').strip()[:300],
         'provider_name': data.get('provider_name') or 'gemini',
@@ -1013,28 +1759,74 @@ def _normalize_writing_payload(data: dict, *, level: str, focus: str, lang: str)
     }
 
 
+def _reading_type_rules(rtype: str) -> str:
+    """Faqat tanlangan tip — Gemini boshqa formatga o'tib ketmasin."""
+    if rtype == 'tfng':
+        return """REQUIRED question format (ONLY this — do not invent another type):
+- Each prompt is a statement about the passage.
+- options MUST be exactly: [{"letter":"a","text":"TRUE"},{"letter":"b","text":"FALSE"},{"letter":"c","text":"NOT GIVEN"}]
+- correct MUST be "a", "b", or "c".
+- instruction: "Choose TRUE, FALSE or NOT GIVEN." """
+    if rtype == 'mcq':
+        return """REQUIRED question format (ONLY this — NEVER use TRUE/FALSE/NOT GIVEN):
+- Each prompt is a question with 4 distinct content options (not True/False).
+- options: exactly 4 items with letters a,b,c,d and different answer texts from the passage.
+- correct MUST be one of a/b/c/d.
+- instruction: "Choose the correct option." """
+    if rtype == 'gap_fill':
+        return """REQUIRED question format (ONLY this — NEVER use multiple-choice or TRUE/FALSE):
+- Each prompt has a blank like "______" taken from the passage.
+- options MUST be an empty array [].
+- correct MUST be the ONE WORD (or short phrase) that fills the blank — NOT a letter.
+- instruction: "ONE WORD ONLY" """
+    if rtype == 'matching_headings':
+        return """REQUIRED question format (ONLY this — NEVER use TRUE/FALSE/NOT GIVEN):
+- Each prompt is a short paragraph summary / section idea.
+- options are candidate HEADINGS with roman letters i, ii, iii (at least 3).
+- correct MUST be the matching roman letter (e.g. "i" or "ii").
+- instruction: "Choose the correct heading." """
+    if rtype == 'matching_endings':
+        return """REQUIRED question format (ONLY this — NEVER use TRUE/FALSE/NOT GIVEN):
+- Each prompt is an incomplete sentence BEGINNING (no full stop).
+- options are possible ENDINGS (letters a–f); reuse the SAME endings bank for every question when possible.
+- correct MUST be a letter a–f.
+- instruction: "Match each beginning with the correct ending." """
+    if rtype == 'matching_names':
+        return """REQUIRED question format (ONLY this — NEVER use TRUE/FALSE/NOT GIVEN):
+- Passage MUST name several different people (at least 4 full names).
+- Each prompt is a statement/action from the passage (without the person's name).
+- options are the people names (letters a–f); reuse the SAME name bank for every question.
+- correct MUST be a letter a–f.
+- instruction: "Match each statement with the correct person." """
+    return 'Follow the requested IELTS question type strictly.'
+
+
 def _reading_prompt(level: str, rtype: str, lang: str) -> str:
     meta = READING_TYPES[rtype]
+    type_rules = _reading_type_rules(rtype)
     return f"""You are an IELTS Academic Reading materials writer.
 Create ONE short practice set for CEFR/IELTS level {level}.
-Question type focus: {meta['label_uz']} ({READING_TYPES[rtype]['qtype']}).
+SELECTED question type (mandatory): {meta['label_uz']} / key={rtype} / qtype={meta['qtype']}.
+You MUST generate ONLY this question type. Do NOT fall back to True/False/Not Given unless key=tfng.
 
 {learner_language_rules(lang)}
 - Passage and question prompts MUST be in English.
 - tip and each question explanation MUST be in the learner language.
 
+{type_rules}
+
 Return ONLY JSON:
 {{
   "title": "short English title",
   "passage": "280-450 words English academic-style passage suitable for level {level}",
-  "instruction": "short English instruction",
+  "instruction": "short English instruction matching the selected type",
   "tip": "1 short tip in learner language",
   "questions": [
     {{
       "id": 1,
       "prompt": "English question/statement",
-      "options": [{{"letter":"a","text":"..."}}, {{"letter":"b","text":"..."}}],
-      "correct": "a",
+      "options": [{{"letter":"a","text":"..."}}],
+      "correct": "answer letter OR one word for gap_fill",
       "explanation": "short learner-language explanation"
     }}
   ]
@@ -1043,12 +1835,6 @@ Return ONLY JSON:
 Rules:
 - Exactly {READING_QUESTION_COUNT} questions (ids 1–{READING_QUESTION_COUNT}).
 - Cover different parts of the passage; do not repeat the same idea.
-- For tfng: options TRUE/FALSE/NOT GIVEN with letters a/b/c; correct is letter.
-- For mcq: 4 options a-d; correct is letter.
-- For gap_fill: options can be []; correct is the ONE WORD answer (lowercase ok).
-- For matching_headings: options are headings with roman or letter keys; correct matches option letter.
-- For matching_endings: prompt = sentence BEGINNING; options = possible ENDINGS (A–F); correct is letter. Use a shared bank of endings across questions when possible.
-- For matching_names: passage MUST mention several named people; prompt = statement/action; options = people names (A–F); correct is letter.
 - Content must be original, factual-sounding, level-appropriate.
 - Do not mention that you are an AI.
 """

@@ -3,6 +3,65 @@
 
 {% block title %}{{ page_title }} - Ton academy{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Dropdown: static cache bo'lsa ham dizayn chiqsin */
+.mashq-page .mashq-controls {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 10rem) minmax(14rem, 1fr) auto;
+    gap: 1rem 1.15rem;
+    align-items: end;
+}
+.mashq-page .mashq-controls__group {
+    min-width: 0;
+}
+.mashq-page select.mashq-select {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 48px;
+    padding: 0 2.75rem 0 1rem;
+    border-radius: 14px;
+    border: 1.5px solid #e2e8f0;
+    background-color: #f1f5f9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 18px;
+    color: #0f172a;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    cursor: pointer;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(15, 23, 42, 0.05);
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+.mashq-page select.mashq-select:hover {
+    border-color: #a5b4fc;
+    background-color: #fff;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.14);
+}
+.mashq-page select.mashq-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.22);
+}
+.mashq-page .mashq-controls__label {
+    margin-bottom: 0.55rem;
+}
+@media (max-width: 991.98px) {
+    .mashq-page .mashq-controls {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4 mashq-page" id="mashqApp"
      data-skill="{{ skill }}"
@@ -40,29 +99,29 @@
 
     <section class="mashq-controls">
         <div class="mashq-controls__group">
-            <span class="mashq-controls__label">{% trans "Daraja" %}</span>
-            <div class="mashq-levels" id="mashqLevels">
+            <label class="mashq-controls__label" for="mashqLevel">{% trans "Daraja" %}</label>
+            <select class="mashq-select" id="mashqLevel" name="level" aria-label="{% trans "Daraja" %}">
                 {% for lv in levels %}
-                <button type="button" class="mashq-level {% if lv == 'B1' %}is-active{% endif %}" data-level="{{ lv }}" aria-pressed="{% if lv == 'B1' %}true{% else %}false{% endif %}">{{ lv }}</button>
+                <option value="{{ lv }}" {% if lv == 'B1' %}selected{% endif %}>{{ lv }}</option>
                 {% endfor %}
-            </div>
+            </select>
         </div>
 
         <div class="mashq-controls__group mashq-controls__group--grow">
             {% if skill == 'reading' %}
-            <span class="mashq-controls__label">{% trans "Mashq turi" %}</span>
-            <div class="mashq-types" id="mashqTypes">
+            <label class="mashq-controls__label" for="mashqType">{% trans "Savol turi" %}</label>
+            <select class="mashq-select" id="mashqType" name="practice_type" aria-label="{% trans "Savol turi" %}">
                 {% for item in reading_types %}
-                <button type="button" class="mashq-type {% if forloop.first %}is-active{% endif %}" data-type="{{ item.key }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ item.label }}</button>
+                <option value="{{ item.key }}" {% if forloop.first %}selected{% endif %}>{{ item.label }}</option>
                 {% endfor %}
-            </div>
+            </select>
             {% else %}
-            <span class="mashq-controls__label">{% trans "Nimani mashq qilmoqchisiz" %}</span>
-            <div class="mashq-types" id="mashqTypes">
+            <label class="mashq-controls__label" for="mashqType">{% trans "Nimani mashq qilmoqchisiz" %}</label>
+            <select class="mashq-select" id="mashqType" name="practice_type" aria-label="{% trans "Nimani mashq qilmoqchisiz" %}">
                 {% for item in writing_focuses %}
-                <button type="button" class="mashq-type {% if forloop.first %}is-active{% endif %}" data-type="{{ item.key }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ item.label }}</button>
+                <option value="{{ item.key }}" {% if forloop.first %}selected{% endif %}>{{ item.label }}</option>
                 {% endfor %}
-            </div>
+            </select>
             {% endif %}
         </div>
 
@@ -189,8 +248,8 @@
     let payload = null;
     let checked = false;
 
-    const levelsEl = document.getElementById('mashqLevels');
-    const typesEl = document.getElementById('mashqTypes');
+    const levelSelect = document.getElementById('mashqLevel');
+    const typeSelect = document.getElementById('mashqType');
     const generateBtn = document.getElementById('mashqGenerate');
     const checkBtn = document.getElementById('mashqCheck');
     const resetBtn = document.getElementById('mashqResetAnswers');
@@ -206,12 +265,10 @@
     const progressFill = document.getElementById('mashqProgressFill');
 
     function selectedLevel() {
-        const btn = levelsEl.querySelector('.mashq-level.is-active');
-        return btn ? btn.dataset.level : 'B1';
+        return (levelSelect && levelSelect.value) ? levelSelect.value : 'B1';
     }
     function selectedType() {
-        const btn = typesEl.querySelector('.mashq-type.is-active');
-        return btn ? btn.dataset.type : '';
+        return (typeSelect && typeSelect.value) ? typeSelect.value : '';
     }
 
     function setStatus(msg, kind) {
@@ -234,46 +291,56 @@
             .replace(/"/g, '&quot;');
     }
 
-    function activateGroup(group, btn, cls) {
-        group.querySelectorAll('.' + cls).forEach(function (b) {
-            b.classList.remove('is-active');
-            b.setAttribute('aria-pressed', 'false');
-        });
-        btn.classList.add('is-active');
-        btn.setAttribute('aria-pressed', 'true');
-    }
-
-    levelsEl.addEventListener('click', function (e) {
-        const btn = e.target.closest('.mashq-level');
-        if (!btn) return;
-        activateGroup(levelsEl, btn, 'mashq-level');
-    });
-
-    typesEl.addEventListener('click', function (e) {
-        const btn = e.target.closest('.mashq-type');
-        if (!btn) return;
-        activateGroup(typesEl, btn, 'mashq-type');
-    });
-
-    function renderOptions(id, opts) {
+    function renderOptions(id, opts, lettersOnly) {
         return '<div class="mashq-opts" role="radiogroup">' + opts.map(function (o) {
             const letter = (o.letter || '').toLowerCase();
             const val = letter || (o.text || '');
             const showLetter = (letter || '').toUpperCase();
-            return '<label class="mashq-opt">' +
+            const textHtml = lettersOnly
+                ? ''
+                : '<span class="mashq-opt__text">' + esc(o.text || '') + '</span>';
+            return '<label class="mashq-opt' + (lettersOnly ? ' mashq-opt--letter' : '') + '">' +
                 '<input type="radio" name="pq_' + id + '" value="' + esc(val) + '" data-letter="' + esc(letter) + '">' +
                 '<span class="mashq-opt__letter" aria-hidden="true">' + esc(showLetter || '•') + '</span>' +
-                '<span class="mashq-opt__text">' + esc(o.text || '') + '</span>' +
+                textHtml +
                 '</label>';
         }).join('') + '</div>';
     }
 
-    function renderQuestionBlock(q, idx, fillAsTextarea) {
+    function sharedOptionsBank(qs) {
+        if (!qs || !qs.length) return null;
+        const first = Array.isArray(qs[0].options) ? qs[0].options : [];
+        if (first.length < 3) return null;
+        const same = qs.every(function (q) {
+            const opts = Array.isArray(q.options) ? q.options : [];
+            if (opts.length !== first.length) return false;
+            return opts.every(function (o, i) {
+                return String(o.text || '') === String(first[i].text || '')
+                    && String(o.letter || '').toLowerCase() === String(first[i].letter || '').toLowerCase();
+            });
+        });
+        return same ? first : null;
+    }
+
+    function renderOptionBank(opts, ptype) {
+        const title = (ptype === 'matching_names')
+            ? 'People'
+            : (ptype === 'matching_endings' ? 'Endings' : 'Options');
+        return '<div class="mashq-bank">' +
+            '<div class="mashq-bank__title">' + esc(title) + '</div>' +
+            '<ul class="mashq-bank__list">' +
+            opts.map(function (o) {
+                return '<li><strong>' + esc(String(o.letter || '').toUpperCase()) + '</strong> ' + esc(o.text || '') + '</li>';
+            }).join('') +
+            '</ul></div>';
+    }
+
+    function renderQuestionBlock(q, idx, fillAsTextarea, lettersOnly) {
         const id = q.id != null ? q.id : (idx + 1);
         const opts = Array.isArray(q.options) ? q.options : [];
         let inner;
         if (opts.length) {
-            inner = renderOptions(id, opts);
+            inner = renderOptions(id, opts, !!lettersOnly);
         } else if (fillAsTextarea) {
             inner = '<textarea class="form-control mashq-fill" data-qid="' + id + '" rows="2" placeholder="' + esc(i18n.writePh) + '"></textarea>';
         } else {
@@ -355,6 +422,11 @@
             (data.tip ? '<p class="mashq-tip"><i class="fas fa-lightbulb me-1"></i><strong>' + esc(i18n.tip) + ':</strong> ' + esc(data.tip) + '</p>' : '');
 
         const qs = Array.isArray(data.questions) ? data.questions : [];
+        const ptype = String(data.practice_type || '');
+        const bank = (ptype === 'matching_endings' || ptype === 'matching_names')
+            ? sharedOptionsBank(qs)
+            : null;
+        const lettersOnly = !!bank;
         rightEmpty.hidden = true;
         rightBody.hidden = false;
         rightBody.innerHTML =
@@ -362,7 +434,8 @@
                 '<h3 class="mashq-panel__heading">' + esc(i18n.questions) + '</h3>' +
                 '<span class="mashq-count">' + qs.length + '</span>' +
             '</div>' +
-            qs.map(function (q, idx) { return renderQuestionBlock(q, idx, false); }).join('');
+            (bank ? renderOptionBank(bank, ptype) : '') +
+            qs.map(function (q, idx) { return renderQuestionBlock(q, idx, false, lettersOnly); }).join('');
         footer.hidden = false;
         scoreEl.hidden = true;
         resetBtn.hidden = true;
