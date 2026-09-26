@@ -13,6 +13,7 @@ from urllib import request as urllib_request
 from django.conf import settings
 
 from core.services.ai_language import learner_language_rules, normalize_ai_lang, t
+from core.services.passage_expansions import MIN_PASSAGE_WORDS, ensure_min_words, word_count as passage_word_count
 
 # Gunicorn default timeout ~30s — Gemini shu ichida tugamasa 502.
 PRACTICE_GEMINI_BUDGET_SEC = 14.0
@@ -296,6 +297,9 @@ def _shuffle_choice_options(row: dict, rng: random.Random) -> dict:
     item = dict(row)
     opts = [dict(o) for o in (item.get('options') or []) if isinstance(o, dict) and o.get('text')]
     if len(opts) < 2:
+        return item
+    texts = {str(o.get('text') or '').strip().upper() for o in opts}
+    if texts == {'TRUE', 'FALSE', 'NOT GIVEN'}:
         return item
     correct_raw = str(item.get('correct') or '').strip().lower()
     correct_text = ''
@@ -1341,14 +1345,6 @@ def _local_reading_b(level: str, rtype: str, lang: str) -> dict:
         names = np['names']
         questions = [_match(prompt, names, correct, tip_common) for prompt, correct in np['rows']]
 
-    instruction_map = {
-        'gap_fill': 'ONE WORD ONLY',
-        'matching_endings': 'Match each beginning with the correct ending.',
-        'matching_names': 'Match each statement with the correct person.',
-        'matching_headings': 'Choose the correct heading.',
-        'tfng': 'Choose TRUE, FALSE or NOT GIVEN.',
-        'mcq': 'Choose the correct option.',
-    }
     tip = t(
         lang,
         f"{level} daraja · {meta['label_uz']}. Matndan dalil topib javob bering.",
@@ -1360,8 +1356,8 @@ def _local_reading_b(level: str, rtype: str, lang: str) -> dict:
         'practice_type': rtype,
         'practice_label': meta['label_uz'] if normalize_ai_lang(lang) == 'uz' else meta['label_ru'],
         'title': title,
-        'passage': passage,
-        'instruction': instruction_map.get(rtype, 'Choose the correct option.'),
+        'passage': ensure_min_words(title, passage),
+        'instruction': _INSTRUCTION_BY_TYPE.get(rtype, 'Choose the correct option.'),
         'questions': _number_questions(questions),
         'tip': tip,
         'provider_name': 'local',
@@ -1793,14 +1789,6 @@ def _local_reading(level: str, rtype: str, lang: str, *, variant: int = 0) -> di
             _heading('Theme', ['City planning', 'Ship design', 'Fashion weeks'], 'i', tip_common),
         ]
 
-    instruction_map = {
-        'gap_fill': 'ONE WORD ONLY',
-        'matching_endings': 'Match each beginning with the correct ending.',
-        'matching_names': 'Match each statement with the correct person.',
-        'matching_headings': 'Choose the correct heading.',
-        'tfng': 'Choose TRUE, FALSE or NOT GIVEN.',
-        'mcq': 'Choose the correct option.',
-    }
     tip = t(
         lang,
         f"{level} daraja · {meta['label_uz']}. Matndan dalil topib javob bering.",
@@ -1812,8 +1800,8 @@ def _local_reading(level: str, rtype: str, lang: str, *, variant: int = 0) -> di
         'practice_type': rtype,
         'practice_label': meta['label_uz'] if normalize_ai_lang(lang) == 'uz' else meta['label_ru'],
         'title': title,
-        'passage': passage,
-        'instruction': instruction_map.get(rtype, 'Choose the correct option.'),
+        'passage': ensure_min_words(title, passage),
+        'instruction': _INSTRUCTION_BY_TYPE.get(rtype, 'Choose the correct option.'),
         'questions': _number_questions(questions),
         'tip': tip,
         'provider_name': 'local',
@@ -2457,12 +2445,24 @@ def _questions_fit_rtype(questions: list, rtype: str) -> bool:
 
 
 _INSTRUCTION_BY_TYPE = {
-    'gap_fill': 'ONE WORD ONLY',
-    'matching_endings': 'Match each beginning with the correct ending.',
-    'matching_names': 'Match each statement with the correct person.',
-    'matching_headings': 'Choose the correct heading.',
-    'tfng': 'Choose TRUE, FALSE or NOT GIVEN.',
-    'mcq': 'Choose the correct option.',
+    'tfng': (
+        'Do the following statements agree with the information in the Reading Passage? '
+        'Write TRUE if the statement agrees with the information, FALSE if the statement contradicts '
+        'the information, or NOT GIVEN if there is no information on this.'
+    ),
+    'mcq': 'Choose the correct letter, A, B, C or D.',
+    'gap_fill': (
+        'Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage for each answer.'
+    ),
+    'matching_headings': (
+        'Choose the correct heading for each question from the list of headings. '
+        'There are more headings than you need.'
+    ),
+    'matching_endings': 'Complete each sentence with the correct ending from the list below.',
+    'matching_names': (
+        'Match each statement with the correct person from the list below. '
+        'You may use any letter more than once.'
+    ),
 }
 
 
@@ -2528,11 +2528,10 @@ def _normalize_reading_payload(data: dict, *, level: str, rtype: str, lang: str)
             item['id'] = len(out_q) + 1
             out_q.append(item)
 
-    instruction = str(data.get('instruction') or '').strip()[:200]
-    if not instruction or (
-        rtype != 'tfng' and 'TRUE' in instruction.upper() and 'FALSE' in instruction.upper()
-    ):
-        instruction = _INSTRUCTION_BY_TYPE.get(rtype, 'Choose the correct option.')
+    instruction = _INSTRUCTION_BY_TYPE.get(
+        rtype,
+        str(data.get('instruction') or 'Choose the correct option.').strip()[:400],
+    )
 
     return {
         'skill': 'reading',
@@ -2540,7 +2539,7 @@ def _normalize_reading_payload(data: dict, *, level: str, rtype: str, lang: str)
         'practice_type': rtype,
         'practice_label': meta['label_uz'] if normalize_ai_lang(lang) == 'uz' else meta['label_ru'],
         'title': str(data.get('title') or 'Reading Practice').strip()[:160],
-        'passage': str(data.get('passage') or data.get('text') or '').strip()[:6000],
+        'passage': str(data.get('passage') or data.get('text') or '').strip()[:20000],
         'instruction': instruction,
         'questions': out_q,
         'tip': str(data.get('tip') or '').strip()[:300],
@@ -2648,7 +2647,7 @@ You MUST generate ONLY this question type. Do NOT fall back to True/False/Not Gi
 Return ONLY JSON:
 {{
   "title": "short English title",
-  "passage": "280-450 words English academic-style passage suitable for level {level}",
+  "passage": "500-650 words English academic-style passage suitable for level {level}. The passage MUST contain at least 500 words.",
   "instruction": "short English instruction matching the selected type",
   "tip": "1 short tip in learner language",
   "questions": [
@@ -2744,6 +2743,12 @@ def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz', se
             payload = _normalize_reading_payload(data, level=level, rtype=rtype, lang=lang)
             if (payload.get('passage') or '').strip() and payload.get('questions'):
                 payload = _freshen_reading_payload(payload, seed)
+                payload['passage'] = ensure_min_words(
+                    str(payload.get('title') or ''),
+                    str(payload.get('passage') or ''),
+                )
+                if passage_word_count(payload.get('passage')) < MIN_PASSAGE_WORDS:
+                    return local
                 if avoid_fingerprint and _practice_fingerprint(payload) == avoid_fingerprint:
                     # AI same topic — local alternative
                     return local

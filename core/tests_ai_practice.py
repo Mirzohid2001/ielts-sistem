@@ -112,7 +112,18 @@ class ReadingTypeGenerationTests(SimpleTestCase):
         self.assertEqual(out['questions'][0]['options'], [])
         self.assertEqual(out['questions'][0]['correct'], 'stress')
 
-    def test_writing_exercises_differ_by_level_band(self):
+    def test_passages_are_at_least_500_words(self):
+        from core.services.passage_expansions import word_count
+        for level in ap.LEVELS:
+            for rtype in ap.READING_TYPES:
+                for variant in (0, 1):
+                    payload = ap._local_reading(level, rtype, 'uz', variant=variant)
+                    count = word_count(payload['passage'])
+                    self.assertGreaterEqual(
+                        count,
+                        500,
+                        msg=f'{level}/{rtype}/v{variant} {payload["title"]} has {count} words',
+                    )
         for focus in ap.WRITING_FOCUSES:
             a = ap._local_writing('A1', focus, 'uz')
             b = ap._local_writing('B1', focus, 'uz')

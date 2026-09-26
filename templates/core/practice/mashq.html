@@ -58,7 +58,247 @@
     .mashq-page .mashq-controls {
         grid-template-columns: 1fr;
     }
+    .mashq-page .mashq-workspace.is-exam {
+        grid-template-columns: 1fr;
+    }
 }
+
+/* Computer-delivered IELTS sheet */
+.mashq-page .ielts-exambar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 0;
+    padding: 0.7rem 1rem;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 4px 4px 0 0;
+    font-family: Georgia, "Times New Roman", serif;
+}
+.mashq-page .ielts-exambar[hidden] { display: none !important; }
+.mashq-page .ielts-exambar__brand {
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+}
+.mashq-page .ielts-exambar__brand span {
+    color: #e10600;
+    font-weight: 700;
+    font-style: italic;
+    margin-right: 0.35rem;
+    font-size: 1.25rem;
+}
+.mashq-page .ielts-exambar__part {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #f3f3f3;
+}
+.mashq-page .mashq-workspace.is-exam {
+    gap: 0;
+    border: 1px solid #c8c8c8;
+    border-top: 0;
+    background: #fff;
+    align-items: stretch;
+}
+.mashq-page .mashq-workspace.is-exam .mashq-panel {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+}
+.mashq-page .mashq-workspace.is-exam .mashq-panel--passage {
+    border-right: 1px solid #d5d5d5;
+    position: relative !important;
+    top: auto !important;
+    max-height: calc(100vh - 22rem) !important;
+}
+.mashq-page .mashq-workspace.is-exam .mashq-panel--questions {
+    max-height: calc(100vh - 22rem) !important;
+}
+.mashq-page:has(.mashq-workspace.is-exam) .mashq-bar {
+    position: static !important;
+    bottom: auto !important;
+    margin-top: 0.75rem;
+}
+.mashq-page .mashq-workspace.is-exam .mashq-panel--passage .mashq-panel__body,
+.mashq-page .mashq-workspace.is-exam .mashq-panel--questions .mashq-panel__body {
+    max-height: min(58vh, 640px) !important;
+    overflow: auto !important;
+}
+.mashq-page .ielts-passhead,
+.mashq-page .ielts-qhead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+.mashq-page .ielts-kicker,
+.mashq-page .ielts-qhead h3 {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #111;
+}
+.mashq-page .ielts-passhead__meta {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.75rem;
+    color: #555;
+}
+.mashq-page .ielts-title {
+    margin: 0.35rem 0 0.45rem;
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #111;
+}
+.mashq-page .ielts-time,
+.mashq-page .ielts-lead,
+.mashq-page .ielts-words,
+.mashq-page .ielts-rubric,
+.mashq-page .ielts-note {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 0.98rem;
+    line-height: 1.45;
+    color: #222;
+}
+.mashq-page .ielts-time,
+.mashq-page .ielts-rubric { font-style: italic; margin: 0 0 0.85rem; }
+.mashq-page .ielts-note {
+    margin: -0.35rem 0 0.9rem;
+    font-size: 0.88rem;
+    color: #444;
+}
+.mashq-page .ielts-words {
+    margin: 0.8rem 0 0;
+    font-size: 0.8rem;
+    color: #666;
+    font-style: italic;
+}
+.mashq-page .ielts-para {
+    display: grid;
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    gap: 0.55rem;
+    margin: 0 0 0.95rem;
+}
+.mashq-page .ielts-para__mark {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    color: #111;
+    padding-top: 0.1rem;
+}
+.mashq-page .ielts-para p,
+.mashq-page .ielts-model {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #1a1a1a;
+}
+.mashq-page .ielts-taskbox {
+    margin: 0.4rem 0 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #111;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+.mashq-page .ielts-modelhead {
+    margin: 1.1rem 0 0.4rem;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1rem;
+}
+.mashq-page .ielts-q {
+    border: 0;
+    border-bottom: 1px solid #e6e6e6;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0.85rem 0.15rem 0.95rem;
+    margin: 0;
+    background: transparent;
+}
+.mashq-page .ielts-qnum {
+    flex: 0 0 auto;
+    min-width: 1.4rem;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #111;
+}
+.mashq-page .ielts-q .mashq-q__prompt {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: 1.02rem;
+}
+.mashq-page .mashq-opts--tfng {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+.mashq-page .mashq-opt {
+    position: relative;
+}
+.mashq-page .mashq-opt input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+}
+.mashq-page .mashq-opt--tfng {
+    border: 1px solid #bdbdbd;
+    border-radius: 2px;
+    padding: 0.4rem 0.7rem;
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+.mashq-page .mashq-opt--tfng.is-selected {
+    border-color: #1a4f8b;
+    background: #e8f1fb;
+}
+.mashq-page .ielts-listbox {
+    border-radius: 0;
+    background: #fff;
+    border: 1px solid #111;
+    margin-bottom: 1rem;
+}
+.mashq-page .ielts-listbox .mashq-bank__title {
+    color: #111;
+    letter-spacing: 0.04em;
+}
+.mashq-page .ielts-listbox .mashq-bank__list strong {
+    min-width: 1.8rem;
+    color: #111;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.mashq-page .ielts-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.55rem;
+}
+.mashq-page .ielts-nav[hidden] { display: none !important; }
+.mashq-page .ielts-nav__n {
+    width: 1.85rem;
+    height: 1.85rem;
+    border: 1px solid #c5c5c5;
+    background: #fff;
+    color: #222;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.mashq-page .ielts-nav__n.is-done { background: #1a4f8b; color: #fff; border-color: #1a4f8b; }
+.mashq-page .ielts-nav__n.is-ok { background: #157347; border-color: #157347; color: #fff; }
+.mashq-page .ielts-nav__n.is-bad { background: #b42318; border-color: #b42318; color: #fff; }
 </style>
 {% endblock %}
 
@@ -139,6 +379,11 @@
 
     <div class="mashq-status" id="mashqStatus" hidden></div>
 
+    <div class="ielts-exambar" id="ieltsExamBar" hidden>
+        <div class="ielts-exambar__brand"><span>IELTS</span> Academic</div>
+        <div class="ielts-exambar__part" id="ieltsExamPart">{% if skill == 'reading' %}Reading{% else %}Writing{% endif %}</div>
+    </div>
+
     <div class="mashq-workspace">
         <article class="mashq-panel mashq-panel--passage" id="mashqLeft">
             <div class="mashq-placeholder" id="mashqLeftEmpty">
@@ -174,6 +419,7 @@
             <div class="mashq-bar__track" aria-hidden="true">
                 <div class="mashq-bar__fill" id="mashqProgressFill" style="width:0%"></div>
             </div>
+            <div class="ielts-nav" id="ieltsNav" hidden></div>
         </div>
         <div class="mashq-bar__actions">
             <div class="mashq-score" id="mashqScore" hidden></div>
@@ -291,17 +537,21 @@
             .replace(/"/g, '&quot;');
     }
 
-    function renderOptions(id, opts, lettersOnly) {
-        return '<div class="mashq-opts" role="radiogroup">' + opts.map(function (o) {
+    function renderOptions(id, opts, lettersOnly, tfng) {
+        const groupClass = 'mashq-opts' + (tfng ? ' mashq-opts--tfng' : '');
+        return '<div class="' + groupClass + '" role="radiogroup">' + opts.map(function (o) {
             const letter = (o.letter || '').toLowerCase();
             const val = letter || (o.text || '');
-            const showLetter = (letter || '').toUpperCase();
-            const textHtml = lettersOnly
-                ? ''
+            const showLetter = letter.length > 1 ? letter : letter.toUpperCase();
+            const textHtml = (lettersOnly || tfng)
+                ? (tfng ? '<span class="mashq-opt__text">' + esc(o.text || '') + '</span>' : '')
                 : '<span class="mashq-opt__text">' + esc(o.text || '') + '</span>';
-            return '<label class="mashq-opt' + (lettersOnly ? ' mashq-opt--letter' : '') + '">' +
+            const letterHtml = tfng
+                ? ''
+                : '<span class="mashq-opt__letter" aria-hidden="true">' + esc(showLetter || '•') + '</span>';
+            return '<label class="mashq-opt' + (lettersOnly ? ' mashq-opt--letter' : '') + (tfng ? ' mashq-opt--tfng' : '') + '">' +
                 '<input type="radio" name="pq_' + id + '" value="' + esc(val) + '" data-letter="' + esc(letter) + '">' +
-                '<span class="mashq-opt__letter" aria-hidden="true">' + esc(showLetter || '•') + '</span>' +
+                letterHtml +
                 textHtml +
                 '</label>';
         }).join('') + '</div>';
@@ -324,31 +574,119 @@
 
     function renderOptionBank(opts, ptype) {
         const title = (ptype === 'matching_names')
-            ? 'People'
-            : (ptype === 'matching_endings' ? 'Endings' : 'Options');
-        return '<div class="mashq-bank">' +
+            ? 'List of People'
+            : (ptype === 'matching_endings'
+                ? 'List of Endings'
+                : (ptype === 'matching_headings' ? 'List of Headings' : 'Options'));
+        return '<div class="mashq-bank ielts-listbox">' +
             '<div class="mashq-bank__title">' + esc(title) + '</div>' +
             '<ul class="mashq-bank__list">' +
             opts.map(function (o) {
-                return '<li><strong>' + esc(String(o.letter || '').toUpperCase()) + '</strong> ' + esc(o.text || '') + '</li>';
+                const raw = String(o.letter || '');
+                const shown = (ptype === 'matching_headings' || raw.length > 1) ? raw.toLowerCase() : raw.toUpperCase();
+                return '<li><strong>' + esc(shown) + '</strong> ' + esc(o.text || '') + '</li>';
             }).join('') +
             '</ul></div>';
     }
 
-    function renderQuestionBlock(q, idx, fillAsTextarea, lettersOnly) {
+    function ieltsParagraphs(text) {
+        const raw = String(text || '').replace(/\r/g, '').trim();
+        let parts = raw.split(/\n\s*\n/).map(function (s) {
+            return s.replace(/\s+/g, ' ').trim();
+        }).filter(Boolean);
+        if (parts.length < 5) {
+            const sentences = raw.match(/[^.!?]+[.!?]+/g) || [raw];
+            const size = Math.max(2, Math.ceil(sentences.length / 7));
+            parts = [];
+            for (let i = 0; i < sentences.length; i += size) {
+                const chunk = sentences.slice(i, i + size).join(' ').replace(/\s+/g, ' ').trim();
+                if (chunk) parts.push(chunk);
+            }
+        }
+        return parts.slice(0, 14);
+    }
+
+    function renderPassageHtml(text) {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        return ieltsParagraphs(text).map(function (paragraph, index) {
+            return '<div class="ielts-para">' +
+                '<span class="ielts-para__mark">' + letters[index] + '</span>' +
+                '<p>' + esc(paragraph) + '</p>' +
+                '</div>';
+        }).join('');
+    }
+
+    function wordCount(text) {
+        return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function fitExamToBar() {
+        document.querySelectorAll('.mashq-workspace.is-exam .mashq-panel__body').forEach(function (body) {
+            body.style.maxHeight = '';
+            body.style.overflow = '';
+        });
+    }
+
+    function showExamBar(part) {
+        const bar = document.getElementById('ieltsExamBar');
+        const label = document.getElementById('ieltsExamPart');
+        if (bar) bar.hidden = false;
+        if (label && part) label.textContent = part;
+        const workspace = document.querySelector('.mashq-workspace');
+        if (workspace) workspace.classList.add('is-exam');
+    }
+
+    function buildQuestionNav(total) {
+        const nav = document.getElementById('ieltsNav');
+        if (!nav) return;
+        if (!total) {
+            nav.hidden = true;
+            nav.innerHTML = '';
+            return;
+        }
+        let html = '';
+        for (let n = 1; n <= total; n += 1) {
+            html += '<button type="button" class="ielts-nav__n" data-go="' + n + '">' + n + '</button>';
+        }
+        nav.innerHTML = html;
+        nav.hidden = false;
+        nav.querySelectorAll('.ielts-nav__n').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const target = rightBody.querySelector('.mashq-q[data-index="' + btn.dataset.go + '"]');
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+    }
+
+    function syncQuestionNav() {
+        const nav = document.getElementById('ieltsNav');
+        if (!nav || nav.hidden) return;
+        rightBody.querySelectorAll('.mashq-q').forEach(function (block) {
+            const btn = nav.querySelector('.ielts-nav__n[data-go="' + block.dataset.index + '"]');
+            if (!btn) return;
+            const radio = block.querySelector('input[type=radio]:checked');
+            const fill = block.querySelector('.mashq-fill');
+            const answered = !!radio || !!(fill && String(fill.value || '').trim());
+            btn.classList.toggle('is-done', answered);
+            btn.classList.toggle('is-ok', block.classList.contains('is-correct'));
+            btn.classList.toggle('is-bad', block.classList.contains('is-wrong'));
+        });
+    }
+
+    function renderQuestionBlock(q, idx, fillAsTextarea, lettersOnly, tfng) {
         const id = q.id != null ? q.id : (idx + 1);
         const opts = Array.isArray(q.options) ? q.options : [];
         let inner;
         if (opts.length) {
-            inner = renderOptions(id, opts, !!lettersOnly);
+            inner = renderOptions(id, opts, !!lettersOnly, !!tfng);
         } else if (fillAsTextarea) {
             inner = '<textarea class="form-control mashq-fill" data-qid="' + id + '" rows="2" placeholder="' + esc(i18n.writePh) + '"></textarea>';
         } else {
             inner = '<input type="text" class="form-control mashq-fill" data-qid="' + id + '" placeholder="' + esc(i18n.fillPh) + '" autocomplete="off" spellcheck="false">';
         }
-        return '<div class="mashq-q" data-qid="' + id + '" data-index="' + (idx + 1) + '">' +
+        return '<div class="mashq-q ielts-q" data-qid="' + id + '" data-index="' + (idx + 1) + '">' +
             '<div class="mashq-q__head">' +
-                '<span class="mashq-q__badge">' + (idx + 1) + '</span>' +
+                '<span class="ielts-qnum">' + (idx + 1) + '</span>' +
                 '<div class="mashq-q__prompt">' + esc(q.prompt || '') + '</div>' +
             '</div>' +
             inner +
@@ -357,6 +695,35 @@
     }
 
     function bindAnswerEvents() {
+        function keepPlace(action) {
+            const winX = window.scrollX;
+            const winY = window.scrollY;
+            const leftY = leftBody.scrollTop;
+            const rightY = rightBody.scrollTop;
+            action();
+            window.scrollTo(winX, winY);
+            leftBody.scrollTop = leftY;
+            rightBody.scrollTop = rightY;
+        }
+        function chooseOption(lab) {
+            const input = lab.querySelector('input');
+            if (!input || input.disabled) return;
+            keepPlace(function () {
+                input.checked = true;
+                try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        }
+        rightBody.querySelectorAll('.mashq-opt').forEach(function (lab) {
+            lab.addEventListener('pointerdown', function (event) {
+                if (event.button !== 0) return;
+                event.preventDefault();
+                chooseOption(lab);
+            });
+            lab.addEventListener('click', function (event) {
+                event.preventDefault();
+            });
+        });
         rightBody.querySelectorAll('.mashq-opt input').forEach(function (input) {
             input.addEventListener('change', function () {
                 const group = input.closest('.mashq-opts');
@@ -399,6 +766,7 @@
         progressHint.textContent = (done >= total && total) ? i18n.allDone : i18n.needMore;
         progressHint.classList.toggle('is-ready', done >= total && total > 0);
         checkBtn.classList.toggle('is-ready', done >= total && total > 0 && !checked);
+        syncQuestionNav();
     }
 
     function setInputsDisabled(disabled) {
@@ -411,31 +779,35 @@
         checked = false;
         leftEmpty.hidden = true;
         leftBody.hidden = false;
-        leftBody.innerHTML =
-            '<div class="mashq-meta">' +
-                '<span class="mashq-pill">' + esc(data.level) + '</span>' +
-                '<span class="mashq-pill mashq-pill--soft">' + esc(data.practice_label || '') + '</span>' +
-            '</div>' +
-            '<h2 class="mashq-passage__title">' + esc(data.title || 'Reading') + '</h2>' +
-            (data.instruction ? '<p class="mashq-instruction"><i class="fas fa-info-circle me-1"></i>' + esc(data.instruction) + '</p>' : '') +
-            '<div class="mashq-passage">' + esc(data.passage || '').replace(/\n/g, '<br>') + '</div>' +
-            (data.tip ? '<p class="mashq-tip"><i class="fas fa-lightbulb me-1"></i><strong>' + esc(i18n.tip) + ':</strong> ' + esc(data.tip) + '</p>' : '');
-
         const qs = Array.isArray(data.questions) ? data.questions : [];
+        showExamBar('Reading');
+        leftBody.innerHTML =
+            '<div class="ielts-passhead">' +
+                '<div class="ielts-kicker">Reading Passage</div>' +
+                '<div class="ielts-passhead__meta">' + esc(data.level || '') + ' · ' + esc(data.practice_label || '') + '</div>' +
+            '</div>' +
+            '<h2 class="ielts-title">' + esc(data.title || 'Reading') + '</h2>' +
+            '<p class="ielts-time">You should spend about 20 minutes on Questions 1–' + (qs.length || 10) + '.</p>' +
+            '<div class="ielts-passage">' + renderPassageHtml(data.passage || '') + '</div>' +
+            '<p class="ielts-words">' + wordCount(data.passage) + ' words</p>';
+
         const ptype = String(data.practice_type || '');
-        const bank = (ptype === 'matching_endings' || ptype === 'matching_names')
+        const bank = (ptype === 'matching_endings' || ptype === 'matching_names' || ptype === 'matching_headings')
             ? sharedOptionsBank(qs)
             : null;
         const lettersOnly = !!bank;
+        const tfng = ptype === 'tfng';
         rightEmpty.hidden = true;
         rightBody.hidden = false;
         rightBody.innerHTML =
-            '<div class="mashq-panel__heading-row">' +
-                '<h3 class="mashq-panel__heading">' + esc(i18n.questions) + '</h3>' +
-                '<span class="mashq-count">' + qs.length + '</span>' +
+            '<div class="ielts-qhead">' +
+                '<h3>Questions ' + (qs.length ? ('1–' + qs.length) : '') + '</h3>' +
             '</div>' +
+            (data.instruction ? '<p class="ielts-rubric">' + esc(data.instruction) + '</p>' : '') +
+            (data.tip ? '<p class="ielts-note">' + esc(data.tip) + '</p>' : '') +
             (bank ? renderOptionBank(bank, ptype) : '') +
-            qs.map(function (q, idx) { return renderQuestionBlock(q, idx, false, lettersOnly); }).join('');
+            qs.map(function (q, idx) { return renderQuestionBlock(q, idx, false, lettersOnly, tfng); }).join('');
+        buildQuestionNav(qs.length);
         footer.hidden = false;
         scoreEl.hidden = true;
         resetBtn.hidden = true;
@@ -443,33 +815,42 @@
         setInputsDisabled(false);
         bindAnswerEvents();
         updateProgress();
+        fitExamToBar();
         rightBody.scrollTop = 0;
+        leftBody.scrollTop = 0;
     }
 
     function renderWriting(data) {
         checked = false;
         leftEmpty.hidden = true;
         leftBody.hidden = false;
-        leftBody.innerHTML =
-            '<div class="mashq-meta">' +
-                '<span class="mashq-pill">' + esc(data.level) + '</span>' +
-                '<span class="mashq-pill mashq-pill--soft">' + esc(data.practice_label || '') + '</span>' +
-            '</div>' +
-            '<h2 class="mashq-passage__title">' + esc(i18n.task) + '</h2>' +
-            '<div class="mashq-task">' + esc(data.task || '').replace(/\n/g, '<br>') + '</div>' +
-            '<h3 class="mashq-panel__heading">' + esc(i18n.sample) + '</h3>' +
-            '<div class="mashq-passage">' + esc(data.sample_essay || '').replace(/\n/g, '<br>') + '</div>' +
-            (data.tip ? '<p class="mashq-tip"><i class="fas fa-lightbulb me-1"></i><strong>' + esc(i18n.tip) + ':</strong> ' + esc(data.tip) + '</p>' : '');
-
         const ex = Array.isArray(data.exercises) ? data.exercises : [];
+        const taskText = String(data.task || '');
+        const hasWordLimit = /words/i.test(taskText);
+        showExamBar('Writing');
+        leftBody.innerHTML =
+            '<div class="ielts-passhead">' +
+                '<div class="ielts-kicker">Writing Task 2</div>' +
+                '<div class="ielts-passhead__meta">' + esc(data.level || '') + ' · ' + esc(data.practice_label || '') + '</div>' +
+            '</div>' +
+            '<p class="ielts-time">You should spend about 40 minutes on this task.</p>' +
+            '<p class="ielts-lead">Write about the following topic:</p>' +
+            '<div class="ielts-taskbox">' + esc(taskText).replace(/\n/g, '<br>') + '</div>' +
+            '<p class="ielts-lead">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p>' +
+            (hasWordLimit ? '' : '<p class="ielts-wordcount">Write at least 250 words.</p>') +
+            '<h3 class="ielts-modelhead">' + esc(i18n.sample) + '</h3>' +
+            '<div class="ielts-model">' + esc(data.sample_essay || '').replace(/\n/g, '<br>') + '</div>' +
+            (data.tip ? '<p class="ielts-note">' + esc(data.tip) + '</p>' : '');
+
         rightEmpty.hidden = true;
         rightBody.hidden = false;
         rightBody.innerHTML =
-            '<div class="mashq-panel__heading-row">' +
-                '<h3 class="mashq-panel__heading">' + esc(i18n.exercises) + '</h3>' +
-                '<span class="mashq-count">' + ex.length + '</span>' +
+            '<div class="ielts-qhead">' +
+                '<h3>Questions ' + (ex.length ? ('1–' + ex.length) : '') + '</h3>' +
             '</div>' +
-            ex.map(function (q, idx) { return renderQuestionBlock(q, idx, true); }).join('');
+            '<p class="ielts-rubric">Answer the questions using the task and the model answer.</p>' +
+            ex.map(function (q, idx) { return renderQuestionBlock(q, idx, true, false, false); }).join('');
+        buildQuestionNav(ex.length);
         footer.hidden = false;
         scoreEl.hidden = true;
         resetBtn.hidden = true;
@@ -477,7 +858,9 @@
         setInputsDisabled(false);
         bindAnswerEvents();
         updateProgress();
+        fitExamToBar();
         rightBody.scrollTop = 0;
+        leftBody.scrollTop = 0;
     }
 
     function collectAnswers() {
@@ -664,6 +1047,8 @@
         else renderReading(payload);
         setStatus('', '');
     });
+
+    window.addEventListener('resize', fitExamToBar);
 })();
 </script>
 {% endblock %}
