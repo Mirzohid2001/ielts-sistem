@@ -15,13 +15,13 @@ from django.conf import settings
 from core.services.ai_language import learner_language_rules, normalize_ai_lang, t
 from core.services.passage_expansions import MIN_PASSAGE_WORDS, ensure_min_words, word_count as passage_word_count
 
-# Gunicorn default timeout ~30s — Gemini shu ichida tugamasa 502.
-PRACTICE_GEMINI_BUDGET_SEC = 14.0
-PRACTICE_GEMINI_CALL_TIMEOUT = 12.0
-PRACTICE_GEMINI_MAX_MODELS = 1
+# Gunicorn default timeout ~30s. 500 so'zlik JSON o'ylashsiz flashda ~10–20s.
+PRACTICE_GEMINI_BUDGET_SEC = 26.0
+PRACTICE_GEMINI_CALL_TIMEOUT = 22.0
+PRACTICE_GEMINI_MAX_MODELS = 3
 
 LEVELS = ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')
-READING_VARIANT_COUNT = 2
+READING_VARIANT_COUNT = 4
 READING_QUESTION_COUNT = 10
 WRITING_EXERCISE_COUNT = 4
 
@@ -91,10 +91,8 @@ WRITING_FOCUSES = {
 }
 
 GEMINI_MODEL_FALLBACKS = (
-    'gemini-2.5-flash',
-    'gemini-flash-lite-latest',
-    'gemini-2.0-flash-lite',
-    'gemini-2.0-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-3.8-flash',
 )
 
 
@@ -156,7 +154,15 @@ def _gemini_model_chain(preferred=''):
     return chain
 
 
-def _call_gemini_json(prompt: str, *, model: str, timeout: float = 70) -> dict:
+def _call_gemini_json(
+    prompt: str,
+    *,
+    model: str,
+    timeout: float = 70,
+    temperature: float = 0.9,
+    max_output_tokens: int = 8192,
+    disable_thinking: bool = True,
+) -> dict:
     api_key = os.environ.get('GEMINI_API_KEY', '').strip()
     if not api_key:
         raise ValueError('GEMINI_API_KEY topilmadi')
@@ -165,13 +171,17 @@ def _call_gemini_json(prompt: str, *, model: str, timeout: float = 70) -> dict:
         'https://generativelanguage.googleapis.com/v1beta/models',
     ).rstrip('/')
     endpoint = f'{base_url}/{model}:generateContent?key={api_key}'
+    generation = {
+        'temperature': temperature,
+        'topP': 0.95,
+        'maxOutputTokens': max_output_tokens,
+        'responseMimeType': 'application/json',
+    }
+    # 2.5-flash fikrlash tokenlarini matnga sarflaydi — JSON kesiladi va local bank chiqadi.
+    if disable_thinking:
+        generation['thinkingConfig'] = {'thinkingBudget': 0}
     body = {
-        'generationConfig': {
-            'temperature': 0.55,
-            'topP': 0.92,
-            'maxOutputTokens': 4096,
-            'responseMimeType': 'application/json',
-        },
+        'generationConfig': generation,
         'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
     }
     req = urllib_request.Request(
@@ -185,6 +195,15 @@ def _call_gemini_json(prompt: str, *, model: str, timeout: float = 70) -> dict:
             raw = json.loads(resp.read().decode('utf-8'))
     except urllib_error.HTTPError as exc:
         detail = exc.read().decode('utf-8', errors='ignore')
+        if disable_thinking and exc.code == 400 and 'thinking' in detail.lower():
+            return _call_gemini_json(
+                prompt,
+                model=model,
+                timeout=timeout,
+                temperature=temperature,
+                max_output_tokens=max_output_tokens,
+                disable_thinking=False,
+            )
         raise ValueError(f'Gemini HTTP {exc.code}: {detail[:300]}') from exc
     except urllib_error.URLError as exc:
         raise ValueError(f'Gemini aloqa: {exc.reason}') from exc
@@ -1368,6 +1387,8 @@ def _local_reading_b(level: str, rtype: str, lang: str) -> dict:
 
 def _local_reading(level: str, rtype: str, lang: str, *, variant: int = 0) -> dict:
     variant = int(variant or 0) % READING_VARIANT_COUNT
+    if variant >= 2:
+        return _local_reading_bank(level, rtype, lang, slot=variant - 2)
     if variant == 1:
         return _local_reading_b(level, rtype, lang)
     meta = READING_TYPES[rtype]
@@ -1810,9 +1831,54 @@ def _local_reading(level: str, rtype: str, lang: str, *, variant: int = 0) -> di
     }
 
 
+def _local_reading_bank(level: str, rtype: str, lang: str, *, slot: int = 0) -> dict:
+    """Variant 2 and 3: a different topic, not a shuffle of the previous one."""
+    from core.services.reading_banks import build_questions, get_pack, passage_for
+
+    meta = READING_TYPES[rtype]
+    pack = get_pack(level, slot)
+    tip = t(
+        lang,
+        f"{level} daraja · {meta['label_uz']}. Javobni shu matndan toping.",
+        f"Уровень {level} · {meta['label_ru']}. Ответ есть в этом тексте.",
+    )
+    passage = ensure_min_words(pack['title'], passage_for(level, pack))
+    questions = build_questions(rtype, pack, tip)
+    return {
+        'skill': 'reading',
+        'level': level,
+        'practice_type': rtype,
+        'practice_label': meta['label_uz'] if normalize_ai_lang(lang) == 'uz' else meta['label_ru'],
+        'title': pack['title'],
+        'passage': passage,
+        'instruction': _INSTRUCTION_BY_TYPE.get(rtype, 'Choose the correct option.'),
+        'questions': _number_questions(questions),
+        'tip': tip,
+        'provider_name': 'local',
+        'model_name': f'practice-local-v{2 + int(slot)}',
+        'content_variant': 2 + int(slot),
+    }
+
+
+def _blocked_titles(avoid_fingerprint: str = '', avoid_titles=None) -> set[str]:
+    blocked = set()
+    for raw in avoid_titles or []:
+        title = str(raw or '').strip().lower()
+        if title:
+            blocked.add(title)
+    parts = str(avoid_fingerprint or '').split('|')
+    if len(parts) >= 3 and parts[2].strip():
+        blocked.add(parts[2].strip().lower())
+    return blocked
+
+
+def _payload_title(payload: dict) -> str:
+    return str(payload.get('title') or payload.get('task') or '').strip().lower()
+
+
 def _local_writing(level: str, focus: str, lang: str, *, variant: int = 0) -> dict:
     meta = WRITING_FOCUSES[focus]
-    variant = int(variant or 0) % READING_VARIANT_COUNT
+    variant = int(variant or 0) % 2
     tasks_a = {
         'A1': 'Write about your favourite place. Say where it is and why you like it. (80–100 words)',
         'A2': 'Some people prefer living in a city. Do you agree or disagree? Give reasons. (120–150 words)',
@@ -2630,13 +2696,119 @@ def _reading_type_rules(rtype: str) -> str:
     return 'Follow the requested IELTS question type strictly.'
 
 
+_FRESH_TOPICS = (
+    'how desert beetles collect water from fog',
+    'why some city birds sing at night',
+    'how a small bakery plans its morning',
+    'the job of a lighthouse keeper in the past',
+    'how paper was recycled in one neighbourhood',
+    'why river ferries still run in a modern city',
+    'how students share one community kitchen',
+    'the work of a map maker before satellites',
+    'how a village stores rain for the dry season',
+    'why night markets change the food they sell',
+    'how wool is washed and dyed in a small mill',
+    'the daily route of a postal boat',
+    'how a theatre company reuses old costumes',
+    'why some bridges are closed to cars',
+    'how a hospital garden helps patients walk',
+    'the science of keeping bread fresh',
+    'how archaeologists date a clay pot',
+    'why coral changes colour when the sea warms',
+    'how a radio station reaches mountain villages',
+    'the history of one public drinking fountain',
+    'how bees communicate the location of flowers',
+    'why old films are stored in cold rooms',
+    'how a city counts bicycles at rush hour',
+    'the work of people who repair old clocks',
+    'how mangrove trees protect a shoreline',
+    'why some schools teach outdoors one day a week',
+    'how tea leaves are dried on a hillside',
+    'the design of a quiet reading room',
+    'how firefighters train with empty buildings',
+    'why salt was once traded over long distances',
+    'how a railway station reduces noise',
+    'the life cycle of a salmon in one river',
+    'how potters test clay before firing',
+    'why street trees are chosen for hot summers',
+    'how a choir learns a new piece',
+    'the tools used to study a glacier',
+    'how a market stall keeps fish cold',
+    'why some islands share one electricity cable',
+    'how translators prepare for a live speech',
+    'the way a seed bank protects rare plants',
+    'how a newsroom checks a local story',
+    'why certain fabrics fade in sunlight',
+    'how volunteers restore a stone path',
+    'the sound of a concert hall before the audience arrives',
+    'how a farm rotates three crops',
+    'why bats are counted at dusk',
+    'how a museum moves a fragile painting',
+    'the routine of a night-shift nurse',
+)
+
+
+def _fresh_topic(seed: str, attempt: int = 0) -> str:
+    digest = hashlib.sha256(f'{seed}:{attempt}'.encode('utf-8')).digest()
+    return _FRESH_TOPICS[int.from_bytes(digest[:2], 'big') % len(_FRESH_TOPICS)]
+
+
+def _covers_topic(topic: str, payload: dict) -> bool:
+    """Matn berilgan mavzuning asosiy so'zini o'z ichiga olishi kerak."""
+    stop = {
+        'about', 'after', 'before', 'their', 'there', 'these', 'those', 'which',
+        'while', 'where', 'being', 'still', 'some', 'from', 'with', 'that', 'this',
+    }
+    words = [
+        word for word in re.findall(r"[a-z']+", (topic or '').lower())
+        if len(word) >= 6 and word not in stop
+    ]
+    if not words:
+        return True
+    blob = f"{payload.get('title') or ''} {payload.get('passage') or ''}".lower()
+    longest = sorted(words, key=len, reverse=True)[:2]
+    return any(word in blob for word in longest)
+
+
+_LEVEL_VOICE = {
+    'A1': (
+        'CEFR A1. Everyday concrete topic. Present simple. Sentences of about 8–12 words. '
+        'Only very common words. The passage is still 520–620 words, but every sentence stays simple.'
+    ),
+    'A2': (
+        'CEFR A2. Familiar daily-life topic. Short linked paragraphs with because, so and but. '
+        'Concrete facts a pre-intermediate learner can follow. 520–620 words.'
+    ),
+    'B1': (
+        'CEFR B1. Clear informational article. Some less common words explained by context. '
+        'Paragraphs of four to six straightforward sentences. 520–620 words.'
+    ),
+    'B2': (
+        'CEFR B2. Academic but readable. Cause, contrast and some complex sentences. '
+        'Specialist words only when the passage explains them. 520–620 words.'
+    ),
+    'C1': (
+        'CEFR C1. Academic IELTS passage with hedging, nominalisation and a developed argument. '
+        'Longer paragraphs and precise vocabulary. 520–620 words.'
+    ),
+    'C2': (
+        'CEFR C2. Dense academic argument: concession, precise hedges and abstract claims. '
+        'Suitable for a high IELTS band. 520–620 words.'
+    ),
+}
+
+
 def _reading_prompt(level: str, rtype: str, lang: str) -> str:
     meta = READING_TYPES[rtype]
     type_rules = _reading_type_rules(rtype)
-    return f"""You are an IELTS Academic Reading materials writer.
-Create ONE short practice set for CEFR/IELTS level {level}.
+    voice = _LEVEL_VOICE.get(level, _LEVEL_VOICE['B1'])
+    return f"""You are an IELTS Academic Reading item writer.
+Create ONE original practice set for CEFR level {level}.
 SELECTED question type (mandatory): {meta['label_uz']} / key={rtype} / qtype={meta['qtype']}.
 You MUST generate ONLY this question type. Do NOT fall back to True/False/Not Given unless key=tfng.
+
+Level voice (mandatory):
+{voice}
 
 {learner_language_rules(lang)}
 - Passage and question prompts MUST be in English.
@@ -2646,8 +2818,8 @@ You MUST generate ONLY this question type. Do NOT fall back to True/False/Not Gi
 
 Return ONLY JSON:
 {{
-  "title": "short English title",
-  "passage": "500-650 words English academic-style passage suitable for level {level}. The passage MUST contain at least 500 words.",
+  "title": "original English title for this new passage",
+  "passage": "520-620 word English passage for level {level}, paragraphs separated by a blank line",
   "instruction": "short English instruction matching the selected type",
   "tip": "1 short tip in learner language",
   "questions": [
@@ -2655,7 +2827,7 @@ Return ONLY JSON:
       "id": 1,
       "prompt": "English question/statement",
       "options": [{{"letter":"a","text":"..."}}],
-      "correct": "answer letter OR one word for gap_fill",
+      "correct": "answer letter OR the gap words",
       "explanation": "short learner-language explanation"
     }}
   ]
@@ -2663,8 +2835,9 @@ Return ONLY JSON:
 
 Rules:
 - Exactly {READING_QUESTION_COUNT} questions (ids 1–{READING_QUESTION_COUNT}).
-- Cover different parts of the passage; do not repeat the same idea.
-- Content must be original, factual-sounding, level-appropriate.
+- Every question answer must be supported by the passage. Spread questions across the whole text.
+- Invent a NEW topic each time. Do not rewrite a passage about shops, parks, buses, libraries, museums, cycling, printing, cables, bilingualism, sleep, climate models, or vacant land unless the request seed asks for that subject.
+- The passage itself must be at least 500 English words. Do not pad with comments about the task.
 - Do not mention that you are an AI.
 """
 
@@ -2703,22 +2876,37 @@ Rules:
 """
 
 
-def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz', seed='', avoid_fingerprint='') -> dict:
+def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz', seed='', avoid_fingerprint='', avoid_titles=None) -> dict:
     level = normalize_level(level)
     rtype = normalize_reading_type(practice_type)
     lang = normalize_ai_lang(lang)
     seed = str(seed or '').strip() or f'{time.time_ns()}'
-    variant = _variant_index(seed, level=level, practice_type=rtype)
-    local = _freshen_reading_payload(
-        _local_reading(level, rtype, lang, variant=variant),
-        seed,
-    )
-    if avoid_fingerprint and _practice_fingerprint(local) == avoid_fingerprint:
-        variant = 1 - variant
-        local = _freshen_reading_payload(
-            _local_reading(level, rtype, lang, variant=variant),
-            f'{seed}:alt',
-        )
+    start = _variant_index(seed, level=level, practice_type=rtype)
+    blocked = _blocked_titles(avoid_fingerprint, avoid_titles)
+    variant = start
+    raw = None
+    for step in range(READING_VARIANT_COUNT):
+        variant = (start + step) % READING_VARIANT_COUNT
+        candidate = _local_reading(level, rtype, lang, variant=variant)
+        if _payload_title(candidate) not in blocked:
+            raw = candidate
+            break
+    if raw is None:
+        oldest = ''
+        for item in avoid_titles or []:
+            title = str(item or '').strip().lower()
+            if title:
+                oldest = title
+                break
+        for step in range(READING_VARIANT_COUNT):
+            variant = (start + step) % READING_VARIANT_COUNT
+            candidate = _local_reading(level, rtype, lang, variant=variant)
+            if oldest and _payload_title(candidate) == oldest:
+                raw = candidate
+                break
+        if raw is None:
+            raw = candidate
+    local = _freshen_reading_payload(raw, seed if variant == start else f'{seed}:v{variant}')
     local['content_variant'] = variant
 
     provider = _provider()
@@ -2728,35 +2916,77 @@ def generate_reading_practice(*, level='B1', practice_type='tfng', lang='uz', se
         return local
 
     errors = []
-    prompt = _reading_prompt(level, rtype, lang) + f"\nUnique request seed: {seed}. Produce a fresh passage (do not reuse a previous topic).\n"
+    banned = [str(item or '').strip() for item in (avoid_titles or []) if str(item or '').strip()]
+    ban_line = ''
+    if banned:
+        ban_line = 'Do not reuse these titles or their topics: ' + '; '.join(banned[:8]) + '.\n'
+    base_prompt = _reading_prompt(level, rtype, lang)
     deadline = time.monotonic() + PRACTICE_GEMINI_BUDGET_SEC
     for model in _gemini_model_chain(_model_name())[:PRACTICE_GEMINI_MAX_MODELS]:
-        remaining = deadline - time.monotonic()
-        if remaining < 3:
-            errors.append('budget_exhausted')
-            break
-        call_timeout = min(PRACTICE_GEMINI_CALL_TIMEOUT, max(3.0, remaining - 1.0))
-        try:
-            data = _call_gemini_json(prompt, model=model, timeout=call_timeout)
-            data['provider_name'] = 'gemini'
-            data['model_name'] = model
-            payload = _normalize_reading_payload(data, level=level, rtype=rtype, lang=lang)
-            if (payload.get('passage') or '').strip() and payload.get('questions'):
-                payload = _freshen_reading_payload(payload, seed)
-                payload['passage'] = ensure_min_words(
-                    str(payload.get('title') or ''),
-                    str(payload.get('passage') or ''),
+        for attempt in range(2):
+            remaining = deadline - time.monotonic()
+            if remaining < 4:
+                errors.append('budget_exhausted')
+                break
+            topic = _fresh_topic(seed, attempt)
+            prompt = (
+                f'The passage MUST be about this subject and no other subject: {topic}.\n'
+                + base_prompt
+                + f'\nUnique request seed: {seed}-{attempt}. Subject again: {topic}.\n'
+                + 'Write at least 560 English words in the passage field before you stop.\n'
+                + ban_line
+            )
+            call_timeout = min(PRACTICE_GEMINI_CALL_TIMEOUT, max(4.0, remaining - 0.5))
+            try:
+                data = _call_gemini_json(
+                    prompt,
+                    model=model,
+                    timeout=call_timeout,
+                    temperature=0.95 if attempt else 0.9,
                 )
+                data['provider_name'] = 'gemini'
+                data['model_name'] = model
+                payload = _normalize_reading_payload(data, level=level, rtype=rtype, lang=lang)
+                # Normalizatsiya tipni rad etsa local bank qaytadi — buni AI javob deb qabul qilmaymiz.
+                if payload.get('provider_name') != 'gemini':
+                    errors.append(f'{model}: wrong_shape')
+                    prompt += (
+                        '\nThe previous JSON did not match the required question type. '
+                        'Return only the selected type, with exactly 10 questions, and a new topic.\n'
+                    )
+                    continue
+                if not (payload.get('passage') or '').strip() or not payload.get('questions'):
+                    errors.append(f'{model}: empty_payload')
+                    continue
+                title = _payload_title(payload)
+                same = title in blocked or (
+                    avoid_fingerprint and _practice_fingerprint(payload) == avoid_fingerprint
+                )
+                if same:
+                    errors.append(f'{model}: repeat')
+                    if title:
+                        ban_line += f'Do not use the title "{payload.get("title")}".\n'
+                    continue
+                if attempt == 0 and not _covers_topic(topic, payload):
+                    errors.append(f'{model}: off_topic')
+                    continue
+                if passage_word_count(payload.get('passage')) < MIN_PASSAGE_WORDS and attempt == 0:
+                    errors.append(f'{model}: short')
+                    continue
                 if passage_word_count(payload.get('passage')) < MIN_PASSAGE_WORDS:
-                    return local
-                if avoid_fingerprint and _practice_fingerprint(payload) == avoid_fingerprint:
-                    # AI same topic — local alternative
-                    return local
+                    payload['passage'] = ensure_min_words(
+                        str(payload.get('title') or topic),
+                        str(payload.get('passage') or ''),
+                    )
+                payload = _freshen_reading_payload(payload, seed)
                 return payload
-            errors.append(f'{model}: empty_payload')
-        except Exception as exc:
-            errors.append(str(exc)[:180])
-            continue
+            except Exception as exc:
+                message = str(exc)[:180]
+                errors.append(message)
+                # Shu model limiti tugagan — ikkinchi urinishni sarflamay, keyingi modelga o'tamiz.
+                if '429' in message or 'quota' in message.lower():
+                    break
+                continue
     local = dict(local)
     local['raw_errors'] = errors
     local['provider_name'] = 'local'
@@ -2769,7 +2999,7 @@ def generate_writing_practice(*, level='B1', practice_type='lexical_resource', l
     focus = normalize_writing_focus(practice_type)
     lang = normalize_ai_lang(lang)
     seed = str(seed or '').strip() or f'{time.time_ns()}'
-    variant = _variant_index(seed, level=level, practice_type=focus)
+    variant = _variant_index(seed, level=level, practice_type=focus, n=2)
     local = _freshen_writing_payload(
         _local_writing(level, focus, lang, variant=variant),
         seed,
@@ -2818,7 +3048,7 @@ def generate_writing_practice(*, level='B1', practice_type='lexical_resource', l
     return local
 
 
-def generate_practice(*, skill='reading', level='B1', practice_type='', lang='uz', seed='', avoid_fingerprint='') -> dict:
+def generate_practice(*, skill='reading', level='B1', practice_type='', lang='uz', seed='', avoid_fingerprint='', avoid_titles=None) -> dict:
     skill = (skill or 'reading').strip().lower()
     if skill == 'writing':
         return generate_writing_practice(
@@ -2834,6 +3064,7 @@ def generate_practice(*, skill='reading', level='B1', practice_type='', lang='uz
         lang=lang,
         seed=seed,
         avoid_fingerprint=avoid_fingerprint,
+        avoid_titles=avoid_titles,
     )
 
 

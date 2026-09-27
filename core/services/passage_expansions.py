@@ -26,6 +26,17 @@ def ensure_min_words(title: str, passage: str, *, minimum: int = MIN_PASSAGE_WOR
     return combined
 
 
+def _simple_title(title: str) -> bool:
+    low = (title or '').lower()
+    simple_bits = (
+        'park', 'beach', 'school', 'shop', 'market', 'bus', 'corner', 'morning',
+        'library', 'club', 'sport',
+    )
+    return any(bit in low for bit in simple_bits) and not any(
+        hard in low for hard in ('green space', 'cognitive', 'telegraph', 'printing', 'sleep', 'hiring', 'climate', 'bilingual')
+    )
+
+
 def _develop(title: str, points: list[str]) -> str:
     """Restate known facts as academic paragraphs. No new people, numbers, or results."""
     paragraphs = []
@@ -37,22 +48,49 @@ def _develop(title: str, points: list[str]) -> str:
         if sentence[-1] not in '.!?':
             sentence += '.'
         restated = sentence[0].lower() + sentence[1:]
-        if index % 2 == 0:
+        simple = _simple_title(subject)
+        frame = index % 3
+        if simple and frame == 0:
             paragraphs.append(
                 f"{sentence} "
-                f"Read against the rest of {subject}, the claim stays narrow: {restated} "
-                f"The names, places, and results in these lines are the same ones already given, "
-                f"and the paragraph does not hand an action to anyone else. "
-                f"A slower pass through the same wording still leads back to that single point, "
-                f"which is why a question about this section can be settled from the text itself."
+                f"The text says this in easy words: {restated} "
+                f"The same people and the same place stay in the story. "
+                f"You can find this idea if you read the lines slowly, one sentence at a time."
+            )
+        elif simple and frame == 1:
+            paragraphs.append(
+                f"{sentence} "
+                f"A second look at {subject} shows the same idea: {restated} "
+                f"The next lines do not change the people or the result. "
+                f"The meaning stays small and clear, so a short question can use these words."
+            )
+        elif simple:
+            paragraphs.append(
+                f"{sentence} "
+                f"This part of {subject} only repeats what is already true: {restated} "
+                f"There is no new place and no new person here. "
+                f"Read it from the start of the paragraph to the end and the idea is still the same."
+            )
+        elif frame == 0:
+            paragraphs.append(
+                f"{sentence} "
+                f"Within {subject}, that point is developed rather than replaced: {restated} "
+                f"The actors and outcomes already named remain the ones the reader should use. "
+                f"The paragraph gives the same claim more room, which is how a longer reading still supports one answer."
+            )
+        elif frame == 1:
+            paragraphs.append(
+                f"{sentence} "
+                f"The account in {subject} returns to this result and does not open a second case: {restated} "
+                f"Cause and effect stay paired exactly as they were first stated. "
+                f"A question that asks for this idea can be checked against these lines and no others."
             )
         else:
             paragraphs.append(
                 f"{sentence} "
-                f"In {subject} this is not a side comment. It is part of the main account: {restated} "
-                f"Later sentences keep the cause beside the result that was stated first. "
-                f"They do not add a fresh figure, a fresh place, or a conclusion the opening did not already allow. "
-                f"The longer form only gives the original idea enough room to be found among the other paragraphs."
+                f"What follows in {subject} is a fuller statement of the same fact: {restated} "
+                f"No extra figure is introduced, and the example does not move to another field. "
+                f"The paragraph is longer so the original point can be located inside a continuous text."
             )
     return "\n\n".join(paragraphs)
 

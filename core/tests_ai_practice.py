@@ -116,7 +116,7 @@ class ReadingTypeGenerationTests(SimpleTestCase):
         from core.services.passage_expansions import word_count
         for level in ap.LEVELS:
             for rtype in ap.READING_TYPES:
-                for variant in (0, 1):
+                for variant in range(ap.READING_VARIANT_COUNT):
                     payload = ap._local_reading(level, rtype, 'uz', variant=variant)
                     count = word_count(payload['passage'])
                     self.assertGreaterEqual(

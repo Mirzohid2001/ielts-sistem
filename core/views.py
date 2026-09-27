@@ -4168,6 +4168,17 @@ def practice_generate(request):
         from core.services.ai_practice import _practice_fingerprint
         avoid_fingerprint = _practice_fingerprint(prev)
 
+    from core.services.ai_practice import normalize_level, normalize_reading_type, normalize_writing_focus
+    if skill == 'writing':
+        kind = normalize_writing_focus(practice_type)
+    else:
+        kind = normalize_reading_type(practice_type)
+    recent_key = f"{skill}|{normalize_level(level)}|{kind}"
+    recent = request.session.get('practice_recent')
+    if not isinstance(recent, dict):
+        recent = {}
+    seen = recent.get(recent_key) if isinstance(recent.get(recent_key), list) else []
+
     try:
         payload = generate_practice(
             skill=skill,
@@ -4176,6 +4187,7 @@ def practice_generate(request):
             lang=lang,
             seed=seed,
             avoid_fingerprint=avoid_fingerprint,
+            avoid_titles=seen,
         )
     except Exception as exc:
         from core.services import ai_practice as _ap
@@ -4212,6 +4224,12 @@ def practice_generate(request):
         payload = dict(payload)
         payload['provider_name'] = 'local'
         payload['raw_errors'] = [str(exc)[:180]]
+
+    fresh_title = str(payload.get('title') or payload.get('task') or '').strip()
+    if fresh_title:
+        kept = [item for item in seen if str(item).strip() != fresh_title]
+        recent[recent_key] = (kept + [fresh_title])[-8:]
+        request.session['practice_recent'] = recent
 
     # To'liq payload sessionda; clientga correct bermaymiz
     request.session['practice_payload'] = payload
