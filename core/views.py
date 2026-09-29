@@ -4118,25 +4118,17 @@ def admin_toliq_yoriqnoma(request):
 @login_required
 def practice_hub(request, skill='reading'):
     """Reading/Writing AI mashq sahifasi."""
-    from core.services.ai_practice import LEVELS, READING_TYPES, WRITING_FOCUSES
+    from core.services.ai_practice import practice_page_catalog
 
     skill = (skill or request.GET.get('skill') or 'reading').strip().lower()
     if skill not in ('reading', 'writing'):
         skill = 'reading'
 
-    reading_types = [
-        {'key': key, 'label': meta['label_uz']}
-        for key, meta in READING_TYPES.items()
-    ]
-    writing_focuses = [
-        {'key': key, 'label': meta['label_uz']}
-        for key, meta in WRITING_FOCUSES.items()
-    ]
+    from core.services.ai_language import get_ai_language
+    catalog = practice_page_catalog(skill, lang=get_ai_language(request))
     return render(request, 'core/practice/mashq.html', {
         'skill': skill,
-        'levels': LEVELS,
-        'reading_types': reading_types,
-        'writing_focuses': writing_focuses,
+        'catalog': catalog,
         'page_title': 'Reading mashqi' if skill == 'reading' else 'Writing mashqi',
     })
 

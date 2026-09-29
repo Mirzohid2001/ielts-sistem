@@ -1891,3 +1891,138 @@ msgstr "Внимание! До конца теста осталась 1 мину
 
 msgid "Vaqt tugadi. Test avtomatik yakunlandi."
 msgstr "Время вышло. Тест завершён автоматически."
+
+msgid "Reading mashqi"
+msgstr "Практика Reading"
+
+msgid "Writing mashqi"
+msgstr "Практика Writing"
+
+msgid "Har safar yangi"
+msgstr "Каждый раз новый"
+
+msgid "Reading mashqi — IELTS Academic"
+msgstr "Практика Reading — IELTS Academic"
+
+msgid "Kompyuter imtihonidagi kabi: savol turini tanlang, matn va 10 ta savol shu daraja uchun yoziladi."
+msgstr "Как на компьютерном экзамене: выберите тип вопроса, текст и 10 вопросов будут написаны для этого уровня."
+
+msgid "Writing mashqi — IELTS Academic"
+msgstr "Практика Writing — IELTS Academic"
+
+msgid "IELTS mezonlari bo‘yicha mashq: yo‘nalishni tanlang, insho namunasi va topshiriqlar shu daraja uchun yoziladi."
+msgstr "Практика по критериям IELTS: выберите направление, образец эссе и задания будут написаны для этого уровня."
+
+msgid "Daraja"
+msgstr "Уровень"
+
+msgid "Matn va savollarni olish"
+msgstr "Получить текст и вопросы"
+
+msgid "Insho va mashqlarni olish"
+msgstr "Получить эссе и задания"
+
+msgid "Imtihon rejimi"
+msgstr "Режим экзамена"
+
+msgid "Keyingi mashq"
+msgstr "Следующее"
+
+msgid "Vaqtni to‘xtatish yoki davom ettirish"
+msgstr "Пауза или продолжение"
+
+msgid "Matnni kichraytirish"
+msgstr "Уменьшить текст"
+
+msgid "Matnni kattalashtirish"
+msgstr "Увеличить текст"
+
+msgid "Satr oralig‘i"
+msgstr "Межстрочный интервал"
+
+msgid "Satr"
+msgstr "Интервал"
+
+msgid "Qoralama"
+msgstr "Черновик"
+
+msgid "Bayroq"
+msgstr "Метка"
+
+msgid "Matn shu yerda ochiladi. Bandlar A, B, C bilan belgilanadi."
+msgstr "Текст откроется здесь. Абзацы будут отмечены A, B, C."
+
+msgid "Insho topshirig‘i va namuna shu yerda ochiladi."
+msgstr "Задание и образец эссе откроются здесь."
+
+msgid "Shu yerda eslatma yozing. Natijaga kirmaydi."
+msgstr "Пишите заметки здесь. На результат это не влияет."
+
+msgid "Panellarni surish"
+msgstr "Сдвинуть панели"
+
+msgid "Javoblar"
+msgstr "Ответы"
+
+msgid "Barcha savollarga javob bering"
+msgstr "Ответьте на все вопросы"
+
+msgid "Javoblarni tekshirish"
+msgstr "Проверить ответы"
+
+msgid "Mashqlar"
+msgstr "Задания"
+
+msgid "Task"
+msgstr "Задание"
+
+msgid "Namuna insho"
+msgstr "Образец эссе"
+
+msgid "Maslahat"
+msgstr "Совет"
+
+msgid "Javobni yozing"
+msgstr "Напишите ответ"
+
+msgid "Javobingizni yozing"
+msgstr "Напишите свой ответ"
+
+msgid "Tayyor — tekshirishingiz mumkin"
+msgstr "Готово — можно проверять"
+
+msgid "Ba’zi savollar bo‘sh. Baribir tekshirasizmi?"
+msgstr "Некоторые вопросы пустые. Всё равно проверить?"
+
+msgid "To‘g‘ri!"
+msgstr "Верно!"
+
+msgid "To‘g‘ri javob"
+msgstr "Правильный ответ"
+
+msgid "Mashq yuklanmoqda…"
+msgstr "Задание загружается…"
+
+msgid "Bazadan matn va savollar olinmoqda…"
+msgstr "Готовим текст и вопросы…"
+
+msgid "Tarmoq xatosi. Qayta urinib ko‘ring."
+msgstr "Ошибка сети. Попробуйте ещё раз."
+
+msgid "Tekshirishda xatolik."
+msgstr "Ошибка при проверке."
+
+msgid "ta to‘g‘ri"
+msgstr "верных"
+
+msgid "Avval savolga bayroq qo‘ying."
+msgstr "Сначала отметьте вопрос."
+
+msgid "ta savol"
+msgstr "вопросов"
+
+msgid "Vaqt tugadi. Javoblar yopildi — tekshirish mumkin."
+msgstr "Время вышло. Ответы закрыты — можно проверить."
+
+msgid "Hammasi to‘g‘ri."
+msgstr "Всё верно."

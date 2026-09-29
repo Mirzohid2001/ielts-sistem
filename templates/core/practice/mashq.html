@@ -8,9 +8,261 @@
 /* Dropdown: static cache bo'lsa ham dizayn chiqsin */
 .mashq-page .mashq-controls {
     display: grid;
-    grid-template-columns: minmax(7.5rem, 10rem) minmax(14rem, 1fr) auto;
+    grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
     gap: 1rem 1.15rem;
     align-items: end;
+}
+.mashq-page .mashq-cats {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
+    gap: 0.75rem;
+}
+.mashq-page .mashq-cat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-height: 8.5rem;
+    padding: 0.9rem 0.95rem 0.85rem;
+    border-radius: 16px;
+    border: 1px solid #e7e5e4;
+    background: #fff;
+    color: #1c1917;
+}
+.mashq-page .mashq-cat__kicker {
+    margin: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #78716c;
+}
+.mashq-page .mashq-cat__name {
+    margin: 0;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+}
+.mashq-page .mashq-cat__types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.7rem;
+}
+.mashq-page .mashq-type {
+    border: 1px solid #e7e5e4;
+    background: #fafaf9;
+    color: #1c1917;
+    border-radius: 999px;
+    padding: 0.32rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.3;
+    cursor: pointer;
+}
+.mashq-page .mashq-type:hover { border-color: #a5b4fc; background: #fff; }
+.mashq-page .mashq-cat.is-active {
+    border-color: #c7d2fe;
+    background: #f8fafc;
+    box-shadow: inset 3px 0 0 #1e1b4b;
+}
+.mashq-page .mashq-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.mashq-page .mashq-type.is-active {
+    background: #1e1b4b;
+    border-color: #1e1b4b;
+    color: #fff;
+}
+.mashq-page .mashq-type__score {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.05rem 0.32rem;
+    border-radius: 999px;
+    background: #e7e5e4;
+    color: #44403c;
+}
+.mashq-page .mashq-type__score.is-weak { background: #fee2e2; color: #991b1b; }
+.mashq-page .mashq-type__score.is-strong { background: #dcfce7; color: #166534; }
+.mashq-page .mashq-type.is-active .mashq-type__score {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+.mashq-page .mashq-exam {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #1e1b4b;
+    cursor: pointer;
+}
+.mashq-page .mashq-exam input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #1e1b4b;
+}
+.mashq-page.is-strict #mashqBriefText,
+.mashq-page.is-strict .ielts-note,
+.mashq-page.is-strict .ielts-model,
+.mashq-page.is-strict .ielts-modelhead { display: none !important; }
+.mashq-page.is-strict #mashqTimerBtn { cursor: default; }
+.mashq-page mark.ielts-hl {
+    background: #fde68a;
+    color: inherit;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.ielts-hlbtn {
+    position: fixed;
+    z-index: 40;
+    border: 0;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    background: #1e1b4b;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.78rem;
+    box-shadow: 0 8px 18px rgba(30, 27, 75, 0.28);
+    cursor: pointer;
+}
+.mashq-page .mashq-q[hidden] { display: none !important; }
+.mashq-page .ielts-clear {
+    margin: 0.4rem 0 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    color: #166534;
+}
+.mashq-page .mashq-controls__action {
+    grid-column: 2;
+    justify-self: end;
+}
+.mashq-page .ielts-sheet-idle__line,
+.mashq-page .ielts-sheet-idle .ielts-kicker {
+    font-family: Georgia, "Times New Roman", serif;
+}
+.mashq-page .ielts-sheet-idle__line {
+    margin: 0.35rem 0 0;
+    color: #57534e;
+    font-size: 1.02rem;
+    line-height: 1.55;
+}
+.mashq-page .mashq-workspace:not(.is-exam) .mashq-panel--passage {
+    position: static;
+    max-height: none;
+}
+.mashq-page .mashq-placeholder {
+    align-items: stretch;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 1.25rem 1.35rem 1.5rem;
+    overflow: auto;
+}
+.mashq-page .mashq-guide__kicker {
+    margin: 0 0 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6366f1;
+}
+.mashq-page .mashq-guide__steps {
+    margin: 0;
+    padding-left: 1.15rem;
+    color: #334155;
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+.mashq-page .mashq-guide__steps li + li { margin-top: 0.45rem; }
+.mashq-page .mashq-sample__label {
+    margin: 0 0 0.55rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.mashq-page .mashq-sample__box {
+    margin: 0 0 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px dashed #c7d2fe;
+    color: #1e293b;
+    font-family: Georgia, "Times New Roman", serif;
+    white-space: pre-wrap;
+    line-height: 1.55;
+}
+.mashq-page .mashq-placeholder p {
+    margin: 0;
+    color: #475569;
+}
+.mashq-page .mashq-placeholder .mashq-guide__kicker {
+    margin: 0 0 0.65rem;
+}
+.mashq-page .mashq-brief {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.5rem;
+    align-items: center;
+    padding-top: 0.15rem;
+    border-top: 0;
+}
+.mashq-page .mashq-brief__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.mashq-page .mashq-brief__facts li,
+.mashq-page .mashq-brief__last {
+    margin: 0;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.mashq-page .mashq-brief__last {
+    background: #ecfdf3;
+    color: #166534;
+}
+.mashq-page .ielts-exambar__tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.mashq-page .ielts-tool {
+    border: 1px solid #4b4b4b;
+    background: #111;
+    color: #fff;
+    border-radius: 4px;
+    min-width: 2.4rem;
+    height: 2rem;
+    padding: 0 0.55rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+.mashq-page .ielts-tool.is-paused { color: #fbbf24; }
+.mashq-page .ielts-tool.is-low { color: #fca5a5; }
+.mashq-page .mashq-panel__body.is-font-sm .ielts-para p,
+.mashq-page .mashq-panel__body.is-font-sm .ielts-model,
+.mashq-page .mashq-panel__body.is-font-sm .mashq-q__prompt,
+.mashq-page .mashq-panel__body.is-font-sm .ielts-rubric {
+    font-size: 0.92rem;
+}
+.mashq-page .mashq-panel__body.is-font-lg .ielts-para p,
+.mashq-page .mashq-panel__body.is-font-lg .ielts-model,
+.mashq-page .mashq-panel__body.is-font-lg .mashq-q__prompt,
+.mashq-page .mashq-panel__body.is-font-lg .ielts-rubric {
+    font-size: 1.22rem;
 }
 .mashq-page .mashq-controls__group {
     min-width: 0;
@@ -55,8 +307,15 @@
     margin-bottom: 0.55rem;
 }
 @media (max-width: 991.98px) {
+    .mashq-page .mashq-cats {
+        grid-template-columns: 1fr 1fr;
+    }
     .mashq-page .mashq-controls {
         grid-template-columns: 1fr;
+    }
+    .mashq-page .mashq-controls__action {
+        grid-column: auto;
+        justify-self: stretch;
     }
     .mashq-page .mashq-workspace.is-exam {
         grid-template-columns: 1fr;
@@ -299,6 +558,136 @@
 .mashq-page .ielts-nav__n.is-done { background: #1a4f8b; color: #fff; border-color: #1a4f8b; }
 .mashq-page .ielts-nav__n.is-ok { background: #157347; border-color: #157347; color: #fff; }
 .mashq-page .ielts-nav__n.is-bad { background: #b42318; border-color: #b42318; color: #fff; }
+.mashq-page .ielts-nav__n.is-flag { box-shadow: inset 0 -3px 0 #eab308; }
+.mashq-page .mashq-coach {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0.28rem 0.35rem 0.28rem 0.7rem;
+    border: 1px solid #f5d0a8;
+    border-radius: 999px;
+    background: #fff7ed;
+    color: #9a3412;
+    cursor: pointer;
+    font: inherit;
+}
+.mashq-page .mashq-coach[hidden] { display: none !important; }
+.mashq-page .mashq-coach__kicker {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.mashq-page .mashq-coach__name {
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
+    background: #1e1b4b;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+.mashq-page .ielts-tool--text {
+    min-width: 0;
+    padding: 0 0.7rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+}
+.mashq-page .ielts-tool.is-on {
+    background: #fde68a;
+    color: #1e1b4b;
+    border-color: #fde68a;
+}
+.mashq-page .ielts-flag {
+    flex: 0 0 auto;
+    width: 1.85rem;
+    height: 1.85rem;
+    margin-left: auto;
+    border: 1px solid #d6d3d1;
+    border-radius: 4px;
+    background: #fff;
+    color: #78716c;
+    cursor: pointer;
+}
+.mashq-page .ielts-flag.is-on {
+    background: #1e1b4b;
+    border-color: #1e1b4b;
+    color: #fde68a;
+}
+.mashq-page .ielts-q .mashq-q__prompt { flex: 1; }
+.mashq-page .mashq-panel__body.is-flags .mashq-q:not(.is-flag) { display: none; }
+.mashq-page .mashq-split { display: none; }
+.mashq-page .mashq-notes[hidden] { display: none !important; }
+.mashq-page .mashq-notes {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.85rem 1rem 1rem;
+    background-color: #fffdf6;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 1.7rem,
+        #efe6d2 1.7rem,
+        #efe6d2 1.74rem
+    );
+}
+.mashq-page .mashq-notes__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 800;
+    color: #1e1b4b;
+}
+.mashq-page .mashq-notes__close {
+    border: 0;
+    background: transparent;
+    font-weight: 700;
+    color: #78716c;
+    cursor: pointer;
+}
+.mashq-page .mashq-notes textarea {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    resize: none;
+    background: transparent;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.02rem;
+    line-height: 1.74rem;
+    color: #1c1917;
+}
+.mashq-page .mashq-notes textarea:focus { outline: none; }
+.mashq-page .mashq-workspace.is-tight .ielts-para p,
+.mashq-page .mashq-workspace.is-tight .ielts-model,
+.mashq-page .mashq-workspace.is-tight .ielts-q .mashq-q__prompt { line-height: 1.4; }
+.mashq-page .mashq-workspace.is-roomy .ielts-para p,
+.mashq-page .mashq-workspace.is-roomy .ielts-model,
+.mashq-page .mashq-workspace.is-roomy .ielts-q .mashq-q__prompt { line-height: 2.05; }
+@media (min-width: 992px) {
+    .mashq-page .mashq-workspace.is-exam {
+        grid-template-columns: minmax(18rem, var(--split, 1fr)) 14px minmax(18rem, 1fr);
+    }
+    .mashq-page .mashq-workspace.is-exam .mashq-panel--passage { border-right: 0; }
+    .mashq-page .mashq-workspace.is-exam .mashq-split {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: col-resize;
+        background: #f5f5f4;
+        touch-action: none;
+    }
+    .mashq-page .mashq-workspace.is-exam .mashq-split::before {
+        content: "";
+        width: 4px;
+        height: 2.4rem;
+        border-radius: 999px;
+        background: #a8a29e;
+    }
+}
 </style>
 {% endblock %}
 
@@ -324,45 +713,44 @@
                 <i class="fas fa-pen-fancy me-1"></i>{% trans "Writing mashqi" %}
             </a>
         </div>
-        <span class="mashq-badge"><i class="fas fa-database me-1"></i>{% trans "Bazadan" %}</span>
+        <span class="mashq-badge"><i class="fas fa-wand-magic-sparkles me-1"></i>{% trans "Har safar yangi" %}</span>
     </div>
 
     <header class="mashq-hero">
         {% if skill == 'reading' %}
         <h1 class="mashq-hero__title">{% trans "Reading mashqi — IELTS Academic" %}</h1>
-        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq turini tanlang. Bizning bazamizdan mos akademik matn va savollar tayyorlanadi." %}</p>
+        <p class="mashq-hero__sub">{% trans "Kompyuter imtihonidagi kabi: savol turini tanlang, matn va 10 ta savol shu daraja uchun yoziladi." %}</p>
         {% else %}
         <h1 class="mashq-hero__title">{% trans "Writing mashqi — IELTS Academic" %}</h1>
-        <p class="mashq-hero__sub">{% trans "Darajangizni va mashq yo‘nalishini tanlang. Bazamizdan insho namunasi va mashqlar beriladi." %}</p>
+        <p class="mashq-hero__sub">{% trans "IELTS mezonlari bo‘yicha mashq: yo‘nalishni tanlang, insho namunasi va topshiriqlar shu daraja uchun yoziladi." %}</p>
         {% endif %}
     </header>
 
+    {{ catalog|json_script:"mashqCatalog" }}
     <section class="mashq-controls">
+        <div class="mashq-cats" id="mashqCats" role="group" aria-label="{% trans "Kategoriya" %}">
+            {% for group in catalog.categories %}
+            <article class="mashq-cat{% if forloop.first %} is-active{% endif %}" data-category="{{ group.key }}">
+                <p class="mashq-cat__kicker">{{ group.official }}</p>
+                <h2 class="mashq-cat__name">{{ group.label }}</h2>
+                <div class="mashq-cat__types">
+                    {% for item in group.types %}
+                    <button type="button" class="mashq-type{% if forloop.parentloop.first and forloop.first %} is-active{% endif %}" data-type="{{ item.key }}" data-category="{{ group.key }}">{{ item.label }}</button>
+                    {% endfor %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        <input type="hidden" id="mashqCategory" value="{{ catalog.categories.0.key }}">
+        <select id="mashqType" hidden aria-hidden="true"></select>
+
         <div class="mashq-controls__group">
             <label class="mashq-controls__label" for="mashqLevel">{% trans "Daraja" %}</label>
             <select class="mashq-select" id="mashqLevel" name="level" aria-label="{% trans "Daraja" %}">
-                {% for lv in levels %}
-                <option value="{{ lv }}" {% if lv == 'B1' %}selected{% endif %}>{{ lv }}</option>
+                {% for lv in catalog.levels %}
+                <option value="{{ lv.key }}" {% if lv.key == 'B1' %}selected{% endif %}>{{ lv.label }}</option>
                 {% endfor %}
             </select>
-        </div>
-
-        <div class="mashq-controls__group mashq-controls__group--grow">
-            {% if skill == 'reading' %}
-            <label class="mashq-controls__label" for="mashqType">{% trans "Savol turi" %}</label>
-            <select class="mashq-select" id="mashqType" name="practice_type" aria-label="{% trans "Savol turi" %}">
-                {% for item in reading_types %}
-                <option value="{{ item.key }}" {% if forloop.first %}selected{% endif %}>{{ item.label }}</option>
-                {% endfor %}
-            </select>
-            {% else %}
-            <label class="mashq-controls__label" for="mashqType">{% trans "Nimani mashq qilmoqchisiz" %}</label>
-            <select class="mashq-select" id="mashqType" name="practice_type" aria-label="{% trans "Nimani mashq qilmoqchisiz" %}">
-                {% for item in writing_focuses %}
-                <option value="{{ item.key }}" {% if forloop.first %}selected{% endif %}>{{ item.label }}</option>
-                {% endfor %}
-            </select>
-            {% endif %}
         </div>
 
         <div class="mashq-controls__action">
@@ -375,36 +763,57 @@
                 {% endif %}
             </button>
         </div>
+
+        <div class="mashq-brief" id="mashqBrief">
+            <label class="mashq-exam" for="mashqExamMode">
+                <input type="checkbox" id="mashqExamMode">
+                <span>{% trans "Imtihon rejimi" %}</span>
+            </label>
+            <ul class="mashq-brief__facts" id="mashqBriefFacts"></ul>
+            <p class="mashq-brief__last" id="mashqLast" hidden></p>
+            <button type="button" class="mashq-coach" id="mashqCoach" hidden>
+                <span class="mashq-coach__kicker">{% trans "Keyingi mashq" %}</span>
+                <span class="mashq-coach__name" id="mashqCoachName"></span>
+            </button>
+        </div>
     </section>
 
     <div class="mashq-status" id="mashqStatus" hidden></div>
 
     <div class="ielts-exambar" id="ieltsExamBar" hidden>
         <div class="ielts-exambar__brand"><span>IELTS</span> Academic</div>
+        <div class="ielts-exambar__tools" id="ieltsTools" hidden>
+            <button type="button" class="ielts-tool" id="mashqTimerBtn" title="{% trans "Vaqtni to‘xtatish yoki davom ettirish" %}">20:00</button>
+            <button type="button" class="ielts-tool" id="mashqFontDown" title="{% trans "Matnni kichraytirish" %}">A−</button>
+            <button type="button" class="ielts-tool" id="mashqFontUp" title="{% trans "Matnni kattalashtirish" %}">A+</button>
+            <button type="button" class="ielts-tool ielts-tool--text" id="mashqRhythm" title="{% trans "Satr oralig‘i" %}">{% trans "Satr" %}</button>
+            <button type="button" class="ielts-tool ielts-tool--text" id="mashqNotesBtn">{% trans "Qoralama" %}</button>
+            <button type="button" class="ielts-tool ielts-tool--text" id="mashqFlagFilter">{% trans "Bayroq" %}</button>
+        </div>
         <div class="ielts-exambar__part" id="ieltsExamPart">{% if skill == 'reading' %}Reading{% else %}Writing{% endif %}</div>
     </div>
 
     <div class="mashq-workspace">
         <article class="mashq-panel mashq-panel--passage" id="mashqLeft">
-            <div class="mashq-placeholder" id="mashqLeftEmpty">
-                <div class="mashq-placeholder__icon"><i class="fas fa-file-alt"></i></div>
-                {% if skill == 'reading' %}
-                <p>{% trans "Daraja va mashq turini tanlab, «Matn va savollarni olish» tugmasini bosing." %}</p>
-                {% else %}
-                <p>{% trans "Daraja va yo‘nalishni tanlab, «Insho va mashqlarni olish» tugmasini bosing." %}</p>
-                {% endif %}
+            <div class="mashq-placeholder ielts-sheet-idle" id="mashqLeftEmpty">
+                <p class="ielts-kicker">{% if skill == 'reading' %}Reading Passage{% else %}Writing Task{% endif %}</p>
+                <p class="ielts-sheet-idle__line">{% if skill == 'reading' %}{% trans "Matn shu yerda ochiladi. Bandlar A, B, C bilan belgilanadi." %}{% else %}{% trans "Insho topshirig‘i va namuna shu yerda ochiladi." %}{% endif %}</p>
             </div>
             <div class="mashq-panel__body" id="mashqLeftBody" hidden></div>
+            <aside class="mashq-notes" id="mashqNotes" hidden>
+                <div class="mashq-notes__head">
+                    <span>{% trans "Qoralama" %}</span>
+                    <button type="button" class="mashq-notes__close" id="mashqNotesClose">{% trans "Yopish" %}</button>
+                </div>
+                <textarea id="mashqNotesBox" placeholder="{% trans "Shu yerda eslatma yozing. Natijaga kirmaydi." %}"></textarea>
+            </aside>
         </article>
+        <div class="mashq-split" id="mashqSplit" role="separator" aria-orientation="vertical" aria-label="{% trans "Panellarni surish" %}"></div>
 
         <article class="mashq-panel mashq-panel--questions" id="mashqRight">
-            <div class="mashq-placeholder" id="mashqRightEmpty">
-                <div class="mashq-placeholder__icon"><i class="fas fa-list-check"></i></div>
-                {% if skill == 'reading' %}
-                <p>{% trans "Savollar matn bilan birga shu yerda chiqadi." %}</p>
-                {% else %}
-                <p>{% trans "Mashqlar insho bilan birga shu yerda bo‘ladi." %}</p>
-                {% endif %}
+            <div class="mashq-placeholder ielts-sheet-idle" id="mashqRightEmpty">
+                <p class="ielts-kicker" id="mashqQKicker">{% if skill == 'reading' %}Questions 1–10{% else %}Questions 1–4{% endif %}</p>
+                <p class="ielts-rubric" id="mashqBriefText"></p>
             </div>
             <div class="mashq-panel__body" id="mashqRightBody" hidden></div>
         </article>
@@ -457,6 +866,13 @@
 {% trans "Tekshirishda xatolik." as t_check_err %}
 {% trans "Natija" as t_score %}
 {% trans "ta to‘g‘ri" as t_of %}
+{% trans "Belgilash" as t_flag %}
+{% trans "Avval savolga bayroq qo‘ying." as t_flag_need %}
+{% trans "Oxirgi natija" as t_last %}
+{% trans "ta savol" as t_q_word %}
+{% trans "daqiqa" as t_min_word %}
+{% trans "Vaqt tugadi. Javoblar yopildi — tekshirish mumkin." as t_time_up %}
+{% trans "Hammasi to‘g‘ri." as t_all_ok %}
 <script>
 (function () {
     const app = document.getElementById('mashqApp');
@@ -488,14 +904,62 @@
         net: "{{ t_net|escapejs }}",
         checkErr: "{{ t_check_err|escapejs }}",
         score: "{{ t_score|escapejs }}",
-        of: "{{ t_of|escapejs }}"
+        of: "{{ t_of|escapejs }}",
+        flag: "{{ t_flag|escapejs }}",
+        flagNeed: "{{ t_flag_need|escapejs }}",
+        lastScore: "{{ t_last|escapejs }}",
+        qWord: "{{ t_q_word|escapejs }}",
+        minWord: "{{ t_min_word|escapejs }}",
+        timeUp: "{{ t_time_up|escapejs }}",
+        allOk: "{{ t_all_ok|escapejs }}"
     };
+    function countPhrase(n, kind) {
+        const lang = (document.documentElement.lang || 'uz').toLowerCase();
+        if (lang.indexOf('ru') === 0) {
+            const n10 = n % 10;
+            const n100 = n % 100;
+            const forms = kind === 'min'
+                ? ['минута', 'минуты', 'минут']
+                : ['вопрос', 'вопроса', 'вопросов'];
+            let word = forms[2];
+            if (n10 === 1 && n100 !== 11) word = forms[0];
+            else if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) word = forms[1];
+            return n + ' ' + word;
+        }
+        return n + ' ' + (kind === 'min' ? i18n.minWord : i18n.qWord);
+    }
 
     let payload = null;
     let checked = false;
+    let attemptLevel = '';
+    let attemptType = '';
 
     const levelSelect = document.getElementById('mashqLevel');
+    const categorySelect = document.getElementById('mashqCategory');
     const typeSelect = document.getElementById('mashqType');
+    const briefText = document.getElementById('mashqBriefText');
+    const briefFacts = document.getElementById('mashqBriefFacts');
+    const lastEl = document.getElementById('mashqLast');
+    const rightGuide = document.getElementById('mashqRightGuide');
+    const sampleLabel = document.getElementById('mashqSampleLabel');
+    const sampleBox = document.getElementById('mashqSampleBox');
+    const timerBtn = document.getElementById('mashqTimerBtn');
+    const fontDownBtn = document.getElementById('mashqFontDown');
+    const fontUpBtn = document.getElementById('mashqFontUp');
+    const examTools = document.getElementById('ieltsTools');
+    let catalog = { categories: [] };
+    try {
+        catalog = JSON.parse((document.getElementById('mashqCatalog') || {}).textContent || '{}');
+    } catch (err) {
+        catalog = { categories: [] };
+    }
+    const prefKey = 'ton_mashq_pref_' + skill;
+    const scoreStore = 'ton_mashq_scores_' + skill;
+    const examModeInput = document.getElementById('mashqExamMode');
+    let remain = 0;
+    let timerHandle = null;
+    let timerPaused = false;
+    let fontStep = 1;
     const generateBtn = document.getElementById('mashqGenerate');
     const checkBtn = document.getElementById('mashqCheck');
     const resetBtn = document.getElementById('mashqResetAnswers');
@@ -515,6 +979,217 @@
     }
     function selectedType() {
         return (typeSelect && typeSelect.value) ? typeSelect.value : '';
+    }
+    function typeOwner(typeKey) {
+        const groups = catalog.categories || [];
+        return groups.find(function (group) {
+            return (group.types || []).some(function (item) { return item.key === typeKey; });
+        }) || null;
+    }
+    function currentTypeMeta() {
+        const owner = typeOwner(selectedType());
+        if (!owner) return null;
+        return (owner.types || []).find(function (item) { return item.key === selectedType(); }) || null;
+    }
+    function fillTypes(prefer) {
+        if (!typeSelect) return;
+        const want = (prefer === undefined || prefer === null || prefer === '')
+            ? (typeSelect.value || '')
+            : prefer;
+        typeSelect.innerHTML = '';
+        (catalog.categories || []).forEach(function (group) {
+            const block = document.createElement('optgroup');
+            block.label = group.label || '';
+            (group.types || []).forEach(function (item) {
+                const opt = document.createElement('option');
+                opt.value = item.key;
+                opt.textContent = item.label;
+                block.appendChild(opt);
+            });
+            typeSelect.appendChild(block);
+        });
+        if (want && typeOwner(want)) typeSelect.value = want;
+        const owner = typeOwner(selectedType());
+        if (owner) markCategory(owner.key);
+        markTypeButtons();
+    }
+    function markTypeButtons() {
+        const current = selectedType();
+        document.querySelectorAll('.mashq-type').forEach(function (btn) {
+            btn.classList.toggle('is-active', btn.dataset.type === current);
+        });
+    }
+    function examMode() {
+        return !!(examModeInput && examModeInput.checked);
+    }
+    function readScores() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(scoreStore) || '{}');
+            return raw && typeof raw === 'object' ? raw : {};
+        } catch (err) {
+            return {};
+        }
+    }
+    function paintTypeScores() {
+        const all = readScores();
+        const level = selectedLevel();
+        document.querySelectorAll('.mashq-type').forEach(function (btn) {
+            const row = all[level + '|' + (btn.dataset.type || '')];
+            let badge = btn.querySelector('.mashq-type__score');
+            if (!row || !row.total) {
+                if (badge) badge.remove();
+                return;
+            }
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'mashq-type__score';
+                btn.appendChild(badge);
+            }
+            const ratio = row.correct / row.total;
+            badge.textContent = row.correct + '/' + row.total;
+            badge.classList.toggle('is-weak', ratio < 0.6);
+            badge.classList.toggle('is-strong', ratio >= 0.8);
+        });
+        paintCoach();
+    }
+    function paintCoach() {
+        const btn = document.getElementById('mashqCoach');
+        const name = document.getElementById('mashqCoachName');
+        if (!btn || !name) return;
+        const all = readScores();
+        const level = selectedLevel();
+        let worst = null;
+        (catalog.categories || []).forEach(function (group) {
+            (group.types || []).forEach(function (item) {
+                const row = all[level + '|' + item.key];
+                if (!row || !row.total) return;
+                const ratio = row.correct / row.total;
+                if (!worst || ratio < worst.ratio) {
+                    worst = { key: item.key, label: item.label, ratio: ratio, correct: row.correct, total: row.total };
+                }
+            });
+        });
+        if (!worst || worst.ratio >= 0.8) {
+            btn.hidden = true;
+            return;
+        }
+        btn.hidden = false;
+        btn.dataset.type = worst.key;
+        name.textContent = worst.label + ' · ' + worst.correct + '/' + worst.total;
+    }
+    function paintLast() {
+        if (!lastEl) return;
+        const row = readScores()[selectedLevel() + '|' + selectedType()];
+        if (!row || !row.total) {
+            lastEl.hidden = true;
+            return;
+        }
+        lastEl.hidden = false;
+        lastEl.textContent = i18n.lastScore + ': ' + row.correct + '/' + row.total;
+    }
+    function savePref() {
+        try {
+            localStorage.setItem(prefKey, JSON.stringify({
+                level: selectedLevel(),
+                category: categorySelect ? categorySelect.value : '',
+                type: selectedType(),
+                exam: examMode()
+            }));
+        } catch (err) { /* brauzer yopiq saqlashi mumkin */ }
+    }
+    function paintBrief() {
+        const meta = currentTypeMeta();
+        const levelOpt = levelSelect && levelSelect.selectedOptions && levelSelect.selectedOptions[0];
+        const levelLabel = levelOpt ? levelOpt.textContent : selectedLevel();
+        app.classList.toggle('is-strict', examMode());
+        if (briefText) {
+            briefText.hidden = examMode();
+            briefText.textContent = examMode() ? '' : (meta ? (meta.blurb || '') : '');
+        }
+        const qKicker = document.getElementById('mashqQKicker');
+        if (qKicker && meta) qKicker.textContent = 'Questions 1–' + (meta.questions || 10);
+        if (briefFacts) {
+            briefFacts.innerHTML = '';
+            if (meta) {
+                [levelLabel, countPhrase(meta.questions || 0, 'q'), countPhrase(meta.minutes || 20, 'min')].forEach(function (label) {
+                    const li = document.createElement('li');
+                    li.textContent = label;
+                    briefFacts.appendChild(li);
+                });
+            }
+        }
+        if (sampleLabel) sampleLabel.textContent = meta ? (meta.label || '') : '';
+        if (sampleBox) sampleBox.textContent = meta ? (meta.example || '') : '';
+        if (rightGuide) {
+            rightGuide.textContent = meta
+                ? (countPhrase(meta.questions || 0, 'q') + ' · ' + countPhrase(meta.minutes || 20, 'min'))
+                : '';
+        }
+        paintLast();
+        paintTypeScores();
+        savePref();
+    }
+    function formatClock(sec) {
+        const safe = Math.max(0, sec);
+        const minutes = Math.floor(safe / 60);
+        const seconds = safe % 60;
+        return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+    function stopTimer() {
+        if (timerHandle) clearInterval(timerHandle);
+        timerHandle = null;
+    }
+    function paintTimer() {
+        if (!timerBtn) return;
+        timerBtn.textContent = formatClock(remain);
+        timerBtn.classList.toggle('is-low', remain <= 60);
+        timerBtn.classList.toggle('is-paused', timerPaused);
+    }
+    function startTimer(minutes) {
+        stopTimer();
+        remain = Math.max(1, Number(minutes) || 20) * 60;
+        timerPaused = false;
+        if (examTools) examTools.hidden = false;
+        paintTimer();
+        timerHandle = setInterval(function () {
+            if (timerPaused) return;
+            if (remain > 0) remain -= 1;
+            paintTimer();
+            if (remain <= 0) {
+                stopTimer();
+                paintTimer();
+                if (examMode() && !checked) {
+                    setInputsDisabled(true);
+                    setStatus(i18n.timeUp, 'info');
+                }
+            }
+        }, 1000);
+    }
+    function applyFont() {
+        [leftBody, rightBody].forEach(function (el) {
+            if (!el) return;
+            el.classList.toggle('is-font-sm', fontStep === 0);
+            el.classList.toggle('is-font-lg', fontStep === 2);
+        });
+    }
+    function markCategory(key) {
+        document.querySelectorAll('.mashq-cat').forEach(function (btn) {
+            btn.classList.toggle('is-active', btn.dataset.category === key);
+        });
+        if (categorySelect) categorySelect.value = key;
+    }
+    function restorePref() {
+        let pref = null;
+        try { pref = JSON.parse(localStorage.getItem(prefKey) || 'null'); } catch (err) { pref = null; }
+        if (pref && levelSelect && pref.level && Array.from(levelSelect.options).some(function (opt) { return opt.value === pref.level; })) {
+            levelSelect.value = pref.level;
+        }
+        if (pref && categorySelect && pref.category && document.querySelector('.mashq-cat[data-category="' + pref.category + '"]')) {
+            markCategory(pref.category);
+        }
+        if (examModeInput && pref && pref.exam) examModeInput.checked = true;
+        fillTypes(pref && pref.type);
+        paintBrief();
     }
 
     function setStatus(msg, kind) {
@@ -634,6 +1309,10 @@
         if (label && part) label.textContent = part;
         const workspace = document.querySelector('.mashq-workspace');
         if (workspace) workspace.classList.add('is-exam');
+        const meta = currentTypeMeta();
+        startTimer(meta ? meta.minutes : (part === 'Writing' ? 40 : 20));
+        applyFont();
+        applyRhythm();
     }
 
     function buildQuestionNav(total) {
@@ -670,6 +1349,7 @@
             btn.classList.toggle('is-done', answered);
             btn.classList.toggle('is-ok', block.classList.contains('is-correct'));
             btn.classList.toggle('is-bad', block.classList.contains('is-wrong'));
+            btn.classList.toggle('is-flag', block.classList.contains('is-flag'));
         });
     }
 
@@ -688,6 +1368,7 @@
             '<div class="mashq-q__head">' +
                 '<span class="ielts-qnum">' + (idx + 1) + '</span>' +
                 '<div class="mashq-q__prompt">' + esc(q.prompt || '') + '</div>' +
+                '<button type="button" class="ielts-flag" aria-pressed="false" title="' + esc(i18n.flag) + '"><i class="fas fa-flag"></i></button>' +
             '</div>' +
             inner +
             '<div class="mashq-q__feedback" hidden></div>' +
@@ -741,6 +1422,19 @@
             el.addEventListener('input', updateProgress);
         });
     }
+    function paintFlagCount() {
+        const filter = document.getElementById('mashqFlagFilter');
+        if (!filter) return;
+        const count = rightBody.querySelectorAll('.mashq-q.is-flag').length;
+        if (!filter.dataset.label) filter.dataset.label = filter.textContent.trim();
+        filter.textContent = count ? (filter.dataset.label + ' ' + count) : filter.dataset.label;
+    }
+    function clearFlagFilter() {
+        rightBody.classList.remove('is-flags');
+        const filter = document.getElementById('mashqFlagFilter');
+        if (filter) filter.classList.remove('is-on');
+        paintFlagCount();
+    }
 
     function questionCount() {
         return rightBody.querySelectorAll('.mashq-q').length;
@@ -775,8 +1469,15 @@
         });
     }
 
+    function rememberAttempt(data) {
+        attemptLevel = (data && data.level) || selectedLevel();
+        attemptType = (data && data.practice_type) || selectedType();
+        if (rightBody) rightBody.dataset.attempt = attemptLevel + '|' + attemptType;
+    }
     function renderReading(data) {
         checked = false;
+        rememberAttempt(data);
+        clearFlagFilter();
         leftEmpty.hidden = true;
         leftBody.hidden = false;
         const qs = Array.isArray(data.questions) ? data.questions : [];
@@ -822,6 +1523,8 @@
 
     function renderWriting(data) {
         checked = false;
+        rememberAttempt(data);
+        clearFlagFilter();
         leftEmpty.hidden = true;
         leftBody.hidden = false;
         const ex = Array.isArray(data.exercises) ? data.exercises : [];
@@ -939,19 +1642,255 @@
             '<span class="mashq-score__pct">' + pct + '% · ' + (result.correct || 0) + ' ' + esc(i18n.of) + '</span>';
 
         setInputsDisabled(true);
+        clearFlagFilter();
         resetBtn.hidden = false;
         checkBtn.hidden = true;
+        rightBody.querySelectorAll('.mashq-q.is-correct').forEach(function (block) {
+            block.hidden = true;
+        });
+        const nav = document.getElementById('ieltsNav');
+        if (nav) {
+            nav.querySelectorAll('.ielts-nav__n').forEach(function (btn) {
+                const block = rightBody.querySelector('.mashq-q[data-index="' + btn.dataset.go + '"]');
+                btn.hidden = !(block && block.classList.contains('is-wrong'));
+            });
+        }
+        if (!firstWrong) {
+            const doneNote = document.createElement('p');
+            doneNote.className = 'ielts-clear';
+            doneNote.textContent = i18n.allOk;
+            rightBody.appendChild(doneNote);
+        }
         updateProgress();
+        try {
+            const all = readScores();
+            const stamped = String((rightBody && rightBody.dataset.attempt) || '').split('|');
+            all[(stamped[0] || attemptLevel || selectedLevel()) + '|' + (stamped[1] || attemptType || selectedType())] = {
+                correct: result.correct || 0,
+                total: result.total || 0
+            };
+            localStorage.setItem(scoreStore, JSON.stringify(all));
+        } catch (err) { /* natija saqlanmasa sahifa ishlashda davom etadi */ }
+        paintLast();
+        paintTypeScores();
 
         if (firstWrong) {
             firstWrong.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
 
+    document.querySelectorAll('.mashq-type').forEach(function (btn) {
+        btn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            fillTypes(btn.dataset.type || '');
+            paintBrief();
+        });
+    });
+    document.querySelectorAll('.mashq-cat').forEach(function (card) {
+        card.addEventListener('click', function () {
+            if (card.querySelector('.mashq-type.is-active')) return;
+            const first = card.querySelector('.mashq-type');
+            if (!first) return;
+            fillTypes(first.dataset.type || '');
+            paintBrief();
+        });
+    });
+    if (levelSelect) levelSelect.addEventListener('change', paintBrief);
+    if (examModeInput) {
+        examModeInput.addEventListener('change', function () {
+            paintBrief();
+            rightBody.querySelectorAll('.ielts-note').forEach(function (node) {
+                node.hidden = examMode();
+            });
+        });
+    }
+    if (timerBtn) {
+        timerBtn.addEventListener('click', function () {
+            if (examMode()) return;
+            if (!timerHandle && remain <= 0) return;
+            timerPaused = !timerPaused;
+            paintTimer();
+            if (!timerPaused && !timerHandle && remain > 0) {
+                timerHandle = setInterval(function () {
+                    if (timerPaused) return;
+                    if (remain > 0) remain -= 1;
+                    paintTimer();
+                    if (remain <= 0) stopTimer();
+                }, 1000);
+            }
+        });
+    }
+    if (fontDownBtn) {
+        fontDownBtn.addEventListener('click', function () {
+            fontStep = Math.max(0, fontStep - 1);
+            applyFont();
+        });
+    }
+    if (fontUpBtn) {
+        fontUpBtn.addEventListener('click', function () {
+            fontStep = Math.min(2, fontStep + 1);
+            applyFont();
+        });
+    }
+    const rhythmBtn = document.getElementById('mashqRhythm');
+    const workspace = document.querySelector('.mashq-workspace');
+    let rhythm = 1;
+    function applyRhythm() {
+        if (!workspace) return;
+        workspace.classList.toggle('is-tight', rhythm === 0);
+        workspace.classList.toggle('is-roomy', rhythm === 2);
+        if (rhythmBtn) rhythmBtn.classList.toggle('is-on', rhythm !== 1);
+    }
+    if (rhythmBtn) {
+        rhythmBtn.addEventListener('click', function () {
+            rhythm = (rhythm + 1) % 3;
+            applyRhythm();
+        });
+    }
+    const notesBox = document.getElementById('mashqNotesBox');
+    const notesPane = document.getElementById('mashqNotes');
+    const notesBtn = document.getElementById('mashqNotesBtn');
+    const notesKey = 'ton_mashq_notes_' + skill;
+    if (notesBox) {
+        try { notesBox.value = localStorage.getItem(notesKey) || ''; } catch (err) { /* saqlanmasa bo'sh qoladi */ }
+        notesBox.addEventListener('input', function () {
+            try { localStorage.setItem(notesKey, notesBox.value); } catch (err) { /* brauzer yozishni rad etishi mumkin */ }
+        });
+    }
+    function setNotes(open) {
+        if (!notesPane || !notesBtn) return;
+        notesPane.hidden = !open;
+        notesBtn.classList.toggle('is-on', open);
+        if (open && notesBox) notesBox.focus();
+    }
+    if (notesBtn) notesBtn.addEventListener('click', function () { setNotes(notesPane.hidden); });
+    const notesClose = document.getElementById('mashqNotesClose');
+    if (notesClose) notesClose.addEventListener('click', function () { setNotes(false); });
+    rightBody.addEventListener('click', function (event) {
+        const flag = event.target.closest('.ielts-flag');
+        if (!flag || checked) return;
+        const block = flag.closest('.mashq-q');
+        if (!block) return;
+        const on = !block.classList.contains('is-flag');
+        block.classList.toggle('is-flag', on);
+        flag.classList.toggle('is-on', on);
+        flag.setAttribute('aria-pressed', on ? 'true' : 'false');
+        syncQuestionNav();
+        paintFlagCount();
+    });
+    const flagFilter = document.getElementById('mashqFlagFilter');
+    if (flagFilter) {
+        flagFilter.addEventListener('click', function () {
+            if (checked) return;
+            const count = rightBody.querySelectorAll('.mashq-q.is-flag').length;
+            if (!count) {
+                setStatus(i18n.flagNeed, 'info');
+                return;
+            }
+            const on = !rightBody.classList.contains('is-flags');
+            rightBody.classList.toggle('is-flags', on);
+            flagFilter.classList.toggle('is-on', on);
+        });
+    }
+    const coachBtn = document.getElementById('mashqCoach');
+    if (coachBtn) {
+        coachBtn.addEventListener('click', function () {
+            if (!coachBtn.dataset.type) return;
+            fillTypes(coachBtn.dataset.type);
+            paintBrief();
+        });
+    }
+    const split = document.getElementById('mashqSplit');
+    if (split && workspace) {
+        try {
+            const saved = localStorage.getItem('ton_mashq_split');
+            if (saved) workspace.style.setProperty('--split', saved);
+        } catch (err) { /* kenglik saqlanmasa teng qoladi */ }
+        split.addEventListener('pointerdown', function (event) {
+            if (!workspace.classList.contains('is-exam')) return;
+            event.preventDefault();
+            split.setPointerCapture(event.pointerId);
+            function move(ev) {
+                const rect = workspace.getBoundingClientRect();
+                const x = Math.min(Math.max(ev.clientX - rect.left, 280), rect.width - 300);
+                const value = x + 'px';
+                workspace.style.setProperty('--split', value);
+                try { localStorage.setItem('ton_mashq_split', value); } catch (err) { /* saqlanmasa joriy seansda turadi */ }
+            }
+            function up(ev) {
+                split.removeEventListener('pointermove', move);
+                split.removeEventListener('pointerup', up);
+                try { split.releasePointerCapture(ev.pointerId); } catch (err) { /* capture allaqachon tushgan */ }
+            }
+            split.addEventListener('pointermove', move);
+            split.addEventListener('pointerup', up);
+        });
+    }
+    const hlBtn = document.createElement('button');
+    hlBtn.type = 'button';
+    hlBtn.className = 'ielts-hlbtn';
+    hlBtn.textContent = i18n.flag;
+    hlBtn.hidden = true;
+    document.body.appendChild(hlBtn);
+    let pendingRange = null;
+    function hideHighlight() {
+        hlBtn.hidden = true;
+        pendingRange = null;
+    }
+    leftBody.addEventListener('mouseup', function () {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.rangeCount) {
+            hideHighlight();
+            return;
+        }
+        const range = sel.getRangeAt(0);
+        if (!leftBody.contains(range.commonAncestorContainer)) {
+            hideHighlight();
+            return;
+        }
+        if (!sel.toString().trim()) {
+            hideHighlight();
+            return;
+        }
+        const rect = range.getBoundingClientRect();
+        pendingRange = range.cloneRange();
+        hlBtn.hidden = false;
+        hlBtn.style.left = Math.max(8, rect.left) + 'px';
+        hlBtn.style.top = Math.max(8, rect.top - 36) + 'px';
+    });
+    hlBtn.addEventListener('mousedown', function (event) {
+        event.preventDefault();
+    });
+    hlBtn.addEventListener('click', function () {
+        if (!pendingRange) return;
+        const mark = document.createElement('mark');
+        mark.className = 'ielts-hl';
+        try {
+            pendingRange.surroundContents(mark);
+        } catch (err) {
+            const frag = pendingRange.extractContents();
+            mark.appendChild(frag);
+            pendingRange.insertNode(mark);
+        }
+        const sel = window.getSelection();
+        if (sel) sel.removeAllRanges();
+        hideHighlight();
+    });
+    leftBody.addEventListener('click', function (event) {
+        const mark = event.target.closest ? event.target.closest('mark.ielts-hl') : null;
+        if (!mark || !leftBody.contains(mark)) return;
+        const parent = mark.parentNode;
+        while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+        parent.removeChild(mark);
+    });
+    leftBody.addEventListener('scroll', hideHighlight);
+    restorePref();
+
     generateBtn.addEventListener('click', async function () {
         generateBtn.disabled = true;
         const prevHtml = generateBtn.innerHTML;
         generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + esc(i18n.creating);
+        stopTimer();
         setStatus(i18n.aiBusy, 'info');
         scoreEl.hidden = true;
         footer.hidden = true;
@@ -1009,7 +1948,7 @@
     });
 
     checkBtn.addEventListener('click', async function () {
-        if (!payload || checked) return;
+        if (checked || !questionCount()) return;
         const total = questionCount();
         const done = answeredCount();
         if (total && done < total) {

@@ -63,6 +63,222 @@ READING_TYPES = {
     },
 }
 
+READING_CATEGORIES = (
+    {
+        'key': 'identify',
+        'label_uz': 'Faktni aniqlash',
+        'label_ru': 'Определение информации',
+        'official_en': 'Identifying information',
+        'hint_uz': 'Mos, zid yoki yo‘q',
+        'hint_ru': 'Совпадает, противоречит или нет в тексте',
+        'types': ('tfng',),
+    },
+    {
+        'key': 'choice',
+        'label_uz': 'Variant tanlash',
+        'label_ru': 'Выбор ответа',
+        'official_en': 'Multiple choice',
+        'hint_uz': 'A–D dan bittasi',
+        'hint_ru': 'Один вариант из A–D',
+        'types': ('mcq',),
+    },
+    {
+        'key': 'complete',
+        'label_uz': 'Bo‘sh joy',
+        'label_ru': 'Заполнение',
+        'official_en': 'Completion',
+        'hint_uz': 'Matndan 1–2 so‘z',
+        'hint_ru': '1–2 слова из текста',
+        'types': ('gap_fill',),
+    },
+    {
+        'key': 'match',
+        'label_uz': 'Moslashtirish',
+        'label_ru': 'Сопоставление',
+        'official_en': 'Matching',
+        'hint_uz': 'Sarlavha, tugash, ism',
+        'hint_ru': 'Заголовок, концовка, имя',
+        'types': ('matching_headings', 'matching_endings', 'matching_names'),
+    },
+)
+
+WRITING_CATEGORIES = (
+    {
+        'key': 'language',
+        'label_uz': 'Lug‘at va grammatika',
+        'label_ru': 'Лексика и грамматика',
+        'official_en': 'Lexical resource and grammar',
+        'hint_uz': 'So‘z tanlash, zamon',
+        'hint_ru': 'Выбор слов и времена',
+        'types': ('lexical_resource', 'grammar'),
+    },
+    {
+        'key': 'sentence',
+        'label_uz': 'Jumla',
+        'label_ru': 'Уровень предложения',
+        'official_en': 'Sentence level',
+        'hint_uz': 'Qayta yozish, bog‘lash',
+        'hint_ru': 'Перефраз и связки',
+        'types': ('paraphrasing', 'sentence_construction'),
+    },
+    {
+        'key': 'essay',
+        'label_uz': 'Insho tuzilishi',
+        'label_ru': 'Развитие эссе',
+        'official_en': 'Essay development',
+        'hint_uz': 'Sabab, misol, fikr',
+        'hint_ru': 'Причина, пример, позиция',
+        'types': ('support_sentences', 'argument_development'),
+    },
+)
+
+_READING_TYPE_META = {
+    'tfng': {
+        'blurb_uz': 'Har gap uchun TRUE, FALSE yoki NOT GIVEN. TRUE — matnga mos, FALSE — matnga zid, NOT GIVEN — matnda bu haqda yo‘q.',
+        'blurb_ru': 'Для каждого предложения выберите TRUE, FALSE или NOT GIVEN. TRUE — совпадает с текстом, FALSE — противоречит тексту, NOT GIVEN — в тексте этого нет.',
+        'example_uz': 'The garden opened in 1998.   TRUE    FALSE    NOT GIVEN',
+        'minutes': 20,
+        'questions': 10,
+    },
+    'mcq': {
+        'blurb_uz': 'Har savolda A, B, C yoki D dan bittasini tanlang. Noto‘g‘ri variantlar matndagi so‘zlarga o‘xshash bo‘lishi mumkin.',
+        'blurb_ru': 'В каждом вопросе выберите один вариант: A, B, C или D. Неверные варианты могут повторять слова из текста.',
+        'example_uz': 'What was the first crop in the garden?\nA tomatoes   B wheat   C rice   D beans',
+        'minutes': 20,
+        'questions': 10,
+    },
+    'gap_fill': {
+        'blurb_uz': 'Bo‘sh joyni matndagi so‘z bilan to‘ldiring. Ko‘pi bilan ikki so‘z, o‘z so‘zingizni qo‘shmang.',
+        'blurb_ru': 'Заполните пропуск словами из текста. Не больше двух слов, свои слова не добавляйте.',
+        'example_uz': 'The seeds are covered with ______ to keep them moist.',
+        'minutes': 20,
+        'questions': 10,
+    },
+    'matching_headings': {
+        'blurb_uz': 'Har bo‘limga sarlavhalar ro‘yxatidan mosini qo‘ying. Ro‘yxatda ortiqcha sarlavhalar bor.',
+        'blurb_ru': 'Подберите заголовок к каждому абзацу из списка. В списке есть лишние заголовки.',
+        'example_uz': 'i  A new water supply\nii  Closing the park\niii  Why people joined\nParagraph B → iii',
+        'minutes': 20,
+        'questions': 10,
+    },
+    'matching_endings': {
+        'blurb_uz': 'Gap boshini tugashlar ro‘yxatidagi jumla bilan yakunlang. Har bir tugash odatda bir marta ishlatiladi.',
+        'blurb_ru': 'Закончите начало предложения подходящей концовкой из списка. Каждую концовку обычно используют один раз.',
+        'example_uz': 'The ferry still runs …\nA  because the bridge is closed to cars.',
+        'minutes': 20,
+        'questions': 10,
+    },
+    'matching_names': {
+        'blurb_uz': 'Har bir fikrni matndagi shaxsga moslang. Bitta ism bir necha savolda qaytishi mumkin.',
+        'blurb_ru': 'Соотнесите каждое утверждение с человеком из текста. Одно имя может подойти к нескольким вопросам.',
+        'example_uz': 'A  Hana Ortiz\nB  Tom Reed\nfirst suggested the garden → A',
+        'minutes': 20,
+        'questions': 10,
+    },
+}
+
+_WRITING_TYPE_META = {
+    'lexical_resource': {
+        'blurb_uz': 'Aniq so‘z, sinonim va tabiiy birikmalarni tanlang. IELTS da bu Lexical Resource mezoniga kiradi.',
+        'blurb_ru': 'Подберите точное слово, синоним и естественное сочетание. В IELTS это критерий Lexical Resource.',
+        'example_uz': 'Replace “a lot of” with a more precise phrase in an academic sentence.',
+        'minutes': 20,
+        'questions': 4,
+    },
+    'grammar': {
+        'blurb_uz': 'Zamon, moslik va gap tuzilmasini tekshiring. Bu Grammatical Range and Accuracy mezoniga kiradi.',
+        'blurb_ru': 'Проверьте время, согласование и структуру предложения. Это критерий Grammatical Range and Accuracy.',
+        'example_uz': 'Correct the verb: If cities reduce traffic, the air ___ cleaner.',
+        'minutes': 20,
+        'questions': 4,
+    },
+    'paraphrasing': {
+        'blurb_uz': 'Berilgan fikrni boshqa so‘zlar bilan yozing, ma’no o‘zgarmasin. Task 2 kirishida shu kerak.',
+        'blurb_ru': 'Передайте ту же мысль другими словами, смысл не меняйте. Это нужно во вступлении Task 2.',
+        'example_uz': 'Paraphrase: Many people believe public transport should be free.',
+        'minutes': 20,
+        'questions': 4,
+    },
+    'sentence_construction': {
+        'blurb_uz': 'Oddiy gaplarni because, although, which bilan bog‘langan jumlalarga aylantiring.',
+        'blurb_ru': 'Соедините простые предложения связками because, although, which.',
+        'example_uz': 'Join: The bus was late. / She arrived on time.  Use although.',
+        'minutes': 20,
+        'questions': 4,
+    },
+    'support_sentences': {
+        'blurb_uz': 'Asosiy gapni sabab yoki misol bilan mustahkamlang. Har bir band shunday quriladi.',
+        'blurb_ru': 'Подкрепите главную мысль причиной или примером. Так строится каждый абзац.',
+        'example_uz': 'Main idea: Parks reduce stress.\nAdd one reason or a short example.',
+        'minutes': 40,
+        'questions': 4,
+    },
+    'argument_development': {
+        'blurb_uz': 'Bir tomonni rivojlantiring va qarama-qarshi fikrga qisqa javob yozing.',
+        'blurb_ru': 'Развейте одну сторону и коротко ответьте на противоположную точку зрения.',
+        'example_uz': 'Some say remote work harms teamwork.\nWrite one sentence that answers this view.',
+        'minutes': 40,
+        'questions': 4,
+    },
+}
+
+LEVEL_NOTES = {
+    'A1': 'Boshlang‘ich',
+    'A2': 'Oddiy',
+    'B1': 'O‘rta',
+    'B2': 'Yuqori-o‘rta',
+    'C1': 'Ilg‘or',
+    'C2': 'Yuqori',
+}
+LEVEL_NOTES_RU = {
+    'A1': 'Начальный',
+    'A2': 'Элементарный',
+    'B1': 'Средний',
+    'B2': 'Выше среднего',
+    'C1': 'Продвинутый',
+    'C2': 'Свободный',
+}
+
+
+def practice_page_catalog(skill: str, lang: str = 'uz') -> dict:
+    """Mashq sahifasi: kategoriya, tur, vaqt va qisqa qoida. Til sayt tiliga mos."""
+    ru = normalize_ai_lang(lang) == 'ru'
+    reading = (skill or '').strip().lower() != 'writing'
+    groups = READING_CATEGORIES if reading else WRITING_CATEGORIES
+    source = READING_TYPES if reading else WRITING_FOCUSES
+    blurbs = _READING_TYPE_META if reading else _WRITING_TYPE_META
+    notes = LEVEL_NOTES_RU if ru else LEVEL_NOTES
+    categories = []
+    for group in groups:
+        types = []
+        for key in group['types']:
+            meta = source.get(key) or {}
+            extra = blurbs.get(key) or {}
+            types.append({
+                'key': key,
+                'label': (meta.get('label_ru') if ru else meta.get('label_uz')) or key,
+                'blurb': (extra.get('blurb_ru') if ru else extra.get('blurb_uz')) or '',
+                'example': extra.get('example_uz') or '',
+                'minutes': int(extra.get('minutes') or 20),
+                'questions': int(extra.get('questions') or (10 if reading else 4)),
+            })
+        if types:
+            categories.append({
+                'key': group['key'],
+                'label': group.get('label_ru') if ru else group['label_uz'],
+                'official': group.get('official_en') or group['label_uz'],
+                'hint': (group.get('hint_ru') if ru else group.get('hint_uz')) or '',
+                'types': types,
+            })
+    return {
+        'levels': [
+            {'key': level, 'label': f"{level} · {notes[level]}"}
+            for level in LEVELS
+        ],
+        'categories': categories,
+    }
+
+
 WRITING_FOCUSES = {
     'lexical_resource': {
         'label_uz': 'Lexical Resource',
