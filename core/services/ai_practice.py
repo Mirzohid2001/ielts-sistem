@@ -3335,11 +3335,33 @@ def _answers_match(user: str, correct: str) -> bool:
     return blank_answers_match(u, c)
 
 
+def trim_practice_payload(payload: dict, skill: str, count: int) -> dict:
+    """Tanlangan savol soni. Writing doim 4 ta mashqda qoladi."""
+    if not isinstance(payload, dict):
+        return {}
+    reading = (skill or '').strip().lower() != 'writing'
+    allowed = (5, 8, 10) if reading else (4,)
+    try:
+        n = int(count)
+    except (TypeError, ValueError):
+        n = 10 if reading else 4
+    if n not in allowed:
+        n = 10 if reading else 4
+    key = 'questions' if reading else 'exercises'
+    rows = payload.get(key)
+    if not isinstance(rows, list) or n >= len(rows):
+        return payload
+    out = dict(payload)
+    out[key] = rows[:n]
+    return out
+
+
 def public_practice_payload(payload: dict) -> dict:
     """Clientga correct/hint maxfiy maydonlarini bermaslik."""
     if not isinstance(payload, dict):
         return {}
     out = dict(payload)
+    out.pop('raw_errors', None)
     for key in ('questions', 'exercises'):
         rows = out.get(key)
         if not isinstance(rows, list):
@@ -3357,7 +3379,59 @@ def public_practice_payload(payload: dict) -> dict:
     return out
 
 
-def check_practice_answers(payload: dict, answers: dict) -> dict:
+def locate_practice_evidence(passage: str, row: dict) -> tuple:
+    """Tushuntirish yoki aniq so‘z matndagi qaysi bandda turishini topadi."""
+    import re
+
+    raw = str(passage or '').replace('\r', '').strip()
+    parts = [re.sub(r'\s+', ' ', part).strip() for part in re.split(r'\n\s*\n', raw) if part.strip()]
+    if len(parts) < 2:
+        sentences = re.findall(r'[^.!?]+[.!?]+', raw) or ([raw] if raw else [])
+        size = max(2, (len(sentences) + 5) // 6)
+        parts = []
+        for index in range(0, len(sentences), size):
+            chunk = re.sub(r'\s+', ' ', ' '.join(sentences[index:index + size])).strip()
+            if chunk:
+                parts.append(chunk)
+    parts = parts[:12]
+    if not parts or not isinstance(row, dict):
+        return '', ''
+
+    blobs = []
+    for field in ('explanation', 'hint'):
+        text = re.sub(r'\s+', ' ', str(row.get(field) or '')).strip().strip('"“”')
+        if text:
+            blobs.append(text)
+            blobs.extend(re.findall(r'[^.!?]{18,}[.!?]?', text))
+    best_letter = ''
+    best_snippet = ''
+    best_len = 0
+    for blob in blobs:
+        window = re.sub(r'\s+', ' ', blob).strip()
+        if len(window) < 18:
+            continue
+        probe = window[:48].lower()
+        for index, part in enumerate(parts):
+            at = part.lower().find(probe)
+            if at < 0:
+                continue
+            snippet = part[at:at + min(len(part) - at, max(len(window), 48))]
+            if len(snippet) > best_len:
+                best_len = len(snippet)
+                best_letter = chr(65 + index)
+                best_snippet = snippet.strip()
+    if best_letter:
+        return best_letter, best_snippet[:140]
+    word = str(row.get('correct') or '').strip()
+    if len(word) >= 4 and ' ' not in word and word.lower() not in {'true', 'false', 'not', 'given', 'a', 'b', 'c', 'd'}:
+        for index, part in enumerate(parts):
+            found = re.search(re.escape(word), part, re.I)
+            if found:
+                return chr(65 + index), found.group(0)
+    return '', ''
+
+
+def check_practice_answers(payload: dict, answers: dict, only=None) -> dict:
     """answers: { "1": "a", "2": "stress", ... }"""
     skill = (payload or {}).get('skill') or 'reading'
     items = payload.get('questions') if skill == 'reading' else payload.get('exercises')
@@ -3376,6 +3450,7 @@ def check_practice_answers(payload: dict, answers: dict) -> dict:
         ok = _answers_match(user, expected)
         if ok:
             correct_n += 1
+        letter, snippet = locate_practice_evidence(str((payload or {}).get('passage') or ''), row)
         results.append({
             'id': row.get('id'),
             'user': user,
@@ -3383,8 +3458,14 @@ def check_practice_answers(payload: dict, answers: dict) -> dict:
             'correct_display': _format_correct_display(row, expected),
             'is_correct': ok,
             'explanation': row.get('explanation') or row.get('hint') or '',
+            'paragraph': letter,
+            'evidence': snippet,
             'answered': bool(user),
         })
+    if only is not None and str(only).strip():
+        want = str(only).strip()
+        results = [row for row in results if str(row.get('id')) == want]
+        correct_n = sum(1 for row in results if row.get('is_correct'))
     total = len(results) or 1
     return {
         'skill': skill,

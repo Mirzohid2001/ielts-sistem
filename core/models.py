@@ -2234,6 +2234,44 @@ class SATResourceNote(models.Model):
         return f"{self.user.username} - {self.resource.title}"
 
 
+class PracticeLabRecord(models.Model):
+    """Mashq qoralamasi va tugallangan natija. Javob kaliti faqat serverda."""
+    KIND_DRAFT = 'draft'
+    KIND_DONE = 'done'
+    KIND_CHOICES = (
+        (KIND_DRAFT, 'Qoralama'),
+        (KIND_DONE, 'Tugallangan'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='practice_lab_records', verbose_name="Foydalanuvchi")
+    skill = models.CharField(max_length=16, verbose_name="Ko‘nikma")
+    kind = models.CharField(max_length=8, choices=KIND_CHOICES, verbose_name="Holat")
+    level = models.CharField(max_length=8, blank=True, verbose_name="Daraja")
+    practice_type = models.CharField(max_length=40, blank=True, verbose_name="Savol turi")
+    mode = models.CharField(max_length=16, blank=True, verbose_name="Rejim")
+    title = models.CharField(max_length=240, blank=True, verbose_name="Sarlavha")
+    label = models.CharField(max_length=120, blank=True, verbose_name="Tur nomi")
+    correct = models.PositiveSmallIntegerField(default=0, verbose_name="To‘g‘ri")
+    total = models.PositiveSmallIntegerField(default=0, verbose_name="Jami")
+    public = models.JSONField(default=dict, blank=True, verbose_name="O‘quvchiga ochiq matn")
+    secret = models.JSONField(default=dict, blank=True, verbose_name="Javob kaliti")
+    state = models.JSONField(default=dict, blank=True, verbose_name="Javoblar va belgilar")
+    result = models.JSONField(default=dict, blank=True, verbose_name="Tekshiruv")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqt")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan vaqt")
+
+    class Meta:
+        verbose_name = "Mashq yozuvi"
+        verbose_name_plural = "Mashq yozuvlari"
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['user', 'skill', 'kind', '-updated_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id} {self.skill} {self.kind} {self.title}"
+
+
 # Signal: UserTestAnswer o'zgarganda natijani qayta hisoblash (admin essay baholaganda)
 from django.db.models.signals import post_save
 from django.dispatch import receiver

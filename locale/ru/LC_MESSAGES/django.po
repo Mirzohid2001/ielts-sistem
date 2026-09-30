@@ -2026,3 +2026,237 @@ msgstr "Время вышло. Ответы закрыты — можно про
 
 msgid "Hammasi to‘g‘ri."
 msgstr "Всё верно."
+
+msgid "KEYINGI QADAM"
+msgstr "СЛЕДУЮЩИЙ ШАГ"
+
+msgid "Reading Practice Lab"
+msgstr "Лаборатория Reading"
+
+msgid "Writing Practice Lab"
+msgstr "Лаборатория Writing"
+
+msgid "Zaifroq o‘qish ko‘nikmasini shaxsiy mashq bilan mustahkamlang."
+msgstr "Укрепите более слабый навык чтения личной практикой."
+
+msgid "IELTS mezonlari bo‘yicha insho va mashqlarni shu daraja uchun oling."
+msgstr "Получите эссе и задания по критериям IELTS для этого уровня."
+
+msgid "Aniqlik"
+msgstr "Точность"
+
+msgid "barcha mashqlar bo‘yicha"
+msgstr "по всем занятиям"
+
+msgid "Tugallangan"
+msgstr "Завершено"
+
+msgid "shu brauzerda"
+msgstr "в этом браузере"
+
+msgid "Tavsiya"
+msgstr "Рекомендация"
+
+msgid "matn qiyinligi"
+msgstr "сложность текста"
+
+msgid "SIZ UCHUN"
+msgstr "ДЛЯ ВАС"
+
+msgid "Tavsiya etilgan mashq"
+msgstr "Рекомендованное занятие"
+
+msgid "Savol turini tanlang"
+msgstr "Выберите тип вопроса"
+
+msgid "Darajani tanlang"
+msgstr "Выберите уровень"
+
+msgid "Daraja matn qiyinligini bildiradi, IELTS ballini emas."
+msgstr "Уровень описывает сложность текста, а не балл IELTS."
+
+msgid "Rejimni tanlang"
+msgstr "Выберите режим"
+
+msgid "Savollar soni"
+msgstr "Число вопросов"
+
+msgid "Mashqni yaratish"
+msgstr "Создать занятие"
+
+msgid "QISQA DARS"
+msgstr "КОРОТКИЙ УРОК"
+
+msgid "yoki"
+msgstr "или"
+
+msgid "Javobni o‘zgartiradigan farqni ko‘ring."
+msgstr "Посмотрите разницу, которая меняет ответ."
+
+msgid "3 daqiqalik dars"
+msgstr "Урок на 3 минуты"
+
+msgid "So‘nggi mashqlar"
+msgstr "Недавние занятия"
+
+msgid "Shoshilmang. Dalilni matndan toping."
+msgstr "Не спешите. Найдите доказательство в тексте."
+
+msgid "Javoblarni yuborish"
+msgstr "Отправить ответы"
+
+msgid "Matn"
+msgstr "Текст"
+
+msgid "YANA BIR QADAM"
+msgstr "ЕЩЁ ОДИН ШАГ"
+
+msgid "Mashq yakunlandi"
+msgstr "Занятие завершено"
+
+msgid "Javob va dalilni ko‘rish"
+msgstr "Смотреть ответы и доказательства"
+
+msgid "Yana shu turda"
+msgstr "Ещё раз этот тип"
+
+msgid "Tur tanlash"
+msgstr "Выбор типа"
+
+msgid "TAYYORGARLIK"
+msgstr "ПОДГОТОВКА"
+
+msgid "Mashq yozilmoqda…"
+msgstr "Пишем занятие…"
+
+msgid "O‘rganish"
+msgstr "Изучение"
+
+msgid "Mashq"
+msgstr "Практика"
+
+msgid "Sinov"
+msgstr "Испытание"
+
+msgid "Maslahat va ikkinchi urinish."
+msgstr "Подсказка и вторая попытка."
+
+msgid "Mustaqil javob."
+msgstr "Самостоятельный ответ."
+
+msgid "Vaqt tugagach javob yuboriladi."
+msgstr "Когда время выйдет, ответы отправятся."
+
+msgid "taxminan"
+msgstr "примерно"
+
+msgid "Hali mashq yo‘q."
+msgstr "Пока нет занятий."
+
+msgid "Zaif tur"
+msgstr "Слабый тип"
+
+msgid "Shu darajada shu turni qayta oling."
+msgstr "Пройдите этот тип ещё раз на этом уровне."
+
+msgid "Javobni tekshirish"
+msgstr "Проверить ответ"
+
+msgid "To‘g‘ri. Davom etishingiz mumkin."
+msgstr "Верно. Можно продолжать."
+
+msgid "Hali emas. Dalilni qayta qidiring."
+msgstr "Пока нет. Найдите доказательство снова."
+
+msgid "Javobingiz"
+msgstr "Ваш ответ"
+
+msgid "Ajoyib. Hamma javob to‘g‘ri."
+msgstr "Отлично. Все ответы верные."
+
+msgid "Qayta ko‘rish kerak"
+msgstr "Нужно пересмотреть"
+
+msgid "Bo‘sh savollar bor. Baribir yuborasizmi?"
+msgstr "Есть пустые вопросы. Всё равно отправить?"
+
+msgid "Mashqni to‘xtatasizmi? Javoblar shu sahifada qoladi."
+msgstr "Остановить занятие? Ответы останутся на этой странице."
+
+msgid "Matn belgilandi."
+msgstr "Текст отмечен."
+
+msgid "Avval matndan so‘z belgilang."
+msgstr "Сначала выделите слова в тексте."
+
+msgid "FALSE — matndagi gapga zid. NOT GIVEN — bu haqda yozilmagan."
+msgstr "FALSE — противоречит тексту. NOT GIVEN — об этом не написано."
+
+msgid "Namuna"
+msgstr "Образец"
+
+msgid "Topshiriq"
+msgstr "Задание"
+
+msgid "Matn yozilmoqda"
+msgstr "Пишем текст"
+
+msgid "Savollar tuzilmoqda"
+msgstr "Составляем вопросы"
+
+msgid "Aniqlik tekshirilmoqda"
+msgstr "Проверяем точность"
+
+msgid "Mashq ochilmoqda"
+msgstr "Открываем занятие"
+
+msgid "Qaytish"
+msgstr "Назад"
+
+msgid "Qolish"
+msgstr "Остаться"
+
+msgid "3 ta savol"
+msgstr "3 вопроса"
+
+msgid "O‘zingiz tanlang"
+msgstr "Выберите сами"
+
+msgid "to‘g‘ri javob"
+msgstr "верных ответов"
+
+msgid "Mustahkamlashni istagan ko‘nikmani belgilang."
+msgstr "Выберите навык, который хотите укрепить."
+
+msgid "E’TIBOR"
+msgstr "ФОКУС"
+
+msgid "Izoh"
+msgstr "Заметка"
+
+msgid "Tugallanmagan mashq"
+msgstr "Незавершённое занятие"
+
+msgid "Savol turi bo‘yicha"
+msgstr "По типу вопроса"
+
+msgid "Tarix"
+msgstr "История"
+
+msgid "Mashqlar tarixi"
+msgstr "История занятий"
+
+msgid "O‘qish profili"
+msgstr "Профиль чтения"
+
+msgid "PROFIL"
+msgstr "ПРОФИЛЬ"
+
+msgid "Shrift"
+msgstr "Шрифт"
+
+msgid "TARIX"
+msgstr "ИСТОРИЯ"
+
+msgid "Yangidan"
+msgstr "Заново"

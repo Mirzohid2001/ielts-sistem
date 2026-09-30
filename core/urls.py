@@ -8,6 +8,7 @@ urlpatterns = [
     path('ielts/', views.dashboard, name='dashboard'),
     path('mashqlar/api/generate/', views.practice_generate, name='practice_generate'),
     path('mashqlar/api/check/', views.practice_check, name='practice_check'),
+    path('mashqlar/api/lab/', views.practice_lab, name='practice_lab'),
     path('mashqlar/', views.practice_hub, {'skill': 'reading'}, name='practice_hub'),
     path('mashqlar/<str:skill>/', views.practice_hub, name='practice_skill'),
     path('videos/', views.video_list, name='video_list'),

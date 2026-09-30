@@ -4,1990 +4,1422 @@
 {% block title %}{{ page_title }} - Ton academy{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Source+Serif+4:wght@400;500;600&display=swap">
 <style>
-/* Dropdown: static cache bo'lsa ham dizayn chiqsin */
-.mashq-page .mashq-controls {
-    display: grid;
-    grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
-    gap: 1rem 1.15rem;
-    align-items: end;
-}
-.mashq-page .mashq-cats {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
-    gap: 0.75rem;
-}
-.mashq-page .mashq-cat {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-    min-height: 8.5rem;
-    padding: 0.9rem 0.95rem 0.85rem;
-    border-radius: 16px;
-    border: 1px solid #e7e5e4;
-    background: #fff;
-    color: #1c1917;
-}
-.mashq-page .mashq-cat__kicker {
-    margin: 0;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #78716c;
-}
-.mashq-page .mashq-cat__name {
-    margin: 0;
-    font-weight: 800;
-    font-size: 1rem;
-    letter-spacing: -0.01em;
-}
-.mashq-page .mashq-cat__types {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.7rem;
-}
-.mashq-page .mashq-type {
-    border: 1px solid #e7e5e4;
-    background: #fafaf9;
-    color: #1c1917;
-    border-radius: 999px;
-    padding: 0.32rem 0.7rem;
-    font-size: 0.78rem;
-    font-weight: 700;
-    line-height: 1.3;
-    cursor: pointer;
-}
-.mashq-page .mashq-type:hover { border-color: #a5b4fc; background: #fff; }
-.mashq-page .mashq-cat.is-active {
-    border-color: #c7d2fe;
-    background: #f8fafc;
-    box-shadow: inset 3px 0 0 #1e1b4b;
-}
-.mashq-page .mashq-type {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-.mashq-page .mashq-type.is-active {
-    background: #1e1b4b;
-    border-color: #1e1b4b;
-    color: #fff;
-}
-.mashq-page .mashq-type__score {
-    font-size: 0.68rem;
-    font-weight: 800;
-    padding: 0.05rem 0.32rem;
-    border-radius: 999px;
-    background: #e7e5e4;
-    color: #44403c;
-}
-.mashq-page .mashq-type__score.is-weak { background: #fee2e2; color: #991b1b; }
-.mashq-page .mashq-type__score.is-strong { background: #dcfce7; color: #166534; }
-.mashq-page .mashq-type.is-active .mashq-type__score {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-}
-.mashq-page .mashq-exam {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    margin: 0;
-    font-size: 0.82rem;
-    font-weight: 800;
-    color: #1e1b4b;
-    cursor: pointer;
-}
-.mashq-page .mashq-exam input {
-    width: 1rem;
-    height: 1rem;
-    accent-color: #1e1b4b;
-}
-.mashq-page.is-strict #mashqBriefText,
-.mashq-page.is-strict .ielts-note,
-.mashq-page.is-strict .ielts-model,
-.mashq-page.is-strict .ielts-modelhead { display: none !important; }
-.mashq-page.is-strict #mashqTimerBtn { cursor: default; }
-.mashq-page mark.ielts-hl {
-    background: #fde68a;
-    color: inherit;
-    cursor: pointer;
-    border-radius: 2px;
-}
-.ielts-hlbtn {
-    position: fixed;
-    z-index: 40;
-    border: 0;
-    border-radius: 999px;
-    padding: 0.35rem 0.7rem;
-    background: #1e1b4b;
-    color: #fff;
-    font-weight: 800;
-    font-size: 0.78rem;
-    box-shadow: 0 8px 18px rgba(30, 27, 75, 0.28);
-    cursor: pointer;
-}
-.mashq-page .mashq-q[hidden] { display: none !important; }
-.mashq-page .ielts-clear {
-    margin: 0.4rem 0 0;
-    font-family: Georgia, "Times New Roman", serif;
-    font-style: italic;
-    color: #166534;
-}
-.mashq-page .mashq-controls__action {
-    grid-column: 2;
-    justify-self: end;
-}
-.mashq-page .ielts-sheet-idle__line,
-.mashq-page .ielts-sheet-idle .ielts-kicker {
-    font-family: Georgia, "Times New Roman", serif;
-}
-.mashq-page .ielts-sheet-idle__line {
-    margin: 0.35rem 0 0;
-    color: #57534e;
-    font-size: 1.02rem;
-    line-height: 1.55;
-}
-.mashq-page .mashq-workspace:not(.is-exam) .mashq-panel--passage {
-    position: static;
-    max-height: none;
-}
-.mashq-page .mashq-placeholder {
-    align-items: stretch;
-    justify-content: flex-start;
-    text-align: left;
-    padding: 1.25rem 1.35rem 1.5rem;
-    overflow: auto;
-}
-.mashq-page .mashq-guide__kicker {
-    margin: 0 0 0.65rem;
-    font-size: 0.75rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #6366f1;
-}
-.mashq-page .mashq-guide__steps {
-    margin: 0;
-    padding-left: 1.15rem;
-    color: #334155;
-    font-size: 0.95rem;
-    line-height: 1.55;
-}
-.mashq-page .mashq-guide__steps li + li { margin-top: 0.45rem; }
-.mashq-page .mashq-sample__label {
-    margin: 0 0 0.55rem;
-    font-weight: 800;
-    color: #0f172a;
-}
-.mashq-page .mashq-sample__box {
-    margin: 0 0 0.75rem;
-    padding: 0.9rem 1rem;
-    border-radius: 12px;
-    background: #f8fafc;
-    border: 1px dashed #c7d2fe;
-    color: #1e293b;
-    font-family: Georgia, "Times New Roman", serif;
-    white-space: pre-wrap;
-    line-height: 1.55;
-}
-.mashq-page .mashq-placeholder p {
-    margin: 0;
-    color: #475569;
-}
-.mashq-page .mashq-placeholder .mashq-guide__kicker {
-    margin: 0 0 0.65rem;
-}
-.mashq-page .mashq-brief {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem 0.5rem;
-    align-items: center;
-    padding-top: 0.15rem;
-    border-top: 0;
-}
-.mashq-page .mashq-brief__facts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-.mashq-page .mashq-brief__facts li,
-.mashq-page .mashq-brief__last {
-    margin: 0;
-    padding: 0.35rem 0.65rem;
-    border-radius: 999px;
-    background: #eef2ff;
-    color: #3730a3;
-    font-size: 0.78rem;
-    font-weight: 700;
-}
-.mashq-page .mashq-brief__last {
-    background: #ecfdf3;
-    color: #166534;
-}
-.mashq-page .ielts-exambar__tools {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-}
-.mashq-page .ielts-tool {
-    border: 1px solid #4b4b4b;
-    background: #111;
-    color: #fff;
-    border-radius: 4px;
-    min-width: 2.4rem;
-    height: 2rem;
-    padding: 0 0.55rem;
-    font-weight: 700;
-    font-size: 0.82rem;
-    cursor: pointer;
-}
-.mashq-page .ielts-tool.is-paused { color: #fbbf24; }
-.mashq-page .ielts-tool.is-low { color: #fca5a5; }
-.mashq-page .mashq-panel__body.is-font-sm .ielts-para p,
-.mashq-page .mashq-panel__body.is-font-sm .ielts-model,
-.mashq-page .mashq-panel__body.is-font-sm .mashq-q__prompt,
-.mashq-page .mashq-panel__body.is-font-sm .ielts-rubric {
-    font-size: 0.92rem;
-}
-.mashq-page .mashq-panel__body.is-font-lg .ielts-para p,
-.mashq-page .mashq-panel__body.is-font-lg .ielts-model,
-.mashq-page .mashq-panel__body.is-font-lg .mashq-q__prompt,
-.mashq-page .mashq-panel__body.is-font-lg .ielts-rubric {
-    font-size: 1.22rem;
-}
-.mashq-page .mashq-controls__group {
-    min-width: 0;
-}
-.mashq-page select.mashq-select {
-    display: block;
-    box-sizing: border-box;
-    width: 100%;
-    height: 48px;
-    padding: 0 2.75rem 0 1rem;
-    border-radius: 14px;
-    border: 1.5px solid #e2e8f0;
-    background-color: #f1f5f9;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 18px;
-    color: #0f172a;
-    font-family: inherit;
-    font-weight: 700;
-    font-size: 0.95rem;
-    line-height: 1.2;
-    cursor: pointer;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(15, 23, 42, 0.05);
-    transition: border-color .15s, box-shadow .15s, background-color .15s;
-}
-.mashq-page select.mashq-select:hover {
-    border-color: #a5b4fc;
-    background-color: #fff;
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.14);
-}
-.mashq-page select.mashq-select:focus {
-    outline: none;
-    border-color: #6366f1;
-    background-color: #fff;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.22);
-}
-.mashq-page .mashq-controls__label {
-    margin-bottom: 0.55rem;
-}
-@media (max-width: 991.98px) {
-    .mashq-page .mashq-cats {
-        grid-template-columns: 1fr 1fr;
-    }
-    .mashq-page .mashq-controls {
-        grid-template-columns: 1fr;
-    }
-    .mashq-page .mashq-controls__action {
-        grid-column: auto;
-        justify-self: stretch;
-    }
-    .mashq-page .mashq-workspace.is-exam {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Computer-delivered IELTS sheet */
-.mashq-page .ielts-exambar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin: 0 0 0;
-    padding: 0.7rem 1rem;
-    background: #1a1a1a;
-    color: #fff;
-    border-radius: 4px 4px 0 0;
-    font-family: Georgia, "Times New Roman", serif;
-}
-.mashq-page .ielts-exambar[hidden] { display: none !important; }
-.mashq-page .ielts-exambar__brand {
-    font-size: 1.05rem;
-    letter-spacing: 0.02em;
-}
-.mashq-page .ielts-exambar__brand span {
-    color: #e10600;
-    font-weight: 700;
-    font-style: italic;
-    margin-right: 0.35rem;
-    font-size: 1.25rem;
-}
-.mashq-page .ielts-exambar__part {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 0.82rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #f3f3f3;
-}
-.mashq-page .mashq-workspace.is-exam {
-    gap: 0;
-    border: 1px solid #c8c8c8;
-    border-top: 0;
-    background: #fff;
-    align-items: stretch;
-}
-.mashq-page .mashq-workspace.is-exam .mashq-panel {
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background: #fff;
-}
-.mashq-page .mashq-workspace.is-exam .mashq-panel--passage {
-    border-right: 1px solid #d5d5d5;
-    position: relative !important;
-    top: auto !important;
-    max-height: calc(100vh - 22rem) !important;
-}
-.mashq-page .mashq-workspace.is-exam .mashq-panel--questions {
-    max-height: calc(100vh - 22rem) !important;
-}
-.mashq-page:has(.mashq-workspace.is-exam) .mashq-bar {
-    position: static !important;
-    bottom: auto !important;
-    margin-top: 0.75rem;
-}
-.mashq-page .mashq-workspace.is-exam .mashq-panel--passage .mashq-panel__body,
-.mashq-page .mashq-workspace.is-exam .mashq-panel--questions .mashq-panel__body {
-    max-height: min(58vh, 640px) !important;
-    overflow: auto !important;
-}
-.mashq-page .ielts-passhead,
-.mashq-page .ielts-qhead {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.75rem;
-    margin-bottom: 0.35rem;
-}
-.mashq-page .ielts-kicker,
-.mashq-page .ielts-qhead h3 {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #111;
-}
-.mashq-page .ielts-passhead__meta {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 0.75rem;
-    color: #555;
-}
-.mashq-page .ielts-title {
-    margin: 0.35rem 0 0.45rem;
-    text-align: center;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #111;
-}
-.mashq-page .ielts-time,
-.mashq-page .ielts-lead,
-.mashq-page .ielts-words,
-.mashq-page .ielts-rubric,
-.mashq-page .ielts-note {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 0.98rem;
-    line-height: 1.45;
-    color: #222;
-}
-.mashq-page .ielts-time,
-.mashq-page .ielts-rubric { font-style: italic; margin: 0 0 0.85rem; }
-.mashq-page .ielts-note {
-    margin: -0.35rem 0 0.9rem;
-    font-size: 0.88rem;
-    color: #444;
-}
-.mashq-page .ielts-words {
-    margin: 0.8rem 0 0;
-    font-size: 0.8rem;
-    color: #666;
-    font-style: italic;
-}
-.mashq-page .ielts-para {
-    display: grid;
-    grid-template-columns: 1.6rem minmax(0, 1fr);
-    gap: 0.55rem;
-    margin: 0 0 0.95rem;
-}
-.mashq-page .ielts-para__mark {
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight: 700;
-    color: #111;
-    padding-top: 0.1rem;
-}
-.mashq-page .ielts-para p,
-.mashq-page .ielts-model {
-    margin: 0;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.05rem;
-    line-height: 1.7;
-    color: #1a1a1a;
-}
-.mashq-page .ielts-taskbox {
-    margin: 0.4rem 0 0.85rem;
-    padding: 0.85rem 1rem;
-    border: 1px solid #111;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.05rem;
-    line-height: 1.6;
-}
-.mashq-page .ielts-modelhead {
-    margin: 1.1rem 0 0.4rem;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 1rem;
-}
-.mashq-page .ielts-q {
-    border: 0;
-    border-bottom: 1px solid #e6e6e6;
-    border-radius: 0;
-    box-shadow: none;
-    padding: 0.85rem 0.15rem 0.95rem;
-    margin: 0;
-    background: transparent;
-}
-.mashq-page .ielts-qnum {
-    flex: 0 0 auto;
-    min-width: 1.4rem;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    color: #111;
-}
-.mashq-page .ielts-q .mashq-q__prompt {
-    font-family: Georgia, "Times New Roman", serif;
-    font-weight: 400;
-    font-size: 1.02rem;
-}
-.mashq-page .mashq-opts--tfng {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-}
-.mashq-page .mashq-opt {
-    position: relative;
-}
-.mashq-page .mashq-opt input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    opacity: 0;
-}
-.mashq-page .mashq-opt--tfng {
-    border: 1px solid #bdbdbd;
-    border-radius: 2px;
-    padding: 0.4rem 0.7rem;
-    background: #fff;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-}
-.mashq-page .mashq-opt--tfng.is-selected {
-    border-color: #1a4f8b;
-    background: #e8f1fb;
-}
-.mashq-page .ielts-listbox {
-    border-radius: 0;
-    background: #fff;
-    border: 1px solid #111;
-    margin-bottom: 1rem;
-}
-.mashq-page .ielts-listbox .mashq-bank__title {
-    color: #111;
-    letter-spacing: 0.04em;
-}
-.mashq-page .ielts-listbox .mashq-bank__list strong {
-    min-width: 1.8rem;
-    color: #111;
-    font-family: Arial, Helvetica, sans-serif;
-}
-.mashq-page .ielts-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    margin-top: 0.55rem;
-}
-.mashq-page .ielts-nav[hidden] { display: none !important; }
-.mashq-page .ielts-nav__n {
-    width: 1.85rem;
-    height: 1.85rem;
-    border: 1px solid #c5c5c5;
-    background: #fff;
-    color: #222;
-    font-size: 0.78rem;
-    font-weight: 700;
-    cursor: pointer;
-    border-radius: 2px;
-}
-.mashq-page .ielts-nav__n.is-done { background: #1a4f8b; color: #fff; border-color: #1a4f8b; }
-.mashq-page .ielts-nav__n.is-ok { background: #157347; border-color: #157347; color: #fff; }
-.mashq-page .ielts-nav__n.is-bad { background: #b42318; border-color: #b42318; color: #fff; }
-.mashq-page .ielts-nav__n.is-flag { box-shadow: inset 0 -3px 0 #eab308; }
-.mashq-page .mashq-coach {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    margin: 0;
-    padding: 0.28rem 0.35rem 0.28rem 0.7rem;
-    border: 1px solid #f5d0a8;
-    border-radius: 999px;
-    background: #fff7ed;
-    color: #9a3412;
-    cursor: pointer;
-    font: inherit;
-}
-.mashq-page .mashq-coach[hidden] { display: none !important; }
-.mashq-page .mashq-coach__kicker {
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-.mashq-page .mashq-coach__name {
-    padding: 0.22rem 0.65rem;
-    border-radius: 999px;
-    background: #1e1b4b;
-    color: #fff;
-    font-size: 0.78rem;
-    font-weight: 800;
-}
-.mashq-page .ielts-tool--text {
-    min-width: 0;
-    padding: 0 0.7rem;
-    font-size: 0.75rem;
-    letter-spacing: 0.01em;
-}
-.mashq-page .ielts-tool.is-on {
-    background: #fde68a;
-    color: #1e1b4b;
-    border-color: #fde68a;
-}
-.mashq-page .ielts-flag {
-    flex: 0 0 auto;
-    width: 1.85rem;
-    height: 1.85rem;
-    margin-left: auto;
-    border: 1px solid #d6d3d1;
-    border-radius: 4px;
-    background: #fff;
-    color: #78716c;
-    cursor: pointer;
-}
-.mashq-page .ielts-flag.is-on {
-    background: #1e1b4b;
-    border-color: #1e1b4b;
-    color: #fde68a;
-}
-.mashq-page .ielts-q .mashq-q__prompt { flex: 1; }
-.mashq-page .mashq-panel__body.is-flags .mashq-q:not(.is-flag) { display: none; }
-.mashq-page .mashq-split { display: none; }
-.mashq-page .mashq-notes[hidden] { display: none !important; }
-.mashq-page .mashq-notes {
-    position: absolute;
-    inset: 0;
-    z-index: 4;
-    display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
-    padding: 0.85rem 1rem 1rem;
-    background-color: #fffdf6;
-    background-image: repeating-linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent 1.7rem,
-        #efe6d2 1.7rem,
-        #efe6d2 1.74rem
-    );
-}
-.mashq-page .mashq-notes__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-weight: 800;
-    color: #1e1b4b;
-}
-.mashq-page .mashq-notes__close {
-    border: 0;
-    background: transparent;
-    font-weight: 700;
-    color: #78716c;
-    cursor: pointer;
-}
-.mashq-page .mashq-notes textarea {
-    flex: 1;
-    width: 100%;
-    border: 0;
-    resize: none;
-    background: transparent;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.02rem;
-    line-height: 1.74rem;
-    color: #1c1917;
-}
-.mashq-page .mashq-notes textarea:focus { outline: none; }
-.mashq-page .mashq-workspace.is-tight .ielts-para p,
-.mashq-page .mashq-workspace.is-tight .ielts-model,
-.mashq-page .mashq-workspace.is-tight .ielts-q .mashq-q__prompt { line-height: 1.4; }
-.mashq-page .mashq-workspace.is-roomy .ielts-para p,
-.mashq-page .mashq-workspace.is-roomy .ielts-model,
-.mashq-page .mashq-workspace.is-roomy .ielts-q .mashq-q__prompt { line-height: 2.05; }
-@media (min-width: 992px) {
-    .mashq-page .mashq-workspace.is-exam {
-        grid-template-columns: minmax(18rem, var(--split, 1fr)) 14px minmax(18rem, 1fr);
-    }
-    .mashq-page .mashq-workspace.is-exam .mashq-panel--passage { border-right: 0; }
-    .mashq-page .mashq-workspace.is-exam .mashq-split {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: col-resize;
-        background: #f5f5f4;
-        touch-action: none;
-    }
-    .mashq-page .mashq-workspace.is-exam .mashq-split::before {
-        content: "";
-        width: 4px;
-        height: 2.4rem;
-        border-radius: 999px;
-        background: #a8a29e;
-    }
+.lab {
+    --navy: #142b39;
+    --ink: #1c2d38;
+    --muted: #637784;
+    --line: #e3e8ea;
+    --wash: #f6f8f9;
+    --blue: #234b61;
+    --green: #376b58;
+    color: var(--ink);
+    background: var(--wash);
+    font-family: "DM Sans", Arial, sans-serif;
+    font-size: 15px;
+    min-height: calc(100vh - 72px);
+    padding: 39px 46px 28px;
+    max-width: none;
+}
+.lab, .lab button, .lab input, .lab textarea, .lab select { font-family: "DM Sans", Arial, sans-serif; }
+.lab h1, .lab h2 { font-family: Manrope, Arial, sans-serif; }
+.lab h1, .lab h2, .lab h3 { margin: 0; font-weight: 700; }
+.lab h1 { font-size: 34px; line-height: 1.3; letter-spacing: -1.3px; font-weight: 750; }
+.lab h2 { font-size: 22px; line-height: 1.4; letter-spacing: -0.65px; }
+.lab h3 { font-size: 16px; letter-spacing: -0.25px; }
+.lab p { line-height: 1.7; }
+.lab button { font: inherit; cursor: pointer; border: 0; background: transparent; color: inherit; transition: background .18s, border-color .18s, box-shadow .18s; }
+.lab button:disabled { opacity: 0.45; cursor: not-allowed; }
+.lab button:focus-visible { outline: 3px solid #6b9db7; outline-offset: 4px; }
+.lab-crumb { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; font-size: 13px; color: #85919a; }
+.lab-crumb a { color: #85919a; text-decoration: none; }
+.lab-crumb a.is-on { color: #435361; font-weight: 500; }
+.lab-crumb a + a:before { content: "›"; margin-right: 14px; color: #85919a; font-weight: 400; }
+.lab-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+.lab-kicker { font-size: 10px; letter-spacing: 1.7px; font-weight: 650; color: #68818e; margin-bottom: 12px; }
+.lab-head p { margin: 10px 0 0; color: #637784; font-size: 14px; }
+.lab-head-ico { width: 64px; height: 64px; flex-shrink: 0; display: grid; place-items: center; border: 1px solid #dbe4e7; border-radius: 16px; color: #688591; background: linear-gradient(145deg, #fff, #edf2f4); font-size: 26px; }
+.lab-metrics { display: grid; grid-template-columns: 1.15fr 1fr 1fr; margin: 6px 0 26px; padding: 0; background: transparent; border: 0; gap: 14px; }
+.lab-metrics > div { display: flex; gap: 14px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; box-shadow: 0 10px 28px #142b3908; }
+.lab-mico { color: #234b61; width: 42px; height: 42px; display: grid; place-items: center; background: #e8f1f6; border-radius: 12px; flex-shrink: 0; font-size: 15px; }
+.lab-metrics > div:nth-child(2) .lab-mico { background: #eef4ef; color: #376b58; }
+.lab-metrics > div:nth-child(3) .lab-mico { background: #f7f1e4; color: #8a6a32; }
+.lab-metrics > div > div > span { display: block; font-size: 12px; color: #637784; margin-bottom: 4px; }
+.lab-metrics strong { display: block; font-size: 26px; font-weight: 700; letter-spacing: -0.7px; line-height: 1.15; font-family: Manrope, Arial, sans-serif; }
+.lab-metrics small { display: block; margin-top: 4px; color: #637784; font-size: 12px; font-weight: 400; }
+#labProfileStats > div { flex-direction: column; align-items: flex-start; gap: 6px; }
+#labProfileStats > div > span { font-size: 12px; color: #637784; }
+.lab-rec { display: flex; justify-content: space-between; color: #fff; background: linear-gradient(128deg, #122734 0%, #1a3d50 58%, #245068 100%); border-radius: 16px; overflow: hidden; border: 0; margin-bottom: 28px; min-height: 228px; box-shadow: 0 18px 40px #142b3924; }
+.lab-rec[hidden] { display: none !important; }
+.lab-rec-copy { padding: 26px 31px; max-width: 73%; }
+.lab-rec .lab-kicker { display: flex; gap: 8px; align-items: center; letter-spacing: 1.6px; font-size: 10px; color: #bbd1db; margin-bottom: 13px; }
+.lab-rec h2 { font-size: 26px; letter-spacing: -0.8px; }
+.lab-rec-meta { display: flex; gap: 12px; margin-top: 11px; font-size: 12px; color: #b9cbd5; }
+.lab-rec-meta span + span:before { content: "·"; padding-right: 12px; color: #7796a7; }
+.lab-rec p { font-size: 14px; max-width: 520px; line-height: 1.6; color: #c1d2db; margin: 15px 0 19px; }
+.lab-white { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #224353; border-radius: 8px; padding: 11px 16px; font-size: 13px; font-weight: 650; }
+.lab-white:hover { background: #e8f1f6; }
+.lab-insight { width: 230px; border-left: 1px solid #ffffff14; padding: 28px 24px 20px; display: flex; flex-direction: column; justify-content: center; background: #ffffff0d; }
+.lab-insight > span { font-size: 11px; color: #bed0da; letter-spacing: 1.6px; }
+.lab-insight strong { font-size: 16px; line-height: 1.4; margin-top: 8px; font-weight: 650; color: #fff; }
+.lab-insight-pct { display: block; margin-top: 12px; font-family: Manrope, Arial, sans-serif; font-size: 28px; letter-spacing: -0.8px; font-weight: 700; color: #fff; }
+.lab-bars { height: 64px; display: flex; gap: 6px; align-items: flex-end; margin-top: 16px; border-bottom: 1px solid #ffffff2e; }
+.lab-bars span { width: 9px; flex: 0 0 9px; border-radius: 4px 4px 0 0; display: block; min-height: 10px; background: #9fd0e2; }
+.lab-bars span.is-high { background: #b7d7ae; }
+.lab-bars span.is-mid { background: #e6d39a; }
+.lab-bars span.is-low { background: #e7b2a6; }
+.lab-builder { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 26px 28px 0; box-shadow: 0 10px 28px #142b3908; }
+.lab-builder-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 25px; }
+.lab-builder-head h2 { font-size: 20px; }
+.lab-builder-head p { font-size: 13px; color: #637784; margin: 5px 0 0; }
+.lab-pill { display: inline-flex; align-items: center; white-space: nowrap; border: 1px solid #dfe6e9; background: #f7f9fa; color: #667984; padding: 5px 9px; border-radius: 5px; font-size: 11px; font-weight: 500; }
+.lab-step { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; font-family: "DM Sans", Arial, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0; }
+.lab-step span { font-size: 9px; background: #f2f5f6; color: #81949e; border-radius: 4px; padding: 3px 5px; font-weight: 500; }
+.lab-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.lab-type, .lab-level, .lab-mode { text-align: left; background: #fff; border: 1px solid #e0e6e9; color: var(--ink); }
+.lab-type { min-height: 175px; padding: 18px 17px 17px; border-radius: 12px; transition: border-color .18s, box-shadow .18s, transform .18s; }
+.lab-type:hover { border-color: #99b4c2; background: #fafcfd; transform: translateY(-2px); box-shadow: 0 12px 24px #142b390c; }
+.lab-type.is-on, .lab-level.is-on, .lab-mode.is-on { border-color: #4f7a91; background: #f3f8fb; box-shadow: 0 0 0 1px #4f7a91; }
+.lab-type h3 { font-family: "DM Sans", Arial, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0; margin: 0 0 7px; }
+.lab-type p { margin: 0; font-size: 12px; line-height: 1.65; color: #637784; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lab-type-top { display: flex; justify-content: space-between; align-items: center; }
+.lab-ico { width: 31px; height: 31px; display: grid; place-items: center; background: #f0f4f6; border-radius: 7px; color: #748b98; }
+.is-on .lab-ico { background: #e2ecf2; color: #416b81; }
+.lab-dot { width: 14px; height: 14px; border: 1px solid #ccd6dc; border-radius: 50%; display: grid; place-items: center; }
+.is-on .lab-dot { border-color: #517d96; }
+.is-on .lab-dot i { width: 6px; height: 6px; border-radius: 50%; background: #517d96; display: block; }
+.lab-setup { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; margin: 26px 0; }
+.lab-setup section + section { border-left: 1px solid var(--line); padding-left: 28px; }
+.lab-levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lab-level { padding: 14px 4px; text-align: center; border-radius: 6px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.lab-level strong { display: block; font-size: 19px; font-weight: 600; }
+.lab-level span, .lab-mode span { display: block; font-size: 12px; color: #637784; }
+.lab-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lab-mode { padding: 11px 5px; text-align: center; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; min-height: 104px; }
+.lab-mode i { color: #7d929e; }
+.lab-mode strong { display: block; font-size: 14px; font-weight: 500; }
+.lab-help { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+.lab-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    border-top: 1px solid var(--line); padding: 20px 0;
+}
+.lab-count { display: flex; align-items: center; gap: 16px; }
+.lab-count .lab-step { margin: 0; }
+.lab-seg { display: flex; border: 1px solid var(--line); border-radius: 6px; padding: 3px; gap: 3px; }
+.lab-seg button { width: 40px; height: 32px; border: 0; border-radius: 4px; background: transparent; color: #7d8b95; }
+.lab-seg button.is-on { background: #e9f0f4; color: #305970; font-weight: 700; }
+.lab-go { display: flex; align-items: center; gap: 14px; }
+.lab-go span { font-size: 12px; color: var(--muted); }
+.lab .lab-primary, .lab .lab-secondary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 40px; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 14px;
+}
+.lab .lab-primary { background: #234b61; color: #fff; border: 1px solid #234b61; }
+.lab .lab-primary:hover { background: #163b51; box-shadow: 0 3px 8px #183c4b16; }
+.lab .lab-secondary { background: #fff; color: #3b5e70; border: 1px solid #d4dfe5; }
+.lab-link { background: none; border: 0; color: #3e6b82; font-weight: 650; padding: 0; }
+.lab-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 23px; }
+.lab-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: 0 10px 28px #142b3908; }
+.lab-lesson { display: flex; align-items: flex-start; gap: 15px; }
+.lab-lesson-ico { height: 42px; width: 42px; border-radius: 10px; background: #f7f3e9; color: #a18a51; display: grid; place-items: center; flex-shrink: 0; }
+.lab-lesson .lab-kicker { font-size: 9px; color: #a18a51; margin: 1px 0 8px; }
+.lab-card h3 { font-size: 15px; margin: 0; }
+.lab-card p { margin: 5px 0 12px; color: #637784; font-size: 12px; }
+.lab-recent button {
+    display: flex; width: 100%; align-items: center; gap: 10px;
+    background: none; border: 0; border-top: 1px solid #eef1f3; padding: 12px 0; text-align: left;
+}
+.lab-recent strong { display: block; font-size: 13px; }
+.lab-recent small { color: var(--muted); }
+.lab-recent b { margin-left: auto; color: #416957; }
+.lab-session {
+    position: fixed; inset: 0; z-index: 1040; background: #fff;
+    display: flex; flex-direction: column;
+}
+.lab-session[hidden], .lab-results[hidden], .lab-modal[hidden], .lab-loading[hidden] { display: none !important; }
+body.lab-lock { overflow: hidden; }
+.lab-shead { height: 77px; flex-shrink: 0; display: flex; align-items: center; padding: 0 28px; gap: 19px; border-bottom: 1px solid var(--line); background: #fff; }
+.lab-shead strong { display: block; font-size: 16px; font-weight: 600; }
+.lab-shead small { display: block; margin-top: 5px; font-size: 11px; color: #85949c; }
+.lab-shead .grow { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+.lab-tag { display: inline-flex; align-items: center; border: 1px solid #dfe6e9; background: #f7f9fa; color: #667984; border-radius: 5px; padding: 5px 9px; font-size: 11px; }
+.lab-exit { display: flex; align-items: center; gap: 8px; border: 0; border-left: 1px solid var(--line); padding-left: 19px; color: #8a959c; font-size: 12px; background: none; }
+.lab-progress { height: 3px; background: #eef3f5; flex-shrink: 0; }
+.lab-progress span { display: block; height: 100%; background: #608799; width: 0; transition: width .3s; }
+.lab-split { flex: 1; min-height: 0; display: grid; grid-template-columns: 58% 42%; }
+.lab-pass, .lab-qs { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.lab-pass { border-right: 1px solid var(--line); background: #fdfdfc; }
+.lab-toolbar { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #edf0f0; min-height: 51px; padding: 8px 33px; font-size: 10px; color: #607581; letter-spacing: 1px; background: #fdfdfc; }
+.lab-toolbar button, .lab-flag { display: inline-flex; align-items: center; gap: 5px; border-radius: 4px; font-size: 12px; letter-spacing: 0; padding: 6px; color: #607581; background: none; border: 0; }
+.lab-toolbar button:hover { background: #f7edbc; color: #7c6c33; }
+.lab-scroll { overflow: auto; flex: 1; }
+.lab-pass .lab-scroll { padding: 37px 48px 30px; }
+.lab-passhead { margin-left: 35px; margin-bottom: 34px; }
+.lab-passhead .lab-kicker { font-size: 10px; color: #829790; }
+.lab .lab-pass h2.lab-serif { font-family: "Source Serif 4", Georgia, serif; font-size: 35px; line-height: 1.22; letter-spacing: -0.9px; font-weight: 500; max-width: 520px; margin: 0; }
+.lab-words { display: flex; gap: 13px; color: #607581; font-size: 12px; margin: 18px 0 0; }
+.lab-para { display: flex; gap: 19px; margin-bottom: 26px; }
+.lab-para b { flex: 0 0 23px; width: 23px; height: 24px; margin-top: 8px; display: grid; place-items: center; border: 1px solid #dfe6e3; border-radius: 4px; font-size: 10px; color: #8c9d94; font-family: "DM Sans", Arial, sans-serif; font-weight: 500; }
+.lab-para b.is-lit { background: #e6eedf; border-color: #b6c8a7; color: #547039; }
+.lab-para p { margin: 0; font-family: "Source Serif 4", Georgia, serif; font-size: inherit; line-height: 1.95; color: #47534f; }
+.lab-end { text-align: center; font-size: 11px; letter-spacing: 2px; color: #a8b3ae; border-top: 1px solid #e8eeea; padding: 25px 0; margin-left: 35px; }
+.lab-task { font-family: Georgia, serif; font-size: 18px; line-height: 1.7; margin: 0 0 18px; }
+.lab-sample { border: 1px solid #111; padding: 14px 16px; font-family: Georgia, serif; line-height: 1.7; }
+.lab.is-challenge .lab-sample, .lab.is-challenge .lab-sample-h { display: none; }
+.lab-mark { background: #f5eaaa; cursor: pointer; }
+.lab-ev { background: #dfecd4; border-bottom: 2px solid #96b77a; }
+.lab-switch { display: inline-flex; gap: 4px; margin: 0 0 22px; padding: 4px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 1px 2px #142b3908; }
+.lab-switch button { border: 0; background: transparent; color: #607581; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; }
+.lab-switch button.is-on { background: #234b61; color: #fff; }
+.lab-resume { display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #eff5f7; border: 1px solid #cadde6; border-radius: 8px; padding: 16px 18px; margin-bottom: 22px; }
+.lab-resume[hidden] { display: none !important; }
+.lab-resume strong { display: block; font-size: 14px; }
+.lab-resume p { margin: 4px 0 0; color: #637784; font-size: 13px; }
+.lab-resume div:last-child { display: flex; gap: 10px; flex-wrap: wrap; }
+.lab-skill { margin-top: 16px; }
+.lab-skill .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+.lab-bar { height: 6px; border-radius: 5px; background: #edf1f3; overflow: hidden; }
+.lab-bar span { display: block; height: 100%; background: #668c9d; }
+.lab-notes { background: #faf4de; border-radius: 8px; padding: 16px 18px; margin: 18px 0 8px 35px; }
+.lab-notes h3 { font-size: 13px; margin-bottom: 8px; }
+.lab-notes p { font-size: 13px; color: #8d7c43; margin: 0 0 6px; }
+#labProfile[hidden], #labHistory[hidden], #labPractice[hidden] { display: none !important; }
+.lab-qs { background: #f7f9fa; }
+.lab-qhead { padding: 25px 28px 20px; border-bottom: 1px solid var(--line); background: #fff; }
+.lab-qtop { display: flex; justify-content: space-between; align-items: center; font-size: 11px; letter-spacing: 1.2px; color: #607581; }
+.lab-qtop strong { font-size: 11px; letter-spacing: 0; font-weight: 500; color: #607581; }
+.lab-qnav { display: flex; flex-wrap: wrap; gap: 7px; margin: 18px 0 0; }
+.lab-qnav button { width: 36px; height: 36px; border: 1px solid #dce5eb; border-radius: 5px; background: #fff; color: #8a9ca6; position: relative; font-size: 14px; }
+.lab-qnav button.is-on { background: #335f77; color: #fff; border-color: #335f77; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #7596a8; }
+.lab-qnav button.is-done { background: #e6eff4; color: #4a768e; }
+.lab-qnav button.is-ok { background: #e7f2ec; color: #41755a; border-color: #b3cebe; }
+.lab-qnav button.is-bad { background: #fff0eb; color: #ad6053; border-color: #dfb8af; }
+.lab-qnav button.is-flag::after { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: #c09c4d; }
+.lab-qbody { padding: 18px 22px 8px; }
+.lab-qcard { background: #fff; border: 1px solid #dfe7ec; border-radius: 8px; padding: 20px; }
+.lab-qs .lab-scroll { padding: 26px 28px; }
+.lab-qcard h3 { font-family: "DM Sans", Arial, sans-serif; font-size: 20px; font-weight: 500; line-height: 1.55; letter-spacing: -0.25px; margin: 22px 0; }
+.lab-opt { display: flex; align-items: center; gap: 11px; border: 1px solid #e0e7eb; border-radius: 6px; padding: 13px 14px; margin: 0 0 10px; cursor: pointer; font-size: 14px; color: #657f8d; min-height: 46px; position: relative; }
+.lab-opt.is-on { border-color: #719bb0; background: #f1f7fa; color: #305e77; }
+.lab-opt.is-key { background: #eef7f1; border-color: #9ec6ae; color: #397451; }
+.lab-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.lab-bullet { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #cbd9e0; font-size: 10px; flex-shrink: 0; }
+.lab-opt.is-on .lab-bullet { background: #537f97; color: #fff; border-color: #537f97; }
+.lab-qcard textarea, .lab-qcard input[type="text"] { width: 100%; border: 1px solid #cfdee6; border-radius: 6px; padding: 12px; }
+.lab-qcard textarea { min-height: 110px; }
+.lab-page { display: flex; justify-content: space-between; margin-top: 14px; color: var(--muted); }
+.lab-page button { background: none; border: 0; color: #3e6b82; font-weight: 650; }
+.lab-learn { border-top: 1px solid #e5ecf0; margin-top: 16px; padding-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.lab-hint { width: 100%; background: #fbf7e9; border: 1px solid #e9debc; border-radius: 6px; padding: 12px; color: #8d7a45; }
+.lab-note { width: 100%; background: #edf5ef; color: #4b7a5f; border-radius: 6px; padding: 12px; }
+.lab-note.is-bad { background: #fcf7ee; color: #a2743a; }
+.lab-why { width: 100%; border-top: 1px solid #e4eaee; padding-top: 12px; }
+.lab-why p { margin: 6px 0; color: var(--muted); }
+.lab-foot { padding: 14px 22px 18px; border-top: 1px solid #e0e8ed; background: #fff; }
+.lab-foot p { text-align: center; color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+.lab-foot .lab-primary { width: 100%; }
+.lab-mtabs { display: none; }
+.lab-results { max-width: 980px; }
+.lab-hero { display: flex; gap: 28px; align-items: center; background: #eef4f2; border: 1px solid #dce7e1; border-radius: 10px; padding: 28px; }
+.lab-ring { width: 132px; height: 132px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.lab-ring div { width: 112px; height: 112px; border-radius: 50%; background: #eef4f2; display: grid; place-items: center; text-align: center; }
+.lab-ring strong { font-size: 32px; color: #355f50; }
+.lab-modal, .lab-loading {
+    position: fixed; inset: 0; z-index: 1100; background: #142b3980;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.lab-dialog { width: min(490px, 100%); background: #fff; border-radius: 15px; box-shadow: 0 30px 120px #0f28393b; padding: 36px; position: relative; max-height: 90dvh; overflow: auto; }
+.lab-dialog.is-load { text-align: center; padding: 35px 42px; }
+.lab-book { display: grid; place-items: center; width: 74px; height: 74px; border: 1px solid #d7e4eb; border-radius: 21px; background: #eff5f8; color: #64889d; margin: 5px auto 28px; font-size: 28px; animation: labpulse 2s infinite; }
+.lab-dialog h2 { margin: 8px 0 16px; font-size: 24px; line-height: 1.4; }
+.lab-dialog p { color: #798b96; font-size: 14px; }
+.lab-dialog-x { position: absolute; right: 15px; top: 15px; border: 0; background: none; color: #8c9da7; font-size: 20px; }
+.lab-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+.lab-stages { text-align: left; margin: 28px 0; padding: 16px 0; border-block: 1px solid #e6edf1; }
+.lab-stage { display: flex; align-items: center; gap: 12px; color: #b5c0c7; font-size: 14px; padding: 11px 0; }
+.lab-stage > b { width: 22px; height: 22px; border: 1px solid #e3eaee; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; }
+.lab-stage.is-on { color: #426a80; }
+.lab-stage.is-on > b { background: #eaf2f7; border-color: #adcadb; }
+.lab-stage.is-done { color: #60876e; }
+.lab-stage.is-done > b { background: #eaf4ed; border-color: #d4e4d9; }
+@keyframes labpulse { 50% { box-shadow: 0 0 0 10px #edf4f865; transform: translateY(-3px); } }
+.lab-def { background: #f8fafb; border: 1px solid var(--line); border-radius: 7px; padding: 17px; margin-top: 15px; }
+.lab-def p { font-size: 13px; color: #68808f; }
+.lab-ring { width: 145px; height: 145px; }
+.lab-ring div { width: 129px; height: 129px; background: #eef4f2; }
+.lab-ring strong { font-size: 38px; font-weight: 600; letter-spacing: -1px; color: #355f50; }
+.lab-ring strong span { font-size: 20px; font-weight: 400; color: #769589; }
+.lab-ring small { display: block; font-size: 10px; color: #7e998e; margin-top: 4px; }
+.lab-hero { background: #eef4f2; border: 1px solid #dce7e1; }
+.lab-hero h2 { font-size: 23px; }
+.lab-hero p { color: #6a897b; font-size: 13px; margin: 10px 0 20px; }
+@media (max-width: 1000px) {
+    .lab { padding: 28px 22px; }
+    .lab-head-ico, .lab-insight { display: none; }
+    .lab-rec-copy { max-width: 100%; width: 100%; }
+    .lab-types { grid-template-columns: 1fr 1fr; }
+    .lab-setup, .lab-bottom { grid-template-columns: 1fr; }
+    .lab-setup section + section { border: 0; padding-left: 0; }
+    .lab-metrics > div { border-right: 0; }
+    .lab h1 { font-size: 29px; }
+}
+@media (max-width: 760px) {
+    .lab { padding: 25px 20px; }
+    .lab h1 { font-size: 28px; letter-spacing: -1px; }
+    .lab-metrics { grid-template-columns: 1fr; padding: 17px; }
+    .lab-row, .lab-go { flex-wrap: wrap; }
+    .lab-go .lab-primary { width: 100%; }
+    .lab-hero { flex-direction: column; text-align: center; }
+    .lab-pass .lab-scroll { padding: 26px 22px; }
+    .lab-passhead, .lab-words, .lab-end { margin-left: 0; }
+    .lab-pass h2 { font-size: 30px; }
+    .lab-split { display: block; position: relative; }
+    .lab-pass, .lab-qs { position: absolute; inset: 0; display: none; }
+    .lab-pass.is-show, .lab-qs.is-show { display: flex; }
+    .lab-mtabs { display: flex; height: 64px; border-top: 1px solid #dce6ec; background: #fff; align-items: center; }
+    .lab-mtabs button { flex: 1; border: 0; background: none; color: #8399a6; padding: 12px; border-radius: 6px; }
+    .lab-mtabs button.is-on { background: #eaf2f7; color: #386b85; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4 mashq-page" id="mashqApp"
+<div class="lab" id="mashqApp"
      data-skill="{{ skill }}"
      data-generate-url="{% url 'core:practice_generate' %}"
-     data-check-url="{% url 'core:practice_check' %}">
+     data-check-url="{% url 'core:practice_check' %}"
+     data-lab-url="{% url 'core:practice_lab' %}">
     {% csrf_token %}
+    {{ catalog|json_script:"mashqCatalog" }}
+    {{ lab_boot|json_script:"labBoot" }}
 
-    <div class="mashq-top">
-        <div class="mashq-tabs" role="tablist">
-            <a href="{% url 'core:practice_skill' 'reading' %}"
-               class="mashq-tab {% if skill == 'reading' %}is-active{% endif %}"
-               role="tab"
-               aria-selected="{% if skill == 'reading' %}true{% else %}false{% endif %}">
-                <i class="fas fa-book-open me-1"></i>{% trans "Reading mashqi" %}
-            </a>
-            <a href="{% url 'core:practice_skill' 'writing' %}"
-               class="mashq-tab {% if skill == 'writing' %}is-active{% endif %}"
-               role="tab"
-               aria-selected="{% if skill == 'writing' %}true{% else %}false{% endif %}">
-                <i class="fas fa-pen-fancy me-1"></i>{% trans "Writing mashqi" %}
-            </a>
+    <div id="labHome">
+        <div class="lab-switch" id="labSwitch">
+            <button type="button" data-desk="practice" class="is-on">{% trans "Mashq" %}</button>
+            <button type="button" data-desk="profile">{% trans "Profil" %}</button>
+            <button type="button" data-desk="history">{% trans "Tarix" %}</button>
         </div>
-        <span class="mashq-badge"><i class="fas fa-wand-magic-sparkles me-1"></i>{% trans "Har safar yangi" %}</span>
+        <div id="labPractice">
+        <div class="lab-crumb">
+            <a href="{% url 'core:practice_skill' 'reading' %}" class="{% if skill == 'reading' %}is-on{% endif %}">{% trans "Reading mashqi" %}</a>
+            <a href="{% url 'core:practice_skill' 'writing' %}" class="{% if skill == 'writing' %}is-on{% endif %}">{% trans "Writing mashqi" %}</a>
+        </div>
+        <div class="lab-head">
+            <div>
+                <div class="lab-kicker">{% trans "KEYINGI QADAM" %}</div>
+                <h1>{% if skill == 'reading' %}{% trans "Reading Practice Lab" %}{% else %}{% trans "Writing Practice Lab" %}{% endif %}</h1>
+                <p>{% if skill == 'reading' %}{% trans "Zaifroq o‘qish ko‘nikmasini shaxsiy mashq bilan mustahkamlang." %}{% else %}{% trans "IELTS mezonlari bo‘yicha insho va mashqlarni shu daraja uchun oling." %}{% endif %}</p>
+            </div>
+            <div class="lab-head-ico" aria-hidden="true"><i class="fas fa-book-open"></i></div>
+        </div>
+        <div class="lab-metrics">
+            <div><span class="lab-mico" aria-hidden="true"><i class="fas fa-bullseye"></i></span><div><span>{% trans "Aniqlik" %}</span><strong id="labAccuracy">—</strong><small>{% trans "barcha mashqlar bo‘yicha" %}</small></div></div>
+            <div><span class="lab-mico" aria-hidden="true"><i class="fas fa-book-open"></i></span><div><span>{% trans "Tugallangan" %}</span><strong id="labDone">0</strong><small>{% trans "shu brauzerda" %}</small></div></div>
+            <div><span class="lab-mico" aria-hidden="true"><i class="fas fa-chart-line"></i></span><div><span>{% trans "Tavsiya" %}</span><strong id="labRecLevel">—</strong><small>{% trans "matn qiyinligi" %}</small></div></div>
+        </div>
+        <section class="lab-resume" id="labResume" hidden>
+            <div>
+                <strong>{% trans "Tugallanmagan mashq" %}</strong>
+                <p id="labResumeText"></p>
+            </div>
+            <div>
+                <button type="button" class="lab-secondary" id="labDiscard">{% trans "Yangidan" %}</button>
+                <button type="button" class="lab-primary" id="labResumeGo">{% trans "Davom ettirish" %}</button>
+            </div>
+        </section>
+        <section class="lab-rec" id="labRecommend" hidden>
+            <div class="lab-rec-copy">
+                <div class="lab-kicker"><i class="fas fa-wand-magic-sparkles"></i> {% trans "SIZ UCHUN" %}</div>
+                <h2 id="labRecName"></h2>
+                <div class="lab-rec-meta" id="labRecMeta"></div>
+                <p id="labRecReason"></p>
+                <button type="button" class="lab-white" id="labRecStart">{% trans "Tavsiya etilgan mashq" %} <i class="fas fa-chevron-right"></i></button>
+            </div>
+            <aside class="lab-insight">
+                <span>{% trans "E’TIBOR" %}</span>
+                <strong id="labRecSkill"></strong>
+                <b class="lab-insight-pct" id="labRecScore"></b>
+                <div class="lab-bars" id="labBars"></div>
+            </aside>
+        </section>
+        <section class="lab-builder">
+            <div class="lab-builder-head">
+                <div>
+                    <h2>{% trans "O‘zingiz tanlang" %}</h2>
+                    <p>{% trans "Mustahkamlashni istagan ko‘nikmani belgilang." %}</p>
+                </div>
+                <span class="lab-pill">IELTS Academic</span>
+            </div>
+            <div class="lab-step"><span>01</span>{% trans "Savol turini tanlang" %}</div>
+            <div class="lab-types" id="labTypes"></div>
+            <div class="lab-setup">
+                <section>
+                    <div class="lab-step"><span>02</span>{% trans "Darajani tanlang" %}</div>
+                    <div class="lab-levels" id="labLevels"></div>
+                    <p class="lab-help">{% trans "Daraja matn qiyinligini bildiradi, IELTS ballini emas." %}</p>
+                </section>
+                <section>
+                    <div class="lab-step"><span>03</span>{% trans "Rejimni tanlang" %}</div>
+                    <div class="lab-modes" id="labModes"></div>
+                    <p class="lab-help" id="labModeHelp"></p>
+                </section>
+            </div>
+            <div class="lab-row">
+                <div class="lab-count" id="labCountWrap">
+                    <div class="lab-step"><span>04</span>{% trans "Savollar soni" %}</div>
+                    <div class="lab-seg" id="labCounts"></div>
+                </div>
+                <div class="lab-go">
+                    <span id="labEta"></span>
+                    <button type="button" class="lab-primary" id="labGenerate"><i class="fas fa-wand-magic-sparkles"></i> {% trans "Mashqni yaratish" %}</button>
+                </div>
+            </div>
+        </section>
+        <div class="lab-bottom">
+            {% if skill == 'reading' %}
+            <section class="lab-card lab-lesson">
+                <span class="lab-lesson-ico" aria-hidden="true"><i class="fas fa-lightbulb"></i></span>
+                <div>
+                    <div class="lab-kicker">{% trans "QISQA DARS" %}</div>
+                    <h3>FALSE {% trans "yoki" %} NOT GIVEN?</h3>
+                    <p>{% trans "Javobni o‘zgartiradigan farqni ko‘ring." %}</p>
+                    <button type="button" class="lab-link" id="labLessonBtn">{% trans "3 daqiqalik dars" %} <i class="fas fa-chevron-right"></i></button>
+                </div>
+            </section>
+            {% endif %}
+            <section class="lab-card lab-recent">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3>{% trans "So‘nggi mashqlar" %}</h3>
+                    <button type="button" class="lab-link" data-desk="history">{% trans "Tarix" %}</button>
+                </div>
+                <div id="labRecent"></div>
+            </section>
+        </div>
+        </div>
+        <section id="labProfile" hidden>
+            <div class="lab-kicker">{% trans "PROFIL" %}</div>
+            <h1>{% trans "O‘qish profili" %}</h1>
+            <div class="lab-metrics" id="labProfileStats"></div>
+            <section class="lab-card"><h3>{% trans "Savol turi bo‘yicha" %}</h3><div id="labSkills"></div></section>
+        </section>
+        <section id="labHistory" hidden>
+            <div class="lab-kicker">{% trans "TARIX" %}</div>
+            <h1>{% trans "Mashqlar tarixi" %}</h1>
+            <div class="lab-card" id="labHistoryList"></div>
+        </section>
     </div>
 
-    <header class="mashq-hero">
-        {% if skill == 'reading' %}
-        <h1 class="mashq-hero__title">{% trans "Reading mashqi — IELTS Academic" %}</h1>
-        <p class="mashq-hero__sub">{% trans "Kompyuter imtihonidagi kabi: savol turini tanlang, matn va 10 ta savol shu daraja uchun yoziladi." %}</p>
-        {% else %}
-        <h1 class="mashq-hero__title">{% trans "Writing mashqi — IELTS Academic" %}</h1>
-        <p class="mashq-hero__sub">{% trans "IELTS mezonlari bo‘yicha mashq: yo‘nalishni tanlang, insho namunasi va topshiriqlar shu daraja uchun yoziladi." %}</p>
-        {% endif %}
-    </header>
-
-    {{ catalog|json_script:"mashqCatalog" }}
-    <section class="mashq-controls">
-        <div class="mashq-cats" id="mashqCats" role="group" aria-label="{% trans "Kategoriya" %}">
-            {% for group in catalog.categories %}
-            <article class="mashq-cat{% if forloop.first %} is-active{% endif %}" data-category="{{ group.key }}">
-                <p class="mashq-cat__kicker">{{ group.official }}</p>
-                <h2 class="mashq-cat__name">{{ group.label }}</h2>
-                <div class="mashq-cat__types">
-                    {% for item in group.types %}
-                    <button type="button" class="mashq-type{% if forloop.parentloop.first and forloop.first %} is-active{% endif %}" data-type="{{ item.key }}" data-category="{{ group.key }}">{{ item.label }}</button>
-                    {% endfor %}
+    <section class="lab-session" id="labSession" hidden>
+        <header class="lab-shead">
+            <div>
+                <strong id="labSessionTitle">{% trans "Reading mashqi" %}</strong>
+                <small id="labSessionMeta"></small>
+            </div>
+            <span class="lab-tag" id="labModeTag"></span>
+            <div class="grow">
+                <span id="labCounter"></span>
+                <button type="button" class="lab-link" id="labTimer" hidden>20:00</button>
+                <button type="button" class="lab-exit" id="labExit">{% trans "Chiqish" %} <i class="fas fa-xmark"></i></button>
+            </div>
+        </header>
+        <div class="lab-progress"><span id="labProgress"></span></div>
+        <div class="lab-split">
+            <section class="lab-pass is-show" id="labPass">
+                <div class="lab-toolbar">
+                    <span>{% if skill == 'reading' %}READING PASSAGE{% else %}WRITING TASK{% endif %}</span>
+                    <div>
+                        <button type="button" id="labSmaller" aria-label="{% trans "Shrift" %}">A−</button>
+                        <button type="button" id="labLarger" aria-label="{% trans "Shrift" %}">A+</button>
+                        <button type="button" id="labHighlight"><i class="fas fa-highlighter"></i> {% trans "Belgilash" %}</button>
+                        <button type="button" id="labNote"><i class="fas fa-pen"></i> {% trans "Izoh" %}</button>
+                    </div>
                 </div>
-            </article>
-            {% endfor %}
+                <div class="lab-scroll" id="labPassBody"></div>
+            </section>
+            <section class="lab-qs" id="labQs">
+                <div class="lab-qhead">
+                    <div class="lab-qtop">
+                        <span id="labQKicker">QUESTIONS</span>
+                        <strong id="labAnswered"></strong>
+                    </div>
+                    <div class="lab-qnav" id="labQnav"></div>
+                    <p class="lab-help" id="labInstruct"></p>
+                </div>
+                <div class="lab-scroll">
+                    <div class="lab-qbody" id="labQuestion"></div>
+                    <div class="lab-page">
+                        <button type="button" id="labPrev"><i class="fas fa-chevron-left"></i> {% trans "Oldingi" %}</button>
+                        <span id="labPos"></span>
+                        <button type="button" id="labNext">{% trans "Keyingi" %} <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="lab-foot">
+                    <p id="labFootNote">{% trans "Shoshilmang. Dalilni matndan toping." %}</p>
+                    <button type="button" class="lab-primary" id="labSubmit">{% trans "Javoblarni yuborish" %}</button>
+                </div>
+            </section>
         </div>
-        <input type="hidden" id="mashqCategory" value="{{ catalog.categories.0.key }}">
-        <select id="mashqType" hidden aria-hidden="true"></select>
-
-        <div class="mashq-controls__group">
-            <label class="mashq-controls__label" for="mashqLevel">{% trans "Daraja" %}</label>
-            <select class="mashq-select" id="mashqLevel" name="level" aria-label="{% trans "Daraja" %}">
-                {% for lv in catalog.levels %}
-                <option value="{{ lv.key }}" {% if lv.key == 'B1' %}selected{% endif %}>{{ lv.label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="mashq-controls__action">
-            <button type="button" class="btn mashq-generate" id="mashqGenerate">
-                <i class="fas fa-book-open me-1"></i>
-                {% if skill == 'reading' %}
-                {% trans "Matn va savollarni olish" %}
-                {% else %}
-                {% trans "Insho va mashqlarni olish" %}
-                {% endif %}
-            </button>
-        </div>
-
-        <div class="mashq-brief" id="mashqBrief">
-            <label class="mashq-exam" for="mashqExamMode">
-                <input type="checkbox" id="mashqExamMode">
-                <span>{% trans "Imtihon rejimi" %}</span>
-            </label>
-            <ul class="mashq-brief__facts" id="mashqBriefFacts"></ul>
-            <p class="mashq-brief__last" id="mashqLast" hidden></p>
-            <button type="button" class="mashq-coach" id="mashqCoach" hidden>
-                <span class="mashq-coach__kicker">{% trans "Keyingi mashq" %}</span>
-                <span class="mashq-coach__name" id="mashqCoachName"></span>
-            </button>
+        <div class="lab-mtabs">
+            <button type="button" class="is-on" data-tab="pass" id="labTabPass"><i class="fas fa-book-open"></i> {% trans "Matn" %}</button>
+            <button type="button" data-tab="qs" id="labTabQs"><i class="fas fa-list-check"></i> {% trans "Savollar" %}</button>
         </div>
     </section>
 
-    <div class="mashq-status" id="mashqStatus" hidden></div>
-
-    <div class="ielts-exambar" id="ieltsExamBar" hidden>
-        <div class="ielts-exambar__brand"><span>IELTS</span> Academic</div>
-        <div class="ielts-exambar__tools" id="ieltsTools" hidden>
-            <button type="button" class="ielts-tool" id="mashqTimerBtn" title="{% trans "Vaqtni to‘xtatish yoki davom ettirish" %}">20:00</button>
-            <button type="button" class="ielts-tool" id="mashqFontDown" title="{% trans "Matnni kichraytirish" %}">A−</button>
-            <button type="button" class="ielts-tool" id="mashqFontUp" title="{% trans "Matnni kattalashtirish" %}">A+</button>
-            <button type="button" class="ielts-tool ielts-tool--text" id="mashqRhythm" title="{% trans "Satr oralig‘i" %}">{% trans "Satr" %}</button>
-            <button type="button" class="ielts-tool ielts-tool--text" id="mashqNotesBtn">{% trans "Qoralama" %}</button>
-            <button type="button" class="ielts-tool ielts-tool--text" id="mashqFlagFilter">{% trans "Bayroq" %}</button>
+    <section class="lab-results" id="labResults" hidden>
+        <div class="lab-kicker">{% trans "YANA BIR QADAM" %}</div>
+        <h1>{% trans "Mashq yakunlandi" %}</h1>
+        <p id="labResultSub" class="lab-help"></p>
+        <div class="lab-hero" style="margin-top:18px;">
+            <div class="lab-ring" id="labRing"><div><strong id="labScore"></strong><small>{% trans "to‘g‘ri javob" %}</small></div></div>
+            <div>
+                <h2 id="labResultTitle"></h2>
+                <p id="labResultWrong"></p>
+                <button type="button" class="lab-secondary" id="labReviewBtn">{% trans "Javob va dalilni ko‘rish" %}</button>
+            </div>
         </div>
-        <div class="ielts-exambar__part" id="ieltsExamPart">{% if skill == 'reading' %}Reading{% else %}Writing{% endif %}</div>
-    </div>
-
-    <div class="mashq-workspace">
-        <article class="mashq-panel mashq-panel--passage" id="mashqLeft">
-            <div class="mashq-placeholder ielts-sheet-idle" id="mashqLeftEmpty">
-                <p class="ielts-kicker">{% if skill == 'reading' %}Reading Passage{% else %}Writing Task{% endif %}</p>
-                <p class="ielts-sheet-idle__line">{% if skill == 'reading' %}{% trans "Matn shu yerda ochiladi. Bandlar A, B, C bilan belgilanadi." %}{% else %}{% trans "Insho topshirig‘i va namuna shu yerda ochiladi." %}{% endif %}</p>
-            </div>
-            <div class="mashq-panel__body" id="mashqLeftBody" hidden></div>
-            <aside class="mashq-notes" id="mashqNotes" hidden>
-                <div class="mashq-notes__head">
-                    <span>{% trans "Qoralama" %}</span>
-                    <button type="button" class="mashq-notes__close" id="mashqNotesClose">{% trans "Yopish" %}</button>
-                </div>
-                <textarea id="mashqNotesBox" placeholder="{% trans "Shu yerda eslatma yozing. Natijaga kirmaydi." %}"></textarea>
-            </aside>
-        </article>
-        <div class="mashq-split" id="mashqSplit" role="separator" aria-orientation="vertical" aria-label="{% trans "Panellarni surish" %}"></div>
-
-        <article class="mashq-panel mashq-panel--questions" id="mashqRight">
-            <div class="mashq-placeholder ielts-sheet-idle" id="mashqRightEmpty">
-                <p class="ielts-kicker" id="mashqQKicker">{% if skill == 'reading' %}Questions 1–10{% else %}Questions 1–4{% endif %}</p>
-                <p class="ielts-rubric" id="mashqBriefText"></p>
-            </div>
-            <div class="mashq-panel__body" id="mashqRightBody" hidden></div>
-        </article>
-    </div>
-
-    <div class="mashq-bar" id="mashqFooter" hidden>
-        <div class="mashq-bar__progress">
-            <div class="mashq-bar__meta">
-                <span id="mashqProgressLabel">{% trans "Javoblar" %}: 0/0</span>
-                <span class="mashq-bar__hint" id="mashqProgressHint">{% trans "Barcha savollarga javob bering" %}</span>
-            </div>
-            <div class="mashq-bar__track" aria-hidden="true">
-                <div class="mashq-bar__fill" id="mashqProgressFill" style="width:0%"></div>
-            </div>
-            <div class="ielts-nav" id="ieltsNav" hidden></div>
+        <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="lab-primary" id="labAgain">{% trans "Yana shu turda" %}</button>
+            <button type="button" class="lab-secondary" id="labBackHome">{% trans "Tur tanlash" %}</button>
         </div>
-        <div class="mashq-bar__actions">
-            <div class="mashq-score" id="mashqScore" hidden></div>
-            <button type="button" class="btn btn-outline-secondary mashq-bar__reset" id="mashqResetAnswers" hidden>
-                {% trans "Qayta urinish" %}
-            </button>
-            <button type="button" class="btn btn-primary mashq-bar__check" id="mashqCheck">
-                <i class="fas fa-check-double me-1"></i>{% trans "Javoblarni tekshirish" %}
-            </button>
+    </section>
+
+    <div class="lab-loading" id="labLoading" hidden>
+        <div class="lab-dialog is-load">
+            <div class="lab-book" aria-hidden="true"><i class="fas fa-book-open"></i></div>
+            <div class="lab-kicker">{% trans "TAYYORGARLIK" %}</div>
+            <h2>{% trans "Mashq yozilmoqda…" %}</h2>
+            <div class="lab-stages" id="labStages"></div>
+        </div>
+    </div>
+    <div class="lab-modal" id="labModal" hidden>
+        <div class="lab-dialog" role="dialog">
+            <button type="button" class="lab-dialog-x" id="labModalX" aria-label="{% trans "Yopish" %}">×</button>
+            <div id="labModalBody"></div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-{% trans "Savollar" as t_questions %}
-{% trans "Mashqlar" as t_exercises %}
-{% trans "Task" as t_task %}
-{% trans "Namuna insho" as t_sample %}
-{% trans "Maslahat" as t_tip %}
-{% trans "Javobni yozing" as t_fill_ph %}
-{% trans "Javobingizni yozing" as t_write_ph %}
-{% trans "Javoblar" as t_answers %}
-{% trans "Tayyor — tekshirishingiz mumkin" as t_all_done %}
-{% trans "Barcha savollarga javob bering" as t_need_more %}
-{% trans "Ba’zi savollar bo‘sh. Baribir tekshirasizmi?" as t_unanswered %}
-{% trans "To‘g‘ri!" as t_correct %}
-{% trans "To‘g‘ri javob" as t_correct_ans %}
-{% trans "Sizning javobingiz" as t_your_ans %}
-{% trans "Javob berilmagan" as t_empty_ans %}
-{% trans "Mashq yuklanmoqda…" as t_creating %}
-{% trans "Bazadan matn va savollar olinmoqda…" as t_ai_busy %}
-{% trans "Xatolik yuz berdi" as t_err %}
+{% trans "O‘rganish" as t_learn %}
+{% trans "Mashq" as t_practice %}
+{% trans "Sinov" as t_challenge %}
+{% trans "Maslahat va ikkinchi urinish." as t_learn_d %}
+{% trans "Mustaqil javob." as t_prac_d %}
+{% trans "Vaqt tugagach javob yuboriladi." as t_chal_d %}
+{% trans "taxminan" as t_about %}
+{% trans "daqiqa" as t_min %}
+{% trans "Hali mashq yo‘q." as t_empty_hist %}
+{% trans "Zaif tur" as t_weak %}
+{% trans "Shu darajada shu turni qayta oling." as t_weak_why %}
+{% trans "Javobni tekshirish" as t_probe %}
+{% trans "Maslahat" as t_hint %}
+{% trans "Tushuntirish" as t_reveal %}
+{% trans "To‘g‘ri. Davom etishingiz mumkin." as t_yes %}
+{% trans "Hali emas. Dalilni qayta qidiring." as t_no %}
+{% trans "Qayta urinish" as t_retry %}
+{% trans "Bayroq" as t_flag %}
+{% trans "Javobingiz" as t_yours %}
+{% trans "To‘g‘ri javob" as t_key %}
+{% trans "Javob berilmagan" as t_blank %}
+{% trans "Ajoyib. Hamma javob to‘g‘ri." as t_all %}
+{% trans "Qayta ko‘rish kerak" as t_review_need %}
+{% trans "Savollar" as t_qs %}
+{% trans "Bo‘sh savollar bor. Baribir yuborasizmi?" as t_unans %}
+{% trans "Mashqni to‘xtatasizmi? Javoblar shu sahifada qoladi." as t_pause %}
 {% trans "Tarmoq xatosi. Qayta urinib ko‘ring." as t_net %}
-{% trans "Tekshirishda xatolik." as t_check_err %}
-{% trans "Natija" as t_score %}
-{% trans "ta to‘g‘ri" as t_of %}
-{% trans "Belgilash" as t_flag %}
-{% trans "Avval savolga bayroq qo‘ying." as t_flag_need %}
-{% trans "Oxirgi natija" as t_last %}
-{% trans "ta savol" as t_q_word %}
-{% trans "daqiqa" as t_min_word %}
-{% trans "Vaqt tugadi. Javoblar yopildi — tekshirish mumkin." as t_time_up %}
-{% trans "Hammasi to‘g‘ri." as t_all_ok %}
+{% trans "Xatolik yuz berdi" as t_err %}
+{% trans "Matn belgilandi." as t_marked %}
+{% trans "Avval matndan so‘z belgilang." as t_need_sel %}
+{% trans "FALSE — matndagi gapga zid. NOT GIVEN — bu haqda yozilmagan." as t_lesson %}
+{% trans "Namuna" as t_sample %}
+{% trans "Topshiriq" as t_task %}
+{% trans "Matn yozilmoqda" as t_st1 %}
+{% trans "Savollar tuzilmoqda" as t_st2 %}
+{% trans "Aniqlik tekshirilmoqda" as t_st3 %}
+{% trans "Mashq ochilmoqda" as t_st4 %}
+{% trans "Shoshilmang. Dalilni matndan toping." as t_calm %}
+{% trans "Qaytish" as t_back %}
+{% trans "Yuborish" as t_send %}
+{% trans "Qolish" as t_stay %}
+{% trans "3 ta savol" as t_three %}
+{% trans "Chiqish" as t_exit %}
 <script>
 (function () {
     const app = document.getElementById('mashqApp');
     if (!app) return;
-
     const skill = app.dataset.skill || 'reading';
     const generateUrl = app.dataset.generateUrl;
     const checkUrl = app.dataset.checkUrl;
     const csrf = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
     const i18n = {
-        questions: "{{ t_questions|escapejs }}",
-        exercises: "{{ t_exercises|escapejs }}",
-        task: "{{ t_task|escapejs }}",
-        sample: "{{ t_sample|escapejs }}",
-        tip: "{{ t_tip|escapejs }}",
-        fillPh: "{{ t_fill_ph|escapejs }}",
-        writePh: "{{ t_write_ph|escapejs }}",
-        answers: "{{ t_answers|escapejs }}",
-        allDone: "{{ t_all_done|escapejs }}",
-        needMore: "{{ t_need_more|escapejs }}",
-        unanswered: "{{ t_unanswered|escapejs }}",
-        correct: "{{ t_correct|escapejs }}",
-        correctAns: "{{ t_correct_ans|escapejs }}",
-        yourAns: "{{ t_your_ans|escapejs }}",
-        emptyAns: "{{ t_empty_ans|escapejs }}",
-        creating: "{{ t_creating|escapejs }}",
-        aiBusy: "{{ t_ai_busy|escapejs }}",
-        err: "{{ t_err|escapejs }}",
-        net: "{{ t_net|escapejs }}",
-        checkErr: "{{ t_check_err|escapejs }}",
-        score: "{{ t_score|escapejs }}",
-        of: "{{ t_of|escapejs }}",
-        flag: "{{ t_flag|escapejs }}",
-        flagNeed: "{{ t_flag_need|escapejs }}",
-        lastScore: "{{ t_last|escapejs }}",
-        qWord: "{{ t_q_word|escapejs }}",
-        minWord: "{{ t_min_word|escapejs }}",
-        timeUp: "{{ t_time_up|escapejs }}",
-        allOk: "{{ t_all_ok|escapejs }}"
+        learn: "{{ t_learn|escapejs }}", practice: "{{ t_practice|escapejs }}", challenge: "{{ t_challenge|escapejs }}",
+        learnD: "{{ t_learn_d|escapejs }}", pracD: "{{ t_prac_d|escapejs }}", chalD: "{{ t_chal_d|escapejs }}",
+        about: "{{ t_about|escapejs }}", min: "{{ t_min|escapejs }}", emptyHist: "{{ t_empty_hist|escapejs }}",
+        weak: "{{ t_weak|escapejs }}", weakWhy: "{{ t_weak_why|escapejs }}",
+        probe: "{{ t_probe|escapejs }}", hint: "{{ t_hint|escapejs }}", reveal: "{{ t_reveal|escapejs }}",
+        yes: "{{ t_yes|escapejs }}", no: "{{ t_no|escapejs }}", retry: "{{ t_retry|escapejs }}",
+        flag: "{{ t_flag|escapejs }}", yours: "{{ t_yours|escapejs }}", key: "{{ t_key|escapejs }}", blank: "{{ t_blank|escapejs }}",
+        all: "{{ t_all|escapejs }}", reviewNeed: "{{ t_review_need|escapejs }}", qs: "{{ t_qs|escapejs }}",
+        unans: "{{ t_unans|escapejs }}", pause: "{{ t_pause|escapejs }}", net: "{{ t_net|escapejs }}", err: "{{ t_err|escapejs }}",
+        marked: "{{ t_marked|escapejs }}", needSel: "{{ t_need_sel|escapejs }}", lesson: "{{ t_lesson|escapejs }}",
+        sample: "{{ t_sample|escapejs }}", task: "{{ t_task|escapejs }}",
+        calm: "{{ t_calm|escapejs }}", back: "{{ t_back|escapejs }}", send: "{{ t_send|escapejs }}",
+        stay: "{{ t_stay|escapejs }}", three: "{{ t_three|escapejs }}", leave: "{{ t_exit|escapejs }}",
+        st: ["{{ t_st1|escapejs }}", "{{ t_st2|escapejs }}", "{{ t_st3|escapejs }}", "{{ t_st4|escapejs }}"]
     };
-    function countPhrase(n, kind) {
-        const lang = (document.documentElement.lang || 'uz').toLowerCase();
-        if (lang.indexOf('ru') === 0) {
-            const n10 = n % 10;
-            const n100 = n % 100;
-            const forms = kind === 'min'
-                ? ['минута', 'минуты', 'минут']
-                : ['вопрос', 'вопроса', 'вопросов'];
-            let word = forms[2];
-            if (n10 === 1 && n100 !== 11) word = forms[0];
-            else if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) word = forms[1];
-            return n + ' ' + word;
-        }
-        return n + ' ' + (kind === 'min' ? i18n.minWord : i18n.qWord);
-    }
-
+    let catalog = { categories: [], levels: [] };
+    try { catalog = JSON.parse((document.getElementById('mashqCatalog') || {}).textContent || '{}'); } catch (e) { catalog = { categories: [], levels: [] }; }
+    const histKey = 'ton_lab_hist_' + skill;
+    const prefKey = 'ton_lab_pref_' + skill;
+    const modes = [
+        { id: 'learn', name: i18n.learn, desc: i18n.learnD, icon: 'fa-lightbulb' },
+        { id: 'practice', name: i18n.practice, desc: i18n.pracD, icon: 'fa-pen' },
+        { id: 'challenge', name: i18n.challenge, desc: i18n.chalD, icon: 'fa-clock' }
+    ];
+    const icons = { tfng: 'fa-check-double', mcq: 'fa-list-ul', gap_fill: 'fa-i-cursor', matching_headings: 'fa-align-left', matching_endings: 'fa-link', matching_names: 'fa-users' };
+    let cfg = { type: '', level: 'B1', mode: 'practice', count: skill === 'writing' ? 4 : 8 };
     let payload = null;
-    let checked = false;
-    let attemptLevel = '';
-    let attemptType = '';
-
-    const levelSelect = document.getElementById('mashqLevel');
-    const categorySelect = document.getElementById('mashqCategory');
-    const typeSelect = document.getElementById('mashqType');
-    const briefText = document.getElementById('mashqBriefText');
-    const briefFacts = document.getElementById('mashqBriefFacts');
-    const lastEl = document.getElementById('mashqLast');
-    const rightGuide = document.getElementById('mashqRightGuide');
-    const sampleLabel = document.getElementById('mashqSampleLabel');
-    const sampleBox = document.getElementById('mashqSampleBox');
-    const timerBtn = document.getElementById('mashqTimerBtn');
-    const fontDownBtn = document.getElementById('mashqFontDown');
-    const fontUpBtn = document.getElementById('mashqFontUp');
-    const examTools = document.getElementById('ieltsTools');
-    let catalog = { categories: [] };
-    try {
-        catalog = JSON.parse((document.getElementById('mashqCatalog') || {}).textContent || '{}');
-    } catch (err) {
-        catalog = { categories: [] };
-    }
-    const prefKey = 'ton_mashq_pref_' + skill;
-    const scoreStore = 'ton_mashq_scores_' + skill;
-    const examModeInput = document.getElementById('mashqExamMode');
+    let questions = [];
+    let answers = {};
+    let flags = {};
+    let probes = {};
+    let reveals = {};
+    let hints = {};
+    let active = 0;
+    let review = false;
+    let result = null;
+    let timerId = null;
     let remain = 0;
-    let timerHandle = null;
-    let timerPaused = false;
-    let fontStep = 1;
-    const generateBtn = document.getElementById('mashqGenerate');
-    const checkBtn = document.getElementById('mashqCheck');
-    const resetBtn = document.getElementById('mashqResetAnswers');
-    const statusEl = document.getElementById('mashqStatus');
-    const leftEmpty = document.getElementById('mashqLeftEmpty');
-    const rightEmpty = document.getElementById('mashqRightEmpty');
-    const leftBody = document.getElementById('mashqLeftBody');
-    const rightBody = document.getElementById('mashqRightBody');
-    const footer = document.getElementById('mashqFooter');
-    const scoreEl = document.getElementById('mashqScore');
-    const progressLabel = document.getElementById('mashqProgressLabel');
-    const progressHint = document.getElementById('mashqProgressHint');
-    const progressFill = document.getElementById('mashqProgressFill');
+    let busy = false;
+    let marks = [];
+    let fontSize = 18;
+    let hintLevels = {};
+    let litLetter = '';
+    let evidenceRange = null;
+    let carriedRemain = null;
+    let draftMeta = null;
+    let records = [];
+    let boot = { history: [], draft: null };
+    try { boot = JSON.parse((document.getElementById('labBoot') || {}).textContent || '{}'); } catch (e) { boot = { history: [], draft: null }; }
+    records = Array.isArray(boot.history) ? boot.history : [];
+    draftMeta = boot.draft || null;
+    const labUrl = app.dataset.labUrl || '';
+    const stages = i18n.st;
 
-    function selectedLevel() {
-        return (levelSelect && levelSelect.value) ? levelSelect.value : 'B1';
-    }
-    function selectedType() {
-        return (typeSelect && typeSelect.value) ? typeSelect.value : '';
-    }
-    function typeOwner(typeKey) {
-        const groups = catalog.categories || [];
-        return groups.find(function (group) {
-            return (group.types || []).some(function (item) { return item.key === typeKey; });
-        }) || null;
-    }
-    function currentTypeMeta() {
-        const owner = typeOwner(selectedType());
-        if (!owner) return null;
-        return (owner.types || []).find(function (item) { return item.key === selectedType(); }) || null;
-    }
-    function fillTypes(prefer) {
-        if (!typeSelect) return;
-        const want = (prefer === undefined || prefer === null || prefer === '')
-            ? (typeSelect.value || '')
-            : prefer;
-        typeSelect.innerHTML = '';
+    function types() {
+        const out = [];
         (catalog.categories || []).forEach(function (group) {
-            const block = document.createElement('optgroup');
-            block.label = group.label || '';
-            (group.types || []).forEach(function (item) {
-                const opt = document.createElement('option');
-                opt.value = item.key;
-                opt.textContent = item.label;
-                block.appendChild(opt);
-            });
-            typeSelect.appendChild(block);
+            (group.types || []).forEach(function (item) { out.push(item); });
         });
-        if (want && typeOwner(want)) typeSelect.value = want;
-        const owner = typeOwner(selectedType());
-        if (owner) markCategory(owner.key);
-        markTypeButtons();
+        return out;
     }
-    function markTypeButtons() {
-        const current = selectedType();
-        document.querySelectorAll('.mashq-type').forEach(function (btn) {
-            btn.classList.toggle('is-active', btn.dataset.type === current);
-        });
-    }
-    function examMode() {
-        return !!(examModeInput && examModeInput.checked);
-    }
-    function readScores() {
-        try {
-            const raw = JSON.parse(localStorage.getItem(scoreStore) || '{}');
-            return raw && typeof raw === 'object' ? raw : {};
-        } catch (err) {
-            return {};
-        }
-    }
-    function paintTypeScores() {
-        const all = readScores();
-        const level = selectedLevel();
-        document.querySelectorAll('.mashq-type').forEach(function (btn) {
-            const row = all[level + '|' + (btn.dataset.type || '')];
-            let badge = btn.querySelector('.mashq-type__score');
-            if (!row || !row.total) {
-                if (badge) badge.remove();
-                return;
-            }
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'mashq-type__score';
-                btn.appendChild(badge);
-            }
-            const ratio = row.correct / row.total;
-            badge.textContent = row.correct + '/' + row.total;
-            badge.classList.toggle('is-weak', ratio < 0.6);
-            badge.classList.toggle('is-strong', ratio >= 0.8);
-        });
-        paintCoach();
-    }
-    function paintCoach() {
-        const btn = document.getElementById('mashqCoach');
-        const name = document.getElementById('mashqCoachName');
-        if (!btn || !name) return;
-        const all = readScores();
-        const level = selectedLevel();
-        let worst = null;
-        (catalog.categories || []).forEach(function (group) {
-            (group.types || []).forEach(function (item) {
-                const row = all[level + '|' + item.key];
-                if (!row || !row.total) return;
-                const ratio = row.correct / row.total;
-                if (!worst || ratio < worst.ratio) {
-                    worst = { key: item.key, label: item.label, ratio: ratio, correct: row.correct, total: row.total };
-                }
-            });
-        });
-        if (!worst || worst.ratio >= 0.8) {
-            btn.hidden = true;
-            return;
-        }
-        btn.hidden = false;
-        btn.dataset.type = worst.key;
-        name.textContent = worst.label + ' · ' + worst.correct + '/' + worst.total;
-    }
-    function paintLast() {
-        if (!lastEl) return;
-        const row = readScores()[selectedLevel() + '|' + selectedType()];
-        if (!row || !row.total) {
-            lastEl.hidden = true;
-            return;
-        }
-        lastEl.hidden = false;
-        lastEl.textContent = i18n.lastScore + ': ' + row.correct + '/' + row.total;
-    }
-    function savePref() {
-        try {
-            localStorage.setItem(prefKey, JSON.stringify({
-                level: selectedLevel(),
-                category: categorySelect ? categorySelect.value : '',
-                type: selectedType(),
-                exam: examMode()
-            }));
-        } catch (err) { /* brauzer yopiq saqlashi mumkin */ }
-    }
-    function paintBrief() {
-        const meta = currentTypeMeta();
-        const levelOpt = levelSelect && levelSelect.selectedOptions && levelSelect.selectedOptions[0];
-        const levelLabel = levelOpt ? levelOpt.textContent : selectedLevel();
-        app.classList.toggle('is-strict', examMode());
-        if (briefText) {
-            briefText.hidden = examMode();
-            briefText.textContent = examMode() ? '' : (meta ? (meta.blurb || '') : '');
-        }
-        const qKicker = document.getElementById('mashqQKicker');
-        if (qKicker && meta) qKicker.textContent = 'Questions 1–' + (meta.questions || 10);
-        if (briefFacts) {
-            briefFacts.innerHTML = '';
-            if (meta) {
-                [levelLabel, countPhrase(meta.questions || 0, 'q'), countPhrase(meta.minutes || 20, 'min')].forEach(function (label) {
-                    const li = document.createElement('li');
-                    li.textContent = label;
-                    briefFacts.appendChild(li);
-                });
-            }
-        }
-        if (sampleLabel) sampleLabel.textContent = meta ? (meta.label || '') : '';
-        if (sampleBox) sampleBox.textContent = meta ? (meta.example || '') : '';
-        if (rightGuide) {
-            rightGuide.textContent = meta
-                ? (countPhrase(meta.questions || 0, 'q') + ' · ' + countPhrase(meta.minutes || 20, 'min'))
-                : '';
-        }
-        paintLast();
-        paintTypeScores();
-        savePref();
-    }
-    function formatClock(sec) {
-        const safe = Math.max(0, sec);
-        const minutes = Math.floor(safe / 60);
-        const seconds = safe % 60;
-        return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-    }
-    function stopTimer() {
-        if (timerHandle) clearInterval(timerHandle);
-        timerHandle = null;
-    }
-    function paintTimer() {
-        if (!timerBtn) return;
-        timerBtn.textContent = formatClock(remain);
-        timerBtn.classList.toggle('is-low', remain <= 60);
-        timerBtn.classList.toggle('is-paused', timerPaused);
-    }
-    function startTimer(minutes) {
-        stopTimer();
-        remain = Math.max(1, Number(minutes) || 20) * 60;
-        timerPaused = false;
-        if (examTools) examTools.hidden = false;
-        paintTimer();
-        timerHandle = setInterval(function () {
-            if (timerPaused) return;
-            if (remain > 0) remain -= 1;
-            paintTimer();
-            if (remain <= 0) {
-                stopTimer();
-                paintTimer();
-                if (examMode() && !checked) {
-                    setInputsDisabled(true);
-                    setStatus(i18n.timeUp, 'info');
-                }
-            }
-        }, 1000);
-    }
-    function applyFont() {
-        [leftBody, rightBody].forEach(function (el) {
-            if (!el) return;
-            el.classList.toggle('is-font-sm', fontStep === 0);
-            el.classList.toggle('is-font-lg', fontStep === 2);
-        });
-    }
-    function markCategory(key) {
-        document.querySelectorAll('.mashq-cat').forEach(function (btn) {
-            btn.classList.toggle('is-active', btn.dataset.category === key);
-        });
-        if (categorySelect) categorySelect.value = key;
-    }
-    function restorePref() {
-        let pref = null;
-        try { pref = JSON.parse(localStorage.getItem(prefKey) || 'null'); } catch (err) { pref = null; }
-        if (pref && levelSelect && pref.level && Array.from(levelSelect.options).some(function (opt) { return opt.value === pref.level; })) {
-            levelSelect.value = pref.level;
-        }
-        if (pref && categorySelect && pref.category && document.querySelector('.mashq-cat[data-category="' + pref.category + '"]')) {
-            markCategory(pref.category);
-        }
-        if (examModeInput && pref && pref.exam) examModeInput.checked = true;
-        fillTypes(pref && pref.type);
-        paintBrief();
-    }
-
-    function setStatus(msg, kind) {
-        if (!msg) {
-            statusEl.hidden = true;
-            statusEl.textContent = '';
-            statusEl.className = 'mashq-status';
-            return;
-        }
-        statusEl.hidden = false;
-        statusEl.textContent = msg;
-        statusEl.className = 'mashq-status mashq-status--' + (kind || 'info');
-    }
-
-    function esc(s) {
-        return String(s == null ? '' : s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
-    function renderOptions(id, opts, lettersOnly, tfng) {
-        const groupClass = 'mashq-opts' + (tfng ? ' mashq-opts--tfng' : '');
-        return '<div class="' + groupClass + '" role="radiogroup">' + opts.map(function (o) {
-            const letter = (o.letter || '').toLowerCase();
-            const val = letter || (o.text || '');
-            const showLetter = letter.length > 1 ? letter : letter.toUpperCase();
-            const textHtml = (lettersOnly || tfng)
-                ? (tfng ? '<span class="mashq-opt__text">' + esc(o.text || '') + '</span>' : '')
-                : '<span class="mashq-opt__text">' + esc(o.text || '') + '</span>';
-            const letterHtml = tfng
-                ? ''
-                : '<span class="mashq-opt__letter" aria-hidden="true">' + esc(showLetter || '•') + '</span>';
-            return '<label class="mashq-opt' + (lettersOnly ? ' mashq-opt--letter' : '') + (tfng ? ' mashq-opt--tfng' : '') + '">' +
-                '<input type="radio" name="pq_' + id + '" value="' + esc(val) + '" data-letter="' + esc(letter) + '">' +
-                letterHtml +
-                textHtml +
-                '</label>';
-        }).join('') + '</div>';
-    }
-
-    function sharedOptionsBank(qs) {
-        if (!qs || !qs.length) return null;
-        const first = Array.isArray(qs[0].options) ? qs[0].options : [];
-        if (first.length < 3) return null;
-        const same = qs.every(function (q) {
-            const opts = Array.isArray(q.options) ? q.options : [];
-            if (opts.length !== first.length) return false;
-            return opts.every(function (o, i) {
-                return String(o.text || '') === String(first[i].text || '')
-                    && String(o.letter || '').toLowerCase() === String(first[i].letter || '').toLowerCase();
-            });
-        });
-        return same ? first : null;
-    }
-
-    function renderOptionBank(opts, ptype) {
-        const title = (ptype === 'matching_names')
-            ? 'List of People'
-            : (ptype === 'matching_endings'
-                ? 'List of Endings'
-                : (ptype === 'matching_headings' ? 'List of Headings' : 'Options'));
-        return '<div class="mashq-bank ielts-listbox">' +
-            '<div class="mashq-bank__title">' + esc(title) + '</div>' +
-            '<ul class="mashq-bank__list">' +
-            opts.map(function (o) {
-                const raw = String(o.letter || '');
-                const shown = (ptype === 'matching_headings' || raw.length > 1) ? raw.toLowerCase() : raw.toUpperCase();
-                return '<li><strong>' + esc(shown) + '</strong> ' + esc(o.text || '') + '</li>';
-            }).join('') +
-            '</ul></div>';
-    }
-
-    function ieltsParagraphs(text) {
+    function typeMeta(key) { return types().find(function (item) { return item.key === key; }) || null; }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+    function readHist() { try { const raw = JSON.parse(localStorage.getItem(histKey) || '[]'); return Array.isArray(raw) ? raw : []; } catch (e) { return []; } }
+    function writeHist(rows) { try { localStorage.setItem(histKey, JSON.stringify(rows.slice(0, 8))); } catch (e) { /* saqlanmasa sahifa ishlayveradi */ } }
+    function savePref() { try { localStorage.setItem(prefKey, JSON.stringify(cfg)); } catch (e) {} }
+    function wordCount(text) { return String(text || '').trim().split(/\s+/).filter(Boolean).length; }
+    function paragraphs(text) {
         const raw = String(text || '').replace(/\r/g, '').trim();
-        let parts = raw.split(/\n\s*\n/).map(function (s) {
-            return s.replace(/\s+/g, ' ').trim();
-        }).filter(Boolean);
-        if (parts.length < 5) {
+        let parts = raw.split(/\n\s*\n/).map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+        if (parts.length < 4) {
             const sentences = raw.match(/[^.!?]+[.!?]+/g) || [raw];
-            const size = Math.max(2, Math.ceil(sentences.length / 7));
+            const size = Math.max(2, Math.ceil(sentences.length / 6));
             parts = [];
             for (let i = 0; i < sentences.length; i += size) {
                 const chunk = sentences.slice(i, i + size).join(' ').replace(/\s+/g, ' ').trim();
                 if (chunk) parts.push(chunk);
             }
         }
-        return parts.slice(0, 14);
+        return parts.slice(0, 12);
     }
 
-    function renderPassageHtml(text) {
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        return ieltsParagraphs(text).map(function (paragraph, index) {
-            return '<div class="ielts-para">' +
-                '<span class="ielts-para__mark">' + letters[index] + '</span>' +
-                '<p>' + esc(paragraph) + '</p>' +
-                '</div>';
+    function paintHome() {
+        const list = types();
+        if (!cfg.type && list[0]) cfg.type = list[0].key;
+        const levels = catalog.levels || [];
+        document.getElementById('labTypes').innerHTML = list.map(function (item) {
+            const on = item.key === cfg.type;
+            return '<button type="button" class="lab-type' + (on ? ' is-on' : '') + '" data-type="' + esc(item.key) + '"><div class="lab-type-top"><span class="lab-ico"><i class="fas ' + (icons[item.key] || 'fa-pen') + '"></i></span><span class="lab-dot">' + (on ? '<i></i>' : '') + '</span></div><h3>' + esc(item.label) + '</h3><p>' + esc(item.blurb || '') + '</p></button>';
         }).join('');
+        document.getElementById('labLevels').innerHTML = levels.map(function (lv) {
+            const note = String(lv.label || '').split('·').slice(1).join('·').trim();
+            const on = lv.key === cfg.level;
+            return '<button type="button" class="lab-level' + (on ? ' is-on' : '') + '" data-level="' + esc(lv.key) + '"><strong>' + esc(lv.key) + '</strong><span>' + esc(note) + '</span></button>';
+        }).join('');
+        document.getElementById('labModes').innerHTML = modes.map(function (mode) {
+            const on = mode.id === cfg.mode;
+            return '<button type="button" class="lab-mode' + (on ? ' is-on' : '') + '" data-mode="' + mode.id + '"><i class="fas ' + mode.icon + '"></i><strong>' + esc(mode.name) + '</strong><span>' + esc(mode.desc) + '</span></button>';
+        }).join('');
+        const mode = modes.find(function (m) { return m.id === cfg.mode; });
+        document.getElementById('labModeHelp').textContent = mode ? mode.desc : '';
+        const counts = skill === 'writing' ? [4] : [5, 8, 10];
+        if (counts.indexOf(cfg.count) < 0) cfg.count = counts[counts.length - 1 === 0 ? 0 : 1] || counts[0];
+        if (skill === 'writing') cfg.count = 4;
+        document.getElementById('labCounts').innerHTML = counts.map(function (n) {
+            return '<button type="button" data-count="' + n + '"' + (n === cfg.count ? ' class="is-on"' : '') + '>' + n + '</button>';
+        }).join('');
+        document.getElementById('labCountWrap').hidden = skill === 'writing';
+        const meta = typeMeta(cfg.type);
+        const mins = meta && meta.minutes ? meta.minutes : 20;
+        document.getElementById('labEta').textContent = i18n.about + ' ' + Math.max(8, Math.round(mins * cfg.count / (skill === 'writing' ? 4 : 10))) + ' ' + i18n.min;
+        paintStats();
     }
-
-    function wordCount(text) {
-        return String(text || '').trim().split(/\s+/).filter(Boolean).length;
-    }
-
-    function fitExamToBar() {
-        document.querySelectorAll('.mashq-workspace.is-exam .mashq-panel__body').forEach(function (body) {
-            body.style.maxHeight = '';
-            body.style.overflow = '';
+    function paintStats() {
+        const local = readHist();
+        const hist = records.length ? records : local;
+        const done = hist.length;
+        let correct = 0, total = 0;
+        const byType = {};
+        hist.forEach(function (row) {
+            correct += row.correct || 0;
+            total += row.total || 0;
+            if (!byType[row.type]) byType[row.type] = { correct: 0, total: 0, label: row.label, level: row.level };
+            byType[row.type].correct += row.correct || 0;
+            byType[row.type].total += row.total || 0;
         });
-    }
-
-    function showExamBar(part) {
-        const bar = document.getElementById('ieltsExamBar');
-        const label = document.getElementById('ieltsExamPart');
-        if (bar) bar.hidden = false;
-        if (label && part) label.textContent = part;
-        const workspace = document.querySelector('.mashq-workspace');
-        if (workspace) workspace.classList.add('is-exam');
-        const meta = currentTypeMeta();
-        startTimer(meta ? meta.minutes : (part === 'Writing' ? 40 : 20));
-        applyFont();
-        applyRhythm();
-    }
-
-    function buildQuestionNav(total) {
-        const nav = document.getElementById('ieltsNav');
-        if (!nav) return;
-        if (!total) {
-            nav.hidden = true;
-            nav.innerHTML = '';
-            return;
-        }
-        let html = '';
-        for (let n = 1; n <= total; n += 1) {
-            html += '<button type="button" class="ielts-nav__n" data-go="' + n + '">' + n + '</button>';
-        }
-        nav.innerHTML = html;
-        nav.hidden = false;
-        nav.querySelectorAll('.ielts-nav__n').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                const target = rightBody.querySelector('.mashq-q[data-index="' + btn.dataset.go + '"]');
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
+        document.getElementById('labDone').textContent = String(done);
+        document.getElementById('labAccuracy').textContent = total ? Math.round(100 * correct / total) + '%' : '—';
+        let worst = null;
+        Object.keys(byType).forEach(function (key) {
+            const row = byType[key];
+            const ratio = row.total ? row.correct / row.total : 1;
+            if (!worst || ratio < worst.ratio) worst = { key: key, ratio: ratio, label: row.label, level: row.level, correct: row.correct, total: row.total };
         });
-    }
-
-    function syncQuestionNav() {
-        const nav = document.getElementById('ieltsNav');
-        if (!nav || nav.hidden) return;
-        rightBody.querySelectorAll('.mashq-q').forEach(function (block) {
-            const btn = nav.querySelector('.ielts-nav__n[data-go="' + block.dataset.index + '"]');
-            if (!btn) return;
-            const radio = block.querySelector('input[type=radio]:checked');
-            const fill = block.querySelector('.mashq-fill');
-            const answered = !!radio || !!(fill && String(fill.value || '').trim());
-            btn.classList.toggle('is-done', answered);
-            btn.classList.toggle('is-ok', block.classList.contains('is-correct'));
-            btn.classList.toggle('is-bad', block.classList.contains('is-wrong'));
-            btn.classList.toggle('is-flag', block.classList.contains('is-flag'));
-        });
-    }
-
-    function renderQuestionBlock(q, idx, fillAsTextarea, lettersOnly, tfng) {
-        const id = q.id != null ? q.id : (idx + 1);
-        const opts = Array.isArray(q.options) ? q.options : [];
-        let inner;
-        if (opts.length) {
-            inner = renderOptions(id, opts, !!lettersOnly, !!tfng);
-        } else if (fillAsTextarea) {
-            inner = '<textarea class="form-control mashq-fill" data-qid="' + id + '" rows="2" placeholder="' + esc(i18n.writePh) + '"></textarea>';
+        const rec = document.getElementById('labRecommend');
+        if (worst && worst.ratio < 0.8) {
+            rec.hidden = false;
+            document.getElementById('labRecName').textContent = worst.label || worst.key;
+            document.getElementById('labRecMeta').innerHTML = '<span>' + esc(worst.level) + '</span><span>' + worst.correct + '/' + worst.total + '</span>';
+            document.getElementById('labRecReason').textContent = i18n.weakWhy;
+            document.getElementById('labRecLevel').textContent = worst.level || cfg.level;
+            const skillName = document.getElementById('labRecSkill');
+            if (skillName) skillName.textContent = worst.label || worst.key;
+            const bars = document.getElementById('labBars');
+            const score = document.getElementById('labRecScore');
+            if (score) score.textContent = Math.round(worst.ratio * 100) + '%';
+            if (bars) {
+                bars.innerHTML = hist.slice(0, 8).reverse().map(function (row) {
+                    const pct = row.total ? Math.round(100 * row.correct / row.total) : 8;
+                    const tone = pct >= 80 ? 'is-high' : (pct >= 50 ? 'is-mid' : 'is-low');
+                    return '<span class="' + tone + '" style="height:' + Math.max(18, pct) + '%"></span>';
+                }).join('');
+            }
+            rec.dataset.type = worst.key;
+            rec.dataset.level = worst.level || cfg.level;
         } else {
-            inner = '<input type="text" class="form-control mashq-fill" data-qid="' + id + '" placeholder="' + esc(i18n.fillPh) + '" autocomplete="off" spellcheck="false">';
+            rec.hidden = true;
+            document.getElementById('labRecLevel').textContent = cfg.level;
         }
-        return '<div class="mashq-q ielts-q" data-qid="' + id + '" data-index="' + (idx + 1) + '">' +
-            '<div class="mashq-q__head">' +
-                '<span class="ielts-qnum">' + (idx + 1) + '</span>' +
-                '<div class="mashq-q__prompt">' + esc(q.prompt || '') + '</div>' +
-                '<button type="button" class="ielts-flag" aria-pressed="false" title="' + esc(i18n.flag) + '"><i class="fas fa-flag"></i></button>' +
-            '</div>' +
-            inner +
-            '<div class="mashq-q__feedback" hidden></div>' +
-            '</div>';
-    }
-
-    function bindAnswerEvents() {
-        function keepPlace(action) {
-            const winX = window.scrollX;
-            const winY = window.scrollY;
-            const leftY = leftBody.scrollTop;
-            const rightY = rightBody.scrollTop;
-            action();
-            window.scrollTo(winX, winY);
-            leftBody.scrollTop = leftY;
-            rightBody.scrollTop = rightY;
+        const box = document.getElementById('labRecent');
+        box.innerHTML = hist.slice(0, 3).map(function (row, i) {
+            const pct = row.total ? Math.round(100 * row.correct / row.total) : 0;
+            const attr = row.id ? ' data-open="' + row.id + '"' : ' data-hist="' + i + '"';
+            return '<button type="button"' + attr + '><span><strong>' + esc(row.label || row.type) + '</strong><small>' + esc(row.level) + ' · ' + esc(row.mode) + ' · ' + row.total + '</small></span><b>' + pct + '%</b></button>';
+        }).join('') || '<p class="lab-help">' + esc(i18n.emptyHist) + '</p>';
+        const resume = document.getElementById('labResume');
+        if (resume) {
+            resume.hidden = !draftMeta;
+            const text = document.getElementById('labResumeText');
+            if (draftMeta && text) text.textContent = (draftMeta.title || draftMeta.label || '') + ' · ' + (draftMeta.answered || 0) + '/' + (draftMeta.total || 0);
         }
-        function chooseOption(lab) {
-            const input = lab.querySelector('input');
-            if (!input || input.disabled) return;
-            keepPlace(function () {
-                input.checked = true;
-                try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-            });
-        }
-        rightBody.querySelectorAll('.mashq-opt').forEach(function (lab) {
-            lab.addEventListener('pointerdown', function (event) {
-                if (event.button !== 0) return;
-                event.preventDefault();
-                chooseOption(lab);
-            });
-            lab.addEventListener('click', function (event) {
-                event.preventDefault();
-            });
+        paintProfile(hist);
+    }
+    function paintProfile(hist) {
+        const stats = document.getElementById('labProfileStats');
+        const skills = document.getElementById('labSkills');
+        const list = document.getElementById('labHistoryList');
+        if (!stats || !skills || !list) return;
+        let correct = 0, total = 0;
+        const byType = {};
+        hist.forEach(function (row) {
+            correct += row.correct || 0;
+            total += row.total || 0;
+            const key = row.type || row.label || 'mix';
+            if (!byType[key]) byType[key] = { label: row.label || key, correct: 0, total: 0 };
+            byType[key].correct += row.correct || 0;
+            byType[key].total += row.total || 0;
         });
-        rightBody.querySelectorAll('.mashq-opt input').forEach(function (input) {
-            input.addEventListener('change', function () {
-                const group = input.closest('.mashq-opts');
-                if (group) {
-                    group.querySelectorAll('.mashq-opt').forEach(function (lab) {
-                        lab.classList.remove('is-selected');
-                    });
-                }
-                const lab = input.closest('.mashq-opt');
-                if (lab) lab.classList.add('is-selected');
-                updateProgress();
-            });
-        });
-        rightBody.querySelectorAll('.mashq-fill').forEach(function (el) {
-            el.addEventListener('input', updateProgress);
-        });
+        const acc = total ? Math.round(100 * correct / total) + '%' : '—';
+        stats.innerHTML = '<div><span>' + esc(i18n.acc || 'Aniqlik') + '</span><strong>' + acc + '</strong></div><div><span>' + esc(i18n.done || 'Tugallangan') + '</span><strong>' + hist.length + '</strong></div><div><span>' + esc(i18n.qs || 'Savollar') + '</span><strong>' + total + '</strong></div>';
+        skills.innerHTML = Object.keys(byType).map(function (key) {
+            const row = byType[key];
+            const pct = row.total ? Math.round(100 * row.correct / row.total) : 0;
+            return '<div class="lab-skill"><div class="row"><span>' + esc(row.label) + '</span><strong>' + pct + '%</strong></div><div class="lab-bar"><span style="width:' + pct + '%"></span></div></div>';
+        }).join('') || '<p class="lab-help">' + esc(i18n.emptyHist) + '</p>';
+        list.innerHTML = hist.map(function (row, i) {
+            const pct = row.total ? Math.round(100 * row.correct / row.total) : 0;
+            const attr = row.id ? ' data-open="' + row.id + '"' : ' data-hist="' + i + '"';
+            return '<button type="button" class="lab-recent" ' + attr + ' style="display:flex;width:100%;justify-content:space-between;padding:12px 0;border:0;border-bottom:1px solid #eef1f3;background:none;text-align:left;"><span><strong>' + esc(row.label || row.title || row.type) + '</strong><small style="display:block;color:#637784;">' + esc(row.level) + ' · ' + esc(row.mode) + '</small></span><b>' + (row.correct || 0) + '/' + (row.total || 0) + ' · ' + pct + '%</b></button>';
+        }).join('') || '<p class="lab-help">' + esc(i18n.emptyHist) + '</p>';
     }
-    function paintFlagCount() {
-        const filter = document.getElementById('mashqFlagFilter');
-        if (!filter) return;
-        const count = rightBody.querySelectorAll('.mashq-q.is-flag').length;
-        if (!filter.dataset.label) filter.dataset.label = filter.textContent.trim();
-        filter.textContent = count ? (filter.dataset.label + ' ' + count) : filter.dataset.label;
-    }
-    function clearFlagFilter() {
-        rightBody.classList.remove('is-flags');
-        const filter = document.getElementById('mashqFlagFilter');
-        if (filter) filter.classList.remove('is-on');
-        paintFlagCount();
-    }
-
-    function questionCount() {
-        return rightBody.querySelectorAll('.mashq-q').length;
-    }
-
-    function answeredCount() {
-        let n = 0;
-        rightBody.querySelectorAll('.mashq-q').forEach(function (block) {
-            const checkedRadio = block.querySelector('input[type=radio]:checked');
-            if (checkedRadio) { n += 1; return; }
-            const fill = block.querySelector('.mashq-fill');
-            if (fill && String(fill.value || '').trim()) n += 1;
-        });
-        return n;
-    }
-
-    function updateProgress() {
-        const total = questionCount();
-        const done = answeredCount();
-        const pct = total ? Math.round(100 * done / total) : 0;
-        progressLabel.textContent = i18n.answers + ': ' + done + '/' + total;
-        progressFill.style.width = pct + '%';
-        progressHint.textContent = (done >= total && total) ? i18n.allDone : i18n.needMore;
-        progressHint.classList.toggle('is-ready', done >= total && total > 0);
-        checkBtn.classList.toggle('is-ready', done >= total && total > 0 && !checked);
-        syncQuestionNav();
-    }
-
-    function setInputsDisabled(disabled) {
-        rightBody.querySelectorAll('input, textarea').forEach(function (el) {
-            el.disabled = !!disabled;
+    function showDesk(name) {
+        document.getElementById('labPractice').hidden = name !== 'practice';
+        document.getElementById('labProfile').hidden = name !== 'profile';
+        document.getElementById('labHistory').hidden = name !== 'history';
+        document.querySelectorAll('#labSwitch button').forEach(function (btn) {
+            btn.classList.toggle('is-on', btn.dataset.desk === name);
         });
     }
 
-    function rememberAttempt(data) {
-        attemptLevel = (data && data.level) || selectedLevel();
-        attemptType = (data && data.practice_type) || selectedType();
-        if (rightBody) rightBody.dataset.attempt = attemptLevel + '|' + attemptType;
+    function show(name) {
+        document.getElementById('labHome').hidden = name !== 'home';
+        document.getElementById('labSession').hidden = name !== 'session';
+        document.getElementById('labResults').hidden = name !== 'results';
+        document.body.classList.toggle('lab-lock', name === 'session');
+        app.classList.toggle('is-challenge', cfg.mode === 'challenge');
     }
-    function renderReading(data) {
-        checked = false;
-        rememberAttempt(data);
-        clearFlagFilter();
-        leftEmpty.hidden = true;
-        leftBody.hidden = false;
-        const qs = Array.isArray(data.questions) ? data.questions : [];
-        showExamBar('Reading');
-        leftBody.innerHTML =
-            '<div class="ielts-passhead">' +
-                '<div class="ielts-kicker">Reading Passage</div>' +
-                '<div class="ielts-passhead__meta">' + esc(data.level || '') + ' · ' + esc(data.practice_label || '') + '</div>' +
-            '</div>' +
-            '<h2 class="ielts-title">' + esc(data.title || 'Reading') + '</h2>' +
-            '<p class="ielts-time">You should spend about 20 minutes on Questions 1–' + (qs.length || 10) + '.</p>' +
-            '<div class="ielts-passage">' + renderPassageHtml(data.passage || '') + '</div>' +
-            '<p class="ielts-words">' + wordCount(data.passage) + ' words</p>';
-
-        const ptype = String(data.practice_type || '');
-        const bank = (ptype === 'matching_endings' || ptype === 'matching_names' || ptype === 'matching_headings')
-            ? sharedOptionsBank(qs)
-            : null;
-        const lettersOnly = !!bank;
-        const tfng = ptype === 'tfng';
-        rightEmpty.hidden = true;
-        rightBody.hidden = false;
-        rightBody.innerHTML =
-            '<div class="ielts-qhead">' +
-                '<h3>Questions ' + (qs.length ? ('1–' + qs.length) : '') + '</h3>' +
-            '</div>' +
-            (data.instruction ? '<p class="ielts-rubric">' + esc(data.instruction) + '</p>' : '') +
-            (data.tip ? '<p class="ielts-note">' + esc(data.tip) + '</p>' : '') +
-            (bank ? renderOptionBank(bank, ptype) : '') +
-            qs.map(function (q, idx) { return renderQuestionBlock(q, idx, false, lettersOnly, tfng); }).join('');
-        buildQuestionNav(qs.length);
-        footer.hidden = false;
-        scoreEl.hidden = true;
-        resetBtn.hidden = true;
-        checkBtn.hidden = false;
-        setInputsDisabled(false);
-        bindAnswerEvents();
-        updateProgress();
-        fitExamToBar();
-        rightBody.scrollTop = 0;
-        leftBody.scrollTop = 0;
+    function formatClock(sec) {
+        const m = Math.floor(Math.max(0, sec) / 60);
+        const s = Math.max(0, sec) % 60;
+        return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
-
-    function renderWriting(data) {
-        checked = false;
-        rememberAttempt(data);
-        clearFlagFilter();
-        leftEmpty.hidden = true;
-        leftBody.hidden = false;
-        const ex = Array.isArray(data.exercises) ? data.exercises : [];
-        const taskText = String(data.task || '');
-        const hasWordLimit = /words/i.test(taskText);
-        showExamBar('Writing');
-        leftBody.innerHTML =
-            '<div class="ielts-passhead">' +
-                '<div class="ielts-kicker">Writing Task 2</div>' +
-                '<div class="ielts-passhead__meta">' + esc(data.level || '') + ' · ' + esc(data.practice_label || '') + '</div>' +
-            '</div>' +
-            '<p class="ielts-time">You should spend about 40 minutes on this task.</p>' +
-            '<p class="ielts-lead">Write about the following topic:</p>' +
-            '<div class="ielts-taskbox">' + esc(taskText).replace(/\n/g, '<br>') + '</div>' +
-            '<p class="ielts-lead">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p>' +
-            (hasWordLimit ? '' : '<p class="ielts-wordcount">Write at least 250 words.</p>') +
-            '<h3 class="ielts-modelhead">' + esc(i18n.sample) + '</h3>' +
-            '<div class="ielts-model">' + esc(data.sample_essay || '').replace(/\n/g, '<br>') + '</div>' +
-            (data.tip ? '<p class="ielts-note">' + esc(data.tip) + '</p>' : '');
-
-        rightEmpty.hidden = true;
-        rightBody.hidden = false;
-        rightBody.innerHTML =
-            '<div class="ielts-qhead">' +
-                '<h3>Questions ' + (ex.length ? ('1–' + ex.length) : '') + '</h3>' +
-            '</div>' +
-            '<p class="ielts-rubric">Answer the questions using the task and the model answer.</p>' +
-            ex.map(function (q, idx) { return renderQuestionBlock(q, idx, true, false, false); }).join('');
-        buildQuestionNav(ex.length);
-        footer.hidden = false;
-        scoreEl.hidden = true;
-        resetBtn.hidden = true;
-        checkBtn.hidden = false;
-        setInputsDisabled(false);
-        bindAnswerEvents();
-        updateProgress();
-        fitExamToBar();
-        rightBody.scrollTop = 0;
-        leftBody.scrollTop = 0;
-    }
-
-    function collectAnswers() {
-        const answers = {};
-        rightBody.querySelectorAll('.mashq-q').forEach(function (block) {
-            const qid = String(block.dataset.qid || '');
-            const checkedRadio = block.querySelector('input[type=radio]:checked');
-            if (checkedRadio) {
-                answers[qid] = checkedRadio.value;
-                return;
-            }
-            const fill = block.querySelector('.mashq-fill');
-            if (fill) answers[qid] = fill.value || '';
-        });
-        return answers;
-    }
-
-    function applyCheckResult(result) {
-        checked = true;
-        const items = Array.isArray(result.items) ? result.items : [];
-        let firstWrong = null;
-        items.forEach(function (item) {
-            const block = rightBody.querySelector('.mashq-q[data-qid="' + item.id + '"]');
-            if (!block) return;
-            const fb = block.querySelector('.mashq-q__feedback');
-            block.classList.remove('is-correct', 'is-wrong', 'is-empty');
-            block.classList.add(item.is_correct ? 'is-correct' : 'is-wrong');
-            if (!item.answered) block.classList.add('is-empty');
-
-            // option highlighting
-            block.querySelectorAll('.mashq-opt').forEach(function (lab) {
-                lab.classList.remove('is-right', 'is-miss', 'is-selected');
-                const input = lab.querySelector('input');
-                if (!input) return;
-                const val = String(input.value || '').toLowerCase();
-                const correctRaw = String(item.correct || '').toLowerCase().split('|')[0].trim();
-                const userRaw = String(item.user || '').toLowerCase();
-                if (val === correctRaw || (input.dataset.letter || '').toLowerCase() === correctRaw) {
-                    lab.classList.add('is-right');
-                }
-                if (input.checked) {
-                    lab.classList.add('is-selected');
-                    if (!item.is_correct) lab.classList.add('is-miss');
-                }
-            });
-
-            if (fb) {
-                fb.hidden = false;
-                if (item.is_correct) {
-                    fb.innerHTML =
-                        '<div class="mashq-fb mashq-fb--ok"><i class="fas fa-check-circle"></i><span>' +
-                        esc(item.explanation || i18n.correct) + '</span></div>';
-                } else {
-                    const your = item.answered
-                        ? esc(item.user)
-                        : '<em>' + esc(i18n.emptyAns) + '</em>';
-                    fb.innerHTML =
-                        '<div class="mashq-fb mashq-fb--bad">' +
-                            '<div><i class="fas fa-times-circle"></i> ' + esc(i18n.correctAns) +
-                            ': <strong>' + esc(item.correct_display || item.correct) + '</strong></div>' +
-                            '<div class="mashq-fb__you">' + esc(i18n.yourAns) + ': ' + your + '</div>' +
-                            (item.explanation ? '<div class="mashq-fb__why">' + esc(item.explanation) + '</div>' : '') +
-                        '</div>';
-                    if (!firstWrong) firstWrong = block;
-                }
-            }
-        });
-
-        const pct = result.percent || 0;
-        const tone = pct >= 80 ? 'good' : (pct >= 50 ? 'mid' : 'low');
-        scoreEl.hidden = false;
-        scoreEl.className = 'mashq-score mashq-score--' + tone;
-        scoreEl.innerHTML =
-            '<span class="mashq-score__label">' + esc(i18n.score) + '</span>' +
-            '<strong>' + (result.correct || 0) + '/' + (result.total || 0) + '</strong>' +
-            '<span class="mashq-score__pct">' + pct + '% · ' + (result.correct || 0) + ' ' + esc(i18n.of) + '</span>';
-
-        setInputsDisabled(true);
-        clearFlagFilter();
-        resetBtn.hidden = false;
-        checkBtn.hidden = true;
-        rightBody.querySelectorAll('.mashq-q.is-correct').forEach(function (block) {
-            block.hidden = true;
-        });
-        const nav = document.getElementById('ieltsNav');
-        if (nav) {
-            nav.querySelectorAll('.ielts-nav__n').forEach(function (btn) {
-                const block = rightBody.querySelector('.mashq-q[data-index="' + btn.dataset.go + '"]');
-                btn.hidden = !(block && block.classList.contains('is-wrong'));
-            });
-        }
-        if (!firstWrong) {
-            const doneNote = document.createElement('p');
-            doneNote.className = 'ielts-clear';
-            doneNote.textContent = i18n.allOk;
-            rightBody.appendChild(doneNote);
-        }
-        updateProgress();
-        try {
-            const all = readScores();
-            const stamped = String((rightBody && rightBody.dataset.attempt) || '').split('|');
-            all[(stamped[0] || attemptLevel || selectedLevel()) + '|' + (stamped[1] || attemptType || selectedType())] = {
-                correct: result.correct || 0,
-                total: result.total || 0
-            };
-            localStorage.setItem(scoreStore, JSON.stringify(all));
-        } catch (err) { /* natija saqlanmasa sahifa ishlashda davom etadi */ }
-        paintLast();
-        paintTypeScores();
-
-        if (firstWrong) {
-            firstWrong.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
-    document.querySelectorAll('.mashq-type').forEach(function (btn) {
-        btn.addEventListener('click', function (event) {
-            event.stopPropagation();
-            fillTypes(btn.dataset.type || '');
-            paintBrief();
-        });
-    });
-    document.querySelectorAll('.mashq-cat').forEach(function (card) {
-        card.addEventListener('click', function () {
-            if (card.querySelector('.mashq-type.is-active')) return;
-            const first = card.querySelector('.mashq-type');
-            if (!first) return;
-            fillTypes(first.dataset.type || '');
-            paintBrief();
-        });
-    });
-    if (levelSelect) levelSelect.addEventListener('change', paintBrief);
-    if (examModeInput) {
-        examModeInput.addEventListener('change', function () {
-            paintBrief();
-            rightBody.querySelectorAll('.ielts-note').forEach(function (node) {
-                node.hidden = examMode();
-            });
-        });
-    }
-    if (timerBtn) {
-        timerBtn.addEventListener('click', function () {
-            if (examMode()) return;
-            if (!timerHandle && remain <= 0) return;
-            timerPaused = !timerPaused;
-            paintTimer();
-            if (!timerPaused && !timerHandle && remain > 0) {
-                timerHandle = setInterval(function () {
-                    if (timerPaused) return;
-                    if (remain > 0) remain -= 1;
-                    paintTimer();
-                    if (remain <= 0) stopTimer();
-                }, 1000);
-            }
-        });
-    }
-    if (fontDownBtn) {
-        fontDownBtn.addEventListener('click', function () {
-            fontStep = Math.max(0, fontStep - 1);
-            applyFont();
-        });
-    }
-    if (fontUpBtn) {
-        fontUpBtn.addEventListener('click', function () {
-            fontStep = Math.min(2, fontStep + 1);
-            applyFont();
-        });
-    }
-    const rhythmBtn = document.getElementById('mashqRhythm');
-    const workspace = document.querySelector('.mashq-workspace');
-    let rhythm = 1;
-    function applyRhythm() {
-        if (!workspace) return;
-        workspace.classList.toggle('is-tight', rhythm === 0);
-        workspace.classList.toggle('is-roomy', rhythm === 2);
-        if (rhythmBtn) rhythmBtn.classList.toggle('is-on', rhythm !== 1);
-    }
-    if (rhythmBtn) {
-        rhythmBtn.addEventListener('click', function () {
-            rhythm = (rhythm + 1) % 3;
-            applyRhythm();
-        });
-    }
-    const notesBox = document.getElementById('mashqNotesBox');
-    const notesPane = document.getElementById('mashqNotes');
-    const notesBtn = document.getElementById('mashqNotesBtn');
-    const notesKey = 'ton_mashq_notes_' + skill;
-    if (notesBox) {
-        try { notesBox.value = localStorage.getItem(notesKey) || ''; } catch (err) { /* saqlanmasa bo'sh qoladi */ }
-        notesBox.addEventListener('input', function () {
-            try { localStorage.setItem(notesKey, notesBox.value); } catch (err) { /* brauzer yozishni rad etishi mumkin */ }
-        });
-    }
-    function setNotes(open) {
-        if (!notesPane || !notesBtn) return;
-        notesPane.hidden = !open;
-        notesBtn.classList.toggle('is-on', open);
-        if (open && notesBox) notesBox.focus();
-    }
-    if (notesBtn) notesBtn.addEventListener('click', function () { setNotes(notesPane.hidden); });
-    const notesClose = document.getElementById('mashqNotesClose');
-    if (notesClose) notesClose.addEventListener('click', function () { setNotes(false); });
-    rightBody.addEventListener('click', function (event) {
-        const flag = event.target.closest('.ielts-flag');
-        if (!flag || checked) return;
-        const block = flag.closest('.mashq-q');
-        if (!block) return;
-        const on = !block.classList.contains('is-flag');
-        block.classList.toggle('is-flag', on);
-        flag.classList.toggle('is-on', on);
-        flag.setAttribute('aria-pressed', on ? 'true' : 'false');
-        syncQuestionNav();
-        paintFlagCount();
-    });
-    const flagFilter = document.getElementById('mashqFlagFilter');
-    if (flagFilter) {
-        flagFilter.addEventListener('click', function () {
-            if (checked) return;
-            const count = rightBody.querySelectorAll('.mashq-q.is-flag').length;
-            if (!count) {
-                setStatus(i18n.flagNeed, 'info');
-                return;
-            }
-            const on = !rightBody.classList.contains('is-flags');
-            rightBody.classList.toggle('is-flags', on);
-            flagFilter.classList.toggle('is-on', on);
-        });
-    }
-    const coachBtn = document.getElementById('mashqCoach');
-    if (coachBtn) {
-        coachBtn.addEventListener('click', function () {
-            if (!coachBtn.dataset.type) return;
-            fillTypes(coachBtn.dataset.type);
-            paintBrief();
-        });
-    }
-    const split = document.getElementById('mashqSplit');
-    if (split && workspace) {
-        try {
-            const saved = localStorage.getItem('ton_mashq_split');
-            if (saved) workspace.style.setProperty('--split', saved);
-        } catch (err) { /* kenglik saqlanmasa teng qoladi */ }
-        split.addEventListener('pointerdown', function (event) {
-            if (!workspace.classList.contains('is-exam')) return;
-            event.preventDefault();
-            split.setPointerCapture(event.pointerId);
-            function move(ev) {
-                const rect = workspace.getBoundingClientRect();
-                const x = Math.min(Math.max(ev.clientX - rect.left, 280), rect.width - 300);
-                const value = x + 'px';
-                workspace.style.setProperty('--split', value);
-                try { localStorage.setItem('ton_mashq_split', value); } catch (err) { /* saqlanmasa joriy seansda turadi */ }
-            }
-            function up(ev) {
-                split.removeEventListener('pointermove', move);
-                split.removeEventListener('pointerup', up);
-                try { split.releasePointerCapture(ev.pointerId); } catch (err) { /* capture allaqachon tushgan */ }
-            }
-            split.addEventListener('pointermove', move);
-            split.addEventListener('pointerup', up);
-        });
-    }
-    const hlBtn = document.createElement('button');
-    hlBtn.type = 'button';
-    hlBtn.className = 'ielts-hlbtn';
-    hlBtn.textContent = i18n.flag;
-    hlBtn.hidden = true;
-    document.body.appendChild(hlBtn);
-    let pendingRange = null;
-    function hideHighlight() {
-        hlBtn.hidden = true;
-        pendingRange = null;
-    }
-    leftBody.addEventListener('mouseup', function () {
-        const sel = window.getSelection();
-        if (!sel || sel.isCollapsed || !sel.rangeCount) {
-            hideHighlight();
-            return;
-        }
-        const range = sel.getRangeAt(0);
-        if (!leftBody.contains(range.commonAncestorContainer)) {
-            hideHighlight();
-            return;
-        }
-        if (!sel.toString().trim()) {
-            hideHighlight();
-            return;
-        }
-        const rect = range.getBoundingClientRect();
-        pendingRange = range.cloneRange();
-        hlBtn.hidden = false;
-        hlBtn.style.left = Math.max(8, rect.left) + 'px';
-        hlBtn.style.top = Math.max(8, rect.top - 36) + 'px';
-    });
-    hlBtn.addEventListener('mousedown', function (event) {
-        event.preventDefault();
-    });
-    hlBtn.addEventListener('click', function () {
-        if (!pendingRange) return;
-        const mark = document.createElement('mark');
-        mark.className = 'ielts-hl';
-        try {
-            pendingRange.surroundContents(mark);
-        } catch (err) {
-            const frag = pendingRange.extractContents();
-            mark.appendChild(frag);
-            pendingRange.insertNode(mark);
-        }
-        const sel = window.getSelection();
-        if (sel) sel.removeAllRanges();
-        hideHighlight();
-    });
-    leftBody.addEventListener('click', function (event) {
-        const mark = event.target.closest ? event.target.closest('mark.ielts-hl') : null;
-        if (!mark || !leftBody.contains(mark)) return;
-        const parent = mark.parentNode;
-        while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
-        parent.removeChild(mark);
-    });
-    leftBody.addEventListener('scroll', hideHighlight);
-    restorePref();
-
-    generateBtn.addEventListener('click', async function () {
-        generateBtn.disabled = true;
-        const prevHtml = generateBtn.innerHTML;
-        generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + esc(i18n.creating);
+    function stopTimer() { if (timerId) clearInterval(timerId); timerId = null; }
+    function startTimer(seconds) {
         stopTimer();
-        setStatus(i18n.aiBusy, 'info');
-        scoreEl.hidden = true;
-        footer.hidden = true;
-        checked = false;
-        payload = null;
-        // Eski matn/savollarni yashirib, yangi so'rov kutamiz
-        leftBody.hidden = true;
-        rightBody.hidden = true;
-        leftEmpty.hidden = false;
-        rightEmpty.hidden = false;
-        app.classList.add('is-loading');
+        const btn = document.getElementById('labTimer');
+        if (cfg.mode === 'learn') { btn.hidden = true; return; }
+        const meta = typeMeta(cfg.type);
+        const mins = meta && meta.minutes ? meta.minutes : 20;
+        remain = typeof seconds === 'number' ? seconds : (cfg.mode === 'challenge' ? mins : Math.max(10, Math.round(mins * cfg.count / 10))) * 60;
+        btn.hidden = false;
+        btn.textContent = formatClock(remain);
+        timerId = setInterval(function () {
+            remain -= 1;
+            btn.textContent = formatClock(remain);
+            if (remain <= 0) {
+                stopTimer();
+                if (cfg.mode === 'challenge' && !review) submit(true);
+            }
+        }, 1000);
+    }
 
+    function captureAnswer() {
+        const q = questions[active];
+        if (!q) return;
+        const card = document.getElementById('labQuestion');
+        const radio = card.querySelector('input[type=radio]:checked');
+        const field = card.querySelector('textarea, input[type=text]');
+        if (radio) answers[q.id] = radio.value;
+        else if (field) answers[q.id] = field.value || '';
+    }
+    function answeredCount() {
+        return questions.filter(function (q) { return String(answers[q.id] || '').trim(); }).length;
+    }
+    function optionLetter(q, opt, index) {
+        const raw = String(opt.letter || '');
+        if (cfg.type === 'matching_headings' || raw.length > 1) return raw.toLowerCase();
+        return (raw || String.fromCharCode(97 + index)).toUpperCase();
+    }
+    function reviewIndexes() {
+        if (!review || !result) return questions.map(function (_q, i) { return i; });
+        const rows = [];
+        questions.forEach(function (q, i) {
+            const item = itemOf(q.id);
+            if (item && !item.is_correct) rows.push(i);
+        });
+        return rows;
+    }
+    function moveActive(step) {
+        captureAnswer();
+        const pool = reviewIndexes();
+        if (!pool.length) return;
+        const pos = pool.indexOf(active);
+        const next = step < 0 ? Math.max(0, pos - 1) : Math.min(pool.length - 1, (pos < 0 ? -1 : pos) + step);
+        active = pool[next];
+        showQuestion();
+    }
+    function paintNav() {
+        const pool = reviewIndexes();
+        document.getElementById('labQnav').innerHTML = pool.map(function (i) {
+            const q = questions[i];
+            const done = !!String(answers[q.id] || '').trim();
+            const cls = [
+                i === active ? 'is-on' : '',
+                done ? 'is-done' : '',
+                flags[q.id] ? 'is-flag' : '',
+                review ? 'is-bad' : '',
+                !review && probes[q.id] === true ? 'is-ok' : '',
+                !review && probes[q.id] === false ? 'is-bad' : ''
+            ].filter(Boolean).join(' ');
+            return '<button type="button" class="' + cls + '" data-go="' + i + '">' + (i + 1) + '</button>';
+        }).join('');
+        const total = questions.length || 1;
+        const n = review ? total : answeredCount();
+        document.getElementById('labProgress').style.width = Math.round(100 * n / total) + '%';
+        document.getElementById('labAnswered').textContent = answeredCount() + ' / ' + questions.length;
+        document.getElementById('labCounter').textContent = (active + 1) + ' / ' + questions.length;
+        document.getElementById('labPos').textContent = (active + 1) + ' / ' + questions.length;
+        const pos = pool.indexOf(active);
+        document.getElementById('labPrev').disabled = pos <= 0;
+        document.getElementById('labNext').disabled = pos < 0 || pos >= pool.length - 1;
+    }
+    function itemOf(id) {
+        if (!result || !Array.isArray(result.items)) return null;
+        return result.items.find(function (item) { return String(item.id) === String(id); }) || null;
+    }
+    function showQuestion() {
+        const q = questions[active];
+        const card = document.getElementById('labQuestion');
+        if (!q || !card) return;
+        const opts = Array.isArray(q.options) ? q.options : [];
+        const graded = review ? itemOf(q.id) : (reveals[q.id] || null);
+        if (review && !reviewIndexes().length) {
+            card.innerHTML = '<div class="lab-qcard"><h3>' + esc(i18n.all) + '</h3></div>';
+            paintNav();
+            return;
+        }
+        let body = '';
+        if (opts.length) {
+            body = opts.map(function (opt, i) {
+                const value = String(opt.letter || String.fromCharCode(97 + i)).toLowerCase();
+                const on = String(answers[q.id] || '').toLowerCase() === value;
+                const key = graded && String(graded.correct || '').toLowerCase().split('|')[0].trim() === value;
+                return '<label class="lab-opt' + (on ? ' is-on' : '') + (key ? ' is-key' : '') + '"><input type="radio" name="ans" value="' + esc(value) + '"' + (on ? ' checked' : '') + (review ? ' disabled' : '') + '><span class="lab-bullet">' + esc(optionLetter(q, opt, i)) + '</span><span>' + esc(opt.text || '') + '</span></label>';
+            }).join('');
+        } else {
+            const long = skill === 'writing' && String(q.kind || '') !== 'gap';
+            const val = esc(answers[q.id] || '');
+            body = long
+                ? '<textarea ' + (review ? 'disabled' : '') + '>' + val + '</textarea>'
+                : '<input type="text" value="' + val + '" ' + (review ? 'disabled' : '') + ' autocomplete="off" spellcheck="false">';
+        }
+        let extra = '';
+        if (!review && cfg.mode === 'learn') {
+            extra = '<div class="lab-learn"><button type="button" class="lab-secondary" id="labProbe">' + esc(i18n.probe) + '</button><button type="button" class="lab-link" id="labHint">' + esc(i18n.hint) + '</button><button type="button" class="lab-link" id="labReveal">' + esc(i18n.reveal) + '</button>';
+            if (hints[q.id]) extra += '<div class="lab-hint">' + esc(hints[q.id]) + '</div>';
+            if (probes[q.id] === true) extra += '<div class="lab-note">' + esc(i18n.yes) + '</div>';
+            if (probes[q.id] === false) extra += '<div class="lab-note is-bad">' + esc(i18n.no) + ' <button type="button" class="lab-link" id="labRetry">' + esc(i18n.retry) + '</button></div>';
+            extra += '</div>';
+        }
+        if (graded) {
+            extra += '<div class="lab-why"><p><span>' + esc(i18n.yours) + '</span><br><strong>' + esc(graded.user || answers[q.id] || i18n.blank) + '</strong></p><p><span>' + esc(i18n.key) + '</span><br><strong>' + esc(graded.correct_display || graded.correct || '') + '</strong></p>' + (graded.explanation ? '<p>' + esc(graded.explanation) + '</p>' : '') + '</div>';
+        }
+        card.innerHTML = '<div class="lab-qcard"><div style="display:flex;justify-content:space-between;"><span class="lab-tag">' + (active + 1) + '</span><button type="button" class="lab-flag" id="labFlag">' + (flags[q.id] ? '⚑ ' : '') + esc(i18n.flag) + '</button></div><h3>' + esc(q.prompt || '') + '</h3>' + body + extra + '</div>';
+        paintNav();
+        const flagged = document.getElementById('labFootNote');
+        const nflag = Object.keys(flags).filter(function (id) { return flags[id]; }).length;
+        if (flagged && !review) flagged.textContent = nflag ? (nflag + ' · ' + i18n.flag) : i18n.calm;
+        const item = graded;
+        lightEvidence(item);
+    }
+    function lightEvidence(item) {
+        const letter = item && item.paragraph ? String(item.paragraph) : '';
+        let range = null;
+        if (letter && item.evidence) {
+            const parts = skill === 'writing' ? [String(payload.task || '')] : paragraphs(payload.passage || '');
+            const plain = parts[letter.charCodeAt(0) - 65] || '';
+            const probe = String(item.evidence).slice(0, 24).toLowerCase();
+            const at = plain.toLowerCase().indexOf(probe);
+            if (at >= 0) {
+                range = { para: letter, start: at, end: at + Math.min(String(item.evidence).length, plain.length - at), kind: 'ev' };
+            }
+        }
+        const same = litLetter === letter && JSON.stringify(evidenceRange) === JSON.stringify(range);
+        litLetter = letter;
+        evidenceRange = range;
+        if (!same) renderPassage();
+        if (!letter) return;
+        const blocks = document.querySelectorAll('.lab-para');
+        for (let i = 0; i < blocks.length; i += 1) {
+            const badge = blocks[i].querySelector('b');
+            if (!badge || badge.textContent !== letter) continue;
+            blocks[i].scrollIntoView({ block: 'center' });
+            break;
+        }
+    }
+    function paintRanges(text, para) {
+        const ranges = marks.filter(function (mark) { return mark.para === para && mark.end > mark.start; }).map(function (mark) {
+            return { start: mark.start, end: mark.end, kind: 'mark', para: mark.para };
+        });
+        if (evidenceRange && evidenceRange.para === para) ranges.push(evidenceRange);
+        if (!ranges.length) return esc(text);
+        const cuts = [0, text.length];
+        ranges.forEach(function (mark) {
+            cuts.push(Math.max(0, Math.min(text.length, mark.start)), Math.max(0, Math.min(text.length, mark.end)));
+        });
+        const points = cuts.filter(function (value, index) { return cuts.indexOf(value) === index; }).sort(function (a, b) { return a - b; });
+        let html = '';
+        for (let i = 0; i < points.length - 1; i += 1) {
+            const from = points[i];
+            const to = points[i + 1];
+            const slice = esc(text.slice(from, to));
+            const marked = ranges.find(function (mark) { return mark.kind === 'mark' && from >= mark.start && to <= mark.end; });
+            const evidence = ranges.find(function (mark) { return mark.kind === 'ev' && from >= mark.start && to <= mark.end; });
+            if (evidence) html += '<span class="lab-ev">' + slice + '</span>';
+            else if (marked) html += '<mark class="lab-mark" data-para="' + esc(marked.para) + '" data-start="' + marked.start + '">' + slice + '</mark>';
+            else html += slice;
+        }
+        return html;
+    }
+    function markedHtml(text, para) {
+        return paintRanges(text, para);
+    }
+    function renderPassage() {
+        const body = document.getElementById('labPassBody');
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const scroll = body.scrollTop;
+        let parts = [];
+        let head = '';
+        if (skill === 'writing') {
+            parts = [String(payload.task || '')];
+            const sample = cfg.mode === 'challenge' ? '' : (payload.sample_essay || '');
+            head = '<p class="lab-kicker" style="margin-left:0;">' + esc(i18n.task) + '</p>';
+            body.innerHTML = head + '<div class="lab-para"><b>A</b><p data-paragraph="A">' + markedHtml(parts[0], 'A') + '</p></div>' + (sample ? '<p class="lab-sample-h"><strong>' + esc(i18n.sample) + '</strong></p><div class="lab-sample">' + esc(sample) + '</div>' : '') + noteList();
+        } else {
+            parts = paragraphs(payload.passage || '');
+            head = '<div class="lab-passhead"><div class="lab-kicker">' + esc(payload.practice_label || '') + '</div><h2 class="lab-serif">' + esc(payload.title || '') + '</h2><p class="lab-words"><span>' + wordCount(payload.passage) + '</span><span>' + esc(payload.level || '') + '</span></p></div>';
+            body.innerHTML = head + parts.map(function (part, i) {
+                const letter = letters[i];
+                return '<div class="lab-para"><b class="' + (litLetter === letter ? 'is-lit' : '') + '">' + letter + '</b><p data-paragraph="' + letter + '">' + markedHtml(part, letter) + '</p></div>';
+            }).join('') + noteList() + '<div class="lab-end">END OF PASSAGE</div>';
+        }
+        body.style.fontSize = fontSize + 'px';
+        body.scrollTop = scroll;
+    }
+    function noteList() {
+        const notes = marks.filter(function (mark) { return mark.note; });
+        if (!notes.length) return '';
+        return '<div class="lab-notes"><h3>' + esc(i18n.note || 'Izoh') + '</h3>' + notes.map(function (mark) {
+            return '<p><strong>' + esc(mark.para) + '</strong> ' + esc(mark.note) + '</p>';
+        }).join('') + '</div>';
+    }
+    function openSession(keep) {
+        questions = (skill === 'writing' ? payload.exercises : payload.questions) || [];
+        if (!keep) {
+            answers = {}; flags = {}; probes = {}; reveals = {}; hints = {}; hintLevels = {};
+            marks = []; active = 0; review = false; result = null; live = true;
+        }
+        document.getElementById('labSessionTitle').textContent = payload.title || payload.practice_label || '';
+        document.getElementById('labSessionMeta').textContent = (payload.level || '') + ' · ' + (payload.practice_label || '');
+        document.getElementById('labModeTag').textContent = (modes.find(function (m) { return m.id === cfg.mode; }) || {}).name || '';
+        document.getElementById('labInstruct').textContent = payload.instruction || (typeMeta(cfg.type) || {}).blurb || '';
+        document.getElementById('labSubmit').hidden = !!review;
+        document.getElementById('labQKicker').textContent = review ? 'REVIEW' : 'QUESTIONS';
+        renderPassage();
+        show('session');
+        showQuestion();
+        if (review) stopTimer();
+        else if (keep && typeof carriedRemain === 'number') startTimer(carriedRemain);
+        else startTimer();
+        carriedRemain = null;
+        document.getElementById('labPass').classList.add('is-show');
+        document.getElementById('labQs').classList.remove('is-show');
+    }
+
+    async function postCheck(body) {
+        const res = await fetch(checkUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify(body)
+        });
+        const json = await res.json().catch(function () { return {}; });
+        if (!res.ok || !json.ok) throw Error(json.error || i18n.err);
+        return json.result;
+    }
+    function snap() {
+        return { answers: answers, flags: flags, marks: marks, font: fontSize, active: active, remain: remain };
+    }
+    async function postLab(extra) {
+        const res = await fetch(labUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify(Object.assign({ skill: skill, mode: cfg.mode, state: snap() }, extra || {})),
+            keepalive: !!(extra && extra.action === 'park')
+        });
+        const json = await res.json().catch(function () { return {}; });
+        if (!res.ok || !json.ok) throw Error(json.error || i18n.err);
+        return json;
+    }
+    async function park() {
+        if (!live || review || !payload) return;
+        try {
+            await postLab({ action: 'park' });
+            draftMeta = {
+                title: payload.title || payload.practice_label || '',
+                label: payload.practice_label || '',
+                level: payload.level || cfg.level,
+                mode: cfg.mode,
+                type: cfg.type,
+                total: questions.length,
+                answered: answeredCount()
+            };
+        } catch (err) { /* keyingi kirishda qoralama qolmasa, yangi mashq ochiladi */ }
+    }
+    async function generate(custom) {
+        if (busy) return;
+        if (custom) cfg = Object.assign({}, cfg, custom);
+        savePref();
+        busy = true;
+        const box = document.getElementById('labStages');
+        document.getElementById('labLoading').hidden = false;
+        let step = 0;
+        box.innerHTML = stages.map(function (label, i) { return '<div class="lab-stage' + (i === 0 ? ' is-on' : '') + '" data-stage="' + i + '"><b>' + (i + 1) + '</b>' + esc(label) + '</div>'; }).join('');
+        const tick = setInterval(function () {
+            step = Math.min(stages.length - 1, step + 1);
+            box.querySelectorAll('.lab-stage').forEach(function (el, i) {
+                el.classList.toggle('is-done', i < step);
+                el.classList.toggle('is-on', i === step);
+            });
+        }, 700);
+        document.getElementById('labGenerate').disabled = true;
         try {
             const res = await fetch(generateUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrf,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    skill: skill,
-                    level: selectedLevel(),
-                    practice_type: selectedType(),
-                    seed: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 10),
-                    refresh: true
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ skill: skill, level: cfg.level, practice_type: cfg.type, count: cfg.count, seed: String(Date.now()), refresh: true })
             });
-            let json = {};
-            try { json = await res.json(); } catch (e) { json = {}; }
-            if (!res.ok || !json.ok) {
-                var msg = json.error || i18n.err;
-                if (res.status === 502 || res.status === 504) {
-                    msg = i18n.net + ' (timeout)';
-                } else if (res.status === 403) {
-                    msg = i18n.err + ' (CSRF)';
-                } else if (res.status && !json.error) {
-                    msg = i18n.err + ' (' + res.status + ')';
-                }
-                setStatus(msg, 'error');
-                return;
-            }
-            payload = json.data;
-            if (skill === 'writing') renderWriting(payload);
-            else renderReading(payload);
-            setStatus('', '');
-            footer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            const json = await res.json().catch(function () { return {}; });
+            if (!res.ok || !json.ok) throw Error((json && json.error) || i18n.err);
+            payload = json.data || {};
+            cfg.type = payload.practice_type || cfg.type;
+            openSession();
+            park();
         } catch (err) {
-            setStatus(i18n.net, 'error');
+            openModal('<h2>' + esc(i18n.err) + '</h2><p>' + esc(err.message || i18n.net) + '</p>');
         } finally {
-            app.classList.remove('is-loading');
-            generateBtn.disabled = false;
-            generateBtn.innerHTML = prevHtml;
+            clearInterval(tick);
+            document.getElementById('labLoading').hidden = true;
+            document.getElementById('labGenerate').disabled = false;
+            busy = false;
         }
-    });
-
-    checkBtn.addEventListener('click', async function () {
-        if (checked || !questionCount()) return;
-        const total = questionCount();
-        const done = answeredCount();
-        if (total && done < total) {
-            if (!window.confirm(i18n.unanswered)) return;
+    }
+    function openModal(html) {
+        document.getElementById('labModalBody').innerHTML = html;
+        document.getElementById('labModal').hidden = false;
+    }
+    function closeModal() { document.getElementById('labModal').hidden = true; }
+    async function submit(force) {
+        if (busy || review) return;
+        captureAnswer();
+        if (!force && answeredCount() < questions.length) {
+            openModal('<h2>' + esc(i18n.qs) + '</h2><p>' + esc(i18n.unans) + '</p><div class="lab-actions"><button type="button" class="lab-secondary" id="labStay">' + esc(i18n.back) + '</button><button type="button" class="lab-primary" id="labForce">' + esc(i18n.send) + '</button></div>');
+            document.getElementById('labStay').onclick = closeModal;
+            document.getElementById('labForce').onclick = function () { closeModal(); submit(true); };
+            return;
         }
-        checkBtn.disabled = true;
+        busy = true;
         try {
-            const res = await fetch(checkUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrf,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ answers: collectAnswers() })
+            result = await postCheck({ action: 'submit', answers: answers });
+            review = true;
+            stopTimer();
+            const hist = readHist();
+            hist.unshift({
+                type: cfg.type,
+                label: (typeMeta(cfg.type) || {}).label || cfg.type,
+                level: payload.level || cfg.level,
+                mode: cfg.mode,
+                correct: result.correct || 0,
+                total: result.total || questions.length,
+                at: Date.now()
             });
-            let json = {};
-            try { json = await res.json(); } catch (e) { json = {}; }
-            if (!res.ok || !json.ok) {
-                setStatus(json.error || i18n.checkErr, 'error');
-                return;
-            }
-            applyCheckResult(json.result || {});
-            setStatus('', '');
+            writeHist(hist);
+            try {
+                const saved = await postLab({ action: 'finish' });
+                live = false;
+                draftMeta = null;
+                records.unshift({
+                    id: saved.id,
+                    type: cfg.type,
+                    label: (typeMeta(cfg.type) || {}).label || cfg.type,
+                    level: payload.level || cfg.level,
+                    mode: cfg.mode,
+                    title: payload.title || '',
+                    correct: result.correct || 0,
+                    total: result.total || questions.length
+                });
+            } catch (err) { /* natija ekranda qoladi, keyinroq saqlashda xato bo'lsa ham */ }
+            active = Math.max(0, questions.findIndex(function (q) { const item = itemOf(q.id); return item && !item.is_correct; }));
+            showResults();
         } catch (err) {
-            setStatus(i18n.checkErr, 'error');
-        } finally {
-            checkBtn.disabled = false;
+            openModal('<h2>' + esc(i18n.err) + '</h2><p>' + esc(err.message || i18n.net) + '</p>');
+        } finally { busy = false; }
+    }
+    function showResults() {
+        show('results');
+        const pct = result.percent || 0;
+        document.getElementById('labScore').innerHTML = (result.correct || 0) + ' <span>/ ' + (result.total || 0) + '</span>';
+        document.getElementById('labRing').style.background = 'conic-gradient(#4b7768 ' + pct + '%, #e9eeec 0)';
+        document.getElementById('labResultSub').textContent = (payload.title || '') + ' · ' + (payload.level || '') + ' · ' + ((typeMeta(cfg.type) || {}).label || '');
+        document.getElementById('labResultTitle').textContent = (result.correct || 0) === (result.total || 0) && (result.total || 0) > 0 ? i18n.all : i18n.reviewNeed;
+        const wrong = (result.items || []).filter(function (item) { return !item.is_correct; }).map(function (item) { return item.id; });
+        document.getElementById('labResultWrong').textContent = wrong.length ? wrong.join(', ') : i18n.all;
+        paintStats();
+    }
+
+    document.getElementById('labTypes').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-type]');
+        if (!btn) return;
+        cfg.type = btn.dataset.type;
+        paintHome();
+    });
+    document.getElementById('labLevels').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-level]');
+        if (!btn) return;
+        cfg.level = btn.dataset.level;
+        paintHome();
+    });
+    document.getElementById('labModes').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-mode]');
+        if (!btn) return;
+        cfg.mode = btn.dataset.mode;
+        paintHome();
+    });
+    document.getElementById('labCounts').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-count]');
+        if (!btn) return;
+        cfg.count = Number(btn.dataset.count);
+        paintHome();
+    });
+    document.getElementById('labGenerate').addEventListener('click', function () { generate(); });
+    const recStart = document.getElementById('labRecStart');
+    if (recStart) recStart.addEventListener('click', function () {
+        const rec = document.getElementById('labRecommend');
+        generate({ type: rec.dataset.type || cfg.type, level: rec.dataset.level || cfg.level, mode: 'learn', count: skill === 'writing' ? 4 : 8 });
+    });
+    document.getElementById('labRecent').addEventListener('click', function (event) {
+        const openBtn = event.target.closest('[data-open]');
+        if (openBtn) { openRecord(openBtn.dataset.open); return; }
+        const btn = event.target.closest('[data-hist]');
+        if (!btn) return;
+        const row = readHist()[Number(btn.dataset.hist)];
+        if (!row) return;
+        cfg.type = row.type || cfg.type;
+        cfg.level = row.level || cfg.level;
+        cfg.mode = row.mode || 'practice';
+        paintHome();
+    });
+    document.getElementById('labHistoryList').addEventListener('click', function (event) {
+        const openBtn = event.target.closest('[data-open]');
+        if (openBtn) openRecord(openBtn.dataset.open);
+    });
+    async function openRecord(id) {
+        try {
+            const saved = await postLab({ action: 'open', id: id });
+            const data = saved.data || {};
+            payload = data.payload || {};
+            result = data.result || null;
+            const state = data.state || {};
+            answers = state.answers || {};
+            flags = state.flags || {};
+            marks = Array.isArray(state.marks) ? state.marks : [];
+            fontSize = state.font || 18;
+            active = state.active || 0;
+            review = true;
+            live = false;
+            cfg.mode = data.mode || cfg.mode;
+            cfg.level = data.level || cfg.level;
+            cfg.type = data.type || cfg.type;
+            openSession(true);
+        } catch (err) {
+            openModal('<p>' + esc(err.message || i18n.net) + '</p>');
+        }
+    }
+    document.getElementById('labResumeGo').addEventListener('click', async function () {
+        try {
+            const saved = await postLab({ action: 'resume' });
+            const data = saved.data || {};
+            payload = data.payload || {};
+            const state = data.state || {};
+            answers = state.answers || {};
+            flags = state.flags || {};
+            marks = Array.isArray(state.marks) ? state.marks : [];
+            fontSize = state.font || 18;
+            active = state.active || 0;
+            if (typeof state.remain === 'number' && state.remain > 0) carriedRemain = state.remain;
+            probes = {}; reveals = {}; hints = {}; hintLevels = {};
+            review = false; result = null; live = true;
+            cfg.mode = data.mode || cfg.mode;
+            cfg.level = data.level || cfg.level;
+            cfg.type = data.type || payload.practice_type || cfg.type;
+            openSession(true);
+        } catch (err) {
+            openModal('<p>' + esc(err.message || i18n.net) + '</p>');
         }
     });
-
-    resetBtn.addEventListener('click', function () {
-        if (!payload) return;
-        if (skill === 'writing') renderWriting(payload);
-        else renderReading(payload);
-        setStatus('', '');
+    document.getElementById('labDiscard').addEventListener('click', async function () {
+        try { await postLab({ action: 'discard' }); } catch (err) { /* qoralama o'chmasa ham yashiramiz */ }
+        draftMeta = null;
+        paintHome();
     });
-
-    window.addEventListener('resize', fitExamToBar);
+    document.getElementById('labSwitch').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-desk]');
+        if (!btn) return;
+        showDesk(btn.dataset.desk);
+    });
+    document.querySelector('.lab-recent .lab-link') && document.querySelector('.lab-recent .lab-link').addEventListener('click', function () { showDesk('history'); });
+    document.getElementById('labExit').addEventListener('click', function () {
+        if (review) { show('home'); paintHome(); return; }
+        openModal('<h2>' + esc(i18n.pause) + '</h2><div class="lab-actions"><button type="button" class="lab-secondary" id="labKeep">' + esc(i18n.stay) + '</button><button type="button" class="lab-primary" id="labLeave">' + esc(i18n.leave) + '</button></div>');
+        document.getElementById('labKeep').onclick = closeModal;
+        document.getElementById('labLeave').onclick = function () { closeModal(); stopTimer(); park().then(function () { show('home'); paintHome(); }); };
+    });
+    document.getElementById('labModalX').addEventListener('click', closeModal);
+    document.getElementById('labPrev').addEventListener('click', function () { moveActive(-1); });
+    document.getElementById('labNext').addEventListener('click', function () { moveActive(1); });
+    document.getElementById('labQnav').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-go]');
+        if (!btn) return;
+        captureAnswer();
+        active = Number(btn.dataset.go);
+        showQuestion();
+    });
+    document.getElementById('labSubmit').addEventListener('click', function () { submit(false); });
+    document.getElementById('labReviewBtn').addEventListener('click', function () {
+        review = true;
+        document.getElementById('labSubmit').hidden = true;
+        document.getElementById('labQKicker').textContent = 'REVIEW';
+        show('session');
+        showQuestion();
+    });
+    document.getElementById('labAgain').addEventListener('click', function () { generate(); });
+    document.getElementById('labBackHome').addEventListener('click', function () { show('home'); paintHome(); });
+    document.getElementById('labQuestion').addEventListener('click', async function (event) {
+        const q = questions[active];
+        if (!q) return;
+        if (event.target.closest('.lab-opt')) {
+            const lab = event.target.closest('.lab-opt');
+            const input = lab.querySelector('input');
+            if (!input || input.disabled) return;
+            event.preventDefault();
+            input.checked = true;
+            answers[q.id] = input.value;
+            document.querySelectorAll('.lab-opt').forEach(function (el) { el.classList.remove('is-on'); });
+            lab.classList.add('is-on');
+            paintNav();
+            return;
+        }
+        if (event.target.closest('#labFlag')) {
+            flags[q.id] = !flags[q.id];
+            showQuestion();
+            return;
+        }
+        if (event.target.closest('#labRetry')) {
+            answers[q.id] = '';
+            probes[q.id] = undefined;
+            showQuestion();
+            return;
+        }
+        if (event.target.closest('#labProbe')) {
+            captureAnswer();
+            if (!String(answers[q.id] || '').trim() || busy) return;
+            busy = true;
+            try {
+                const row = await postCheck({ action: 'probe', only: q.id, answers: answers });
+                probes[q.id] = !!row.is_correct;
+                showQuestion();
+            } catch (err) { openModal('<p>' + esc(err.message || i18n.net) + '</p>'); }
+            finally { busy = false; }
+            return;
+        }
+        if (event.target.closest('#labHint')) {
+            if (busy) return;
+            busy = true;
+            try {
+                const row = await postCheck({ action: 'hint', only: q.id, level: Math.min(3, (hintLevels[q.id] || 0) + 1) });
+                hintLevels[q.id] = row.level || 1;
+                hints[q.id] = row.text || '';
+                showQuestion();
+                if (row.paragraph) lightEvidence({ paragraph: row.paragraph });
+            } catch (err) { openModal('<p>' + esc(err.message || i18n.net) + '</p>'); }
+            finally { busy = false; }
+            return;
+        }
+        if (event.target.closest('#labReveal')) {
+            if (busy) return;
+            busy = true;
+            try {
+                reveals[q.id] = await postCheck({ action: 'reveal', only: q.id, answers: answers });
+                showQuestion();
+            } catch (err) { openModal('<p>' + esc(err.message || i18n.net) + '</p>'); }
+            finally { busy = false; }
+        }
+    });
+    document.getElementById('labQuestion').addEventListener('input', function (event) {
+        const q = questions[active];
+        if (!q) return;
+        if (event.target.matches('textarea, input[type=text]')) answers[q.id] = event.target.value;
+        paintNav();
+    });
+    let pending = null;
+    function captureSelection() {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.rangeCount) { pending = null; return; }
+        const range = sel.getRangeAt(0);
+        const host = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+        const para = host && host.closest ? host.closest('[data-paragraph]') : null;
+        if (!para || !para.contains(range.endContainer)) { pending = null; return; }
+        const prefix = range.cloneRange();
+        prefix.selectNodeContents(para);
+        prefix.setEnd(range.startContainer, range.startOffset);
+        pending = {
+            para: para.getAttribute('data-paragraph'),
+            start: prefix.toString().length,
+            end: prefix.toString().length + range.toString().length
+        };
+    }
+    function saveMark(note) {
+        if (!pending) captureSelection();
+        if (!pending || pending.end <= pending.start) { openModal('<p>' + esc(i18n.needSel) + '</p>'); return; }
+        marks.push({ para: pending.para, start: pending.start, end: pending.end, note: note || '' });
+        pending = null;
+        window.getSelection().removeAllRanges();
+        renderPassage();
+        if (live && !review) park();
+    }
+    document.getElementById('labPassBody').addEventListener('mouseup', captureSelection);
+    document.getElementById('labHighlight').addEventListener('click', function () { saveMark(''); });
+    document.getElementById('labNote').addEventListener('click', function () {
+        captureSelection();
+        if (!pending || pending.end <= pending.start) { openModal('<p>' + esc(i18n.needSel) + '</p>'); return; }
+        openModal('<h2>' + esc(i18n.note || 'Izoh') + '</h2><textarea id="labNoteText" style="width:100%;min-height:90px;margin-top:8px;"></textarea><div class="lab-actions"><button type="button" class="lab-primary" id="labNoteSave">' + esc(i18n.send) + '</button></div>');
+        document.getElementById('labNoteSave').onclick = function () {
+            const note = document.getElementById('labNoteText').value.trim();
+            closeModal();
+            saveMark(note);
+        };
+    });
+    document.getElementById('labSmaller').addEventListener('click', function () {
+        fontSize = Math.max(16, fontSize - 1);
+        document.getElementById('labPassBody').style.fontSize = fontSize + 'px';
+    });
+    document.getElementById('labLarger').addEventListener('click', function () {
+        fontSize = Math.min(26, fontSize + 1);
+        document.getElementById('labPassBody').style.fontSize = fontSize + 'px';
+    });
+    document.getElementById('labPassBody').addEventListener('click', function (event) {
+        const mark = event.target.closest('mark.lab-mark');
+        if (!mark) return;
+        const para = mark.getAttribute('data-para');
+        const start = Number(mark.getAttribute('data-start'));
+        marks = marks.filter(function (item) { return !(item.para === para && item.start === start); });
+        renderPassage();
+    });
+    document.getElementById('labTabPass').addEventListener('click', function () {
+        document.getElementById('labPass').classList.add('is-show');
+        document.getElementById('labQs').classList.remove('is-show');
+        document.getElementById('labTabPass').classList.add('is-on');
+        document.getElementById('labTabQs').classList.remove('is-on');
+    });
+    document.getElementById('labTabQs').addEventListener('click', function () {
+        document.getElementById('labQs').classList.add('is-show');
+        document.getElementById('labPass').classList.remove('is-show');
+        document.getElementById('labTabQs').classList.add('is-on');
+        document.getElementById('labTabPass').classList.remove('is-on');
+    });
+    const lesson = document.getElementById('labLessonBtn');
+    if (lesson) lesson.addEventListener('click', function () {
+        openModal('<div class="lab-kicker">FALSE / NOT GIVEN</div><h2>FALSE / NOT GIVEN</h2><div class="lab-def"><strong>FALSE</strong><p>' + esc(i18n.lesson) + '</p></div><button type="button" class="lab-primary" id="labLessonGo" style="margin-top:14px;">' + esc(i18n.three) + '</button>');
+        document.getElementById('labLessonGo').onclick = function () { closeModal(); generate({ type: 'tfng', mode: 'learn', count: 5 }); };
+    });
+    try {
+        const pref = JSON.parse(localStorage.getItem(prefKey) || 'null');
+        if (pref && pref.type) cfg = Object.assign(cfg, pref);
+    } catch (e) { /* eski sozlama buzilgan bo'lsa tashlab yuboriladi */ }
+    window.addEventListener('pagehide', function () { if (live && !review) park(); });
+    paintHome();
 })();
 </script>
 {% endblock %}

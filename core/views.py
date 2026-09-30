@@ -4125,10 +4125,38 @@ def practice_hub(request, skill='reading'):
         skill = 'reading'
 
     from core.services.ai_language import get_ai_language
+    from core.models import PracticeLabRecord
     catalog = practice_page_catalog(skill, lang=get_ai_language(request))
+    draft = PracticeLabRecord.objects.filter(user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DRAFT).first()
+    done = PracticeLabRecord.objects.filter(user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DONE).order_by('-created_at')[:30]
+    lab_boot = {
+        'draft': None if draft is None else {
+            'title': draft.title,
+            'level': draft.level,
+            'mode': draft.mode,
+            'label': draft.label,
+            'type': draft.practice_type,
+            'total': draft.total,
+            'answered': sum(1 for value in (draft.state or {}).get('answers', {}).values() if str(value).strip()),
+        },
+        'history': [
+            {
+                'id': row.id,
+                'title': row.title,
+                'label': row.label,
+                'level': row.level,
+                'mode': row.mode,
+                'type': row.practice_type,
+                'correct': row.correct,
+                'total': row.total,
+            }
+            for row in done
+        ],
+    }
     return render(request, 'core/practice/mashq.html', {
         'skill': skill,
         'catalog': catalog,
+        'lab_boot': lab_boot,
         'page_title': 'Reading mashqi' if skill == 'reading' else 'Writing mashqi',
     })
 
@@ -4138,7 +4166,7 @@ def practice_hub(request, skill='reading'):
 def practice_generate(request):
     """AJAX: daraja + tur bo'yicha AI mashq yaratish."""
     from core.services.ai_language import get_ai_language
-    from core.services.ai_practice import generate_practice, public_practice_payload
+    from core.services.ai_practice import generate_practice, public_practice_payload, trim_practice_payload
 
     try:
         body = json.loads(request.body.decode('utf-8') or '{}')
@@ -4223,6 +4251,11 @@ def practice_generate(request):
         recent[recent_key] = (kept + [fresh_title])[-8:]
         request.session['practice_recent'] = recent
 
+    try:
+        asked = int(body.get('count') or 0)
+    except (TypeError, ValueError):
+        asked = 0
+    payload = trim_practice_payload(payload, skill, asked)
     # To'liq payload sessionda; clientga correct bermaymiz
     request.session['practice_payload'] = payload
     request.session.modified = True
@@ -4233,7 +4266,7 @@ def practice_generate(request):
 @require_POST
 def practice_check(request):
     """AJAX: foydalanuvchi javoblarini tekshirish (sessiondagi payload bo'yicha)."""
-    from core.services.ai_practice import check_practice_answers
+    from core.services.ai_practice import check_practice_answers, locate_practice_evidence
 
     try:
         body = json.loads(request.body.decode('utf-8') or '{}')
@@ -4252,7 +4285,234 @@ def practice_check(request):
     answers = body.get('answers') or {}
     if not isinstance(answers, dict):
         answers = {}
-    # JSON keys always str — normalize
     answers = {str(k): v for k, v in answers.items()}
+    action = str(body.get('action') or 'submit').strip().lower()
+    only = str(body.get('only') or '').strip()
+    from core.services.ai_language import get_ai_language, t
+    lang = get_ai_language(request)
+
+    if action == 'hint':
+        if not only:
+            return JsonResponse({'ok': False, 'error': 'Savol tanlanmagan.'}, status=400)
+        rows = payload.get('questions') if payload.get('skill') != 'writing' else payload.get('exercises')
+        rows = rows if isinstance(rows, list) else []
+        row = next((item for item in rows if isinstance(item, dict) and str(item.get('id')) == only), None)
+        if row is None:
+            return JsonResponse({'ok': False, 'error': 'Savol topilmadi.'}, status=404)
+        try:
+            level = int(body.get('level') or 1)
+        except (TypeError, ValueError):
+            level = 1
+        level = min(3, max(1, level))
+        hint = str(row.get('hint') or '').strip()
+        expected = str(row.get('correct') or '').strip().lower()
+        if hint and expected and hint.strip().lower() == expected:
+            hint = ''
+        letter, _snippet = locate_practice_evidence(str(payload.get('passage') or ''), row)
+        where = ''
+        if letter:
+            where = t(
+                lang,
+                f'Dalil {letter} bandida. O‘xshash so‘z har doim ham mos emas.',
+                f'Доказательство в абзаце {letter}. Похожие слова не всегда означают совпадение.',
+            )
+        text = {
+            1: where or t(lang, 'Shu fikrni bitta banddan qidiring. O‘xshash so‘z har doim ham mos emas.', 'Ищите эту мысль в одном абзаце. Похожие слова не всегда означают совпадение.'),
+            2: hint or t(lang, 'Gap matnga zidmi yoki bu haqda umuman yozilmaganmi — shuni ajrating.', 'Определите: текст противоречит фразе или просто не говорит об этом.'),
+            3: t(lang, 'Javobni ochishdan oldin, dalil bo‘ladigan gapni barmoq bilan ko‘rsating.', 'Перед ответом укажите предложение, которое служит доказательством.'),
+        }[level]
+        return JsonResponse({'ok': True, 'result': {'id': row.get('id'), 'level': level, 'text': text, 'paragraph': letter}})
+
+    if action == 'probe':
+        if not only:
+            return JsonResponse({'ok': False, 'error': 'Savol tanlanmagan.'}, status=400)
+        graded = check_practice_answers(payload, answers, only=only)
+        item = graded['items'][0] if graded['items'] else None
+        if item is None:
+            return JsonResponse({'ok': False, 'error': 'Savol topilmadi.'}, status=404)
+        return JsonResponse({'ok': True, 'result': {
+            'id': item['id'],
+            'is_correct': item['is_correct'],
+            'answered': item['answered'],
+        }})
+
+    if action == 'reveal':
+        if not only:
+            return JsonResponse({'ok': False, 'error': 'Savol tanlanmagan.'}, status=400)
+        graded = check_practice_answers(payload, answers, only=only)
+        item = graded['items'][0] if graded['items'] else None
+        if item is None:
+            return JsonResponse({'ok': False, 'error': 'Savol topilmadi.'}, status=404)
+        return JsonResponse({'ok': True, 'result': item})
+
     result = check_practice_answers(payload, answers)
     return JsonResponse({'ok': True, 'result': result})
+
+
+def _lab_client_state(body):
+    raw = body.get('state') if isinstance(body.get('state'), dict) else {}
+    answers = raw.get('answers') if isinstance(raw.get('answers'), dict) else {}
+    answers = {str(key)[:12]: str(value)[:4000] for key, value in list(answers.items())[:40]}
+    flags = raw.get('flags') if isinstance(raw.get('flags'), dict) else {}
+    flags = {str(key)[:12]: bool(value) for key, value in list(flags.items())[:40]}
+    marks = []
+    for mark in raw.get('marks') if isinstance(raw.get('marks'), list) else []:
+        if not isinstance(mark, dict) or len(marks) >= 40:
+            continue
+        try:
+            start = int(mark.get('start') or 0)
+            end = int(mark.get('end') or 0)
+        except (TypeError, ValueError):
+            continue
+        marks.append({
+            'para': str(mark.get('para') or 'A')[:2],
+            'start': max(0, start),
+            'end': max(0, end),
+            'note': str(mark.get('note') or '')[:500],
+        })
+    try:
+        font = int(raw.get('font') or 18)
+    except (TypeError, ValueError):
+        font = 18
+    try:
+        active = int(raw.get('active') or 0)
+    except (TypeError, ValueError):
+        active = 0
+    return {
+        'answers': answers,
+        'flags': flags,
+        'marks': marks,
+        'font': min(26, max(16, font)),
+        'active': max(0, active),
+    }
+
+
+def _lab_meta(payload):
+    skill = str((payload or {}).get('skill') or 'reading')
+    rows = payload.get('questions') if skill != 'writing' else payload.get('exercises')
+    rows = rows if isinstance(rows, list) else []
+    return {
+        'skill': skill,
+        'level': str(payload.get('level') or '')[:8],
+        'practice_type': str(payload.get('practice_type') or '')[:40],
+        'title': str(payload.get('title') or payload.get('task') or '')[:240],
+        'label': str(payload.get('practice_label') or '')[:120],
+        'total': len(rows),
+    }
+
+
+@login_required
+@require_POST
+def practice_lab(request):
+    """Qoralama, davom ettirish va tugallangan mashqni shu hisobda saqlash."""
+    from core.models import PracticeLabRecord
+    from core.services.ai_practice import check_practice_answers, public_practice_payload
+
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (TypeError, json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+    action = str(body.get('action') or '').strip().lower()
+    skill = str(body.get('skill') or 'reading').strip().lower()
+    if skill not in ('reading', 'writing'):
+        skill = 'reading'
+    state = _lab_client_state(body)
+
+    if action == 'park':
+        payload = request.session.get('practice_payload') or {}
+        if not isinstance(payload, dict) or not payload:
+            return JsonResponse({'ok': False, 'error': 'Avval mashq yarating.'}, status=400)
+        meta = _lab_meta(payload)
+        mode = str(body.get('mode') or 'practice')[:16]
+        PracticeLabRecord.objects.update_or_create(
+            user=request.user,
+            skill=skill,
+            kind=PracticeLabRecord.KIND_DRAFT,
+            defaults={
+                **meta,
+                'mode': mode,
+                'public': public_practice_payload(payload),
+                'secret': payload,
+                'state': state,
+                'result': {},
+                'correct': 0,
+            },
+        )
+        return JsonResponse({'ok': True})
+
+    if action == 'resume':
+        draft = PracticeLabRecord.objects.filter(
+            user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DRAFT,
+        ).first()
+        secret = draft.secret if draft else None
+        if not isinstance(secret, dict) or not secret:
+            return JsonResponse({'ok': False, 'error': 'Saqlangan mashq topilmadi.'}, status=404)
+        request.session['practice_payload'] = secret
+        request.session.modified = True
+        return JsonResponse({'ok': True, 'data': {
+            'payload': public_practice_payload(secret),
+            'state': draft.state or {},
+            'mode': draft.mode,
+            'type': draft.practice_type,
+            'level': draft.level,
+        }})
+
+    if action == 'discard':
+        PracticeLabRecord.objects.filter(
+            user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DRAFT,
+        ).delete()
+        return JsonResponse({'ok': True})
+
+    if action == 'finish':
+        payload = request.session.get('practice_payload') or {}
+        if not isinstance(payload, dict) or not payload:
+            return JsonResponse({'ok': False, 'error': 'Avval mashq yarating.'}, status=400)
+        answers = {str(key): value for key, value in state['answers'].items()}
+        graded = check_practice_answers(payload, answers)
+        meta = _lab_meta(payload)
+        mode = str(body.get('mode') or 'practice')[:16]
+        record = PracticeLabRecord.objects.create(
+            user=request.user,
+            kind=PracticeLabRecord.KIND_DONE,
+            mode=mode,
+            public=public_practice_payload(payload),
+            secret={},
+            state=state,
+            result=graded,
+            correct=graded.get('correct') or 0,
+            **meta,
+        )
+        PracticeLabRecord.objects.filter(
+            user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DRAFT,
+        ).delete()
+        older = list(
+            PracticeLabRecord.objects.filter(
+                user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DONE,
+            ).order_by('-created_at').values_list('id', flat=True)[30:]
+        )
+        if older:
+            PracticeLabRecord.objects.filter(id__in=older).delete()
+        return JsonResponse({'ok': True, 'id': record.id, 'result': graded})
+
+    if action == 'open':
+        try:
+            record_id = int(body.get('id') or 0)
+        except (TypeError, ValueError):
+            record_id = 0
+        record = PracticeLabRecord.objects.filter(
+            user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DONE, id=record_id,
+        ).first()
+        if record is None:
+            return JsonResponse({'ok': False, 'error': 'Mashq topilmadi.'}, status=404)
+        return JsonResponse({'ok': True, 'data': {
+            'payload': record.public or {},
+            'result': record.result or {},
+            'state': record.state or {},
+            'mode': record.mode,
+            'type': record.practice_type,
+            'level': record.level,
+        }})
+
+    return JsonResponse({'ok': False, 'error': 'Noma’lum amal.'}, status=400)
