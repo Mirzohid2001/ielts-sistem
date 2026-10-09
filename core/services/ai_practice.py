@@ -242,8 +242,13 @@ LEVEL_NOTES_RU = {
 
 def practice_page_catalog(skill: str, lang: str = 'uz') -> dict:
     """Mashq sahifasi: kategoriya, tur, vaqt va qisqa qoida. Til sayt tiliga mos."""
+    skill_key = (skill or '').strip().lower()
+    if skill_key == 'grammar':
+        from core.services.grammar_practice import grammar_page_catalog
+        return grammar_page_catalog(lang)
+
     ru = normalize_ai_lang(lang) == 'ru'
-    reading = (skill or '').strip().lower() != 'writing'
+    reading = skill_key != 'writing'
     groups = READING_CATEGORIES if reading else WRITING_CATEGORIES
     source = READING_TYPES if reading else WRITING_FOCUSES
     blurbs = _READING_TYPE_META if reading else _WRITING_TYPE_META
@@ -3264,8 +3269,18 @@ def generate_writing_practice(*, level='B1', practice_type='lexical_resource', l
     return local
 
 
-def generate_practice(*, skill='reading', level='B1', practice_type='', lang='uz', seed='', avoid_fingerprint='', avoid_titles=None) -> dict:
+def generate_practice(*, skill='reading', level='B1', practice_type='', lang='uz', seed='', avoid_fingerprint='', avoid_titles=None, count=None) -> dict:
     skill = (skill or 'reading').strip().lower()
+    if skill == 'grammar':
+        from core.services.grammar_practice import generate_grammar_practice
+        return generate_grammar_practice(
+            level=level,
+            practice_type=practice_type,
+            lang=lang,
+            seed=seed,
+            count=int(count or 5),
+            avoid_fingerprint=avoid_fingerprint,
+        )
     if skill == 'writing':
         return generate_writing_practice(
             level=level,
@@ -3336,18 +3351,28 @@ def _answers_match(user: str, correct: str) -> bool:
 
 
 def trim_practice_payload(payload: dict, skill: str, count: int) -> dict:
-    """Tanlangan savol soni. Writing doim 4 ta mashqda qoladi."""
+    """Tanlangan savol soni. Writing doim 4; grammar 3–6; reading 5/8/10."""
     if not isinstance(payload, dict):
         return {}
-    reading = (skill or '').strip().lower() != 'writing'
-    allowed = (5, 8, 10) if reading else (4,)
+    skill_key = (skill or '').strip().lower()
+    if skill_key == 'writing':
+        allowed = (4,)
+        default_n = 4
+        key = 'exercises'
+    elif skill_key == 'grammar':
+        allowed = (3, 4, 5, 6)
+        default_n = 5
+        key = 'exercises'
+    else:
+        allowed = (5, 8, 10)
+        default_n = 10
+        key = 'questions'
     try:
         n = int(count)
     except (TypeError, ValueError):
-        n = 10 if reading else 4
+        n = default_n
     if n not in allowed:
-        n = 10 if reading else 4
-    key = 'questions' if reading else 'exercises'
+        n = default_n
     rows = payload.get(key)
     if not isinstance(rows, list) or n >= len(rows):
         return payload
@@ -3360,6 +3385,9 @@ def public_practice_payload(payload: dict) -> dict:
     """Clientga correct/hint maxfiy maydonlarini bermaslik."""
     if not isinstance(payload, dict):
         return {}
+    if (payload.get('skill') or '').strip().lower() == 'grammar':
+        from core.services.grammar_practice import public_grammar_payload
+        return public_grammar_payload(payload)
     out = dict(payload)
     out.pop('raw_errors', None)
     for key in ('questions', 'exercises'):
@@ -3434,6 +3462,47 @@ def locate_practice_evidence(passage: str, row: dict) -> tuple:
 def check_practice_answers(payload: dict, answers: dict, only=None) -> dict:
     """answers: { "1": "a", "2": "stress", ... }"""
     skill = (payload or {}).get('skill') or 'reading'
+    if skill == 'grammar':
+        items = payload.get('exercises') if isinstance(payload.get('exercises'), list) else []
+        from core.services.grammar_practice import evaluate_grammar_item
+        results = []
+        correct_n = 0
+        for row in items:
+            if not isinstance(row, dict):
+                continue
+            qid = str(row.get('id') or '')
+            user_raw = (answers or {}).get(qid)
+            if user_raw is None and qid.isdigit():
+                user_raw = (answers or {}).get(int(qid))
+            graded = evaluate_grammar_item(row, user_raw)
+            if graded.get('is_correct'):
+                correct_n += 1
+            results.append({
+                'id': row.get('id'),
+                'user': graded.get('user') or '',
+                'correct': graded.get('correct') or '',
+                'correct_display': graded.get('correct_display') or graded.get('correct') or '',
+                'is_correct': bool(graded.get('is_correct')),
+                'explanation': graded.get('explanation') or '',
+                'paragraph': '',
+                'evidence': '',
+                'answered': bool(graded.get('answered')),
+                'type': row.get('type') or '',
+                'code': row.get('code') or '',
+            })
+        if only is not None and str(only).strip():
+            want = str(only).strip()
+            results = [row for row in results if str(row.get('id')) == want]
+            correct_n = sum(1 for row in results if row.get('is_correct'))
+        total = len(results) or 1
+        return {
+            'skill': skill,
+            'correct': correct_n,
+            'total': len(results),
+            'percent': round(100 * correct_n / total) if results else 0,
+            'items': results,
+        }
+
     items = payload.get('questions') if skill == 'reading' else payload.get('exercises')
     items = items if isinstance(items, list) else []
     results = []

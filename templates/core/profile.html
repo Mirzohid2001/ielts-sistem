@@ -98,6 +98,7 @@
                                     <h6 class="fw-bold mb-2"><i class="fas fa-graduation-cap me-2 text-primary"></i>IELTS</h6>
                                     <p class="small text-muted mb-1">{% trans "Testlar" %}: <strong>{{ stats.total_tests }}</strong></p>
                                     <p class="small text-muted mb-1">{% trans "Videolar" %}: <strong>{{ stats.total_videos }}</strong></p>
+                                    <p class="small text-muted mb-1">{% trans "Mashqlar" %}: <strong>{{ practice_stats.total }}</strong></p>
                                     <p class="small text-muted mb-0">{% trans "O'rtacha ball" %}: <strong>{{ stats.average_score|floatformat:1 }}%</strong></p>
                                 </div>
                             </div>
@@ -153,6 +154,129 @@
         </div>
     </div>
     {% elif active_section == 'ielts' %}
+
+    <!-- Mashq natijalari (Reading / Writing / Grammar) -->
+    <div class="row mb-5 stagger-item">
+        <div class="col-12">
+            <section class="mashq-profile">
+                <header class="mashq-profile__head">
+                    <div class="mashq-profile__intro">
+                        <span class="mashq-profile__kicker">{% trans "IELTS mashqlar" %}</span>
+                        <h2 class="mashq-profile__title">{% trans "Mashq natijalari" %}</h2>
+                        <p class="mashq-profile__sub">{% trans "Reading, Writing va Grammar lablaridagi yakunlangan mashqlaringiz." %}</p>
+                    </div>
+                    <a href="{% url 'core:practice_hub' %}" class="mashq-profile__cta">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>{% trans "Mashqlarga o'tish" %}</span>
+                    </a>
+                </header>
+
+                <div class="mashq-profile__metrics">
+                    <div class="mashq-metric mashq-metric--total">
+                        <span class="mashq-metric__label">{% trans "Yakunlangan" %}</span>
+                        <strong class="mashq-metric__value">{{ practice_stats.total }}</strong>
+                    </div>
+                    <div class="mashq-metric mashq-metric--avg">
+                        <span class="mashq-metric__label">{% trans "O'rtacha ball" %}</span>
+                        <strong class="mashq-metric__value">{{ practice_stats.avg_percentage|floatformat:1 }}%</strong>
+                    </div>
+                    {% for skill in practice_stats.by_skill %}
+                    <a href="{% url 'core:practice_skill' skill.skill %}" class="mashq-metric mashq-metric--skill mashq-metric--{{ skill.skill }}">
+                        <span class="mashq-metric__label">{{ skill.label }}</span>
+                        <strong class="mashq-metric__value">{{ skill.count }}</strong>
+                        <span class="mashq-metric__hint">{{ skill.avg_percentage|floatformat:0 }}%</span>
+                    </a>
+                    {% empty %}
+                    <div class="mashq-metric mashq-metric--empty">
+                        <span class="mashq-metric__label">{% trans "Ko'nikmalar" %}</span>
+                        <strong class="mashq-metric__value">—</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if practice_results %}
+                <div class="mashq-profile__list d-none d-md-block">
+                    <table class="mashq-table">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Mashq" %}</th>
+                                <th>{% trans "Ko'nikma" %}</th>
+                                <th>{% trans "Daraja" %}</th>
+                                <th>{% trans "Ball" %}</th>
+                                <th>{% trans "Natija" %}</th>
+                                <th>{% trans "Sana" %}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in practice_results %}
+                            <tr>
+                                <td>
+                                    <div class="mashq-table__title">{{ item.title|default:item.label|default:"—"|truncatewords:10 }}</div>
+                                    {% if item.label and item.title %}
+                                    <div class="mashq-table__label">{{ item.label }}</div>
+                                    {% endif %}
+                                </td>
+                                <td><span class="mashq-skill mashq-skill--{{ item.skill }}">{{ item.skill_label }}</span></td>
+                                <td><span class="mashq-level">{{ item.level|default:"—" }}</span></td>
+                                <td class="mashq-table__score">{{ item.correct }}/{{ item.total }}</td>
+                                <td>
+                                    <span class="mashq-pct {% if item.percentage >= 80 %}is-high{% elif item.percentage >= 50 %}is-mid{% else %}is-low{% endif %}">
+                                        {{ item.percentage|floatformat:0 }}%
+                                    </span>
+                                </td>
+                                <td class="mashq-table__date">{{ item.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'core:practice_skill' item.skill %}?open={{ item.id }}" class="mashq-table__link">
+                                        {% trans "Ko'rish" %} <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mashq-result-cards d-md-none">
+                    {% for item in practice_results %}
+                    <article class="mashq-result-card mashq-result-card--{{ item.skill }}">
+                        <div class="mashq-result-card__top">
+                            <div>
+                                <span class="mashq-skill mashq-skill--{{ item.skill }}">{{ item.skill_label }}</span>
+                                <h3>{{ item.title|default:item.label|default:"—"|truncatewords:12 }}</h3>
+                            </div>
+                            <span class="mashq-pct {% if item.percentage >= 80 %}is-high{% elif item.percentage >= 50 %}is-mid{% else %}is-low{% endif %}">
+                                {{ item.percentage|floatformat:0 }}%
+                            </span>
+                        </div>
+                        <div class="mashq-result-card__meta">
+                            <span><i class="fas fa-layer-group"></i> {{ item.level|default:"—" }}</span>
+                            <span><i class="fas fa-check"></i> {{ item.correct }}/{{ item.total }}</span>
+                            <span><i class="fas fa-clock"></i> {{ item.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        <div class="mashq-result-card__bar" aria-hidden="true">
+                            <span style="width: {{ item.percentage|floatformat:0 }}%;"></span>
+                        </div>
+                        <a href="{% url 'core:practice_skill' item.skill %}?open={{ item.id }}" class="mashq-result-card__cta">
+                            {% trans "Ko'rish" %} <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="mashq-empty">
+                    <div class="mashq-empty__icon" aria-hidden="true"><i class="fas fa-book-open"></i></div>
+                    <h3>{% trans "Hozircha mashq natijalari yo'q." %}</h3>
+                    <p>{% trans "Birinchi mashqni yakunlang — natija shu yerda saqlanadi." %}</p>
+                    <a href="{% url 'core:practice_hub' %}" class="mashq-profile__cta mashq-profile__cta--solid">
+                        <i class="fas fa-play"></i>
+                        <span>{% trans "Birinchi mashqni boshlash" %}</span>
+                    </a>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
 
     <!-- Analytics va Reports -->
     <div class="row mb-5">

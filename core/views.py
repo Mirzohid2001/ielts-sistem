@@ -26,6 +26,7 @@ from .models import (
     VideoComment, VideoPlaylist, PlaylistVideo, FlashcardSet, Flashcard,
     SATResource, SATResourceProgress, SATResourceBookmark, SATResourceNote,
     AIWritingFeedback, AIAnswerExplanation, AITestInsight,
+    PracticeLabRecord,
 )
 from .access import get_user_module_access
 from .media_streaming import get_direct_media_url, serve_protected_media
@@ -3252,6 +3253,46 @@ def profile(request, section=None):
 
     writing_progress = build_writing_progress_summary(request.user) if active_section == 'ielts' else None
 
+    practice_done_qs = PracticeLabRecord.objects.filter(
+        user=request.user,
+        kind=PracticeLabRecord.KIND_DONE,
+    )
+    practice_skill_rows = list(
+        practice_done_qs.values('skill').annotate(
+            count=Count('id'),
+            sum_correct=Sum('correct'),
+            sum_total=Sum('total'),
+        ).order_by('skill')
+    )
+    practice_by_skill = []
+    for row in practice_skill_rows:
+        skill_key = (row.get('skill') or '').lower()
+        sum_total = float(row.get('sum_total') or 0)
+        sum_correct = float(row.get('sum_correct') or 0)
+        avg_pct = round(100.0 * sum_correct / sum_total, 1) if sum_total else 0.0
+        practice_by_skill.append({
+            'skill': skill_key,
+            'label': {
+                'reading': 'Reading',
+                'writing': 'Writing',
+                'grammar': 'Grammar',
+                'listening': 'Listening',
+            }.get(skill_key, skill_key.title() or '—'),
+            'count': row.get('count') or 0,
+            'avg_percentage': avg_pct,
+        })
+    practice_stats = {
+        'total': practice_done_qs.count(),
+        'avg_percentage': 0.0,
+        'by_skill': practice_by_skill,
+    }
+    if practice_stats['total']:
+        totals = practice_done_qs.aggregate(c=Sum('correct'), t=Sum('total'))
+        t = float(totals.get('t') or 0)
+        c = float(totals.get('c') or 0)
+        practice_stats['avg_percentage'] = round(100.0 * c / t, 1) if t else 0.0
+    practice_results = list(practice_done_qs.order_by('-created_at')[:20]) if active_section == 'ielts' else []
+
     test_results_page = None
     if active_section == 'ielts':
         page_number = request.GET.get('page', 1)
@@ -3273,6 +3314,8 @@ def profile(request, section=None):
         'sat_recent_progress': sat_recent_progress,
         'jobs_stats': jobs_stats,
         'writing_progress': writing_progress,
+        'practice_stats': practice_stats,
+        'practice_results': practice_results,
     }
     return render(request, 'core/profile.html', context)
 
@@ -4117,11 +4160,11 @@ def admin_toliq_yoriqnoma(request):
 
 @login_required
 def practice_hub(request, skill='reading'):
-    """Reading/Writing AI mashq sahifasi."""
+    """Reading/Writing/Grammar AI mashq sahifasi."""
     from core.services.ai_practice import practice_page_catalog
 
     skill = (skill or request.GET.get('skill') or 'reading').strip().lower()
-    if skill not in ('reading', 'writing'):
+    if skill not in ('reading', 'writing', 'grammar'):
         skill = 'reading'
 
     from core.services.ai_language import get_ai_language
@@ -4153,11 +4196,17 @@ def practice_hub(request, skill='reading'):
             for row in done
         ],
     }
-    return render(request, 'core/practice/mashq.html', {
+    titles = {
+        'reading': 'Reading mashqi',
+        'writing': 'Writing mashqi',
+        'grammar': 'Grammar mashqi',
+    }
+    template = 'core/practice/grammar.html' if skill == 'grammar' else 'core/practice/mashq.html'
+    return render(request, template, {
         'skill': skill,
         'catalog': catalog,
         'lab_boot': lab_boot,
-        'page_title': 'Reading mashqi' if skill == 'reading' else 'Writing mashqi',
+        'page_title': titles.get(skill, 'Mashq'),
     })
 
 
@@ -4176,10 +4225,10 @@ def practice_generate(request):
         body = {}
 
     skill = str(body.get('skill') or 'reading').strip().lower()
-    if skill not in ('reading', 'writing'):
+    if skill not in ('reading', 'writing', 'grammar'):
         skill = 'reading'
-    level = str(body.get('level') or 'B1').strip()
-    practice_type = str(body.get('practice_type') or body.get('type') or '').strip()
+    level = str(body.get('level') or ('B2' if skill == 'grammar' else 'B1')).strip()
+    practice_type = str(body.get('practice_type') or body.get('type') or body.get('area') or '').strip()
     lang = get_ai_language(request)
     seed = str(body.get('seed') or body.get('nonce') or '').strip() or str(time.time_ns())
     prev = request.session.get('practice_payload') if isinstance(request.session.get('practice_payload'), dict) else {}
@@ -4191,13 +4240,32 @@ def practice_generate(request):
     from core.services.ai_practice import normalize_level, normalize_reading_type, normalize_writing_focus
     if skill == 'writing':
         kind = normalize_writing_focus(practice_type)
+        level_key = normalize_level(level)
+    elif skill == 'grammar':
+        from core.services.grammar_practice import normalize_grammar_area, normalize_grammar_level, normalize_grammar_type
+        level_key = normalize_grammar_level(level)
+        kind = (
+            normalize_grammar_area(practice_type)
+            if practice_type.replace('-', '_').replace(' ', '_') in (
+                'better_sentences', 'complex', 'verb_control', 'articles_nouns', 'fix_grammar', 'ielts_writing'
+            ) or practice_type in (
+                'better_sentences', 'complex', 'verb_control', 'articles_nouns', 'fix_grammar', 'ielts_writing'
+            )
+            else normalize_grammar_type(practice_type)
+        )
     else:
         kind = normalize_reading_type(practice_type)
-    recent_key = f"{skill}|{normalize_level(level)}|{kind}"
+        level_key = normalize_level(level)
+    recent_key = f"{skill}|{level_key}|{kind}"
     recent = request.session.get('practice_recent')
     if not isinstance(recent, dict):
         recent = {}
     seen = recent.get(recent_key) if isinstance(recent.get(recent_key), list) else []
+
+    try:
+        asked_count = int(body.get('count') or 0)
+    except (TypeError, ValueError):
+        asked_count = 0
 
     try:
         payload = generate_practice(
@@ -4208,20 +4276,26 @@ def practice_generate(request):
             seed=seed,
             avoid_fingerprint=avoid_fingerprint,
             avoid_titles=seen,
+            count=asked_count or None,
         )
     except Exception as exc:
         from core.services import ai_practice as _ap
         seed2 = seed + ':err'
-        variant = _ap._variant_index(
-            seed2,
-            level=_ap.normalize_level(level),
-            practice_type=(
-                _ap.normalize_writing_focus(practice_type)
-                if skill == 'writing'
-                else _ap.normalize_reading_type(practice_type)
-            ),
-        )
-        if skill == 'writing':
+        if skill == 'grammar':
+            from core.services.grammar_practice import _local_grammar, normalize_grammar_level
+            payload = _local_grammar(
+                normalize_grammar_level(level),
+                practice_type or 'better_sentences',
+                lang,
+                count=asked_count or 5,
+                seed=seed2,
+            )
+        elif skill == 'writing':
+            variant = _ap._variant_index(
+                seed2,
+                level=_ap.normalize_level(level),
+                practice_type=_ap.normalize_writing_focus(practice_type),
+            )
             payload = _ap._freshen_writing_payload(
                 _ap._local_writing(
                     _ap.normalize_level(level),
@@ -4232,6 +4306,11 @@ def practice_generate(request):
                 seed2,
             )
         else:
+            variant = _ap._variant_index(
+                seed2,
+                level=_ap.normalize_level(level),
+                practice_type=_ap.normalize_reading_type(practice_type),
+            )
             payload = _ap._freshen_reading_payload(
                 _ap._local_reading(
                     _ap.normalize_level(level),
@@ -4294,7 +4373,8 @@ def practice_check(request):
     if action == 'hint':
         if not only:
             return JsonResponse({'ok': False, 'error': 'Savol tanlanmagan.'}, status=400)
-        rows = payload.get('questions') if payload.get('skill') != 'writing' else payload.get('exercises')
+        skill_name = str(payload.get('skill') or 'reading').strip().lower()
+        rows = payload.get('questions') if skill_name == 'reading' else payload.get('exercises')
         rows = rows if isinstance(rows, list) else []
         row = next((item for item in rows if isinstance(item, dict) and str(item.get('id')) == only), None)
         if row is None:
@@ -4305,11 +4385,20 @@ def practice_check(request):
             level = 1
         level = min(3, max(1, level))
         hint = str(row.get('hint') or '').strip()
-        expected = str(row.get('correct') or '').strip().lower()
+        expected = str(row.get('correct') or row.get('model') or '').strip().lower()
         if hint and expected and hint.strip().lower() == expected:
             hint = ''
-        letter, _snippet = locate_practice_evidence(str(payload.get('passage') or ''), row)
+        letter = ''
         where = ''
+        if skill_name == 'grammar':
+            target = str(row.get('target') or row.get('code') or '').strip()
+            text = {
+                1: t(lang, f'Diqqatni {target or "struktura"}ga qarating.', f'Сфокусируйтесь на {target or "структуре"}.'),
+                2: hint or t(lang, 'Maqsadli strukturani tekshiring — shakl va bog‘lanish.', 'Проверьте целевую структуру — форму и связь.'),
+                3: t(lang, 'Javobni ochishdan oldin, xato joyini belgilab, to‘liq jumla yozing.', 'Перед открытием ответа отметьте ошибку и напишите полное предложение.'),
+            }[level]
+            return JsonResponse({'ok': True, 'result': {'id': row.get('id'), 'level': level, 'text': text, 'paragraph': ''}})
+        letter, _snippet = locate_practice_evidence(str(payload.get('passage') or ''), row)
         if letter:
             where = t(
                 lang,
@@ -4378,21 +4467,37 @@ def _lab_client_state(body):
         active = int(raw.get('active') or 0)
     except (TypeError, ValueError):
         active = 0
+    try:
+        remain = int(raw.get('remain') or 0)
+    except (TypeError, ValueError):
+        remain = 0
+    selected = raw.get('selectedWords') if isinstance(raw.get('selectedWords'), dict) else {}
+    selected_words = {}
+    for key, value in list(selected.items())[:40]:
+        if isinstance(value, dict):
+            selected_words[str(key)[:12]] = {
+                str(word)[:40]: bool(on)
+                for word, on in list(value.items())[:40]
+            }
+        elif isinstance(value, list):
+            selected_words[str(key)[:12]] = {str(word)[:40]: True for word in value[:40]}
     return {
         'answers': answers,
         'flags': flags,
         'marks': marks,
         'font': min(26, max(16, font)),
         'active': max(0, active),
+        'remain': max(0, remain),
+        'selectedWords': selected_words,
     }
 
 
 def _lab_meta(payload):
-    skill = str((payload or {}).get('skill') or 'reading')
-    rows = payload.get('questions') if skill != 'writing' else payload.get('exercises')
+    skill = str((payload or {}).get('skill') or 'reading').strip().lower()
+    rows = payload.get('questions') if skill == 'reading' else payload.get('exercises')
     rows = rows if isinstance(rows, list) else []
     return {
-        'skill': skill,
+        'skill': skill if skill in ('reading', 'writing', 'grammar') else 'reading',
         'level': str(payload.get('level') or '')[:8],
         'practice_type': str(payload.get('practice_type') or '')[:40],
         'title': str(payload.get('title') or payload.get('task') or '')[:240],
@@ -4416,7 +4521,7 @@ def practice_lab(request):
         body = {}
     action = str(body.get('action') or '').strip().lower()
     skill = str(body.get('skill') or 'reading').strip().lower()
-    if skill not in ('reading', 'writing'):
+    if skill not in ('reading', 'writing', 'grammar'):
         skill = 'reading'
     state = _lab_client_state(body)
 
@@ -4425,27 +4530,49 @@ def practice_lab(request):
         if not isinstance(payload, dict) or not payload:
             return JsonResponse({'ok': False, 'error': 'Avval mashq yarating.'}, status=400)
         meta = _lab_meta(payload)
+        # Payload skilli asosiy manba; body skill bilan moslashtiramiz.
+        skill = meta.get('skill') or skill
+        if skill not in ('reading', 'writing', 'grammar'):
+            skill = 'reading'
         mode = str(body.get('mode') or 'practice')[:16]
-        PracticeLabRecord.objects.update_or_create(
-            user=request.user,
-            skill=skill,
-            kind=PracticeLabRecord.KIND_DRAFT,
-            defaults={
-                **meta,
-                'mode': mode,
-                'public': public_practice_payload(payload),
-                'secret': payload,
-                'state': state,
-                'result': {},
-                'correct': 0,
-            },
+        drafts = list(
+            PracticeLabRecord.objects.filter(
+                user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DRAFT,
+            ).order_by('-updated_at')
         )
+        for extra in drafts[1:]:
+            extra.delete()
+        defaults = {
+            **meta,
+            'skill': skill,
+            'mode': mode,
+            'public': public_practice_payload(payload),
+            'secret': payload,
+            'state': state,
+            'result': {},
+            'correct': 0,
+        }
+        if drafts:
+            for key, value in defaults.items():
+                setattr(drafts[0], key, value)
+            drafts[0].save()
+        else:
+            PracticeLabRecord.objects.create(
+                user=request.user,
+                kind=PracticeLabRecord.KIND_DRAFT,
+                **defaults,
+            )
         return JsonResponse({'ok': True})
 
     if action == 'resume':
-        draft = PracticeLabRecord.objects.filter(
-            user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DRAFT,
-        ).first()
+        drafts = list(
+            PracticeLabRecord.objects.filter(
+                user=request.user, skill=skill, kind=PracticeLabRecord.KIND_DRAFT,
+            ).order_by('-updated_at')
+        )
+        for extra in drafts[1:]:
+            extra.delete()
+        draft = drafts[0] if drafts else None
         secret = draft.secret if draft else None
         if not isinstance(secret, dict) or not secret:
             return JsonResponse({'ok': False, 'error': 'Saqlangan mashq topilmadi.'}, status=404)
@@ -4494,6 +4621,7 @@ def practice_lab(request):
         )
         if older:
             PracticeLabRecord.objects.filter(id__in=older).delete()
+        StudyStreak.update_streak(request.user)
         return JsonResponse({'ok': True, 'id': record.id, 'result': graded})
 
     if action == 'open':

@@ -2260,3 +2260,105 @@ msgstr "ИСТОРИЯ"
 
 msgid "Yangidan"
 msgstr "Заново"
+
+msgid "Grammar mashqi"
+msgstr "Практика Grammar"
+
+msgid "Grammar Practice Lab"
+msgstr "Лаборатория Grammar"
+
+msgid "IELTS Writing va Speaking uchun aniq, moslashuvchan grammatika quring."
+msgstr "Развивайте точную и гибкую грамматику для IELTS Writing и Speaking."
+
+msgid "tekshirilgan urinishlar"
+msgstr "проверенные попытки"
+
+msgid "shu hisobda"
+msgstr "в этом аккаунте"
+
+msgid "Zaif nuqta"
+msgstr "Слабое место"
+
+msgid "tavsiya etilgan"
+msgstr "рекомендуется"
+
+msgid "Maqsad bo‘yicha mashq"
+msgstr "Практика по цели"
+
+msgid "6 ta yo‘nalish"
+msgstr "6 направлений"
+
+msgid "Profil qisqacha"
+msgstr "Краткий профиль"
+
+msgid "To‘liq profil"
+msgstr "Полный профиль"
+
+msgid "Sessiya"
+msgstr "Сессия"
+
+msgid "Grammatika profili"
+msgstr "Профиль грамматики"
+
+msgid "Yo‘nalish bo‘yicha"
+msgstr "По направлению"
+
+msgid "Mashq sozlamalari"
+msgstr "Настройки занятия"
+
+msgid "AI yangi grammatika mashqlarini yozmoqda…"
+msgstr "Подбираем упражнения по грамматике…"
+
+msgid "Mashq tayyorlanmoqda"
+msgstr "Готовим занятие"
+
+msgid "Javobingizni shu yerga yozing…"
+msgstr "Напишите ответ здесь…"
+
+msgid "Noto‘g‘ri so‘zlarni bosing, keyin to‘g‘ri jumla yozing."
+msgstr "Отметьте ошибочные слова, затем напишите верное предложение."
+
+msgid "To‘g‘ri."
+msgstr "Верно."
+
+msgid "Hali xato bor. Qayta urinib ko‘ring."
+msgstr "Ещё есть ошибка. Попробуйте снова."
+
+msgid "Bu yo‘nalishda natija pastroq. Yana mashq qiling."
+msgstr "По этому направлению результат слабее. Потренируйтесь ещё."
+
+msgid "Zaifroq ko‘nikmani yana shu darajada mashq qiling."
+msgstr "Потренируйте более слабый навык на этом уровне."
+
+msgid "Xatolarni ko‘rish"
+msgstr "Смотреть ошибки"
+
+msgid "Yana mashq"
+msgstr "Ещё раз"
+
+msgid "Attempt → diagnose → fix → use in writing."
+msgstr "Попытка → диагноз → исправление → использование в письме."
+
+msgid "Chiqishni xohlaysizmi? Javoblar saqlanadi."
+msgstr "Выйти? Ответы будут сохранены."
+
+msgid "GRAMMAR PRACTICE LAB"
+msgstr "GRAMMAR PRACTICE LAB"
+
+msgid "Mashq yuklanmoqda"
+msgstr "Задание загружается"
+
+msgid "Tanlangan daraja va yo‘nalish bo‘yicha mashq ochilmoqda…"
+msgstr "Открываем задание по выбранному уровню и направлению…"
+
+msgid "Mashqni boshlash"
+msgstr "Начать занятие"
+
+msgid "Matn tanlanmoqda"
+msgstr "Подбираем текст"
+
+msgid "Savollar yuklanmoqda"
+msgstr "Загружаем вопросы"
+
+msgid "Moslik tekshirilmoqda"
+msgstr "Проверяем соответствие"

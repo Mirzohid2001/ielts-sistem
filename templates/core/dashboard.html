@@ -18,6 +18,9 @@
                     <a href="{% url 'core:video_list' %}" class="dash-hero__chip">
                         <i class="fas fa-video"></i>{% trans "Videolar" %}
                     </a>
+                    <a href="{% url 'core:practice_skill' 'grammar' %}" class="dash-hero__chip">
+                        <i class="fas fa-spell-check"></i>{% trans "Grammar mashqi" %}
+                    </a>
                 </div>
             </div>
             <div class="dash-hero__score scale-in">
@@ -165,15 +168,15 @@
                     <p class="dash-cat__desc">{{ category.description|site_t|truncatewords:18 }}</p>
                     {% else %}
                     <p class="dash-cat__desc dash-cat__desc--muted">
-                        {% if category.slug == 'reading' or category.slug == 'writing' %}
+                        {% if category.slug == 'reading' or category.slug == 'writing' or category.slug == 'grammar' %}
                         {% trans "Mashqlar, video darslar va testlar" %}
                         {% else %}
                         {% trans "Video darslar va testlar" %}
                         {% endif %}
                     </p>
                     {% endif %}
-                    <div class="dash-cat__btns{% if category.slug == 'reading' or category.slug == 'writing' %} dash-cat__btns--3{% endif %}">
-                        {% if category.slug == 'reading' or category.slug == 'writing' %}
+                    <div class="dash-cat__btns{% if category.slug == 'reading' or category.slug == 'writing' or category.slug == 'grammar' %} dash-cat__btns--3{% endif %}">
+                        {% if category.slug == 'reading' or category.slug == 'writing' or category.slug == 'grammar' %}
                         <a href="{% url 'core:practice_skill' category.slug %}" class="btn btn-success">
                             <i class="fas fa-dumbbell me-2"></i>{% trans "Mashqlar" %}
                         </a>

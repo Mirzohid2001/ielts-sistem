@@ -4122,6 +4122,478 @@ textarea:focus-visible {
     padding: 2rem;
 }
 
+/* —— Profile: Mashq natijalari —— */
+.mashq-profile {
+    --mq-ink: #1a2f3d;
+    --mq-muted: #637784;
+    --mq-line: #dce6ec;
+    --mq-wash: #f3f7f9;
+    --mq-reading: #1a3d50;
+    --mq-writing: #376b58;
+    --mq-grammar: #315cce;
+    background:
+        radial-gradient(1200px 280px at 0% -10%, #e8f1f680 0%, transparent 55%),
+        radial-gradient(900px 240px at 100% 0%, #edf2ff55 0%, transparent 50%),
+        rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 28px;
+    box-shadow: var(--shadow-2xl);
+    overflow: hidden;
+    backdrop-filter: blur(30px);
+}
+
+.mashq-profile__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    padding: 1.75rem 1.75rem 1.35rem;
+    border-bottom: 1px solid var(--mq-line);
+    background: linear-gradient(180deg, #f7fafb 0%, transparent 100%);
+}
+
+.mashq-profile__kicker {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 750;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #68818e;
+    margin-bottom: 0.45rem;
+}
+
+.mashq-profile__title {
+    margin: 0;
+    font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: var(--mq-ink);
+    line-height: 1.2;
+}
+
+.mashq-profile__sub {
+    margin: 0.45rem 0 0;
+    max-width: 36rem;
+    font-size: 0.9rem;
+    font-weight: 550;
+    color: var(--mq-muted);
+    line-height: 1.45;
+}
+
+.mashq-profile__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.75rem 1.15rem;
+    border-radius: 12px;
+    border: 1px solid #c5d5df;
+    background: #fff;
+    color: #224353;
+    font-weight: 750;
+    font-size: 0.875rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.mashq-profile__cta:hover {
+    background: #e8f1f6;
+    border-color: #9eb8c7;
+    color: #122734;
+    transform: translateY(-1px);
+}
+
+.mashq-profile__cta--solid {
+    background: linear-gradient(135deg, #122734 0%, #1a3d50 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+.mashq-profile__cta--solid:hover {
+    background: linear-gradient(135deg, #1a3d50 0%, #245068 100%);
+    color: #fff;
+}
+
+.mashq-profile__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.85rem;
+    padding: 1.25rem 1.75rem 0.5rem;
+}
+
+.mashq-metric {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 1rem 1.05rem 0.95rem;
+    border-radius: 16px;
+    border: 1px solid var(--mq-line);
+    background: #fff;
+    box-shadow: 0 8px 22px #142b3908;
+    text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mashq-metric::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #9db4c2;
+}
+
+.mashq-metric--total::before { background: linear-gradient(180deg, #1a3d50, #4a7a92); }
+.mashq-metric--avg::before { background: linear-gradient(180deg, #0ea5e9, #38bdf8); }
+.mashq-metric--reading::before { background: var(--mq-reading); }
+.mashq-metric--writing::before { background: var(--mq-writing); }
+.mashq-metric--grammar::before { background: var(--mq-grammar); }
+
+a.mashq-metric:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px #142b3912;
+    border-color: #c5d5df;
+    color: inherit;
+}
+
+.mashq-metric__label {
+    font-size: 0.7rem;
+    font-weight: 750;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mq-muted);
+}
+
+.mashq-metric__value {
+    font-size: clamp(1.45rem, 3vw, 1.85rem);
+    font-weight: 850;
+    letter-spacing: -0.03em;
+    color: var(--mq-ink);
+    line-height: 1.15;
+}
+
+.mashq-metric__hint {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #769589;
+}
+
+.mashq-profile__list {
+    padding: 0.75rem 1.25rem 1.25rem;
+}
+
+.mashq-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.mashq-table thead th {
+    padding: 0.85rem 0.9rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7a8d99;
+    border-bottom: 1px solid var(--mq-line);
+    background: transparent;
+}
+
+.mashq-table tbody td {
+    padding: 1rem 0.9rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #eef2f4;
+}
+
+.mashq-table tbody tr {
+    transition: background 0.18s ease;
+}
+
+.mashq-table tbody tr:hover {
+    background: linear-gradient(90deg, #f3f8fa 0%, transparent 70%);
+}
+
+.mashq-table__title {
+    font-weight: 750;
+    color: var(--mq-ink);
+    line-height: 1.35;
+}
+
+.mashq-table__label {
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mq-muted);
+}
+
+.mashq-table__score {
+    font-weight: 750;
+    color: #3d5563;
+    font-variant-numeric: tabular-nums;
+}
+
+.mashq-table__date {
+    font-size: 0.8125rem;
+    font-weight: 650;
+    color: var(--mq-muted);
+    white-space: nowrap;
+}
+
+.mashq-table__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid #d3e0e8;
+    background: #fff;
+    color: #1a3d50;
+    font-size: 0.8125rem;
+    font-weight: 750;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.mashq-table__link:hover {
+    background: #e8f1f6;
+    border-color: #9eb8c7;
+    color: #122734;
+}
+
+.mashq-table__link i {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}
+
+.mashq-skill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.02em;
+    background: #eef2f4;
+    color: #3d5563;
+}
+
+.mashq-skill--reading { background: #e8f1f6; color: #1a3d50; }
+.mashq-skill--writing { background: #eaf4ef; color: #2f5a4a; }
+.mashq-skill--grammar { background: #edf2ff; color: #315cce; }
+
+.mashq-level {
+    display: inline-block;
+    min-width: 2.25rem;
+    text-align: center;
+    padding: 0.28rem 0.5rem;
+    border-radius: 8px;
+    background: var(--mq-wash);
+    border: 1px solid var(--mq-line);
+    font-size: 0.75rem;
+    font-weight: 750;
+    color: #3d5563;
+}
+
+.mashq-pct {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.1rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+}
+
+.mashq-pct.is-high { background: linear-gradient(135deg, #059669, #10b981); }
+.mashq-pct.is-mid { background: linear-gradient(135deg, #0e7490, #06b6d4); }
+.mashq-pct.is-low { background: linear-gradient(135deg, #b45309, #f59e0b); }
+
+.mashq-result-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem 1.25rem;
+}
+
+.mashq-result-card {
+    position: relative;
+    border: 1px solid var(--mq-line);
+    border-radius: 18px;
+    padding: 1rem 1rem 0.95rem;
+    background: #fff;
+    box-shadow: 0 10px 24px #142b390a;
+    overflow: hidden;
+}
+
+.mashq-result-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #9db4c2;
+}
+
+.mashq-result-card--reading::before { background: var(--mq-reading); }
+.mashq-result-card--writing::before { background: var(--mq-writing); }
+.mashq-result-card--grammar::before { background: var(--mq-grammar); }
+
+.mashq-result-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.7rem;
+}
+
+.mashq-result-card__top h3 {
+    margin: 0.45rem 0 0;
+    font-size: 0.98rem;
+    font-weight: 800;
+    line-height: 1.35;
+    color: var(--mq-ink);
+}
+
+.mashq-result-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.85rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 650;
+    color: var(--mq-muted);
+}
+
+.mashq-result-card__meta i {
+    margin-right: 0.2rem;
+    opacity: 0.75;
+}
+
+.mashq-result-card__bar {
+    height: 6px;
+    border-radius: 999px;
+    background: #eef2f4;
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+}
+
+.mashq-result-card__bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #1a3d50, #4a7a92);
+    max-width: 100%;
+}
+
+.mashq-result-card--writing .mashq-result-card__bar span {
+    background: linear-gradient(90deg, #376b58, #5fa084);
+}
+
+.mashq-result-card--grammar .mashq-result-card__bar span {
+    background: linear-gradient(90deg, #315cce, #6a8de0);
+}
+
+.mashq-result-card__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid #d3e0e8;
+    background: var(--mq-wash);
+    color: #1a3d50;
+    font-size: 0.85rem;
+    font-weight: 750;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.mashq-result-card__cta:hover {
+    background: #e8f1f6;
+    border-color: #9eb8c7;
+    color: #122734;
+}
+
+.mashq-empty {
+    text-align: center;
+    padding: 2.5rem 1.5rem 2.75rem;
+}
+
+.mashq-empty__icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1rem;
+    display: grid;
+    place-items: center;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #fff, #e8f1f6);
+    border: 1px solid var(--mq-line);
+    color: #4a7a92;
+    font-size: 1.6rem;
+}
+
+.mashq-empty h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1.15rem;
+    font-weight: 850;
+    color: var(--mq-ink);
+}
+
+.mashq-empty p {
+    margin: 0 auto 1.25rem;
+    max-width: 26rem;
+    font-size: 0.9rem;
+    color: var(--mq-muted);
+    font-weight: 550;
+}
+
+@media (max-width: 575.98px) {
+    .mashq-profile {
+        border-radius: 22px;
+    }
+
+    .mashq-profile__head {
+        padding: 1.25rem 1rem 1.1rem;
+        align-items: stretch;
+    }
+
+    .mashq-profile__cta {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mashq-profile__metrics {
+        padding: 1rem 1rem 0.25rem;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.7rem;
+    }
+
+    .mashq-metric {
+        padding: 0.85rem 0.8rem;
+    }
+
+    .mashq-metric__value {
+        font-size: 1.35rem;
+    }
+
+    .mashq-result-cards {
+        padding: 0.7rem 0.85rem 1.1rem;
+    }
+}
+
 .profile-table {
     margin: 0;
 }

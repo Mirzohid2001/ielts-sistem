@@ -2271,6 +2271,22 @@ class PracticeLabRecord(models.Model):
     def __str__(self):
         return f"{self.user_id} {self.skill} {self.kind} {self.title}"
 
+    @property
+    def percentage(self):
+        if not self.total:
+            return 0.0
+        return round(100.0 * float(self.correct) / float(self.total), 1)
+
+    @property
+    def skill_label(self):
+        labels = {
+            'reading': 'Reading',
+            'writing': 'Writing',
+            'grammar': 'Grammar',
+            'listening': 'Listening',
+        }
+        return labels.get((self.skill or '').lower(), self.skill or '')
+
 
 # Signal: UserTestAnswer o'zgarganda natijani qayta hisoblash (admin essay baholaganda)
 from django.db.models.signals import post_save

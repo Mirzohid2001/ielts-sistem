@@ -304,6 +304,7 @@ body.lab-lock { overflow: hidden; }
         <div class="lab-crumb">
             <a href="{% url 'core:practice_skill' 'reading' %}" class="{% if skill == 'reading' %}is-on{% endif %}">{% trans "Reading mashqi" %}</a>
             <a href="{% url 'core:practice_skill' 'writing' %}" class="{% if skill == 'writing' %}is-on{% endif %}">{% trans "Writing mashqi" %}</a>
+            <a href="{% url 'core:practice_skill' 'grammar' %}" class="{% if skill == 'grammar' %}is-on{% endif %}">{% trans "Grammar mashqi" %}</a>
         </div>
         <div class="lab-head">
             <div>
@@ -330,7 +331,7 @@ body.lab-lock { overflow: hidden; }
         </section>
         <section class="lab-rec" id="labRecommend" hidden>
             <div class="lab-rec-copy">
-                <div class="lab-kicker"><i class="fas fa-wand-magic-sparkles"></i> {% trans "SIZ UCHUN" %}</div>
+                <div class="lab-kicker"><i class="fas fa-bookmark"></i> {% trans "SIZ UCHUN" %}</div>
                 <h2 id="labRecName"></h2>
                 <div class="lab-rec-meta" id="labRecMeta"></div>
                 <p id="labRecReason"></p>
@@ -372,7 +373,7 @@ body.lab-lock { overflow: hidden; }
                 </div>
                 <div class="lab-go">
                     <span id="labEta"></span>
-                    <button type="button" class="lab-primary" id="labGenerate"><i class="fas fa-wand-magic-sparkles"></i> {% trans "Mashqni yaratish" %}</button>
+                    <button type="button" class="lab-primary" id="labGenerate"><i class="fas fa-play"></i> {% trans "Mashqni boshlash" %}</button>
                 </div>
             </div>
         </section>
@@ -488,7 +489,7 @@ body.lab-lock { overflow: hidden; }
         <div class="lab-dialog is-load">
             <div class="lab-book" aria-hidden="true"><i class="fas fa-book-open"></i></div>
             <div class="lab-kicker">{% trans "TAYYORGARLIK" %}</div>
-            <h2>{% trans "Mashq yozilmoqda…" %}</h2>
+            <h2>{% trans "Mashq yuklanmoqda…" %}</h2>
             <div class="lab-stages" id="labStages"></div>
         </div>
     </div>
@@ -535,9 +536,9 @@ body.lab-lock { overflow: hidden; }
 {% trans "FALSE — matndagi gapga zid. NOT GIVEN — bu haqda yozilmagan." as t_lesson %}
 {% trans "Namuna" as t_sample %}
 {% trans "Topshiriq" as t_task %}
-{% trans "Matn yozilmoqda" as t_st1 %}
-{% trans "Savollar tuzilmoqda" as t_st2 %}
-{% trans "Aniqlik tekshirilmoqda" as t_st3 %}
+{% trans "Matn tanlanmoqda" as t_st1 %}
+{% trans "Savollar yuklanmoqda" as t_st2 %}
+{% trans "Moslik tekshirilmoqda" as t_st3 %}
 {% trans "Mashq ochilmoqda" as t_st4 %}
 {% trans "Shoshilmang. Dalilni matndan toping." as t_calm %}
 {% trans "Qaytish" as t_back %}
@@ -545,6 +546,7 @@ body.lab-lock { overflow: hidden; }
 {% trans "Qolish" as t_stay %}
 {% trans "3 ta savol" as t_three %}
 {% trans "Chiqish" as t_exit %}
+{% trans "Natija ekranda bor, lekin profilga saqlanmadi. Qayta urinib ko‘ring." as t_save_fail %}
 <script>
 (function () {
     const app = document.getElementById('mashqApp');
@@ -567,6 +569,7 @@ body.lab-lock { overflow: hidden; }
         sample: "{{ t_sample|escapejs }}", task: "{{ t_task|escapejs }}",
         calm: "{{ t_calm|escapejs }}", back: "{{ t_back|escapejs }}", send: "{{ t_send|escapejs }}",
         stay: "{{ t_stay|escapejs }}", three: "{{ t_three|escapejs }}", leave: "{{ t_exit|escapejs }}",
+        saveFail: "{{ t_save_fail|escapejs }}",
         st: ["{{ t_st1|escapejs }}", "{{ t_st2|escapejs }}", "{{ t_st3|escapejs }}", "{{ t_st4|escapejs }}"]
     };
     let catalog = { categories: [], levels: [] };
@@ -1130,7 +1133,9 @@ body.lab-lock { overflow: hidden; }
                     correct: result.correct || 0,
                     total: result.total || questions.length
                 });
-            } catch (err) { /* natija ekranda qoladi, keyinroq saqlashda xato bo'lsa ham */ }
+            } catch (err) {
+                openModal('<h2>' + esc(i18n.err) + '</h2><p>' + esc(i18n.saveFail || i18n.net) + '</p>');
+            }
             active = Math.max(0, questions.findIndex(function (q) { const item = itemOf(q.id); return item && !item.is_correct; }));
             showResults();
         } catch (err) {
@@ -1420,6 +1425,17 @@ body.lab-lock { overflow: hidden; }
     } catch (e) { /* eski sozlama buzilgan bo'lsa tashlab yuboriladi */ }
     window.addEventListener('pagehide', function () { if (live && !review) park(); });
     paintHome();
+    try {
+        const openId = Number((new URLSearchParams(window.location.search)).get('open') || 0);
+        if (openId > 0) {
+            openRecord(openId);
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('open');
+                window.history.replaceState({}, '', url.pathname + url.search);
+            }
+        }
+    } catch (e) { /* deep-link ochilmasa oddiy home qoladi */ }
 })();
 </script>
 {% endblock %}
