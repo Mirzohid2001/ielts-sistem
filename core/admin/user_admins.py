@@ -9,6 +9,7 @@ from ..models import (
     Bookmark,
     Flashcard,
     FlashcardSet,
+    IELTSStudyPlan,
     PlaylistVideo,
     StudyStreak,
     UserActivity,
@@ -221,6 +222,14 @@ class StudyStreakAdmin(admin.ModelAdmin):
     search_fields = ['user__username']
     readonly_fields = ['created_at']
     ordering = ['-date', '-created_at']
+
+
+@admin.register(IELTSStudyPlan)
+class IELTSStudyPlanAdmin(admin.ModelAdmin):
+    list_display = ['user', 'revision', 'updated_at', 'created_at']
+    search_fields = ['user__username', 'user__email']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-updated_at']
 
 
 @admin.register(VideoNote)

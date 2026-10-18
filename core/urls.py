@@ -1,11 +1,14 @@
 from django.urls import path
 from . import views
+from . import planner_views
 
 app_name = 'core'
 
 urlpatterns = [
     path('', views.module_selector, name='module_selector'),
     path('ielts/', views.dashboard, name='dashboard'),
+    path('ielts/rejam/', planner_views.study_planner, name='study_planner'),
+    path('ielts/rejam/api/', planner_views.study_planner_api, name='study_planner_api'),
     path('mashqlar/api/generate/', views.practice_generate, name='practice_generate'),
     path('mashqlar/api/check/', views.practice_check, name='practice_check'),
     path('mashqlar/api/lab/', views.practice_lab, name='practice_lab'),

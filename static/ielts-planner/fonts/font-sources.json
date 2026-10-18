@@ -1,0 +1,29 @@
+{
+  "retrieved": "2026-09-14",
+  "fonts": [
+    {
+      "file": "dm-sans-latin-ext.woff2",
+      "family": "DM Sans",
+      "subset": "latin-ext",
+      "source": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu6-K6h9Q.woff2"
+    },
+    {
+      "file": "dm-sans-latin.woff2",
+      "family": "DM Sans",
+      "subset": "latin",
+      "source": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2"
+    },
+    {
+      "file": "manrope-latin-ext.woff2",
+      "family": "Manrope",
+      "subset": "latin-ext",
+      "source": "https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggmxSuXd.woff2"
+    },
+    {
+      "file": "manrope-latin.woff2",
+      "family": "Manrope",
+      "subset": "latin",
+      "source": "https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggexSg.woff2"
+    }
+  ]
+}

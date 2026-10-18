@@ -1,0 +1,56 @@
+.account-message {
+  max-width: 640px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+}
+.account-message h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+.account-message p {
+  margin: 1rem 0;
+  color: #6b7280;
+  line-height: 1.65;
+  font-weight: 500;
+}
+.account-recovery {
+  color: #111827;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: min(520px, calc(100% - 32px));
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.16);
+}
+.account-recovery h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0 0 0.75rem;
+}
+.account-recovery p {
+  line-height: 1.65;
+  margin: 0.85rem 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.save-status[role=button] {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.save-status[role=button]:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 3px;
+}

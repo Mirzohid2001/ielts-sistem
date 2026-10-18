@@ -2288,6 +2288,30 @@ class PracticeLabRecord(models.Model):
         return labels.get((self.skill or '').lower(), self.skill or '')
 
 
+class IELTSStudyPlan(models.Model):
+    """Student IELTS study planner hujjati (optimistic locking bilan)."""
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ielts_study_plan',
+        verbose_name="Foydalanuvchi",
+    )
+    revision = models.PositiveBigIntegerField(default=1, verbose_name="Versiya")
+    document = models.JSONField(default=dict, blank=True, verbose_name="Reja hujjati")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan")
+
+    class Meta:
+        verbose_name = "IELTS study plan"
+        verbose_name_plural = "IELTS study plans"
+        indexes = [
+            models.Index(fields=['user', 'revision']),
+        ]
+
+    def __str__(self):
+        return f"plan:{self.user_id} rev:{self.revision}"
+
+
 # Signal: UserTestAnswer o'zgarganda natijani qayta hisoblash (admin essay baholaganda)
 from django.db.models.signals import post_save
 from django.dispatch import receiver

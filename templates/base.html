@@ -53,6 +53,10 @@
                            href="{% url 'core:test_list' %}">{% trans "Testlar" %}</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'study_planner' %}active{% endif %}"
+                           href="{% url 'core:study_planner' %}">{% trans "IELTS rejam" %}</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if 'leaderboard' in request.path %}active{% endif %}" 
                            href="{% url 'core:leaderboard' %}">{% trans "Reyting" %}</a>
                     </li>
