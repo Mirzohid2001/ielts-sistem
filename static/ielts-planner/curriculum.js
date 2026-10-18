@@ -1,25 +1,26 @@
 import {SPEAKING_RESOURCES,speakingLesson} from './speaking.js';
 import {guideStudyTask} from './study-method.js';
+import {t} from './i18n.js';
 export const CONTENT_VERSION = 3;
-const member = (name,short) => ({name,short,url:'https://tonielts.uz/',access:'Ton hisobi kerak'});
+const member = (nameKey,shortKey) => ({get name(){return t(nameKey);},get short(){return t(shortKey);},url:'https://tonielts.uz/',get access(){return t('resNeedAccount');}});
 export const RESOURCE = {
   ...SPEAKING_RESOURCES,
-  readingVideo:member('Ton Academy · Reading video darslari','Reading video darsi'),
-  writingVideo:member('Ton Academy · Writing video darslari','Writing video darsi'),
-  listeningVideo:member('Ton Academy · Listening video darslari','Listening video darsi'),
-  grammarVideo:member('Ton Academy · Grammar video darslari','Grammar video darsi'),
-  readingExercise:member('Ton Academy · Reading mashqlari','Reading mashqi'),
-  writingExercise:member('Ton Academy · Writing mashqlari','Writing mashqi'),
-  cdiReading:member('Ton Academy · CDI Reading mock testlari','CDI Reading'),
-  cdiListening:member('Ton Academy · CDI Listening mock testlari','CDI Listening'),
-  cdiWriting:member('Ton Academy · CDI Writing mock testlari','CDI Writing'),
+  readingVideo:member('resReadingVideo','resReadingVideoShort'),
+  writingVideo:member('resWritingVideo','resWritingVideoShort'),
+  listeningVideo:member('resListeningVideo','resListeningVideoShort'),
+  grammarVideo:member('resGrammarVideo','resGrammarVideoShort'),
+  readingExercise:member('resReadingEx','resReadingExShort'),
+  writingExercise:member('resWritingEx','resWritingExShort'),
+  cdiReading:{get name(){return t('resCdiReading');},short:'CDI Reading',url:'https://tonielts.uz/',get access(){return t('resNeedAccount');}},
+  cdiListening:{get name(){return t('resCdiListening');},short:'CDI Listening',url:'https://tonielts.uz/',get access(){return t('resNeedAccount');}},
+  cdiWriting:{get name(){return t('resCdiWriting');},short:'CDI Writing',url:'https://tonielts.uz/',get access(){return t('resNeedAccount');}},
   // Retained only so completed tasks from the original release remain readable.
-  video:{name:'Ton video darslari',url:'https://tonacademy.uz/videos/',access:'Bepul demo'},
-  reading:{name:'Ton Reading mock testlari',url:'https://tonacademy.uz/courses/',access:'Bepul demo'},
-  listening:{name:'Ton Listening mock testlari',url:'https://tonacademy.uz/courses/',access:'Bepul demo'},
-  platform:member('Ton o‘quv platformasi','Ton platformasi'),
-  writing:member('Ton AI Writing Checker','AI Writing Checker'),
-  live:member('Ton jonli darslari','Jonli darslar'),
+  video:{get name(){return t('resVideoLegacy');},url:'https://tonacademy.uz/videos/',get access(){return t('resFreeDemo');}},
+  reading:{get name(){return t('resReadingLegacy');},url:'https://tonacademy.uz/courses/',get access(){return t('resFreeDemo');}},
+  listening:{get name(){return t('resListeningLegacy');},url:'https://tonacademy.uz/courses/',get access(){return t('resFreeDemo');}},
+  platform:member('resPlatform','resPlatformShort'),
+  writing:{get name(){return t('resWritingAi');},short:'AI Writing Checker',url:'https://tonielts.uz/',get access(){return t('resNeedAccount');}},
+  live:member('resLive','resLiveShort'),
 };
 const READING_TOPICS = [
   ['Matching headings','har paragrafning asosiy g‘oyasini topish','Sarlavhani moslang va tanlovingizni paragrafning asosiy g‘oyasi bilan asoslang.'],

@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
+from core.services.ielts_planner_i18n import planner_js_strings
 from core.services.ielts_planner_store import account_key_for, read_plan, write_plan
 from core.services.ielts_planner_validate import validate_document
 
@@ -44,6 +45,7 @@ def study_planner(request):
         'planner_api_url': reverse('core:study_planner_api'),
         'dashboard_url': reverse('core:dashboard'),
         'planner_resource_routes': _resource_routes(),
+        'planner_i18n': planner_js_strings(),
     })
 
 

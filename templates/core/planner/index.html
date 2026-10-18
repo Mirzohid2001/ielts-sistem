@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}IELTS Reja · Ton academy{% endblock %}
+{% block title %}{% trans "IELTS Reja" %} · Ton academy{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'ielts-planner/styles.css' %}?v={{ STATIC_ASSET_VERSION }}">
@@ -12,38 +12,38 @@
 <meta name="csrf-token" content="{{ csrf_token }}">
 <div id="planner-app" class="planner-app" data-planner-api="{{ planner_api_url }}">
   <div class="container planner-page">
-    <nav class="planner-crumb" aria-label="Navigatsiya">
-      <a href="{{ dashboard_url }}">Bosh sahifa</a>
+    <nav class="planner-crumb" aria-label="{% trans 'Navigatsiya' %}">
+      <a href="{{ dashboard_url }}">{% trans "Bosh sahifa" %}</a>
       <span aria-hidden="true">›</span>
-      <span class="is-on">IELTS rejam</span>
+      <span class="is-on">{% trans "IELTS rejam" %}</span>
     </nav>
 
     <section class="planner-hero" aria-labelledby="hero-title">
       <div class="planner-hero__inner">
         <div class="planner-hero__copy">
           <p class="planner-hero__eyebrow"><span class="status-dot"></span>IELTS STUDY PLANNER</p>
-          <h1 id="hero-title" class="planner-hero__title">Katta maqsad.<br><span>Aniq kundalik reja.</span></h1>
-          <p class="planner-hero__sub">Ballaringiz, vaqtingiz va imtihon sanangizga qarab haftalik vazifalar tuziladi. Har bir vazifa kabinetdagi video, mashq yoki testga olib boradi.</p>
+          <h1 id="hero-title" class="planner-hero__title">{% trans "Katta maqsad." %}<br><span>{% trans "Aniq kundalik reja." %}</span></h1>
+          <p class="planner-hero__sub">{% trans "Ballaringiz, vaqtingiz va imtihon sanangizga qarab haftalik vazifalar tuziladi. Har bir vazifa kabinetdagi video, mashq yoki testga olib boradi." %}</p>
           <div class="planner-hero__tags">
-            <span><span data-icon="check"></span>Shaxsiy jadval</span>
-            <span><span data-icon="check"></span>4 ko‘nikma</span>
-            <span><span data-icon="check"></span>Kabinet resurslari</span>
+            <span><span data-icon="check"></span>{% trans "Shaxsiy jadval" %}</span>
+            <span><span data-icon="check"></span>{% trans "4 ko‘nikma" %}</span>
+            <span><span data-icon="check"></span>{% trans "Kabinet resurslari" %}</span>
           </div>
         </div>
         <div class="goal-card">
-          <div class="goal-top"><span>SIZNING YO‘NALISHINGIZ</span><span data-icon="spark"></span></div>
+          <div class="goal-top"><span>{% trans "SIZNING YO‘NALISHINGIZ" %}</span><span data-icon="spark"></span></div>
           <div class="goal-body">
             <div class="goal-ring" id="hero-ring" style="--ring-deg: 240deg;">
               <div class="goal-ring__hole">
-                <span class="ring-label">MAQSAD</span>
+                <span class="ring-label">{% trans "MAQSAD" %}</span>
                 <strong id="hero-target">7.0</strong>
-                <span class="ring-sub">band</span>
+                <span class="ring-sub">{% trans "band" %}</span>
               </div>
             </div>
             <div class="goal-info">
-              <div class="goal-score"><span>Hozirgi daraja</span><strong id="hero-current">6.0 <small>band</small></strong></div>
-              <div class="goal-score"><span>Imtihongacha</span><strong id="hero-days">56 <small>kun</small></strong></div>
-              <span class="goal-note" id="hero-note"><span data-icon="arrow-up"></span>Har hafta bir qadam yaqinroq</span>
+              <div class="goal-score"><span>{% trans "Hozirgi daraja" %}</span><strong id="hero-current">6.0 <small>{% trans "band" %}</small></strong></div>
+              <div class="goal-score"><span>{% trans "Imtihongacha" %}</span><strong id="hero-days">56 <small>{% trans "kun" %}</small></strong></div>
+              <span class="goal-note" id="hero-note"><span data-icon="arrow-up"></span>{% trans "Har hafta bir qadam yaqinroq" %}</span>
             </div>
           </div>
           <div class="goal-bottom">
@@ -53,29 +53,29 @@
           </div>
         </div>
       </div>
-      <div class="planner-hero__stats" aria-label="Qisqa ko‘rsatkichlar">
-        <div class="planner-hero__stat"><strong id="stat-overall">6.0</strong><span>Joriy band</span></div>
-        <div class="planner-hero__stat"><strong id="stat-gap">+1.0</strong><span>Maqsad farqi</span></div>
-        <div class="planner-hero__stat"><strong id="stat-days">56</strong><span>Qolgan kun</span></div>
-        <div class="planner-hero__stat"><strong id="stat-week">0/0</strong><span>Bu hafta</span></div>
+      <div class="planner-hero__stats" aria-label="{% trans 'Qisqa ko‘rsatkichlar' %}">
+        <div class="planner-hero__stat"><strong id="stat-overall">6.0</strong><span>{% trans "Joriy band" %}</span></div>
+        <div class="planner-hero__stat"><strong id="stat-gap">+1.0</strong><span>{% trans "Maqsad farqi" %}</span></div>
+        <div class="planner-hero__stat"><strong id="stat-days">56</strong><span>{% trans "Qolgan kun" %}</span></div>
+        <div class="planner-hero__stat"><strong id="stat-week">0/0</strong><span>{% trans "Bu hafta" %}</span></div>
       </div>
     </section>
 
     <div id="sample-banner" class="sample-banner" hidden>
       <div>
-        <strong>Bu namuna reja</strong>
-        <p>Ko‘rib chiqing, sozlamalarni o‘zingizga moslang, keyin <em>Mening rejamni tuzish</em> tugmasini bosing. Shundan keyin hisobingizga saqlanadi.</p>
+        <strong>{% trans "Bu namuna reja" %}</strong>
+        <p>{% blocktrans trimmed %}Ko‘rib chiqing, sozlamalarni o‘zingizga moslang, keyin <em>Mening rejamni tuzish</em> tugmasini bosing. Shundan keyin hisobingizga saqlanadi.{% endblocktrans %}</p>
       </div>
-      <button type="button" class="sample-banner__cta" id="sample-banner-cta">Sozlamalarga o‘tish</button>
+      <button type="button" class="sample-banner__cta" id="sample-banner-cta">{% trans "Sozlamalarga o‘tish" %}</button>
     </div>
 
-    <section id="planner" class="planner-section" aria-label="Shaxsiy reja tuzish">
+    <section id="planner" class="planner-section" aria-label="{% trans 'Shaxsiy reja tuzish' %}">
       <div class="section-intro">
         <div>
-          <span class="eyebrow muted">TAYYORGARLIK MAYDONI</span>
-          <h2>Maqsaddan kundalik odatgacha</h2>
+          <span class="eyebrow muted">{% trans "TAYYORGARLIK MAYDONI" %}</span>
+          <h2>{% trans "Maqsaddan kundalik odatgacha" %}</h2>
         </div>
-        <span class="save-status" id="save-status"><span data-icon="info"></span>Namuna reja</span>
+        <span class="save-status" id="save-status"><span data-icon="info"></span>{% trans "Namuna reja" %}</span>
       </div>
       <div class="planner-layout">
         <aside class="settings-card">
@@ -83,55 +83,55 @@
             <div class="settings-heading">
               <div class="square-icon" data-icon="sliders"></div>
               <div>
-                <h3>Reja sozlamalari</h3>
-                <p>Sizning sur’atingiz. Sizning maqsadingiz.</p>
+                <h3>{% trans "Reja sozlamalari" %}</h3>
+                <p>{% trans "Sizning sur’atingiz. Sizning maqsadingiz." %}</p>
               </div>
             </div>
             <fieldset>
-              <legend><span class="step-number">01</span>Hozirgi IELTS ballaringiz</legend>
+              <legend><span class="step-number">01</span>{% trans "Hozirgi IELTS ballaringiz" %}</legend>
               <div class="scores-grid" id="score-inputs"></div>
-              <div class="overall-line"><span>Umumiy band</span><strong id="draft-overall">6.0</strong></div>
+              <div class="overall-line"><span>{% trans "Umumiy band" %}</span><strong id="draft-overall">6.0</strong></div>
             </fieldset>
             <fieldset>
-              <legend><span class="step-number">02</span>Maqsad va imtihon</legend>
+              <legend><span class="step-number">02</span>{% trans "Maqsad va imtihon" %}</legend>
               <div class="target-date">
-                <label for="target">Maqsad band<select id="target" name="target"></select></label>
-                <label for="exam">Imtihon sanasi<input id="exam" name="exam" type="date" required></label>
+                <label for="target">{% trans "Maqsad band" %}<select id="target" name="target"></select></label>
+                <label for="exam">{% trans "Imtihon sanasi" %}<input id="exam" name="exam" type="date" required></label>
               </div>
             </fieldset>
             <fieldset>
-              <legend><span class="step-number">03</span>O‘qishga ajratadigan vaqtingiz</legend>
-              <span class="field-label" id="days-label">Qaysi kunlari o‘qiysiz?</span>
+              <legend><span class="step-number">03</span>{% trans "O‘qishga ajratadigan vaqtingiz" %}</legend>
+              <span class="field-label" id="days-label">{% trans "Qaysi kunlari o‘qiysiz?" %}</span>
               <div class="day-buttons" id="day-inputs" role="group" aria-labelledby="days-label"></div>
               <div class="time-inputs">
-                <label for="minutes">Kuniga
+                <label for="minutes">{% trans "Kuniga" %}
                   <select id="minutes">
-                    <option value="60">1 soat</option>
-                    <option value="90">1,5 soat</option>
-                    <option value="120">2 soat</option>
-                    <option value="150">2,5 soat</option>
-                    <option value="180">3 soat</option>
-                    <option value="210">3,5 soat</option>
-                    <option value="240">4 soat</option>
+                    <option value="60">{% trans "1 soat" %}</option>
+                    <option value="90">{% trans "1,5 soat" %}</option>
+                    <option value="120">{% trans "2 soat" %}</option>
+                    <option value="150">{% trans "2,5 soat" %}</option>
+                    <option value="180">{% trans "3 soat" %}</option>
+                    <option value="210">{% trans "3,5 soat" %}</option>
+                    <option value="240">{% trans "4 soat" %}</option>
                   </select>
                 </label>
-                <label for="start-time">Boshlanish vaqti<input id="start-time" type="time" value="19:00" required></label>
+                <label for="start-time">{% trans "Boshlanish vaqti" %}<input id="start-time" type="time" value="19:00" required></label>
               </div>
-              <p class="hint">Kuniga 1–4 soat. Vaqtlar qurilmangizning mahalliy vaqtida. Tanaffuslar uchun vazifa vaqtlarini surishingiz mumkin.</p>
+              <p class="hint">{% trans "Kuniga 1–4 soat. Vaqtlar qurilmangizning mahalliy vaqtida. Tanaffuslar uchun vazifa vaqtlarini surishingiz mumkin." %}</p>
             </fieldset>
             <fieldset>
-              <legend><span class="step-number">04</span>Qaysi ko‘nikma qiyinroq?</legend>
+              <legend><span class="step-number">04</span>{% trans "Qaysi ko‘nikma qiyinroq?" %}</legend>
               <div id="weak-inputs" class="weak-buttons"></div>
-              <p class="hint">Bir nechtasini tanlashingiz mumkin.</p>
+              <p class="hint">{% trans "Bir nechtasini tanlashingiz mumkin." %}</p>
             </fieldset>
             <div id="form-error" class="error-message" role="alert" hidden></div>
-            <p id="dirty-message" class="dirty-message" hidden>O‘zgarishlarni rejaga qo‘llash uchun tugmani bosing.</p>
+            <p id="dirty-message" class="dirty-message" hidden>{% trans "O‘zgarishlarni rejaga qo‘llash uchun tugmani bosing." %}</p>
             <button type="submit" class="primary-button" id="generate">
               <span data-icon="spark"></span>
-              <span id="generate-label">Mening rejamni tuzish</span>
+              <span id="generate-label">{% trans "Mening rejamni tuzish" %}</span>
               <span data-icon="arrow-right"></span>
             </button>
-            <p class="form-footnote">Bajarilgan vazifalar saqlanadi. Rejangizni istalgan payt o‘zgartiring.</p>
+            <p class="form-footnote">{% trans "Bajarilgan vazifalar saqlanadi. Rejangizni istalgan payt o‘zgartiring." %}</p>
           </form>
         </aside>
 
@@ -139,26 +139,26 @@
           <div class="plan-panel">
             <div class="plan-heading">
               <div>
-                <div class="plan-eyebrow"><span class="status-dot"></span><span id="plan-type">NAMUNA REJA</span></div>
-                <h3>Sizning haftalik rejangiz</h3>
+                <div class="plan-eyebrow"><span class="status-dot"></span><span id="plan-type">{% trans "NAMUNA REJA" %}</span></div>
+                <h3>{% trans "Sizning haftalik rejangiz" %}</h3>
               </div>
-              <button type="button" class="icon-button" id="export" aria-label="Bu haftani kalendarga yuklash" title="Haftani kalendarga yuklash">
+              <button type="button" class="icon-button" id="export" aria-label="{% trans 'Bu haftani kalendarga yuklash' %}" title="{% trans 'Haftani kalendarga yuklash' %}">
                 <span data-icon="download"></span>
               </button>
             </div>
             <div class="week-toolbar">
               <div class="week-navigation">
-                <button class="icon-button" id="prev-week" aria-label="Oldingi hafta"><span data-icon="chevron-left"></span></button>
+                <button class="icon-button" id="prev-week" aria-label="{% trans 'Oldingi hafta' %}"><span data-icon="chevron-left"></span></button>
                 <div>
-                  <label class="sr-only" for="week-select">Haftani tanlang</label>
+                  <label class="sr-only" for="week-select">{% trans "Haftani tanlang" %}</label>
                   <select id="week-select"></select>
                   <p id="week-range"></p>
                 </div>
-                <button class="icon-button" id="next-week" aria-label="Keyingi hafta"><span data-icon="chevron-right"></span></button>
+                <button class="icon-button" id="next-week" aria-label="{% trans 'Keyingi hafta' %}"><span data-icon="chevron-right"></span></button>
               </div>
-              <div class="view-switch" role="group" aria-label="Reja ko‘rinishi">
-                <button id="list-view" class="selected" aria-pressed="true"><span data-icon="list"></span>Ro‘yxat</button>
-                <button id="calendar-view" aria-pressed="false"><span data-icon="calendar"></span>Kalendar</button>
+              <div class="view-switch" role="group" aria-label="{% trans 'Reja ko‘rinishi' %}">
+                <button id="list-view" class="selected" aria-pressed="true"><span data-icon="list"></span>{% trans "Ro‘yxat" %}</button>
+                <button id="calendar-view" aria-pressed="false"><span data-icon="calendar"></span>{% trans "Kalendar" %}</button>
               </div>
             </div>
             <div class="week-summary">
@@ -168,12 +168,12 @@
               </div>
               <span id="week-complete"></span>
             </div>
-            <div class="progress-track" role="progressbar" id="week-progress" aria-label="Haftalik progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+            <div class="progress-track" role="progressbar" id="week-progress" aria-label="{% trans 'Haftalik progress' %}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
             <div class="plan-filters">
-              <div id="day-filter" class="day-filter" role="group" aria-label="Kun bo‘yicha saralash"></div>
-              <label class="sr-only" for="skill-filter">Ko‘nikma bo‘yicha saralash</label>
+              <div id="day-filter" class="day-filter" role="group" aria-label="{% trans 'Kun bo‘yicha saralash' %}"></div>
+              <label class="sr-only" for="skill-filter">{% trans "Ko‘nikma bo‘yicha saralash" %}</label>
               <select id="skill-filter">
-                <option value="all">Barcha ko‘nikmalar</option>
+                <option value="all">{% trans "Barcha ko‘nikmalar" %}</option>
                 <option>Listening</option>
                 <option>Reading</option>
                 <option>Writing</option>
@@ -183,14 +183,14 @@
             <div id="task-content" class="task-content"></div>
             <div class="plan-bottom">
               <span data-icon="info"></span>
-              <span>Vazifani bosib, ko‘rsatmalarni oching yoki vaqtini o‘zgartiring. Qaydlar uchun daftar yoki Notes’dan foydalaning.</span>
+              <span>{% trans "Vazifani bosib, ko‘rsatmalarni oching yoki vaqtini o‘zgartiring. Qaydlar uchun daftar yoki Notes’dan foydalaning." %}</span>
             </div>
           </div>
           <div class="focus-card">
             <div class="focus-header">
               <div class="square-icon" data-icon="target"></div>
               <div>
-                <h3>Bu hafta e’tibor markazida</h3>
+                <h3>{% trans "Bu hafta e’tibor markazida" %}</h3>
                 <p id="focus-description"></p>
               </div>
             </div>
@@ -204,41 +204,41 @@
     <section id="resources" class="resources-section" aria-labelledby="resources-title">
       <div class="resources-heading">
         <div>
-          <span class="eyebrow muted">REJANGIZGA KUCH BERADIGAN RESURSLAR</span>
-          <h2 id="resources-title">Barchasi Ton Academy’da.</h2>
+          <span class="eyebrow muted">{% trans "REJANGIZGA KUCH BERADIGAN RESURSLAR" %}</span>
+          <h2 id="resources-title">{% trans "Barchasi Ton Academy’da." %}</h2>
         </div>
-        <a href="{{ dashboard_url }}">Kabinetga qaytish<span data-icon="external"></span></a>
+        <a href="{{ dashboard_url }}">{% trans "Kabinetga qaytish" %}<span data-icon="external"></span></a>
       </div>
       <div class="resource-grid">
         <a class="resource-card" href="{% url 'core:video_list' %}">
           <div class="resource-icon purple" data-icon="play"></div>
           <div>
-            <span class="resource-tag">YOZIB OLINGAN VIDEO DARSLAR</span>
-            <h3>Usulni o‘rganing.</h3>
-            <p>Reading, Writing, Listening va Grammar. Savol turlari va qanday mashq qilish bo‘yicha tushuntirishlar.</p>
-            <span class="resource-link">Videolarni ochish <span data-icon="arrow-right"></span></span>
+            <span class="resource-tag">{% trans "YOZIB OLINGAN VIDEO DARSLAR" %}</span>
+            <h3>{% trans "Usulni o‘rganing." %}</h3>
+            <p>{% trans "Reading, Writing, Listening va Grammar. Savol turlari va qanday mashq qilish bo‘yicha tushuntirishlar." %}</p>
+            <span class="resource-link">{% trans "Videolarni ochish" %} <span data-icon="arrow-right"></span></span>
           </div>
         </a>
         <a class="resource-card" href="{% url 'core:practice_hub' %}">
           <div class="resource-icon mint" data-icon="book"></div>
           <div>
-            <span class="resource-tag">READING VA WRITING MASHQLARI</span>
-            <h3>Ko‘nikmani mustahkamlang.</h3>
-            <p>Reading: headings va gap filling. Writing: paraphrasing, Lexical resource va grammatika.</p>
-            <span class="resource-link">Mashqlarni ochish <span data-icon="arrow-right"></span></span>
+            <span class="resource-tag">{% trans "READING VA WRITING MASHQLARI" %}</span>
+            <h3>{% trans "Ko‘nikmani mustahkamlang." %}</h3>
+            <p>{% trans "Reading: headings va gap filling. Writing: paraphrasing, Lexical resource va grammatika." %}</p>
+            <span class="resource-link">{% trans "Mashqlarni ochish" %} <span data-icon="arrow-right"></span></span>
           </div>
         </a>
         <a class="resource-card" href="{% url 'core:test_list' %}">
           <div class="resource-icon blue" data-icon="target"></div>
           <div>
-            <span class="resource-tag">CDI MOCK TESTLAR</span>
-            <h3>O‘rganganingizni sinang.</h3>
-            <p>Reading, Listening va Writing CDI testlari. Vaqt bilan amaliyot va xatolar tahlili.</p>
-            <span class="resource-link">Testlarni ochish <span data-icon="arrow-right"></span></span>
+            <span class="resource-tag">{% trans "CDI MOCK TESTLAR" %}</span>
+            <h3>{% trans "O‘rganganingizni sinang." %}</h3>
+            <p>{% trans "Reading, Listening va Writing CDI testlari. Vaqt bilan amaliyot va xatolar tahlili." %}</p>
+            <span class="resource-link">{% trans "Testlarni ochish" %} <span data-icon="arrow-right"></span></span>
           </div>
         </a>
       </div>
-      <p class="resource-note">Har bir vazifada Ton Academy’dagi resurs va bajarish qadamlari ko‘rsatiladi. Speaking — mustaqil tayyorgarlik: shadowing, Parts 1–3 va ovoz yozuvini tahlil qilish.</p>
+      <p class="resource-note">{% trans "Har bir vazifada Ton Academy’dagi resurs va bajarish qadamlari ko‘rsatiladi. Speaking — mustaqil tayyorgarlik: shadowing, Parts 1–3 va ovoz yozuvini tahlil qilish." %}</p>
     </section>
   </div>
 
@@ -246,50 +246,51 @@
     <form id="task-edit-form" novalidate>
       <div class="dialog-top">
         <span id="dialog-skill" class="skill-badge"></span>
-        <button type="button" class="icon-button" id="close-dialog" aria-label="Oynani yopish"><span data-icon="close"></span></button>
+        <button type="button" class="icon-button" id="close-dialog" aria-label="{% trans 'Oynani yopish' %}"><span data-icon="close"></span></button>
       </div>
       <h2 id="dialog-title"></h2>
       <p id="dialog-description"></p>
       <div class="task-source">
-        <span id="dialog-source-kind">TON ACADEMY RESURSI</span>
+        <span id="dialog-source-kind">{% trans "TON ACADEMY RESURSI" %}</span>
         <strong id="dialog-source"></strong>
       </div>
       <ol id="dialog-steps" class="task-steps"></ol>
       <p id="dialog-outcome" class="task-outcome"></p>
       <div class="study-check" id="dialog-checkpoint"></div>
       <details class="study-help" id="dialog-help">
-        <summary>Tushunarsiz bo‘lsa nima qilaman?</summary>
+        <summary>{% trans "Tushunarsiz bo‘lsa nima qilaman?" %}</summary>
         <p id="dialog-help-text"></p>
         <p id="dialog-review-next"></p>
       </details>
       <a id="dialog-resource" class="dialog-resource" target="_blank" rel="noopener noreferrer"></a>
       <p id="dialog-access" class="hint"></p>
       <hr>
-      <h3>Vazifani moslashtirish</h3>
+      <h3>{% trans "Vazifani moslashtirish" %}</h3>
       <div class="edit-fields">
-        <label for="edit-date">Kun<input id="edit-date" type="date" required></label>
-        <label for="edit-time">Vaqt<input id="edit-time" type="time" required></label>
-        <label for="edit-duration">Davomiylik
+        <label for="edit-date">{% trans "Kun" %}<input id="edit-date" type="date" required></label>
+        <label for="edit-time">{% trans "Vaqt" %}<input id="edit-time" type="time" required></label>
+        <label for="edit-duration">{% trans "Davomiylik" %}
           <select id="edit-duration">
-            <option value="15">15 daqiqa</option>
-            <option value="30">30 daqiqa</option>
-            <option value="45">45 daqiqa</option>
-            <option value="60">60 daqiqa</option>
-            <option value="90">90 daqiqa</option>
-            <option value="120">120 daqiqa</option>
+            <option value="15">{% trans "15 daqiqa" %}</option>
+            <option value="30">{% trans "30 daqiqa" %}</option>
+            <option value="45">{% trans "45 daqiqa" %}</option>
+            <option value="60">{% trans "60 daqiqa" %}</option>
+            <option value="90">{% trans "90 daqiqa" %}</option>
+            <option value="120">{% trans "120 daqiqa" %}</option>
           </select>
         </label>
       </div>
       <div id="edit-error" class="error-message" role="alert" hidden></div>
       <div class="dialog-actions">
-        <button class="secondary-button" id="cancel-edit" type="button">Bekor qilish</button>
-        <button class="primary-button" type="submit">O‘zgarishlarni saqlash<span data-icon="check"></span></button>
+        <button class="secondary-button" id="cancel-edit" type="button">{% trans "Bekor qilish" %}</button>
+        <button class="primary-button" type="submit">{% trans "O‘zgarishlarni saqlash" %}<span data-icon="check"></span></button>
       </div>
     </form>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   {{ planner_resource_routes|json_script:"plannerResourceRoutes" }}
+  {{ planner_i18n|json_script:"plannerI18n" }}
 </div>
 {% endblock %}
 

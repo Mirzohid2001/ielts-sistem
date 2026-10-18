@@ -2362,3 +2362,747 @@ msgstr "Загружаем вопросы"
 
 msgid "Moslik tekshirilmoqda"
 msgstr "Проверяем соответствие"
+
+msgid "IELTS rejam"
+msgstr "Мой IELTS план"
+
+msgid "IELTS Reja"
+msgstr "План IELTS"
+
+msgid "Navigatsiya"
+msgstr "Навигация"
+
+msgid "Katta maqsad."
+msgstr "Большая цель."
+
+msgid "Aniq kundalik reja."
+msgstr "Чёткий ежедневный план."
+
+msgid "Ballaringiz, vaqtingiz va imtihon sanangizga qarab haftalik vazifalar tuziladi. Har bir vazifa kabinetdagi video, mashq yoki testga olib boradi."
+msgstr "Еженедельные задания составляются по вашим баллам, времени и дате экзамена. Каждое задание ведёт к видео, практике или тесту в кабинете."
+
+msgid "Shaxsiy jadval"
+msgstr "Личное расписание"
+
+msgid "4 ko‘nikma"
+msgstr "4 навыка"
+
+msgid "Kabinet resurslari"
+msgstr "Ресурсы кабинета"
+
+msgid "SIZNING YO‘NALISHINGIZ"
+msgstr "ВАШ КУРС"
+
+msgid "MAQSAD"
+msgstr "ЦЕЛЬ"
+
+msgid "band"
+msgstr "балл"
+
+msgid "Hozirgi daraja"
+msgstr "Текущий уровень"
+
+msgid "kun"
+msgstr "дн."
+
+msgid "Imtihongacha"
+msgstr "До экзамена"
+
+msgid "Har hafta bir qadam yaqinroq"
+msgstr "Каждую неделю на шаг ближе"
+
+msgid "Qisqa ko‘rsatkichlar"
+msgstr "Краткие показатели"
+
+msgid "Joriy band"
+msgstr "Текущий балл"
+
+msgid "Maqsad farqi"
+msgstr "До цели"
+
+msgid "Qolgan kun"
+msgstr "Осталось дней"
+
+msgid "Bu hafta"
+msgstr "На этой неделе"
+
+msgid "Bu namuna reja"
+msgstr "Это образец плана"
+
+msgid "Ko‘rib chiqing, sozlamalarni o‘zingizga moslang, keyin <em>Mening rejamni tuzish</em> tugmasini bosing. Shundan keyin hisobingizga saqlanadi."
+msgstr "Просмотрите, настройте параметры под себя, затем нажмите <em>Составить мой план</em>. После этого он сохранится в аккаунте."
+
+msgid "Sozlamalarga o‘tish"
+msgstr "Перейти к настройкам"
+
+msgid "Shaxsiy reja tuzish"
+msgstr "Составление личного плана"
+
+msgid "TAYYORGARLIK MAYDONI"
+msgstr "ПЛОЩАДКА ПОДГОТОВКИ"
+
+msgid "Maqsaddan kundalik odatgacha"
+msgstr "От цели к ежедневной привычке"
+
+msgid "Namuna reja"
+msgstr "Образец плана"
+
+msgid "Reja sozlamalari"
+msgstr "Настройки плана"
+
+msgid "Sizning sur’atingiz. Sizning maqsadingiz."
+msgstr "Ваш темп. Ваша цель."
+
+msgid "Hozirgi IELTS ballaringiz"
+msgstr "Ваши текущие баллы IELTS"
+
+msgid "Umumiy band"
+msgstr "Общий балл"
+
+msgid "Maqsad va imtihon"
+msgstr "Цель и экзамен"
+
+msgid "Maqsad band"
+msgstr "Целевой балл"
+
+msgid "Imtihon sanasi"
+msgstr "Дата экзамена"
+
+msgid "O‘qishga ajratadigan vaqtingiz"
+msgstr "Время на занятия"
+
+msgid "Qaysi kunlari o‘qiysiz?"
+msgstr "В какие дни занимаетесь?"
+
+msgid "Kuniga"
+msgstr "В день"
+
+msgid "1 soat"
+msgstr "1 час"
+
+msgid "1,5 soat"
+msgstr "1,5 часа"
+
+msgid "2 soat"
+msgstr "2 часа"
+
+msgid "2,5 soat"
+msgstr "2,5 часа"
+
+msgid "3 soat"
+msgstr "3 часа"
+
+msgid "3,5 soat"
+msgstr "3,5 часа"
+
+msgid "4 soat"
+msgstr "4 часа"
+
+msgid "Boshlanish vaqti"
+msgstr "Время начала"
+
+msgid "Kuniga 1–4 soat. Vaqtlar qurilmangizning mahalliy vaqtida. Tanaffuslar uchun vazifa vaqtlarini surishingiz mumkin."
+msgstr "От 1 до 4 часов в день. Время — по локальному часовому поясу устройства. Задания можно сдвигать для перерывов."
+
+msgid "Qaysi ko‘nikma qiyinroq?"
+msgstr "Какой навык сложнее?"
+
+msgid "Bir nechtasini tanlashingiz mumkin."
+msgstr "Можно выбрать несколько."
+
+msgid "O‘zgarishlarni rejaga qo‘llash uchun tugmani bosing."
+msgstr "Нажмите кнопку, чтобы применить изменения к плану."
+
+msgid "Mening rejamni tuzish"
+msgstr "Составить мой план"
+
+msgid "Bajarilgan vazifalar saqlanadi. Rejangizni istalgan payt o‘zgartiring."
+msgstr "Выполненные задания сохраняются. План можно менять в любое время."
+
+msgid "NAMUNA REJA"
+msgstr "ОБРАЗЕЦ ПЛАНА"
+
+msgid "Sizning haftalik rejangiz"
+msgstr "Ваш недельный план"
+
+msgid "Bu haftani kalendarga yuklash"
+msgstr "Скачать эту неделю в календарь"
+
+msgid "Haftani kalendarga yuklash"
+msgstr "Скачать неделю в календарь"
+
+msgid "Oldingi hafta"
+msgstr "Предыдущая неделя"
+
+msgid "Haftani tanlang"
+msgstr "Выберите неделю"
+
+msgid "Keyingi hafta"
+msgstr "Следующая неделя"
+
+msgid "Reja ko‘rinishi"
+msgstr "Вид плана"
+
+msgid "Ro‘yxat"
+msgstr "Список"
+
+msgid "Kalendar"
+msgstr "Календарь"
+
+msgid "Haftalik progress"
+msgstr "Недельный прогресс"
+
+msgid "Kun bo‘yicha saralash"
+msgstr "Фильтр по дням"
+
+msgid "Ko‘nikma bo‘yicha saralash"
+msgstr "Фильтр по навыку"
+
+msgid "Barcha ko‘nikmalar"
+msgstr "Все навыки"
+
+msgid "Vazifani bosib, ko‘rsatmalarni oching yoki vaqtini o‘zgartiring. Qaydlar uchun daftar yoki Notes’dan foydalaning."
+msgstr "Нажмите задание, чтобы открыть инструкции или изменить время. Для заметок используйте тетрадь или Notes."
+
+msgid "Bu hafta e’tibor markazida"
+msgstr "Фокус этой недели"
+
+msgid "REJANGIZGA KUCH BERADIGAN RESURSLAR"
+msgstr "РЕСУРСЫ ДЛЯ ВАШЕГО ПЛАНА"
+
+msgid "Barchasi Ton Academy’da."
+msgstr "Всё в Ton Academy."
+
+msgid "Kabinetga qaytish"
+msgstr "Вернуться в кабинет"
+
+msgid "YOZIB OLINGAN VIDEO DARSLAR"
+msgstr "ЗАПИСАННЫЕ ВИДЕОУРОКИ"
+
+msgid "Usulni o‘rganing."
+msgstr "Изучите метод."
+
+msgid "Reading, Writing, Listening va Grammar. Savol turlari va qanday mashq qilish bo‘yicha tushuntirishlar."
+msgstr "Reading, Writing, Listening и Grammar. Объяснения типов вопросов и как тренироваться."
+
+msgid "Videolarni ochish"
+msgstr "Открыть видео"
+
+msgid "READING VA WRITING MASHQLARI"
+msgstr "ПРАКТИКА READING И WRITING"
+
+msgid "Ko‘nikmani mustahkamlang."
+msgstr "Укрепите навык."
+
+msgid "Reading: headings va gap filling. Writing: paraphrasing, Lexical resource va grammatika."
+msgstr "Reading: headings и gap filling. Writing: paraphrasing, Lexical resource и грамматика."
+
+msgid "Mashqlarni ochish"
+msgstr "Открыть практику"
+
+msgid "CDI MOCK TESTLAR"
+msgstr "CDI MOCK-ТЕСТЫ"
+
+msgid "O‘rganganingizni sinang."
+msgstr "Проверьте то, что выучили."
+
+msgid "Reading, Listening va Writing CDI testlari. Vaqt bilan amaliyot va xatolar tahlili."
+msgstr "CDI-тесты Reading, Listening и Writing. Практика на время и разбор ошибок."
+
+msgid "Testlarni ochish"
+msgstr "Открыть тесты"
+
+msgid "Har bir vazifada Ton Academy’dagi resurs va bajarish qadamlari ko‘rsatiladi. Speaking — mustaqil tayyorgarlik: shadowing, Parts 1–3 va ovoz yozuvini tahlil qilish."
+msgstr "В каждом задании указаны ресурс Ton Academy и шаги выполнения. Speaking — самостоятельная подготовка: shadowing, Parts 1–3 и разбор записи."
+
+msgid "Oynani yopish"
+msgstr "Закрыть окно"
+
+msgid "TON ACADEMY RESURSI"
+msgstr "РЕСУРС TON ACADEMY"
+
+msgid "Tushunarsiz bo‘lsa nima qilaman?"
+msgstr "Что делать, если непонятно?"
+
+msgid "Vazifani moslashtirish"
+msgstr "Настроить задание"
+
+msgid "Kun"
+msgstr "День"
+
+msgid "Vaqt"
+msgstr "Время"
+
+msgid "Davomiylik"
+msgstr "Длительность"
+
+msgid "15 daqiqa"
+msgstr "15 минут"
+
+msgid "30 daqiqa"
+msgstr "30 минут"
+
+msgid "45 daqiqa"
+msgstr "45 минут"
+
+msgid "60 daqiqa"
+msgstr "60 минут"
+
+msgid "90 daqiqa"
+msgstr "90 минут"
+
+msgid "120 daqiqa"
+msgstr "120 минут"
+
+msgid "O‘zgarishlarni saqlash"
+msgstr "Сохранить изменения"
+
+msgid "Dushanba"
+msgstr "Понедельник"
+
+msgid "Seshanba"
+msgstr "Вторник"
+
+msgid "Chorshanba"
+msgstr "Среда"
+
+msgid "Payshanba"
+msgstr "Четверг"
+
+msgid "Juma"
+msgstr "Пятница"
+
+msgid "Shanba"
+msgstr "Суббота"
+
+msgid "Yakshanba"
+msgstr "Воскресенье"
+
+msgid "Du"
+msgstr "Пн"
+
+msgid "Se"
+msgstr "Вт"
+
+msgid "Ch"
+msgstr "Ср"
+
+msgid "Pa"
+msgstr "Чт"
+
+msgid "Ju"
+msgstr "Пт"
+
+msgid "Sh"
+msgstr "Сб"
+
+msgid "Ya"
+msgstr "Вс"
+
+msgid "yanvar"
+msgstr "января"
+
+msgid "fevral"
+msgstr "февраля"
+
+msgid "mart"
+msgstr "марта"
+
+msgid "aprel"
+msgstr "апреля"
+
+msgid "may"
+msgstr "мая"
+
+msgid "iyun"
+msgstr "июня"
+
+msgid "iyul"
+msgstr "июля"
+
+msgid "avgust"
+msgstr "августа"
+
+msgid "sentabr"
+msgstr "сентября"
+
+msgid "oktabr"
+msgstr "октября"
+
+msgid "noyabr"
+msgstr "ноября"
+
+msgid "dekabr"
+msgstr "декабря"
+
+msgid "daq"
+msgstr "мин"
+
+msgid "soat"
+msgstr "ч"
+
+msgid "{n}-hafta"
+msgstr "{n}-я неделя"
+
+msgid "Haftasiga {time}"
+msgstr "{time} в неделю"
+
+msgid "{days} kun · {time}"
+msgstr "{days} дн. · {time}"
+
+msgid "{done}/{total} bajarildi"
+msgstr "{done}/{total} выполнено"
+
+msgid "BUGUN"
+msgstr "СЕГОДНЯ"
+
+msgid "O‘tgan kun"
+msgstr "Прошедший день"
+
+msgid "Bajarildi"
+msgstr "Выполнено"
+
+msgid "Bajarildi: {title}"
+msgstr "Выполнено: {title}"
+
+msgid "{title}: tahrirlash"
+msgstr "{title}: изменить"
+
+msgid "{skill} hozirgi band"
+msgstr "{skill} текущий балл"
+
+msgid "va"
+msgstr "и"
+
+msgid "Poydevorni mustahkamlash"
+msgstr "Укрепление базы"
+
+msgid "Maqsadli amaliyot"
+msgstr "Целевая практика"
+
+msgid "Vaqt bilan mashq"
+msgstr "Тренировка на время"
+
+msgid "Yakuniy takrorlash"
+msgstr "Финальный повтор"
+
+msgid "Har bir ko‘nikma uchun 0–9 oralig‘ida ball kiriting."
+msgstr "Введите балл от 0 до 9 для каждого навыка."
+
+msgid "Maqsad bandini 1–9 oralig‘ida tanlang."
+msgstr "Выберите целевой балл от 1 до 9."
+
+msgid "Imtihon sanasi bugundan keyin bo‘lishi kerak."
+msgstr "Дата экзамена должна быть позже сегодняшнего дня."
+
+msgid "Imtihon sanasini keyingi 2 yil ichida tanlang."
+msgstr "Выберите дату экзамена в течение следующих 2 лет."
+
+msgid "Kamida bitta o‘qish kunini tanlang."
+msgstr "Выберите хотя бы один учебный день."
+
+msgid "Kunlik vaqtni 1–4 soat oralig‘ida tanlang."
+msgstr "Выберите ежедневное время от 1 до 4 часов."
+
+msgid "Mashg‘ulotlar yarim tungacha tugashi uchun ertaroq vaqt tanlang."
+msgstr "Выберите более раннее время, чтобы занятия закончились до полуночи."
+
+msgid "Ko‘proq mashq kerak bo‘lgan ko‘nikmani tanlang."
+msgstr "Выберите навык, который нужно тренировать больше."
+
+msgid "Imtihongacha tanlangan o‘qish kuni yo‘q. Kunlarni yoki imtihon sanasini o‘zgartiring."
+msgstr "До экзамена нет выбранных учебных дней. Измените дни или дату экзамена."
+
+msgid "Bu vazifa uchun kamida {n} daqiqa ajrating."
+msgstr "Для этого задания выделите не меньше {n} минут."
+
+msgid "Imtihongacha bo‘lgan to‘g‘ri sanani tanlang."
+msgstr "Выберите корректную дату до экзамена."
+
+msgid "Vazifani bugundan imtihongacha bo‘lgan kunga ko‘chiring."
+msgstr "Перенесите задание на день с сегодня до экзамена."
+
+msgid "Tanlangan sana o‘qish kunlaringizga kirmaydi. Avval reja sozlamalarida bu kunni yoqing."
+msgstr "Выбранный день не входит в учебные дни. Сначала включите его в настройках плана."
+
+msgid "Vaqt va davomiylikni tekshiring. Mashg‘ulot yarim tungacha tugashi kerak."
+msgstr "Проверьте время и длительность. Занятие должно закончиться до полуночи."
+
+msgid "Bu kunning o‘qish vaqti to‘ldi. Boshqa kunni tanlang yoki kunlik vaqtni oshiring."
+msgstr "Учебное время на этот день заполнено. Выберите другой день или увеличьте дневное время."
+
+msgid "Bu vaqtda boshqa mashg‘ulot bor. Bo‘sh vaqtni tanlang."
+msgstr "В это время уже есть занятие. Выберите свободный слот."
+
+msgid "{action} uchun avval “Mening rejamni tuzish” tugmasini bosing."
+msgstr "Чтобы {action}, сначала нажмите «Составить мой план»."
+
+msgid "Saqlanmadi · yordam"
+msgstr "Не сохранено · помощь"
+
+msgid "Saqlanmoqda…"
+msgstr "Сохранение…"
+
+msgid "Namuna reja · hali saqlanmagan"
+msgstr "Образец плана · ещё не сохранён"
+
+msgid "Hisobingizda saqlandi"
+msgstr "Сохранено в аккаунте"
+
+msgid "NAMUNA REJA · SOZLAMALARNI O‘ZINGIZGA MOSLANG"
+msgstr "ОБРАЗЕЦ ПЛАНА · НАСТРОЙТЕ ПОД СЕБЯ"
+
+msgid "SIZNING SHAXSIY REJANGIZ"
+msgstr "ВАШ ЛИЧНЫЙ ПЛАН"
+
+msgid "Rejani yangilash"
+msgstr "Обновить план"
+
+msgid "Shaxsiy rejangiz tayyor va hisobingizga saqlandi."
+msgstr "Ваш личный план готов и сохранён в аккаунте."
+
+msgid "Reja yangilandi. Bajarilgan va kechikkan vazifalar saqlandi."
+msgstr "План обновлён. Выполненные и просроченные задания сохранены."
+
+msgid "Imtihon sanasi yangilanishi kerak"
+msgstr "Нужно обновить дату экзамена"
+
+msgid "Maqsad bandingizga yetgansiz"
+msgstr "Вы достигли целевого балла"
+
+msgid "{gap} band qoldi · har hafta bir qadam"
+msgstr "Осталось {gap} балла · шаг за шагом каждую неделю"
+
+msgid "Keyingi qadam: {title} · {when}"
+msgstr "Следующий шаг: {title} · {when}"
+
+msgid "{skills} — bu haftada ko‘proq mashq."
+msgstr "{skills} — больше практики на этой неделе."
+
+msgid "Bu haftada rejalashtirilgan vazifa yo‘q."
+msgstr "На этой неделе нет запланированных заданий."
+
+msgid "Imtihon sanasi o‘tdi. Tayyorlanishni davom ettirish uchun yangi sana tanlang."
+msgstr "Дата экзамена прошла. Выберите новую дату, чтобы продолжить подготовку."
+
+msgid "Maqsad bandingiz hozirgi darajangizga teng yoki past. Reja ko‘nikmalarni saqlash va zaif joylarni mustahkamlashga yordam beradi."
+msgstr "Целевой балл равен или ниже текущего уровня. План поможет сохранить навыки и укрепить слабые места."
+
+msgid "Maqsad katta, vaqt esa qisqa. Bu reja amaliy yo‘l-yo‘riq beradi; muddat va kutilayotgan natijani ustoz bilan ko‘rib chiqing."
+msgstr "Цель высокая, а времени мало. Этот план даёт практические ориентиры; обсудите срок и ожидания с преподавателем."
+
+msgid "Vaqt joriy ballar, maqsad va tanlangan zaif ko‘nikmalarga qarab taqsimlandi. {tail}"
+msgstr "Время распределено по текущим баллам, цели и выбранным слабым навыкам. {tail}"
+
+msgid "Oxirgi haftada yuklama kuniga 60 daqiqadan oshmaydi."
+msgstr "В последнюю неделю нагрузка не превышает 60 минут в день."
+
+msgid "Natija muntazam amaliyot va fikr-mulohazaga bog‘liq; reja bandni kafolatlamaydi."
+msgstr "Результат зависит от регулярной практики и обратной связи; план не гарантирует балл."
+
+msgid "Bu kun uchun vazifa yo‘q."
+msgstr "На этот день заданий нет."
+
+msgid "Boshqa kun yoki ko‘nikmani tanlang. Rejangizni sozlamalar orqali yangilashingiz mumkin."
+msgstr "Выберите другой день или навык. План можно обновить в настройках."
+
+msgid "Haftalik kalendar, gorizontal surish mumkin"
+msgstr "Недельный календарь, можно листать горизонтально"
+
+msgid "Imtihon kuni"
+msgstr "День экзамена"
+
+msgid "Omad tilaymiz!"
+msgstr "Удачи!"
+
+msgid "Imtihondan keyin"
+msgstr "После экзамена"
+
+msgid "Vazifa yo‘q"
+msgstr "Нет заданий"
+
+msgid "Dam olish"
+msgstr "Отдых"
+
+msgid "Kuch to‘plang."
+msgstr "Наберитесь сил."
+
+msgid "Barcha kunlarni ko‘rish uchun yon tomonga suring."
+msgstr "Проведите в сторону, чтобы увидеть все дни."
+
+msgid "Vazifani belgilash"
+msgstr "отметить задание"
+
+msgid "Vazifani tahrirlash"
+msgstr "изменить задание"
+
+msgid "Yana bir qadam oldinga. Vazifa bajarildi!"
+msgstr "Ещё один шаг вперёд. Задание выполнено!"
+
+msgid "Vazifa qayta ochildi."
+msgstr "Задание снова открыто."
+
+msgid "Ton kabinetida ochish"
+msgstr "Открыть в кабинете Ton"
+
+msgid " · Havola kabinetga olib boradi. Yuqorida ko‘rsatilgan resursni shu yerdan tanlang."
+msgstr " · Ссылка ведёт в кабинет. Выберите указанный выше ресурс оттуда."
+
+msgid "Mashg‘ulot vaqti yangilandi."
+msgstr "Время занятия обновлено."
+
+msgid "Bu haftada yuklash uchun vazifa yo‘q."
+msgstr "На этой неделе нет заданий для скачивания."
+
+msgid "Hafta yuklandi. Faylni o‘z kalendaringizda oching."
+msgstr "Неделя скачана. Откройте файл в своём календаре."
+
+msgid "hafta"
+msgstr "неделя"
+
+msgid "MUSTAQIL SPEAKING"
+msgstr "САМОСТОЯТЕЛЬНЫЙ SPEAKING"
+
+msgid "O‘zingizni tekshiring: {text}"
+msgstr "Проверьте себя: {text}"
+
+msgid "Vazifalar yangilandi. Bajarilgan ishlar va jadvalingiz saqlandi."
+msgstr "Задания обновлены. Выполненное и расписание сохранены."
+
+msgid "Imtihon sanasi o‘tgan. Yangi sana tanlab “Rejani yangilash” tugmasini bosing."
+msgstr "Дата экзамена прошла. Выберите новую дату и нажмите «Обновить план»."
+
+msgid "Avvalgi jadvalingiz saqlandi. Kuniga 1–4 soatlik yangi rejani qo‘llash uchun “Rejani yangilash” tugmasini bosing."
+msgstr "Предыдущее расписание сохранено. Чтобы применить новый план на 1–4 часа в день, нажмите «Обновить план»."
+
+msgid "Bu namuna reja. O‘zingizning ballaringizni tanlab “Mening rejamni tuzish” tugmasini bosing — shundan keyin saqlanadi."
+msgstr "Это образец плана. Выберите свои баллы и нажмите «Составить мой план» — после этого он сохранится."
+
+msgid "Reja yuklanmadi."
+msgstr "План не загрузился."
+
+msgid "Hisobingizga kirganingizni va internetni tekshiring. Saqlangan reja yuklanmaguncha yangi reja yozilmaydi."
+msgstr "Проверьте вход в аккаунт и интернет. Новый план не будет записан, пока не загрузится сохранённый."
+
+msgid "Qayta yuklash"
+msgstr "Перезагрузить"
+
+msgid "O‘zgarishlar hali saqlanmadi"
+msgstr "Изменения ещё не сохранены"
+
+msgid "Avval JSON nusxasini yuklab oling. Boshqa oynada reja o‘zgargan yoki hisob almashgan bo‘lsa, sahifani qayta yuklang. Nusxani IT jamoasi yordamida tekshirib tiklash mumkin."
+msgstr "Сначала скачайте JSON-копию. Если план изменился в другом окне или сменился аккаунт — обновите страницу. Копию можно восстановить с помощью IT."
+
+msgid "JSON nusxa"
+msgstr "JSON-копия"
+
+msgid "Qayta saqlash"
+msgstr "Сохранить снова"
+
+msgid "Sahifani yangilash"
+msgstr "Обновить страницу"
+
+msgid "Hisob, ruxsat yoki reja versiyasi o‘zgargan. JSON nusxani oling va sahifani yangilang."
+msgstr "Аккаунт, доступ или версия плана изменились. Скачайте JSON-копию и обновите страницу."
+
+msgid "Ton hisobi kerak"
+msgstr "Нужен аккаунт Ton"
+
+msgid "Bepul demo"
+msgstr "Бесплатное демо"
+
+msgid "Ton Academy · Reading video darslari"
+msgstr "Ton Academy · видеоуроки Reading"
+
+msgid "Reading video darsi"
+msgstr "Видеоурок Reading"
+
+msgid "Ton Academy · Writing video darslari"
+msgstr "Ton Academy · видеоуроки Writing"
+
+msgid "Writing video darsi"
+msgstr "Видеоурок Writing"
+
+msgid "Ton Academy · Listening video darslari"
+msgstr "Ton Academy · видеоуроки Listening"
+
+msgid "Listening video darsi"
+msgstr "Видеоурок Listening"
+
+msgid "Ton Academy · Grammar video darslari"
+msgstr "Ton Academy · видеоуроки Grammar"
+
+msgid "Grammar video darsi"
+msgstr "Видеоурок Grammar"
+
+msgid "Ton Academy · Reading mashqlari"
+msgstr "Ton Academy · практика Reading"
+
+msgid "Ton Academy · Writing mashqlari"
+msgstr "Ton Academy · практика Writing"
+
+msgid "Ton Academy · CDI Reading mock testlari"
+msgstr "Ton Academy · CDI Reading mock-тесты"
+
+msgid "Ton Academy · CDI Listening mock testlari"
+msgstr "Ton Academy · CDI Listening mock-тесты"
+
+msgid "Ton Academy · CDI Writing mock testlari"
+msgstr "Ton Academy · CDI Writing mock-тесты"
+
+msgid "Ton video darslari"
+msgstr "Видеоуроки Ton"
+
+msgid "Ton Reading mock testlari"
+msgstr "Mock-тесты Ton Reading"
+
+msgid "Ton Listening mock testlari"
+msgstr "Mock-тесты Ton Listening"
+
+msgid "Ton o‘quv platformasi"
+msgstr "Учебная платформа Ton"
+
+msgid "Ton platformasi"
+msgstr "Платформа Ton"
+
+msgid "Ton AI Writing Checker"
+msgstr "Ton AI Writing Checker"
+
+msgid "Ton jonli darslari"
+msgstr "Живые уроки Ton"
+
+msgid "Jonli darslar"
+msgstr "Живые уроки"
+
+msgid "British Council · Speaking videolari"
+msgstr "British Council · видео Speaking"
+
+msgid "Mustaqil · shadowing"
+msgstr "Самостоятельно · shadowing"
+
+msgid "Tashqi bepul manba · Ton hisobi kerak emas"
+msgstr "Внешний бесплатный источник · аккаунт Ton не нужен"
+
+msgid "Shadowing uchun video tanlash"
+msgstr "Выбрать видео для shadowing"
+
+msgid "British Council · IELTS Speaking namunalari"
+msgstr "British Council · образцы IELTS Speaking"
+
+msgid "Mustaqil · Speaking"
+msgstr "Самостоятельно · Speaking"
+
+msgid "Rasmiy tashqi namuna savollari · Ton hisobi kerak emas"
+msgstr "Официальные внешние образцы вопросов · аккаунт Ton не нужен"
+
+msgid "Speaking namuna savollarini ochish"
+msgstr "Открыть образцы Speaking"
+
+msgid "O‘z ovoz yozuvlaringiz"
+msgstr "Ваши аудиозаписи"
+
+msgid "Mustaqil · ovoz tahlili"
+msgstr "Самостоятельно · разбор записи"
+
+msgid "Telefon diktofoni, taymer va qayd daftari yetarli"
+msgstr "Достаточно диктофона, таймера и блокнота"

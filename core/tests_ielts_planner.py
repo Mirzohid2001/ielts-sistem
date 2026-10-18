@@ -100,6 +100,7 @@ class IELTSPlannerAPITests(TestCase):
         self.assertIn('csrf-token', body)
         self.assertIn('ielts-planner/app.js', body)
         self.assertIn('id="plannerResourceRoutes"', body)
+        self.assertIn('id="plannerI18n"', body)
         self.assertIn('planner-app', body)
         self.assertIn('planner-hero', body)
         self.assertIn('sample-banner', body)
@@ -107,6 +108,19 @@ class IELTSPlannerAPITests(TestCase):
         self.assertIn('/tests/collection/writing/', body)
         self.assertIn('Kabinetga qaytish', body)
         self.assertIn('navbar', body)
+
+    def test_page_russian_i18n(self):
+        from django.utils import translation
+        with translation.override('ru'):
+            response = self.client.get(reverse('core:study_planner'))
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn('Мой IELTS план', body)
+        self.assertIn('Большая цель.', body)
+        self.assertIn('Это образец плана', body)
+        self.assertIn('Составить мой план', body)
+        self.assertIn('"dayNames"', body)
+        self.assertIn('Понедельник', body)
 
     def test_get_empty_plan(self):
         response = self.client.get(self.api)

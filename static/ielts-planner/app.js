@@ -1,6 +1,7 @@
 import {createAccountStore} from './account-store.js';
 import {applyResourceRoutes} from './resource-routes.js';
 import {showLoadFailure,showSaveRecovery} from './account-ui.js';
+import {t,MONTHS} from './i18n.js';
 import {SKILLS,DAY_NAMES,DAY_SHORT,RESOURCE,dateString,parseDate,addDays,dayIndex,diffDays,monday,overall,timeMinutes,timeString,defaultProfile,validateProfile,phaseFor,generatePlan,weekDates,validateTaskEdit,refreshPlanContent,makeLesson,CONTENT_VERSION,DAILY_MINUTES} from './planner.js';
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -27,9 +28,8 @@ const ICONS={
 function icon(name){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.info}</svg>`;}
 function icons(root=document){root.querySelectorAll('[data-icon]').forEach(e=>{e.innerHTML=icon(e.dataset.icon);});}
 function escape(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-const MONTHS=['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];
 function formatDate(s,year=false){const d=parseDate(s);return `${d.getDate()}-${MONTHS[d.getMonth()]}${year?`, ${d.getFullYear()}`:''}`;}
-function formatMinutes(n){return n>=60?`${Math.floor(n/60)} soat${n%60?' '+n%60+' daq':''}`:`${n} daq`;}
+function formatMinutes(n){return n>=60?`${Math.floor(n/60)} ${t('soat')}${n%60?' '+n%60+' '+t('daq'):''}`:`${n} ${t('daq')}`;}
 applyResourceRoutes(RESOURCE);
 const accountStore=createAccountStore({endpoint:document.querySelector('[data-planner-api]')?.dataset.plannerApi||'/ielts/rejam/api/'});
 let saved=null,storageError=false;
@@ -56,23 +56,23 @@ function adoptPersonal(){
   accountStore.save({version:1,plan,view});
   updateSaveStatus();
 }
-function requirePersonal(action='Davom etish'){
+function requirePersonal(action=t('continue')){
   if(!isSample)return true;
-  notify(`${action} uchun avval “Mening rejamni tuzish” tugmasini bosing.`);
+  notify(t('needPersonal',{action}));
   $('#generate')?.scrollIntoView({block:'center',behavior:'smooth'});
   return false;
 }
 function updateSaveStatus(){
   const state=accountStore.state(),el=$('#save-status');
-  el.innerHTML=icon(storageError?'info':isSample?'info':'check')+(storageError?'Saqlanmadi · yordam':state.pending?'Saqlanmoqda…':isSample?'Namuna reja · hali saqlanmagan':'Hisobingizda saqlandi');
+  el.innerHTML=icon(storageError?'info':isSample?'info':'check')+(storageError?t('saveFailed'):state.pending?t('saving'):isSample?t('sampleStatus'):t('savedStatus'));
   if(storageError){el.setAttribute('role','button');el.tabIndex=0;}else{el.removeAttribute('role');el.removeAttribute('tabindex');}
-  $('#plan-type').textContent=isSample?'NAMUNA REJA · SOZLAMALARNI O‘ZINGIZGA MOSLANG':'SIZNING SHAXSIY REJANGIZ';
-  $('#generate-label').textContent=isSample?'Mening rejamni tuzish':'Rejani yangilash';
+  $('#plan-type').textContent=isSample?t('planTypeSample'):t('planTypePersonal');
+  $('#generate-label').textContent=isSample?t('generateSample'):t('generateUpdate');
   document.getElementById('planner-app')?.classList.toggle('is-sample',isSample);
 }
 function notify(message,error=false){clearTimeout(toastTimer);const el=$('#toast');el.textContent=message;el.classList.toggle('error',error);el.hidden=false;toastTimer=setTimeout(()=>el.hidden=true,4500);}
 function fillForm(p){
-  $('#score-inputs').innerHTML=SKILLS.map(s=>`<label class="score-label ${s}" for="score-${s}"><span><i class="skill-dot"></i>${s}</span><select id="score-${s}" data-score="${s}" aria-label="${s} hozirgi band">${Array.from({length:19},(_,i)=>i/2).map(n=>`<option value="${n}" ${n===p.scores[s]?'selected':''}>${n.toFixed(1)}</option>`).join('')}</select></label>`).join('');
+  $('#score-inputs').innerHTML=SKILLS.map(s=>`<label class="score-label ${s}" for="score-${s}"><span><i class="skill-dot"></i>${s}</span><select id="score-${s}" data-score="${s}" aria-label="${escape(t('scoreAria',{skill:s}))}">${Array.from({length:19},(_,i)=>i/2).map(n=>`<option value="${n}" ${n===p.scores[s]?'selected':''}>${n.toFixed(1)}</option>`).join('')}</select></label>`).join('');
   $('#target').innerHTML=Array.from({length:17},(_,i)=>1+i/2).map(n=>`<option value="${n}" ${n===p.target?'selected':''}>${n.toFixed(1)}</option>`).join('');
   $('#exam').min=addDays(dateString(),1);$('#exam').max=addDays(dateString(),730);$('#exam').value=p.exam;
   $('#day-inputs').innerHTML=DAY_SHORT.map((name,i)=>`<button type="button" data-day="${i}" class="${p.days.includes(i)?'selected':''}" aria-pressed="${p.days.includes(i)}" aria-label="${DAY_NAMES[i]}">${name}</button>`).join('');
@@ -91,7 +91,7 @@ $('#profile-form').addEventListener('submit',e=>{e.preventDefault();const p=read
   week=initialWeek(plan);dayFilter='all';skillFilter='all';$('#skill-filter').value='all';
   $('#form-error').hidden=true;$('#dirty-message').hidden=true;
   adoptPersonal();render();
-  notify(wasSample?'Shaxsiy rejangiz tayyor va hisobingizga saqlandi.':'Reja yangilandi. Bajarilgan va kechikkan vazifalar saqlandi.');
+  notify(wasSample?t('notifyCreated'):t('notifyUpdated'));
   $('.plan-workspace')?.scrollIntoView({behavior:'smooth',block:'start'});
 });
 $('#sample-banner-cta')?.addEventListener('click',()=>{
@@ -104,25 +104,25 @@ function render(){
   const ringDeg=Math.max(8,Math.min(360,Math.round((cur/Math.max(p.target,0.5))*360)));
   const ring=$('#hero-ring'); if(ring) ring.style.setProperty('--ring-deg',ringDeg+'deg');
   $('#hero-target').textContent=p.target.toFixed(1);
-  $('#hero-current').innerHTML=`${cur.toFixed(1)} <small>band</small>`;
-  $('#hero-days').innerHTML=`${daysLeft} <small>kun</small>`;
+  $('#hero-current').innerHTML=`${cur.toFixed(1)} <small>${t('band')}</small>`;
+  $('#hero-days').innerHTML=`${daysLeft} <small>${t('kun')}</small>`;
   $('#hero-exam').textContent=formatDate(p.exam,true);
-  $('#hero-hours').textContent=`Haftasiga ${formatMinutes(p.days.length*p.minutes)}`;
+  $('#hero-hours').textContent=t('perWeek',{time:formatMinutes(p.days.length*p.minutes)});
   const note=$('#hero-note');
   if(note) note.innerHTML=daysLeft<=0
-    ? `${icon('info')}Imtihon sanasi yangilanishi kerak`
-    : gap<=0 ? `${icon('check')}Maqsad bandingizga yetgansiz` : `${icon('arrow-up')}${gap.toFixed(1)} band qoldi · har hafta bir qadam`;
-  const weeks=weekDates(plan);week=Math.min(Math.max(0,week),weeks.length-1);$('#week-select').innerHTML=weeks.map((d,i)=>`<option value="${i}" ${i===week?'selected':''}>${i+1}-hafta</option>`).join('');
+    ? `${icon('info')}${t('examNeedUpdate')}`
+    : gap<=0 ? `${icon('check')}${t('atGoal')}` : `${icon('arrow-up')}${t('gapLeft',{gap:gap.toFixed(1)})}`;
+  const weeks=weekDates(plan);week=Math.min(Math.max(0,week),weeks.length-1);$('#week-select').innerHTML=weeks.map((d,i)=>`<option value="${i}" ${i===week?'selected':''}>${t('weekN',{n:i+1})}</option>`).join('');
   const start=weeks[week],end=addDays(start,6);$('#week-range').textContent=`${formatDate(start)} – ${formatDate(end)}`;$('#prev-week').disabled=week===0;$('#next-week').disabled=week===weeks.length-1;
   const tasks=currentTasks(),done=tasks.filter(t=>t.done).length,minutes=tasks.reduce((n,t)=>n+t.duration,0),days=new Set(tasks.map(t=>t.date)).size,progress=tasks.length?Math.round(done/tasks.length*100):0;
-  const phase=phaseFor(tasks[0]?.date||start,plan.generatedAt||plan.startDate,p.exam);$('#phase-badge').textContent=phase.name;$('#week-load').textContent=`${days} kun · ${formatMinutes(minutes)}`;$('#week-complete').textContent=`${done}/${tasks.length} bajarildi`;$('#week-progress').setAttribute('aria-valuenow',progress);$('#week-progress>span').style.width=progress+'%';
+  const phase=phaseFor(tasks[0]?.date||start,plan.generatedAt||plan.startDate,p.exam);$('#phase-badge').textContent=phase.name;$('#week-load').textContent=t('weekLoad',{days,time:formatMinutes(minutes)});$('#week-complete').textContent=t('weekDone',{done,total:tasks.length});$('#week-progress').setAttribute('aria-valuenow',progress);$('#week-progress>span').style.width=progress+'%';
   const setText=(sel,val)=>{const el=$(sel);if(el)el.textContent=val;};
   setText('#stat-overall',cur.toFixed(1));
   setText('#stat-gap',(gap>=0?'+':'')+gap.toFixed(1));
   setText('#stat-days',String(daysLeft));
   setText('#stat-week',`${done}/${tasks.length}`);
   $('#list-view').classList.toggle('selected',view==='list');$('#calendar-view').classList.toggle('selected',view==='calendar');$('#list-view').setAttribute('aria-pressed',String(view==='list'));$('#calendar-view').setAttribute('aria-pressed',String(view==='calendar'));
-  $('#day-filter').innerHTML=[['all','Barchasi'],...DAY_SHORT.map((n,i)=>[String(i),n])].map(([value,name])=>`<button data-filter="${value}" class="${dayFilter===value?'active':''}" aria-pressed="${dayFilter===value}">${name}</button>`).join('');
+  $('#day-filter').innerHTML=[['all',t('all')],...DAY_SHORT.map((n,i)=>[String(i),n])].map(([value,name])=>`<button data-filter="${value}" class="${dayFilter===value?'active':''}" aria-pressed="${dayFilter===value}">${name}</button>`).join('');
   $('#day-filter').hidden=view==='calendar';
   const filtered=tasks.filter(t=>(view==='calendar'||dayFilter==='all'||String(dayIndex(t.date))===dayFilter)&&(skillFilter==='all'||t.skill===skillFilter));
   $('#task-content').innerHTML=view==='calendar'?renderCalendar(start,filtered):renderList(filtered);
@@ -130,20 +130,20 @@ function render(){
   const ranked=[...SKILLS].sort((a,b)=>totals[b]-totals[a]);
   const nextOpen=tasks.find(t=>!t.done&&t.date>=today)||tasks.find(t=>!t.done);
   $('#focus-description').textContent=nextOpen
-    ? `Keyingi qadam: ${nextOpen.title} · ${formatDate(nextOpen.date)} ${nextOpen.time}`
-    : (minutes?`${ranked.slice(0,2).join(' va ')} — bu haftada ko‘proq mashq.`:'Bu haftada rejalashtirilgan vazifa yo‘q.');
-  $('#skill-distribution').innerHTML=SKILLS.map(s=>`<div class="skill-meter ${s}"><label>${s}<strong>${totals[s]} daq</strong></label><div><span style="width:${minutes?totals[s]/minutes*100:0}%"></span></div></div>`).join('');
-  $('#plan-advice').textContent=daysLeft<=0?'Imtihon sanasi o‘tdi. Tayyorlanishni davom ettirish uchun yangi sana tanlang.':gap<=0?'Maqsad bandingiz hozirgi darajangizga teng yoki past. Reja ko‘nikmalarni saqlash va zaif joylarni mustahkamlashga yordam beradi.':gap>=1.5&&daysLeft<42?'Maqsad katta, vaqt esa qisqa. Bu reja amaliy yo‘l-yo‘riq beradi; muddat va kutilayotgan natijani ustoz bilan ko‘rib chiqing.':`Vaqt joriy ballar, maqsad va tanlangan zaif ko‘nikmalarga qarab taqsimlandi. ${daysLeft<=7?'Oxirgi haftada yuklama kuniga 60 daqiqadan oshmaydi.':'Natija muntazam amaliyot va fikr-mulohazaga bog‘liq; reja bandni kafolatlamaydi.'}`;
+    ? t('nextStep',{title:nextOpen.title,when:`${formatDate(nextOpen.date)} ${nextOpen.time}`})
+    : (minutes?t('focusMore',{skills:ranked.slice(0,2).join(` ${t('and')} `)}):t('noTasksWeek'));
+  $('#skill-distribution').innerHTML=SKILLS.map(s=>`<div class="skill-meter ${s}"><label>${s}<strong>${totals[s]} ${t('daq')}</strong></label><div><span style="width:${minutes?totals[s]/minutes*100:0}%"></span></div></div>`).join('');
+  $('#plan-advice').textContent=daysLeft<=0?t('advicePast'):gap<=0?t('adviceAtGoal'):gap>=1.5&&daysLeft<42?t('adviceTight'):t('adviceDefault',{tail:daysLeft<=7?t('adviceLastWeek'):t('adviceNoGuarantee')});
   const banner=$('#sample-banner'); if(banner) banner.hidden=!isSample;
   updateSaveStatus();
 }
 function renderList(tasks){
-  if(!tasks.length)return `<div class="empty-state">${icon('calendar')}Bu kun uchun vazifa yo‘q.<p>Boshqa kun yoki ko‘nikmani tanlang. Rejangizni sozlamalar orqali yangilashingiz mumkin.</p></div>`;
+  if(!tasks.length)return `<div class="empty-state">${icon('calendar')}${t('emptyDay')}<p>${t('emptyDayHint')}</p></div>`;
   const dates=[...new Set(tasks.map(t=>t.date))].sort();
-  return dates.map(date=>{const dayTasks=tasks.filter(t=>t.date===date).sort((a,b)=>a.time.localeCompare(b.time));return `<div class="day-group"><div class="day-heading"><h4>${DAY_NAMES[dayIndex(date)]}</h4><span>${formatDate(date)}</span>${date===dateString()?'<span class="day-today">BUGUN</span>':''}${date<dateString()&&dayTasks.some(t=>!t.done)?'<span>O‘tgan kun</span>':''}<small>${formatMinutes(dayTasks.reduce((n,t)=>n+t.duration,0))}</small></div>${dayTasks.map(t=>`<article class="task-row ${t.skill} ${t.done?'done':''} ${t.date===dateString()&&!t.done?'is-today':''}"><label class="task-check"><input type="checkbox" data-complete="${escape(t.id)}" ${t.done?'checked':''} aria-label="Bajarildi: ${escape(t.title)}"></label><button class="task-main" data-task="${escape(t.id)}"><strong>${escape(t.title)}</strong><span class="task-meta">${icon('clock')}${t.time}<span>·</span>${escape(RESOURCE[t.resource].short||RESOURCE[t.resource].name)}</span></button><span class="skill-badge">${t.skill}</span><span class="task-duration">${icon('clock')}${t.duration} daq</span><button class="task-arrow" data-task="${escape(t.id)}" aria-label="${escape(t.title)}: tahrirlash">${icon('chevron-right')}</button></article>`).join('')}</div>`;}).join('');
+  return dates.map(date=>{const dayTasks=tasks.filter(t=>t.date===date).sort((a,b)=>a.time.localeCompare(b.time));return `<div class="day-group"><div class="day-heading"><h4>${DAY_NAMES[dayIndex(date)]}</h4><span>${formatDate(date)}</span>${date===dateString()?`<span class="day-today">${t('today')}</span>`:''}${date<dateString()&&dayTasks.some(t=>!t.done)?`<span>${t('pastDay')}</span>`:''}<small>${formatMinutes(dayTasks.reduce((n,t)=>n+t.duration,0))}</small></div>${dayTasks.map(trow=>`<article class="task-row ${trow.skill} ${trow.done?'done':''} ${trow.date===dateString()&&!trow.done?'is-today':''}"><label class="task-check"><input type="checkbox" data-complete="${escape(trow.id)}" ${trow.done?'checked':''} aria-label="${escape(t('doneAria',{title:trow.title}))}"></label><button class="task-main" data-task="${escape(trow.id)}"><strong>${escape(trow.title)}</strong><span class="task-meta">${icon('clock')}${trow.time}<span>·</span>${escape(RESOURCE[trow.resource].short||RESOURCE[trow.resource].name)}</span></button><span class="skill-badge">${trow.skill}</span><span class="task-duration">${icon('clock')}${trow.duration} ${t('daq')}</span><button class="task-arrow" data-task="${escape(trow.id)}" aria-label="${escape(t('editAria',{title:trow.title}))}">${icon('chevron-right')}</button></article>`).join('')}</div>`;}).join('');
 }
 function renderCalendar(start,tasks){
-  return `<div class="calendar-scroll" tabindex="0" role="region" aria-label="Haftalik kalendar, gorizontal surish mumkin"><div class="calendar-grid">${Array.from({length:7},(_,i)=>{const date=addDays(start,i),dayTasks=tasks.filter(t=>t.date===date).sort((a,b)=>a.time.localeCompare(b.time)),today=date===dateString();return `<div class="calendar-day ${today?'today':''}"><h4>${DAY_NAMES[i]}<span>${parseDate(date).getDate()}</span>${today?'<small>BUGUN</small>':''}</h4>${dayTasks.length?dayTasks.map(t=>`<div class="calendar-task ${t.skill} ${t.done?'done':''}"><button data-task="${escape(t.id)}"><time>${t.time}–${timeString(timeMinutes(t.time)+t.duration)}</time><strong>${escape(t.title)}</strong><small>${t.skill} · ${t.duration} daq</small></button><label><input type="checkbox" data-complete="${escape(t.id)}" ${t.done?'checked':''} aria-label="Bajarildi: ${escape(t.title)}">Bajarildi</label></div>`).join(''):`<div class="calendar-rest">${date===plan.profile.exam?'Imtihon kuni<br>Omad tilaymiz!':date>plan.profile.exam?'Imtihondan keyin':plan.profile.days.includes(i)?'Vazifa yo‘q':'Dam olish<br>Kuch to‘plang.'}</div>`}</div>`;}).join('')}</div></div><p class="calendar-hint">${icon('arrow-right')}Barcha kunlarni ko‘rish uchun yon tomonga suring.</p>`;
+  return `<div class="calendar-scroll" tabindex="0" role="region" aria-label="${escape(t('calAria'))}"><div class="calendar-grid">${Array.from({length:7},(_,i)=>{const date=addDays(start,i),dayTasks=tasks.filter(x=>x.date===date).sort((a,b)=>a.time.localeCompare(b.time)),today=date===dateString();return `<div class="calendar-day ${today?'today':''}"><h4>${DAY_NAMES[i]}<span>${parseDate(date).getDate()}</span>${today?`<small>${t('today')}</small>`:''}</h4>${dayTasks.length?dayTasks.map(trow=>`<div class="calendar-task ${trow.skill} ${trow.done?'done':''}"><button data-task="${escape(trow.id)}"><time>${trow.time}–${timeString(timeMinutes(trow.time)+trow.duration)}</time><strong>${escape(trow.title)}</strong><small>${trow.skill} · ${trow.duration} ${t('daq')}</small></button><label><input type="checkbox" data-complete="${escape(trow.id)}" ${trow.done?'checked':''} aria-label="${escape(t('doneAria',{title:trow.title}))}">${t('done')}</label></div>`).join(''):`<div class="calendar-rest">${date===plan.profile.exam?`${t('examDay')}<br>${t('goodLuck')}`:date>plan.profile.exam?t('afterExam'):plan.profile.days.includes(i)?t('noTask'):`${t('restDay')}<br>${t('restHint')}`}</div>`}</div>`;}).join('')}</div></div><p class="calendar-hint">${icon('arrow-right')}${t('calHint')}</p>`;
 }
 $('#prev-week').addEventListener('click',()=>{week--;dayFilter='all';render();});$('#next-week').addEventListener('click',()=>{week++;dayFilter='all';render();});$('#week-select').addEventListener('change',e=>{week=Number(e.target.value);dayFilter='all';render();});
 $('#day-filter').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(b){dayFilter=b.dataset.filter;render();}});
@@ -153,9 +153,9 @@ $('#task-content').addEventListener('change',e=>{
   if(!e.target.matches('[data-complete]'))return;
   const input=e.target,task=plan.tasks.find(t=>t.id===input.dataset.complete);
   if(!task)return;
-  if(!requirePersonal('Vazifani belgilash')){input.checked=task.done;return;}
+  if(!requirePersonal(t('markTask'))){input.checked=task.done;return;}
   task.done=input.checked;persist();render();
-  notify(task.done?'Yana bir qadam oldinga. Vazifa bajarildi!':'Vazifa qayta ochildi.');
+  notify(task.done?t('notifyDone'):t('notifyUndone'));
 });
 $('#task-content').addEventListener('click',e=>{const b=e.target.closest('[data-task]');if(b)openTask(b.dataset.task);});
 function openTask(id){
@@ -170,9 +170,9 @@ function openTask(id){
   $('#dialog-resource').hidden=!resource.url;
   if(resource.url){
     $('#dialog-resource').href=resource.url;
-    $('#dialog-resource').innerHTML=escape(resource.linkLabel||'Ton kabinetida ochish')+icon('external');
+    $('#dialog-resource').innerHTML=escape(resource.linkLabel||t('openInCabinet'))+icon('external');
   } else $('#dialog-resource').removeAttribute('href');
-  $('#dialog-access').textContent=resource.access+(resource.url==='https://tonielts.uz/'?' · Havola kabinetga olib boradi. Yuqorida ko‘rsatilgan resursni shu yerdan tanlang.':'');
+  $('#dialog-access').textContent=resource.access+(resource.url==='https://tonielts.uz/'?t('cabinetHint'):'');
   const today=dateString();
   $('#edit-date').value=task.date;
   $('#edit-date').min=task.date<today?task.date:today;
@@ -192,7 +192,7 @@ function closeDialog(){$('#task-dialog').close();editingId=null;}
 $('#close-dialog').addEventListener('click',closeDialog);$('#cancel-edit').addEventListener('click',closeDialog);$('#task-dialog').addEventListener('click',e=>{if(e.target===$('#task-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog();}});
 $('#task-edit-form').addEventListener('submit',e=>{
   e.preventDefault();
-  if(!requirePersonal('Vazifani tahrirlash'))return;
+  if(!requirePersonal(t('editTask')))return;
   const task=plan.tasks.find(t=>t.id===editingId);if(!task)return;
   const changes={date:$('#edit-date').value,time:$('#edit-time').value,duration:Number($('#edit-duration').value)};
   const error=validateTaskEdit(task,changes,plan);
@@ -204,26 +204,26 @@ $('#task-edit-form').addEventListener('submit',e=>{
   plan.tasks.sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
   week=Math.max(0,weekDates(plan).indexOf(monday(task.date)));
   dayFilter='all';skillFilter='all';$('#skill-filter').value='all';
-  persist();closeDialog();render();notify('Mashg‘ulot vaqti yangilandi.');
+  persist();closeDialog();render();notify(t('notifyRescheduled'));
 });
 $('#export').addEventListener('click',()=>{
-  const tasks=currentTasks();if(!tasks.length){notify('Bu haftada yuklash uchun vazifa yo‘q.');return;}
+  const tasks=currentTasks();if(!tasks.length){notify(t('exportEmpty'));return;}
   const icsEscape=s=>s.replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
   const dateTime=(date,time)=>date.replaceAll('-','')+'T'+time.replace(':','')+'00';
   const timestamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
-  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Ton Academy//IELTS Planner//UZ','CALSCALE:GREGORIAN',...tasks.flatMap(t=>['BEGIN:VEVENT',`UID:${t.id}@ton-ielts-planner`,`DTSTAMP:${timestamp}`,`DTSTART:${dateTime(t.date,t.time)}`,`DTEND:${dateTime(timeMinutes(t.time)+t.duration===1440?addDays(t.date,1):t.date,timeMinutes(t.time)+t.duration===1440?'00:00':timeString(timeMinutes(t.time)+t.duration))}`,`SUMMARY:${icsEscape(t.skill+': '+t.title)}`,`DESCRIPTION:${icsEscape([t.description,t.source,...(t.steps||[]).map(s=>s.minutes+' daq: '+s.text),t.outcome,t.checkpoint,t.ifStuck,t.reviewNext,RESOURCE[t.resource].url].filter(Boolean).join('\n'))}`,'END:VEVENT']),'END:VCALENDAR'];
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Ton Academy//IELTS Planner//UZ','CALSCALE:GREGORIAN',...tasks.flatMap(task=>['BEGIN:VEVENT',`UID:${task.id}@ton-ielts-planner`,`DTSTAMP:${timestamp}`,`DTSTART:${dateTime(task.date,task.time)}`,`DTEND:${dateTime(timeMinutes(task.time)+task.duration===1440?addDays(task.date,1):task.date,timeMinutes(task.time)+task.duration===1440?'00:00':timeString(timeMinutes(task.time)+task.duration))}`,`SUMMARY:${icsEscape(task.skill+': '+task.title)}`,`DESCRIPTION:${icsEscape([task.description,task.source,...(task.steps||[]).map(s=>s.minutes+' '+t('daq')+': '+s.text),task.outcome,task.checkpoint,task.ifStuck,task.reviewNext,RESOURCE[task.resource].url].filter(Boolean).join('\n'))}`,'END:VEVENT']),'END:VCALENDAR'];
   // Fold lines to 75 UTF-8 octets as required by iCalendar.
   const encoder=new TextEncoder();const folded=lines.map(line=>{let out='',chunk='',bytes=0;for(const c of line){const size=encoder.encode(c).length;if(bytes+size>75){out+=chunk+'\r\n';chunk=' ';bytes=1;}chunk+=c;bytes+=size;}return out+chunk;}).join('\r\n')+'\r\n';
-  const blob=new Blob([folded],{type:'text/calendar;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`ton-ielts-${week+1}-hafta.ics`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('Hafta yuklandi. Faylni o‘z kalendaringizda oching.');
+  const blob=new Blob([folded],{type:'text/calendar;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`ton-ielts-${week+1}-${t('icsWeek')}.ics`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(t('exportDone'));
 });
 function renderTaskDetails(task){
-  $('#dialog-source-kind').textContent=RESOURCE[task.resource].selfStudy?'MUSTAQIL SPEAKING':'TON ACADEMY RESURSI';
+  $('#dialog-source-kind').textContent=RESOURCE[task.resource].selfStudy?t('sourceSelf'):t('sourceTon');
   $('#dialog-source').textContent=task.source||RESOURCE[task.resource].name;
-  $('#dialog-steps').innerHTML=(task.steps||[]).map(step=>`<li><span class="step-time">${step.minutes} daq</span><span>${escape(step.text)}</span></li>`).join('');
+  $('#dialog-steps').innerHTML=(task.steps||[]).map(step=>`<li><span class="step-time">${step.minutes} ${t('daq')}</span><span>${escape(step.text)}</span></li>`).join('');
   $('#dialog-steps').hidden=!task.steps?.length;
   $('#dialog-outcome').textContent=task.outcome||'';
   $('#dialog-outcome').hidden=!task.outcome;
-  $('#dialog-checkpoint').textContent=task.checkpoint?'O‘zingizni tekshiring: '+task.checkpoint:'';
+  $('#dialog-checkpoint').textContent=task.checkpoint?t('checkpoint',{text:task.checkpoint}):'';
   $('#dialog-checkpoint').hidden=!task.checkpoint;
   $('#dialog-help-text').textContent=task.ifStuck||'';
   $('#dialog-review-next').textContent=task.reviewNext||'';
@@ -237,18 +237,18 @@ window.addEventListener('beforeunload',e=>{if(accountStore.state().pending){e.pr
 fillForm(plan.profile);icons();render();
 if(contentUpdated){
   persist();
-  notify('Vazifalar yangilandi. Bajarilgan ishlar va jadvalingiz saqlandi.');
+  notify(t('contentUpdated'));
 }
 if(!isSample&&plan.profile.exam<=dateString()){
-  $('#dirty-message').textContent='Imtihon sanasi o‘tgan. Yangi sana tanlab “Rejani yangilash” tugmasini bosing.';
+  $('#dirty-message').textContent=t('dirtyExamPast');
   $('#dirty-message').hidden=false;
   $('#exam').value=addDays(dateString(),56);
 }
 else if(!DAILY_MINUTES.includes(plan.profile.minutes)){
-  $('#dirty-message').textContent='Avvalgi jadvalingiz saqlandi. Kuniga 1–4 soatlik yangi rejani qo‘llash uchun “Rejani yangilash” tugmasini bosing.';
+  $('#dirty-message').textContent=t('dirtyMinutes');
   $('#dirty-message').hidden=false;
 }
 if(isSample){
-  $('#dirty-message').textContent='Bu namuna reja. O‘zingizning ballaringizni tanlab “Mening rejamni tuzish” tugmasini bosing — shundan keyin saqlanadi.';
+  $('#dirty-message').textContent=t('dirtySample');
   $('#dirty-message').hidden=false;
 }
