@@ -2265,7 +2265,7 @@ class PracticeLabRecord(models.Model):
         verbose_name_plural = "Mashq yozuvlari"
         ordering = ['-updated_at']
         indexes = [
-            models.Index(fields=['user', 'skill', 'kind', '-updated_at']),
+            models.Index(fields=['user', 'skill', 'kind', '-updated_at'], name='core_plab_user_kind_idx'),
         ]
 
     def __str__(self):
