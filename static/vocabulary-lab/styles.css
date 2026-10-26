@@ -469,9 +469,10 @@
 .vocab-lab .empty { text-align: center; padding: 60px 25px; }
 .vocab-lab .empty .iconbox { margin: 0 auto 22px; width: 54px; height: 54px; border-radius: 17px; }
 .vocab-lab .empty p { max-width: 650px; margin: 12px auto; }
-.vocab-lab .modalback { position: fixed; inset: 0; background: #10213b80; display: grid; place-items: center; z-index: 100; padding: 20px; }
-.vocab-lab .modal { width: min(560px,100%); max-height: 85vh; overflow: auto; background: #fff; padding: 30px; border-radius: 22px; box-shadow: 0 20px 70px #0e1c3940; }
-.vocab-lab .modal h2 { margin-bottom: 15px; font-size: 23px; }
+/* Do NOT use Bootstrap's .modal class — it sets display:none and hides our dialog behind a dead overlay. */
+.vocab-lab .vocab-modalback { position: fixed; inset: 0; background: #10213b80; display: grid; place-items: center; z-index: 1050; padding: 20px; }
+.vocab-lab .vocab-dialog { display: block; width: min(560px,100%); max-height: 85vh; overflow: auto; background: #fff; padding: 30px; border-radius: 22px; box-shadow: 0 20px 70px #0e1c3940; }
+.vocab-lab .vocab-dialog h2 { margin-bottom: 15px; font-size: 23px; }
 .vocab-lab .toast { position: fixed; bottom: 25px; right: 25px; z-index: 150; background: var(--navy); color: white; padding: 16px 23px; border-radius: 12px; box-shadow: 0 8px 24px #0002; font-size: 13px; max-width: 90vw; }
 .vocab-lab .loading { padding: 85px 20px; text-align: center; }
 .vocab-lab .spinner { width: 40px; height: 40px; border: 3px solid #e2e9fa; border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 26px; }@keyframes spin { to { transform: rotate(360deg); } }
@@ -637,7 +638,7 @@
 .vocab-lab .principle { line-height: 1.8; font-size: 12px; }
 .vocab-lab .modegroup { width: 100%; }
 .vocab-lab .modegroup button { flex: 1; }
-.vocab-lab .modal { padding: 24px; }
+.vocab-lab .vocab-dialog { padding: 24px; }
 .vocab-lab .setting { align-items: flex-start; }
 .vocab-lab .setting .field { width: auto; }
 }@media (max-width: 360px) {.vocab-lab .content { padding-inline: 15px; }
