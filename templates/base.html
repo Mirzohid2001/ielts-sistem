@@ -25,7 +25,7 @@
     <a href="#main-content" class="skip-to-content">{% trans "Asosiy kontentga o'tish" %}</a>
     {% if user.is_authenticated %}
     {% with ns=request.resolver_match.namespace name=request.resolver_match.url_name %}
-    <nav class="navbar navbar-expand-lg">
+    <nav class="navbar navbar-expand-xl">
         <div class="container">
             <a class="navbar-brand" href="{% url 'core:module_selector' %}">
                 <i class="fas fa-graduation-cap me-2"></i>Ton academy
@@ -35,7 +35,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if ns == 'core' and name != 'module_selector' and name != 'profile' and name != 'profile_section' %}
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav navbar-nav-main me-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'module_selector' %}active{% endif %}" 
                            href="{% url 'core:module_selector' %}">{% trans "Bo'limlar" %}</a>
@@ -54,7 +54,11 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'study_planner' %}active{% endif %}"
-                           href="{% url 'core:study_planner' %}">{% trans "IELTS rejam" %}</a>
+                           href="{% url 'core:study_planner' %}">{% trans "Rejam" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'vocabulary_lab' %}active{% endif %}"
+                           href="{% url 'core:vocabulary_lab' %}">{% trans "Lug‘at" %}</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'leaderboard' in request.path %}active{% endif %}" 
@@ -82,11 +86,11 @@
                     {% endif %}
                 </ul>
                 {% endif %}
-                <ul class="navbar-nav align-items-lg-center">
-                    <li class="nav-item me-lg-2 d-flex align-items-center py-1">
+                <ul class="navbar-nav align-items-xl-center ms-xl-auto">
+                    <li class="nav-item me-xl-2 d-flex align-items-center py-1">
                         {% include 'core/partials/lang_toggle.html' %}
                     </li>
-                    <li class="nav-item dropdown me-lg-2">
+                    <li class="nav-item dropdown me-xl-2">
                         <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell"></i>
                             {% if notification_count %}

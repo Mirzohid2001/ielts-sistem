@@ -100,7 +100,7 @@ html {
     -webkit-backdrop-filter: blur(30px) saturate(180%);
     box-shadow: var(--shadow-lg);
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 1.25rem 0;
+    padding: 0.85rem 0;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -110,12 +110,18 @@ html {
 .navbar.scrolled {
     background: rgba(255, 255, 255, 0.95) !important;
     box-shadow: var(--shadow-xl);
-    padding: 0.75rem 0;
+    padding: 0.65rem 0;
+}
+
+.navbar .container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .navbar-brand {
     font-weight: 800;
-    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-size: clamp(1.2rem, 2.4vw, 1.5rem);
     background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 50%, var(--pink) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -124,10 +130,12 @@ html {
     animation: gradient 3s ease infinite;
     transition: all var(--transition-base);
     white-space: nowrap;
+    line-height: 1.2;
+    margin-right: 1rem;
 }
 
 .navbar-brand:hover {
-    transform: scale(1.05);
+    transform: scale(1.03);
 }
 
 .navbar-toggler {
@@ -146,44 +154,59 @@ html {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
+.navbar-nav-main {
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.125rem;
+    margin-right: 0.75rem !important;
+}
+
+.navbar-nav-main .nav-item {
+    display: flex;
+    align-items: center;
+}
+
 .nav-link {
     font-weight: 600;
     color: var(--gray-700) !important;
-    transition: all var(--transition-base);
+    transition: color var(--transition-base), background var(--transition-base);
     position: relative;
-    padding: 0.5rem 1rem !important;
-    border-radius: 12px;
-    font-size: clamp(0.875rem, 2vw, 1rem);
+    padding: 0.45rem 0.7rem !important;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
 }
 
 .nav-link::before {
     content: '';
     position: absolute;
-    bottom: 0;
+    bottom: 0.2rem;
     left: 50%;
     transform: translateX(-50%);
     width: 0;
-    height: 3px;
+    height: 2px;
     background: linear-gradient(90deg, var(--primary) 0%, var(--purple) 100%);
-    border-radius: 3px;
+    border-radius: 2px;
     transition: width var(--transition-base);
 }
 
 .nav-link:hover::before,
 .nav-link.active::before {
-    width: 80%;
+    width: 55%;
 }
 
 .nav-link:hover {
     color: var(--primary) !important;
-    background: rgba(99, 102, 241, 0.1);
-    transform: translateY(-2px);
+    background: rgba(99, 102, 241, 0.08);
 }
 
 .nav-link.active {
     color: var(--primary) !important;
     font-weight: 700;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    background: rgba(99, 102, 241, 0.1);
 }
 
 /* Dropdown Menu */
@@ -4753,6 +4776,51 @@ a.mashq-metric:hover {
     }
 }
 
+/* Navbar horizontal from xl — keep links on one line */
+@media (min-width: 1200px) {
+    .navbar .navbar-collapse {
+        display: flex !important;
+        flex-basis: auto;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .navbar-nav-main {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .navbar-nav-main .nav-link {
+        padding: 0.4rem 0.62rem !important;
+        font-size: 0.8125rem;
+        letter-spacing: 0.01em;
+    }
+}
+
+/* Collapsed navbar until xl */
+@media (max-width: 1199.98px) {
+    .navbar-nav-main {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        width: 100%;
+        margin-right: 0 !important;
+        margin-bottom: 0.75rem;
+    }
+
+    .navbar-nav-main .nav-link {
+        width: 100%;
+        white-space: normal;
+        padding: 0.7rem 0.9rem !important;
+        font-size: 0.9375rem;
+    }
+
+    .navbar-collapse {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+    }
+}
+
 /* Medium Devices (Tablets, 768px and up) */
 @media (min-width: 768px) and (max-width: 991.98px) {
     .container {
@@ -6510,7 +6578,7 @@ a.mashq-metric:hover {
 
 .dash-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
 }
 
@@ -6546,6 +6614,7 @@ a.mashq-metric:hover {
 
 .dash-action--gold::before { background: linear-gradient(135deg, rgba(245,158,11,0.08), transparent); }
 .dash-action--primary::before { background: linear-gradient(135deg, rgba(99,102,241,0.08), transparent); }
+.dash-action--info::before { background: linear-gradient(135deg, rgba(14,165,233,0.08), transparent); }
 .dash-action--success::before { background: linear-gradient(135deg, rgba(16,185,129,0.08), transparent); }
 
 .dash-action:hover {
@@ -6582,6 +6651,10 @@ a.mashq-metric:hover {
 
 .dash-action--primary .dash-action__icon {
     background: linear-gradient(135deg, var(--primary), #818cf8);
+}
+
+.dash-action--info .dash-action__icon {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
 }
 
 .dash-action--success .dash-action__icon {

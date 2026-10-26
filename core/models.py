@@ -2312,6 +2312,30 @@ class IELTSStudyPlan(models.Model):
         return f"plan:{self.user_id} rev:{self.revision}"
 
 
+class VocabularyLabProgress(models.Model):
+    """Student Vocabulary Lab progress (optimistic locking bilan)."""
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='vocabulary_lab_progress',
+        verbose_name="Foydalanuvchi",
+    )
+    revision = models.PositiveBigIntegerField(default=1, verbose_name="Versiya")
+    document = models.JSONField(default=dict, blank=True, verbose_name="Progress hujjati")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan")
+
+    class Meta:
+        verbose_name = "Vocabulary Lab progress"
+        verbose_name_plural = "Vocabulary Lab progress"
+        indexes = [
+            models.Index(fields=['user', 'revision']),
+        ]
+
+    def __str__(self):
+        return f"vocab:{self.user_id} rev:{self.revision}"
+
+
 # Signal: UserTestAnswer o'zgarganda natijani qayta hisoblash (admin essay baholaganda)
 from django.db.models.signals import post_save
 from django.dispatch import receiver

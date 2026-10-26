@@ -24,6 +24,9 @@
                     <a href="{% url 'core:study_planner' %}" class="dash-hero__chip">
                         <i class="fas fa-calendar-check"></i>{% trans "IELTS rejam" %}
                     </a>
+                    <a href="{% url 'core:vocabulary_lab' %}" class="dash-hero__chip">
+                        <i class="fas fa-book-open"></i>{% trans "Vocabulary Lab" %}
+                    </a>
                 </div>
             </div>
             <div class="dash-hero__score scale-in">
@@ -127,7 +130,15 @@
             </div>
             <i class="fas fa-arrow-right dash-action__arrow"></i>
         </a>
-        <a href="{% url 'core:profile' %}" class="dash-action dash-action--success dash-action--enter" style="--enter-i: 2;">
+        <a href="{% url 'core:vocabulary_lab' %}" class="dash-action dash-action--info dash-action--enter" style="--enter-i: 2;">
+            <div class="dash-action__icon"><i class="fas fa-book-open fa-lg"></i></div>
+            <div class="dash-action__text">
+                <strong>{% trans "Vocabulary Lab" %}</strong>
+                <small>{% trans "Lug‘at va Lexical Resource" %}</small>
+            </div>
+            <i class="fas fa-arrow-right dash-action__arrow"></i>
+        </a>
+        <a href="{% url 'core:profile' %}" class="dash-action dash-action--success dash-action--enter" style="--enter-i: 3;">
             <div class="dash-action__icon"><i class="fas fa-user fa-lg"></i></div>
             <div class="dash-action__text">
                 <strong>{% trans "Profil" %}</strong>

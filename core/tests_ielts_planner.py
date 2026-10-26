@@ -110,17 +110,21 @@ class IELTSPlannerAPITests(TestCase):
         self.assertIn('navbar', body)
 
     def test_page_russian_i18n(self):
-        from django.utils import translation
-        with translation.override('ru'):
-            response = self.client.get(reverse('core:study_planner'))
+        self.client.cookies['ai_lang'] = 'ru'
+        response = self.client.get(reverse('core:study_planner'))
         self.assertEqual(response.status_code, 200)
         body = response.content.decode()
+        self.assertIn('lang="ru"', body)
         self.assertIn('Мой IELTS план', body)
         self.assertIn('Большая цель.', body)
         self.assertIn('Это образец плана', body)
         self.assertIn('Составить мой план', body)
         self.assertIn('"dayNames"', body)
-        self.assertIn('Понедельник', body)
+        # json_script ensure_ascii: Понедельник → \u041f\u043e\u043d…
+        self.assertIn(
+            '\\u041f\\u043e\\u043d\\u0435\\u0434\\u0435\\u043b\\u044c\\u043d\\u0438\\u043a',
+            body,
+        )
 
     def test_get_empty_plan(self):
         response = self.client.get(self.api)

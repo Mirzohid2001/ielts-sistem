@@ -3106,3 +3106,386 @@ msgstr "Самостоятельно · разбор записи"
 
 msgid "Telefon diktofoni, taymer va qayd daftari yetarli"
 msgstr "Достаточно диктофона, таймера и блокнота"
+
+msgid "Vocabulary Lab"
+msgstr "Vocabulary Lab"
+
+msgid "Lug‘at va Lexical Resource"
+msgstr "Словарь и Lexical Resource"
+
+msgid "IELTS vocabulary — natural ishlatishni o‘rganing."
+msgstr "IELTS vocabulary — учитесь использовать язык естественно."
+
+
+# Vocabulary Lab UI
+
+msgid "Umumiy sahifa"
+msgstr "Обзор"
+
+msgid "Takrorlash"
+msgstr "Повторение"
+
+msgid "Mening so‘zlarim"
+msgstr "Мои слова"
+
+msgid "Sozlamalar"
+msgstr "Настройки"
+
+msgid "Vocabulary Lab bo‘limlari"
+msgstr "Разделы Vocabulary Lab"
+
+msgid "Saqlash muammosi"
+msgstr "Проблема сохранения"
+
+msgid "Progress saqlanmadi. Sozlamalardan zaxira eksport qiling."
+msgstr "Прогресс не сохранён. Экспортируйте резервную копию в настройках."
+
+msgid "Progress hisobingizga saqlanmadi. Sozlamalardan zaxira eksport qiling, keyin qayta urinib ko‘ring."
+msgstr "Прогресс не сохранён в аккаунт. Экспортируйте резервную копию в настройках и попробуйте снова."
+
+msgid "Progress yuklanmadi."
+msgstr "Не удалось загрузить прогресс."
+
+msgid "Tizimga kirganingizni tekshiring, keyin sahifani yangilang."
+msgstr "Проверьте, что вы вошли в систему, затем обновите страницу."
+
+msgid "Vocabulary mashqi tayyorlanmoqda..."
+msgstr "Готовим Vocabulary Lab..."
+
+msgid "Foydali so‘zlar tanlanmoqda · Darajangizga moslash"
+msgstr "Подбираем полезные выражения · под ваш уровень"
+
+msgid "Misollar · kollokatsiyalar · mashqlar"
+msgstr "Примеры · коллокации · упражнения"
+
+msgid "Mashq darajasi"
+msgstr "Уровень практики"
+
+msgid "KABINET · VOCABULARY"
+msgstr "КАБИНЕТ · VOCABULARY"
+
+msgid "IELTS uchun foydali ifodalar — va ularni tabiiy ishlatish."
+msgstr "Полезные выражения для IELTS — и как использовать их естественно."
+
+msgid "OZROQ MASHQ. UZOQ NATIJA."
+msgstr "НЕМНОГО ПРАКТИКИ. ДОЛГИЙ РЕЗУЛЬТАТ."
+
+msgid "Yangi tilni o‘zingizniki qiling."
+msgstr "Сделайте новый язык своим."
+
+msgid "Lug‘at to‘plang, Lexical Resourceni yaxshilang va yangi tilni haqiqatan ishlatadigan tilga aylantiring."
+msgstr "Набирайте словарь, улучшайте Lexical Resource и превращайте новый язык в тот, которым вы реально пользуетесь."
+
+msgid "Tabiiy til. Ma’noli mashq. Haqiqiy progress."
+msgstr "Естественный язык. Осмысленная практика. Реальный прогресс."
+
+msgid "Mashqni davom ettirish →"
+msgstr "Продолжить занятие →"
+
+msgid "“{title}” mashqingiz saqlangan."
+msgstr "Ваше занятие «{title}» сохранено."
+
+msgid "Bugungi mashq"
+msgstr "Практика на сегодня"
+
+msgid "Har kuni kichik qadam oldinga"
+msgstr "Каждый день — небольшой шаг вперёд"
+
+msgid "LUG‘AT TO‘PLASH"
+msgstr "НАБОР СЛОВАРЯ"
+
+msgid "Yangi lug‘at o‘rganish"
+msgstr "Учить новый словарь"
+
+msgid "yangi ifoda"
+msgstr "новых выражений"
+
+msgid "mashq uchun ifoda"
+msgstr "выражений для практики"
+
+msgid "O‘rganishni boshlash"
+msgstr "Начать изучение"
+
+msgid "IELTS rejangiz tavsiya qiladi"
+msgstr "Рекомендовано вашим планом IELTS"
+
+msgid "YANGILAB TURING"
+msgstr "ДЕРЖИТЕ В ПАМЯТИ"
+
+msgid "Lug‘atni takrorlash"
+msgstr "Повторить словарь"
+
+msgid "bugun muddati kelgan"
+msgstr "к повторению сегодня"
+
+msgid "Eslab qolish va ishlatish"
+msgstr "Вспоминание и использование"
+
+msgid "Takrorlashni boshlash"
+msgstr "Начать повторение"
+
+msgid "Qisqa takrorlash tilni mustahkamlaydi"
+msgstr "Короткое повторение закрепляет язык"
+
+msgid "Lexical Resourceni yaxshilang"
+msgstr "Улучшите Lexical Resource"
+
+msgid "Hammasini ko‘rish"
+msgstr "Смотреть все"
+
+msgid "Yaxshiroq so‘zlar. Yaxshiroq yozuv."
+msgstr "Лучшие слова. Лучшее письмо."
+
+msgid "Tilni tabiiy, aniq va moslashuvchan ishlatishni mashq qiling."
+msgstr "Тренируйтесь использовать язык естественно, точно и гибко."
+
+msgid "Siz uchun tavsiya"
+msgstr "Рекомендация для вас"
+
+msgid "Lug‘atdan o‘z writingingizga"
+msgstr "От словаря к своему Writing"
+
+msgid "Yangi ifodalarni qisqa IELTS uslubidagi topshiriqda ishlating."
+msgstr "Используйте новые выражения в коротком задании в стиле IELTS."
+
+msgid "Writing transfer →"
+msgstr "Writing transfer →"
+
+msgid "Lug‘at yo‘lingiz"
+msgstr "Ваш путь в словаре"
+
+msgid "O‘rganilgan ifodalar"
+msgstr "Выученные выражения"
+
+msgid "Hozir o‘rganilmoqda"
+msgstr "Сейчас изучаются"
+
+msgid "Faol eslab qolingan"
+msgstr "Активно вспомнены"
+
+msgid "Mustaqil ishlatilgan"
+msgstr "Использованы самостоятельно"
+
+msgid "O‘zlashtirilgan"
+msgstr "Освоены"
+
+msgid "Keyingi qadam: productive recall"
+msgstr "Следующий шаг: productive recall"
+
+msgid "Taniysiz — endi o‘z gaplaringizda ishlatishni mashq qiling."
+msgstr "Вы узнаёте — теперь тренируйтесь использовать в своих предложениях."
+
+msgid "Progressim →"
+msgstr "Мой прогресс →"
+
+msgid "IELTS rejangizda"
+msgstr "В вашем плане IELTS"
+
+msgid "IELTS rejamni ochish →"
+msgstr "Открыть мой план IELTS →"
+
+msgid "Kuchli lug‘at — murakkab emas, balki tabiiy, aniq va moslashuvchan til."
+msgstr "Сильный словарь — это не сложность, а естественный, точный и гибкий язык."
+
+msgid "Foydali ifodalarni toping, keyin ularni o‘z tilingizga aylantiring."
+msgstr "Найдите полезные выражения, затем сделайте их частью своего языка."
+
+msgid "TIZIM A · VOCABULARY BUILDER"
+msgstr "СИСТЕМА A · VOCABULARY BUILDER"
+
+msgid "IELTS mavzular"
+msgstr "Темы IELTS"
+
+msgid "Academic Functions"
+msgstr "Academic Functions"
+
+msgid "Mavzularni qidirish…"
+msgstr "Поиск тем…"
+
+msgid "Funksiyalarni qidirish…"
+msgstr "Поиск функций…"
+
+msgid "to‘plam"
+msgstr "коллекций"
+
+msgid "ifoda"
+msgstr "выражений"
+
+msgid "Qidiruvga mos to‘plam yo‘q."
+msgstr "Нет коллекций по этому поиску."
+
+msgid "Aniq, tabiiy va moslashuvchan tilni tanlashni o‘rganing."
+msgstr "Учитесь выбирать точный, естественный и гибкий язык."
+
+msgid "TIZIM B · LEXICAL RESOURCE"
+msgstr "СИСТЕМА B · LEXICAL RESOURCE"
+
+msgid "Mashq rejimi"
+msgstr "Режим практики"
+
+msgid "Challenge"
+msgstr "Challenge"
+
+msgid "Lug‘atingizni jonli tuting"
+msgstr "Держите словарь активным"
+
+msgid "Bugungi qisqa takrorlash ertaga eslab qolishni osonlashtiradi."
+msgstr "Короткое повторение сегодня облегчит вспоминание завтра."
+
+msgid "MOSLASHUVCHAN TAKROR"
+msgstr "АДАПТИВНОЕ ПОВТОРЕНИЕ"
+
+msgid "takrorlashga tayyor ifoda"
+msgstr "выражений готовы к повторению"
+
+msgid "Takrorlash navbati"
+msgstr "Очередь повторения"
+
+msgid "Vaqt natijangizga moslashadi"
+msgstr "Интервал подстраивается под ваш результат"
+
+msgid "O‘rganilganlarni mashq qilish →"
+msgstr "Практиковать изученное →"
+
+msgid "Hammasi yangilangan."
+msgstr "Всё актуально."
+
+msgid "Yangi takrorlashlar muddati kelganda chiqadi. Saqlangan ifodalarni ham mashq qilishingiz mumkin."
+msgstr "Новые повторения появятся, когда подойдёт срок. Можно также практиковать сохранённые выражения."
+
+msgid "Mening lug‘atim"
+msgstr "Мой словарь"
+
+msgid "Haqiqatan ishlata oladigan tilingiz to‘plami."
+msgstr "Коллекция языка, которым вы действительно можете пользоваться."
+
+msgid "SHAXSIY TO‘PLAM"
+msgstr "ЛИЧНАЯ КОЛЛЕКЦИЯ"
+
+msgid "Hammasi"
+msgstr "Все"
+
+msgid "O‘rganilmoqda"
+msgstr "Изучается"
+
+msgid "Eslab qilingan"
+msgstr "Вспомнено"
+
+msgid "Ishlatilgan"
+msgstr "Использовано"
+
+msgid "Mavzular va funksiyalar"
+msgstr "Темы и функции"
+
+msgid "Ifoda qidirish…"
+msgstr "Найти выражение…"
+
+msgid "Barcha mavzular"
+msgstr "Все темы"
+
+msgid "Bu filtrga mos ifoda yo‘q. Boshqa filtr yoki yangi to‘plamni sinab ko‘ring."
+msgstr "Нет выражений по этому фильтру. Попробуйте другой фильтр или новую коллекцию."
+
+msgid "Maqsadli progress"
+msgstr "Прогресс с целью"
+
+msgid "Nimani taniysiz, eslaysiz va mustaqil ishlatasiz — shuni o‘lchang."
+msgstr "Измеряйте то, что узнаёте, вспоминаете и используете самостоятельно."
+
+msgid "MENING PROGRESSIM"
+msgstr "МОЙ ПРОГРЕСС"
+
+msgid "Ko‘nikmalar va ifodalar to‘plami"
+msgstr "Навыки и коллекция выражений"
+
+msgid "Mening lug‘atim →"
+msgstr "Мой словарь →"
+
+msgid "Recognition aniqligi"
+msgstr "Точность Recognition"
+
+msgid "Production aniqligi"
+msgstr "Точность Production"
+
+msgid "Vocabulary Labdagi faoliyatingiz"
+msgstr "Ваша активность в Vocabulary Lab"
+
+msgid "Lug‘at tarixi"
+msgstr "История словаря"
+
+msgid "Ishingizga qayting va tilingiz qanday o‘sganini ko‘ring."
+msgstr "Вернитесь к работе и посмотрите, как растёт ваш язык."
+
+msgid "O‘QUV YOZUVINGIZ"
+msgstr "ВАША УЧЕБНАЯ ЗАПИСЬ"
+
+msgid "topshiriq"
+msgstr "заданий"
+
+msgid "Natijalarni ko‘rish"
+msgstr "Смотреть результаты"
+
+msgid "Qayta takrorlash"
+msgstr "Повторить снова"
+
+msgid "Keyingi mashq hikoyangizni boshlaydi."
+msgstr "Следующее занятие начнёт вашу историю."
+
+msgid "Tugallangan mashqlar va writing transfer shu yerda chiqadi."
+msgstr "Завершённые занятия и writing transfer появятся здесь."
+
+msgid "Mashqni o‘zingizga moslang"
+msgstr "Настройте практику под себя"
+
+msgid "Darajalar lug‘at mashqi qiyinligini bildiradi, IELTS band emas."
+msgstr "Уровни показывают сложность словарной практики, а не балл IELTS."
+
+msgid "Mashqdagi ifodalar soni"
+msgstr "Число выражений в занятии"
+
+msgid "Progressni eksport qilish"
+msgstr "Экспортировать прогресс"
+
+msgid "Progressni tiklash"
+msgstr "Сбросить прогресс"
+
+msgid "Vocabulary Lab haqida"
+msgstr "О Vocabulary Lab"
+
+msgid "IELTS uslubidagi lug‘at mashqi va mahalliy tekshiruvlar. Progress Ton Academy hisobingizga saqlanadi."
+msgstr "Словарная практика в стиле IELTS и локальные проверки. Прогресс сохраняется в аккаунте Ton Academy."
+
+msgid "Ochiq javoblar hozircha pattern-check — to‘liq IELTS ball emas."
+msgstr "Открытые ответы пока проверяются по шаблону — это не полный балл IELTS."
+
+msgid "Hali emas"
+msgstr "Ещё нет"
+
+msgid "Internet yo‘q. Bu tabdagi kontent va progress saqlanadi."
+msgstr "Нет интернета. Контент и прогресс на этой вкладке сохраняются."
+
+msgid "Xatolik yuz berdi. Oxirgi saqlangan mashq umumiy sahifadan ochiladi."
+msgstr "Произошла ошибка. Последнее сохранённое занятие откроется с обзора."
+
+msgid "Vocabulary Lab yuklanmoqda…"
+msgstr "Загружаем Vocabulary Lab…"
+
+msgid "Lexical"
+msgstr "Lexical"
+
+msgid "Writing"
+msgstr "Writing"
+
+msgid "Recognition"
+msgstr "Recognition"
+
+msgid "Production"
+msgstr "Production"
+
+# Compact navbar labels
+
+msgid "Rejam"
+msgstr "План"
+
+msgid "Lug‘at"
+msgstr "Словарь"

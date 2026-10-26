@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans "Vocabulary Lab" %} · Ton academy{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vocabulary-lab/styles.css' %}?v={{ STATIC_ASSET_VERSION }}">
+{% endblock %}
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<div class="container vocab-shell">
+  <nav class="vocab-crumb" aria-label="{% trans 'Navigatsiya' %}">
+    <a href="{{ vocab_boot.dashboardUrl }}">{% trans "Bosh sahifa" %}</a>
+    <span aria-hidden="true">›</span>
+    <span class="is-on">{% trans "Vocabulary Lab" %}</span>
+  </nav>
+  <div id="app" class="vocab-lab" aria-live="polite">
+    <div class="loading" style="padding:3rem;text-align:center;width:100%">
+      <p style="margin:0;color:#627188">{% trans "Vocabulary Lab yuklanmoqda…" %}</p>
+    </div>
+  </div>
+</div>
+{{ vocab_boot|json_script:"vocabLabBoot" }}
+{{ vocab_i18n|json_script:"vocabLabI18n" }}
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="{% static 'vocabulary-lab/app.js' %}?v={{ STATIC_ASSET_VERSION }}"></script>
+{% endblock %}
