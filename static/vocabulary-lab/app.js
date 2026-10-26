@@ -5,21 +5,25 @@ import{t}from'./i18n.js';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const boot=(()=>{try{return JSON.parse(document.getElementById('vocabLabBoot')?.textContent||'{}');}catch{return {};}})();
 const accountStore=createAccountStore({endpoint:boot.apiUrl||'/ielts/vocabulary/api/'});
-let state,storageError=false;
-const appRoot=document.getElementById('app');
-if(appRoot)appRoot.setAttribute('aria-busy','true');
+let state=emptyProgress(),storageError=false;
+// Never leave the cabinet non-interactive (old builds used document.body.inert).
+document.body.inert=false;
+document.body.removeAttribute('inert');
+let loadFailed=false;
 try{
   const saved=await accountStore.load();
   if(saved!==null&&!validProgress(saved))throw new Error('INVALID_SAVED_PROGRESS');
-  state=saved||emptyProgress();
+  if(saved)state=saved;
 }catch(err){
-  if(appRoot){appRoot.removeAttribute('aria-busy');appRoot.innerHTML=`<div class="loading"><h2>${t('loadFailTitle')}</h2><p>${t('loadFailBody')}</p><button class="btn" type="button" onclick="location.reload()">${t('reload')}</button></div>`;}
-  throw err;
+  console.error(err);
+  loadFailed=true;
+  storageError=true;
 }
-if(appRoot)appRoot.removeAttribute('aria-busy');
+document.body.inert=false;
+document.body.removeAttribute('inert');
 if(state.plan.date!==new Date().toDateString())state.plan={...state.plan,date:new Date().toDateString(),done:[]};
 let page='home',tab='topic',search='',filter='All',filterTopic='All topics',modal=null,itemId=null,feedback=null,attempts=0,showHint=false,showExample=false,chosen=null,writingText=state.writingDraft||'',itemDraft='',loading=false;
-accountStore.subscribe(s=>{storageError=!!s.error;});
+accountStore.subscribe(s=>{storageError=!!s.error||loadFailed;});
 const paths={home:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',book:'<path d="M12 5v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>',review:'<path d="M3 10a9 9 0 1 1 2 8M3 4v6h6M12 7v6l4 2"/>',practice:'<path d="m14 3 7 7-11 11H3v-7ZM11 6l7 7M3 21l6-6"/>',chart:'<path d="M4 3v18h17M8 16v-5M13 16V7M18 16V4"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M7 15h3M14 15h3"/>',arrow:'<path d="M4 12h16m-6-6 6 6-6 6"/>',check:'<path d="m5 12 4 4L19 6"/>',target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',spark:'<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>',link:'<path d="m9 15 6-6M8 16l-2 2a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0M16 8l2-2a4 4 0 0 1 6 6l-5 5a4 4 0 0 1-6 0" transform="translate(1 0) scale(.9)"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',settings:'<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/>',shield:'<path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z"/><path d="m8 12 3 3 5-6"/>',globe:'<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/>',leaf:'<path d="M20 3C4 2 2 10 6 16s14 2 14-13ZM4 21 15 9"/>',brief:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V3h8v4M3 12c6 4 12 4 18 0M12 12v4"/>',bell:'<path d="M6 9a6 6 0 0 1 12 0v5l2 3H4l2-3ZM10 21h4"/>',menu:'<path d="M4 6h16M4 12h16M4 18h16"/>'};
 const icon=(name='book')=>`<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]||paths.book}</svg>`;
 const button=(text,act,cls='btn',extra='')=>`<button class="${cls}" data-action="${act}" ${extra}>${text}</button>`;
@@ -99,8 +103,11 @@ function modalView(){let title='',body='';if(modal.type==='settings'){title=t('s
  if(modal.type==='replace'){title='Continue your saved session?';body=`<p>You have an unfinished ${esc(state.session.title)} session. Resume it, or start the new activity. Completed answers remain saved.</p><div class="actions">${button('Resume session','resume','btn')}${button('Start new activity','replace-session','btn secondary')}</div>`;}
  if(modal.type==='error'){title='We couldn’t prepare this activity';body=`<p>Your progress is safe. Your progress is safe. Try again to return to your practice.</p>${button('Try Again','close-modal','btn')}`;}
  if(modal.type==='reset'){title='Reset Vocabulary Lab progress?';body=`<p>This clears sessions and starts a fresh empty profile on your account. Export a backup first if you want to keep your results.</p><div class="actions">${button('Export progress','export','btn secondary')}${button('Reset progress','reset','btn')}</div>`;}
- return`<div class="modalback"><section class="modal" role="dialog" aria-modal="true" aria-label="${title}" tabindex="-1"><div class="sectionhead"><h2>${title}</h2>${button('×','close-modal','btn secondary','aria-label="Close dialog"')}</div>${body}</section></div>`;}
-document.addEventListener('click',e=>{let b=e.target.closest('[data-action]');if(!b||b.disabled)return;const a=b.dataset.action;const[p,...rest]=a.split(':');const value=rest.join(':');if(navs().some(x=>x[0]===a)||['plan','writing'].includes(a)){go(a);return;}
+ return`<div class="modalback" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-label="${title}" tabindex="-1" data-action="modal-noop"><div class="sectionhead"><h2>${title}</h2>${button('×','close-modal','btn secondary','aria-label="Close dialog"')}</div>${body}</section></div>`;}
+document.addEventListener('click',e=>{
+ if(e.target?.classList?.contains('modalback')){modal=null;render();return;}
+ let b=e.target.closest('[data-action]');if(!b||b.disabled)return;const a=b.dataset.action;if(a==='modal-noop'){e.stopPropagation();return;}
+const[p,...rest]=a.split(':');const value=rest.join(':');if(navs().some(x=>x[0]===a)||['plan','writing'].includes(a)){go(a);return;}
  switch(p){case'cabinet':location.href=boot.dashboardUrl||'/ielts/';break;case'open-planner':location.href=boot.plannerUrl||'/ielts/rejam/';break;case'notifications':toast(dueItems(state).length+' expressions are due for review.');break;case'settings':modal={type:'settings'};render();break;case'about':modal={type:'about'};render();break;case'close-modal':modal=null;render();break;case'tab':tab=value;search='';render();break;case'mode':state.mode=value;save();render();break;case'filter':filter=value;render();break;case'collection':start('learn',{kind:tab,name:value});break;case'start-today':start('learn',{name:'Education'});break;case'start-review':start('review');break;case'review-all':start('review',{all:true});break;case'productive-review':start('review',{all:true,productive:true});break;case'drill':start('lexical',{name:value});break;case'item':itemId=value;itemDraft=state.itemDrafts?.[value]||'';go('item');break;case'learn-item':start('learn',{ids:[value],name:'Expression Practice'});break;case'resume':modal=null;resetFeedback();page='session';render();break;case'replace-session':{const m=modal;modal=null;launch(m.kind,m.opts);break;}case'exit-session':save();go('home');toast('Session saved. Resume from your overview.');break;case'choose':chosen=b.dataset.value;state.session.draft=chosen;save();render();break;case'check-session':checkSession();break;case'next-stage':case'skip-stage':advance();break;case'hint':showHint=true;render();break;case'example':showExample=true;render();break;case'retry':if(page==='item')itemDraft=feedback?.answer||'';feedback=null;chosen=null;showExample=false;render();$('#answer, #sentence, #writing-answer')?.focus();break;
  case'check-item':{const x=bank.find(x=>x.id===itemId),answer=$('#sentence').value;if(!answer.trim())return toast('Write a sentence first.');attempts++;feedback={...checkAnswer(answer,{item:x}),answer};if(feedback.ok){recordItem(state,x.id,'free',true,{eventId:'item-'+x.id+'-'+normal(answer)});save();}render();break;}
  case'check-writing':{writingText=$('#writing-answer').value;attempts++;feedback={...checkAnswer(writingText),answer:writingText};const used=['allocate resources','address an issue','place pressure on'].filter(x=>normal(writingText).includes(x));if(!used.length)feedback.issues.push('Use at least one of the suggested expressions naturally.');const sentences=writingText.trim().split(/[.!?]+/).filter(x=>x.trim());if(sentences.length<2||sentences.length>3)feedback.issues.push('Develop your answer in two or three sentences.');if((normal(writingText).match(/important/g)||[]).length>1)feedback.issues.push('The same repetition issue appears here. Fix it yourself by combining the ideas.');if(!/transport|bus|train|rail/.test(normal(writingText)))feedback.issues.push('Keep your paragraph focused on public transport.');feedback.ok=feedback.issues.length===0;feedback.message=feedback.ok?'Transfer successful ✓ Your paragraph passes the local checks. Save it to update your profile.':'Fix it yourself: use the same skills you have practised in the Lab.';render();break;}

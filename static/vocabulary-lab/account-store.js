@@ -6,7 +6,7 @@ export function createAccountStore({endpoint='/ielts/vocabulary/api/',fetchImpl=
   const state=()=>({pending:!!latest||!!running,error,revision});
   const emit=()=>listener(state());
   async function request(method,body) {
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
     try {
       const headers={Accept:'application/json'};
       if(body){headers['Content-Type']='application/json';headers['X-CSRFToken']=csrfToken();}
